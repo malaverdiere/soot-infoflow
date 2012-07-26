@@ -4,9 +4,8 @@
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
-	<classpathentry exported="true" kind="lib" path="guava-11.0.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/soot"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/QueryContacts"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/soot-dex"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/soot-ifds"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

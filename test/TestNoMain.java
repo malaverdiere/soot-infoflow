@@ -9,6 +9,6 @@ public class TestNoMain {
 	
 	public void onCreate(String test) {
 		String c = test;
-		System.out.println(c);
+		String x = c;
 	}
 }

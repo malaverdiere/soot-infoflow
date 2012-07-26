@@ -1,4 +1,4 @@
-package soot.jimple.interproc.ifds.own;
+package soot.jimple.infoflow.permissionmap;
 import java.util.ArrayList;
 import java.util.List;
 

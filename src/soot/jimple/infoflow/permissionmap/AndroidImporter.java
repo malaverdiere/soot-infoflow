@@ -1,9 +1,10 @@
-package soot.jimple.interproc.ifds.own;
+package soot.jimple.infoflow.permissionmap;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Hashtable;
+
 
 //TODO: improvement - check if parameters are correct...
 //TODO: check subclassing of classes (for example MySocket extends java.net.ServerSocket)

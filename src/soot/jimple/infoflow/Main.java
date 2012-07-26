@@ -1,6 +1,7 @@
 package soot.jimple.infoflow;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +28,9 @@ import soot.jimple.InvokeExpr;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.util.ArgBuilder;
+import soot.jimple.infoflow.util.ArgParser;
+import soot.jimple.infoflow.util.ClassAndMethods;
 import soot.jimple.internal.JCastExpr;
 import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
@@ -266,16 +270,37 @@ public class Main {
 			}
 		}));
 		
+		ArgParser parser = new ArgParser();
+		ArgBuilder builder = new ArgBuilder();
+		ClassAndMethods classmethods = null;
+		String[] newArgs = null;
+		if(args.length>0){
+			if(Arrays.asList(args).contains(ArgParser.CLASSKEYWORD)){
+				classmethods = parser.parseClassArguments(args);
+				newArgs = builder.buildArgs(classmethods.getClassName());
+			} else if (Arrays.asList(args).contains(ArgParser.ANDROIDKEYWORD)){
+				//TODO: to be added by bachelor thesis
+			}else{
+				//just use normal args and provide default testclass
+				classmethods = new ClassAndMethods();
+				classmethods.setClassName("Test");
+				classmethods.addMethodName("main");
+				newArgs = args;
+			}
+		}
 
 	
-		Options.v().parse(args);
+		Options.v().parse(newArgs);
 			
-		SootClass c = Scene.v().forceResolve("TestNoMain", SootClass.BODIES);
+		SootClass c = Scene.v().forceResolve(classmethods.getClassName(), SootClass.BODIES);
 		Scene.v().loadNecessaryClasses();
 		c.setApplicationClass();
-		SootMethod method1 = c.getMethodByName("onCreate");
 		List<SootMethod> entryPoints = new ArrayList<SootMethod>();
-		entryPoints.add(method1);
+		for(String methodname : classmethods.getMethodNames()){
+			SootMethod method1 = c.getMethodByName(methodname);
+			entryPoints.add(method1);
+		}
+		
 		Scene.v().setEntryPoints(entryPoints);
 			
 		PackManager.v().runPacks();

@@ -8,7 +8,7 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="soot.jimple.infoflow.Main"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-class TestIf -methods main"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-class soot.jimple.infoflow.test.TestIf -methods main"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="soot-infoflow"/>
 <stringAttribute key="org.eclipse.jdt.launching.WORKING_DIRECTORY" value="${workspace_loc:soot-infoflow/test}"/>
 </launchConfiguration>

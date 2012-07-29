@@ -1,3 +1,5 @@
+package soot.jimple.infoflow.test;
+
 class TestIf{
 	
 	public static void main(String[] args){

@@ -1,4 +1,4 @@
-
+package soot.jimple.infoflow.test;
 
 public class TestNoMain {
 

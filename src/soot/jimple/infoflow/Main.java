@@ -33,7 +33,9 @@ import soot.jimple.infoflow.permissionmap.SourceManager;
 import soot.jimple.infoflow.util.ArgBuilder;
 import soot.jimple.infoflow.util.ArgParser;
 import soot.jimple.infoflow.util.ClassAndMethods;
+import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JCastExpr;
+import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.interproc.ifds.FlowFunction;
@@ -105,8 +107,6 @@ public class Main {
 												//check if new infoflow is created:
 												if(rightValue instanceof JVirtualInvokeExpr){
 													JVirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) rightValue;
-													System.out
-															.println();
 													SourceManager sourceManager = new DumbSourceManager(); 
 													if(sourceManager.isSourceMethod(invokeExpr.getMethodRef().name())){
 														Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
@@ -196,9 +196,10 @@ public class Main {
 							}
 
 							public FlowFunction<Pair<Value, Value>> getCallFlowFunction(Unit src, final SootMethod dest) {
+				
+								final Stmt stmt = (Stmt) src;
 								
-								Stmt stmt = (Stmt) src;
-								InvokeExpr ie = stmt.getInvokeExpr();
+								final InvokeExpr ie = stmt.getInvokeExpr();
 								System.out.println("Call "+ ie);
 								final List<Value> callArgs = ie.getArgs();
 								final List<Value> paramLocals = new ArrayList<Value>();
@@ -210,6 +211,7 @@ public class Main {
 								return new FlowFunction<Pair<Value, Value>>() {
 
 									public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
+										
 										int argIndex = callArgs.indexOf(source.getO1());
 										if(debug)
 											System.out.println("Variable used for Param: "+argIndex + " " + source);
@@ -250,6 +252,25 @@ public class Main {
 							}
 
 							public FlowFunction<Pair<Value, Value>> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
+								//obviously we have to check for the correct class, too (not only method)
+								SourceManager sourceManager = new DumbSourceManager(); 
+								if(call instanceof JAssignStmt){
+									final JAssignStmt stmt = (JAssignStmt) call;
+									if(sourceManager.isSourceMethod(stmt.getInvokeExpr().getMethodRef().name())){
+										return new FlowFunction<Pair<Value,Value>>() {
+
+											@Override
+											public Set<Pair<Value, Value>> computeTargets(
+													Pair<Value, Value> source) {
+												Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
+												res.add(source);
+												res.add(new Pair<Value, Value>(stmt.getLeftOp(), stmt.getInvokeExpr()));
+												return res;
+											}
+										};
+									}
+								
+								}
 								return Identity.v();
 							}
 						};						

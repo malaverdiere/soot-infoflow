@@ -104,11 +104,12 @@ public class Main {
 											public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
 												boolean addLeftValue = false;
 												
-												//check if new infoflow is created:
+												//check if new infoflow is created here? Not necessary because this covers only calls of methods in the same class,
+												//which should not be source methods (not part of android api)
 												if(rightValue instanceof JVirtualInvokeExpr){
 													JVirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) rightValue;
 													SourceManager sourceManager = new DumbSourceManager(); 
-													if(sourceManager.isSourceMethod(invokeExpr.getMethodRef().name())){
+													if(sourceManager.isSourceMethod(invokeExpr.getMethod().getClass(), invokeExpr.getMethodRef().name())){
 														Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
 														if(!source.equals(zeroValue)){
 															res.add(source);
@@ -256,7 +257,7 @@ public class Main {
 								SourceManager sourceManager = new DumbSourceManager(); 
 								if(call instanceof JAssignStmt){
 									final JAssignStmt stmt = (JAssignStmt) call;
-									if(sourceManager.isSourceMethod(stmt.getInvokeExpr().getMethodRef().name())){
+									if(sourceManager.isSourceMethod(stmt.getInvokeExpr().getMethod().getClass(),stmt.getInvokeExpr().getMethodRef().name())){
 										return new FlowFunction<Pair<Value,Value>>() {
 
 											@Override

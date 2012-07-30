@@ -4,5 +4,5 @@ public abstract class SourceManager {
 
 	
 	
-	public abstract boolean isSourceMethod(String methodName);
+	public abstract boolean isSourceMethod(Class<?> className, String methodName);
 }

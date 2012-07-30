@@ -1,15 +1,17 @@
 package soot.jimple.infoflow.test;
 
+import soot.jimple.infoflow.test.android.TelephonyManager;
+
 public class TestNoMain {
 
-	public String dontcallmeoncreate(String test2){
-		return test2;
-		//System.out.println(f);
+	public String dontcallmeoncreate(){
+		String deviceID = TelephonyManager.getDeviceId();
+		return deviceID;
 	}
 	
 	public void onChange(String str){
 		String b = str;
-		String l = dontcallmeoncreate(b);
+		String l = dontcallmeoncreate();
 		String v = l;
 	}
 	

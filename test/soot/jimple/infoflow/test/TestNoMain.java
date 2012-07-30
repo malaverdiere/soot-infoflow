@@ -1,12 +1,13 @@
 package soot.jimple.infoflow.test;
 
-import soot.jimple.infoflow.test.android.TelephonyManager;
+import soot.jimple.infoflow.test.android.AccountManager;
 
 public class TestNoMain {
 
 	public String dontcallmeoncreate(){
-		String deviceID = TelephonyManager.getDeviceId();
-		return deviceID;
+		AccountManager aManager = new AccountManager();
+		String test = aManager.getPassword();
+		return test;
 	}
 	
 	public void onChange(String str){

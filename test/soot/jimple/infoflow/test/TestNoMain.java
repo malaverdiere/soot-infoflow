@@ -26,4 +26,8 @@ public class TestNoMain {
 		String c = test;
 		String x = c;
 	}
+	
+	public static void foo() {
+		new TestNoMain().onChange("");
+	}
 }

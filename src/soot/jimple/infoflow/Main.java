@@ -35,7 +35,6 @@ import soot.jimple.infoflow.util.ArgParser;
 import soot.jimple.infoflow.util.ClassAndMethods;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JCastExpr;
-import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.interproc.ifds.FlowFunction;
@@ -66,10 +65,7 @@ public class Main {
 				
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 					initialSeeds.add(ep.getActiveBody().getUnits().getFirst()); //TODO: change to real initialSeeds
-//					initialSeeds.put(ep, new Pair<Value, Unit>(ep.getActiveBody().getLocals().getFirst(),ep.getActiveBody().getUnits().getFirst() )
 				}
-				
-				System.out.println(initialSeeds.size() + " " + initialSeeds.iterator().next()); //check if inserted: true
 				
 				final Pair<Value, Value> zeroValue = new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()),null);
 				
@@ -106,21 +102,9 @@ public class Main {
 												
 												//check if new infoflow is created here? Not necessary because this covers only calls of methods in the same class,
 												//which should not be source methods (not part of android api)
-												if(rightValue instanceof JVirtualInvokeExpr){
-													JVirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) rightValue;
-													SourceManager sourceManager = new DumbSourceManager(); 
-													if(sourceManager.isSourceMethod(invokeExpr.getMethod().getClass(), invokeExpr.getMethodRef().name())){
-														Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
-														if(!source.equals(zeroValue)){
-															res.add(source);
-														}
-														res.add(new Pair<Value, Value>(leftValue, rightValue));
-														return res;
-													}
-												 }
 												
 												//normal check for infoflow
-												if(!source.equals(zeroValue)){
+												if(rightValue instanceof JVirtualInvokeExpr || !source.equals(zeroValue)){
 													PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 														if(source.getO1() instanceof InstanceFieldRef && rightValue instanceof InstanceFieldRef &&
 															((InstanceFieldRef)rightValue).getField().getName().equals(((InstanceFieldRef)source.getO1()).getField().getName()))
@@ -253,10 +237,10 @@ public class Main {
 							}
 
 							public FlowFunction<Pair<Value, Value>> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
-								//obviously we have to check for the correct class, too (not only method)
 								SourceManager sourceManager = new DumbSourceManager(); 
 								if(call instanceof JAssignStmt){
 									final JAssignStmt stmt = (JAssignStmt) call;
+									//obviously we have to check for the correct class, too (not only method)
 									if(sourceManager.isSourceMethod(stmt.getInvokeExpr().getMethod().getClass(),stmt.getInvokeExpr().getMethodRef().name())){
 										return new FlowFunction<Pair<Value,Value>>() {
 
@@ -309,7 +293,7 @@ public class Main {
 					System.err.println("----------------------------------------------");
 					
 					for(Pair<Value, Value> l: solver.ifdsResultsAt(ret)) {
-						System.err.println(l.getO1());
+						System.err.println(l.getO1() + " contains value from " + l.getO2());
 					}
 				}
 				

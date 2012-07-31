@@ -4,7 +4,7 @@ import soot.jimple.infoflow.test.android.AccountManager;
 
 public class TestNoMain {
 
-	public String dontcallmeoncreate(){
+	public String function1(){
 		AccountManager aManager = new AccountManager();
 		String test = aManager.getPassword();
 		return test;
@@ -12,7 +12,10 @@ public class TestNoMain {
 	
 	public void onChange(String str){
 		String b = str;
-		String l = dontcallmeoncreate();
+		//works:
+		//TestNoMain nm = new TestNoMain();
+		//String l = nm.function1();
+		String l = this.function1();
 		String v = l;
 	}
 	

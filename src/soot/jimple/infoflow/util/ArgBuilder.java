@@ -8,21 +8,25 @@ public class ArgBuilder {
 	 * @return
 	 */
 	public String[] buildArgs(String className){
-		String[] result = new String[14];
-		result[0] = "-w";
-		result[1] = "-p";
-		result[2] = "cg.spark";
-		result[3] = "on";
-		result[4] = "-cp";
-		result[5] = ".";
-		result[6] = "-pp";
-		result[7] = className;
-		result[8] = "-p";
-		result[9] = "jb";
-		result[10] = "use-original-names:true";
-		result[11] = "-p";
-		result[12] = "cg";
-		result[13] = "verbose:true";
+		String[] result = {
+			"-w",
+			"-p",
+			"cg.spark",
+			"on",
+//			"-p",
+//			"cg.spark",
+//			"on-fly-cg:false",
+			"-cp",
+			".",
+			"-pp",
+			className,
+			"-p",
+			"jb",
+			"use-original-names:true",
+			"-p",
+			"cg",
+			"verbose:true",
+		};
 		
 		return result;
 	}

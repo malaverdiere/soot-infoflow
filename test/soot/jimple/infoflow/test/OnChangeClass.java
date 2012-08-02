@@ -3,13 +3,13 @@ package soot.jimple.infoflow.test;
 import soot.jimple.infoflow.test.android.AccountManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
-public class onChange {
+public class OnChangeClass {
 
 
 	
-	public void onChange1(String str){
+	public void onChange1(){
 		String t1 = TelephonyManager.getDeviceId();
-		String b = str;
+		String b = " ";
 		AccountManager manager = new AccountManager();
 		b = manager.getPassword();
 		String v = b;

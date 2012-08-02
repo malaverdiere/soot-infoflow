@@ -6,8 +6,8 @@ public class TestNoMain {
 	
 	public String result = "";
 	
-	public void onChange(String str){
-		String b = str;
+	public void onChange(){
+		String b = "";
 		//works:
 		//TestNoMain nm = new TestNoMain();
 		//String l = nm.function1();
@@ -28,6 +28,6 @@ public class TestNoMain {
 	}
 	
 	public static void foo() {
-		new TestNoMain().onChange("");
+		new TestNoMain().onChange();
 	}
 }

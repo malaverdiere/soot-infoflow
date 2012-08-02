@@ -13,21 +13,30 @@ import soot.NullType;
 import soot.PackManager;
 import soot.PointsToAnalysis;
 import soot.PointsToSet;
+import soot.RefType;
 import soot.Scene;
 import soot.SceneTransformer;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
+import soot.Type;
 import soot.Unit;
 import soot.Value;
+import soot.VoidType;
+import soot.javaToJimple.LocalGenerator;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InvokeExpr;
+import soot.jimple.Jimple;
+import soot.jimple.JimpleBody;
+import soot.jimple.NewExpr;
 import soot.jimple.ReturnStmt;
+import soot.jimple.SpecialInvokeExpr;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
+import soot.jimple.VirtualInvokeExpr;
 import soot.jimple.infoflow.permissionmap.DumbSourceManager;
 import soot.jimple.infoflow.permissionmap.SourceManager;
 import soot.jimple.infoflow.util.ArgBuilder;
@@ -319,14 +328,49 @@ public class Main {
 			}
 		}
 
+		//MainClassBuilder mcBuilder = new MainClassBuilder();
+		//mcBuilder.build(classmethods);
+		
+		
 		Options.v().parse(newArgs);
 		SootClass c = Scene.v().forceResolve(classmethods.getClassName(), SootClass.BODIES);
 		Scene.v().loadNecessaryClasses();
 		c.setApplicationClass();
 		List<SootMethod> entryPoints = new ArrayList<SootMethod>();
-		for(String methodname : classmethods.getMethodNames()){
-			SootMethod method1 = c.getMethodByName(methodname);
-			entryPoints.add(method1);
+		//TODO: for testing only:
+		classmethods.setNomain(true);
+		if(classmethods.isNomain()){
+			JimpleBody body = Jimple.v().newBody();
+			LocalGenerator generator = new LocalGenerator(body);
+			Local tempLocal = generator.generateLocal(RefType.v(classmethods.getClassName()));
+			NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(classmethods.getClassName()));
+			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);			
+			SpecialInvokeExpr sinvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, Scene.v().makeMethodRef(c, "<init>", new ArrayList<Type>(), VoidType.v(), false));
+			body.getUnits().add(assignStmt);
+			body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
+			
+			
+			for(String methodName : classmethods.getMethodNames()){
+				//Local tempMethodLocal = generator.generateLocal(RefType.v(methodName));
+				SootMethod m = new SootMethod(methodName, new ArrayList<Type>(), VoidType.v());
+				m.setDeclaringClass(c);
+				VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, m.makeRef());
+				body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
+			}
+			
+			SootMethod mainMethod = new SootMethod("dummyMainMethod", new ArrayList<Type>(), VoidType.v());
+			body.setMethod(mainMethod);
+			mainMethod.setActiveBody(body);
+			SootClass mainClass = new SootClass("dummyMainClass");
+			mainClass.setApplicationClass();
+			mainClass.addMethod(mainMethod);
+			Scene.v().addClass(mainClass);
+			entryPoints.add(mainMethod);
+		}else{
+			for(String methodName : classmethods.getMethodNames()){
+				SootMethod method1 = c.getMethodByName(methodName);
+				entryPoints.add(method1);
+			}
 		}
 		
 		Scene.v().setEntryPoints(entryPoints);

@@ -7,6 +7,7 @@ public class ArgParser {
 	public static String CLASSKEYWORD = "-class";
 	public static String METHODKEYWORD = "-methods";
 	public static String ANDROIDKEYWORD = "-android";
+	public static String MAINKEYWORD = "-nomain";
 	
 	public ClassAndMethods parseClassArguments(String[] args){
 		ClassAndMethods cam = new ClassAndMethods();

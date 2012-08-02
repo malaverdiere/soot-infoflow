@@ -6,6 +6,7 @@ import java.util.List;
 public class ClassAndMethods {
 	private String className;
 	private List<String> methodNames;
+	private boolean nomain;
 	
 	
 	public String getClassName() {
@@ -27,5 +28,11 @@ public class ClassAndMethods {
 		if(!methodNames.contains(methodName)){
 			methodNames.add(methodName);
 		}
+	}
+	public boolean isNomain() {
+		return nomain;
+	}
+	public void setNomain(boolean nomain) {
+		this.nomain = nomain;
 	}
 }

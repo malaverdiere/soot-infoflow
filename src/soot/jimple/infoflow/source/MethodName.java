@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.permissionmap;
+package soot.jimple.infoflow.source;
 import java.util.ArrayList;
 import java.util.List;
 

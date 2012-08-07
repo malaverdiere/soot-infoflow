@@ -22,8 +22,10 @@ import soot.jimple.InvokeExpr;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.permissionmap.DumbSourceManager;
-import soot.jimple.infoflow.permissionmap.SourceManager;
+import soot.jimple.infoflow.data.Source;
+import soot.jimple.infoflow.source.DefaultSourceManager;
+import soot.jimple.infoflow.source.DumbSourceManager;
+import soot.jimple.infoflow.source.SourceManager;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JCastExpr;
 import soot.jimple.internal.JVirtualInvokeExpr;
@@ -40,6 +42,7 @@ import soot.toolkits.scalar.Pair;
 public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, Value>,SootMethod>{
 	
 	final Set <Unit> initialSeeds = new HashSet<Unit>();
+	final List<Source> sourceList = new ArrayList<Source>();
 	final Pair<Value, Value> zeroValue = new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()),null);
 	
 
@@ -201,7 +204,14 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 			}
 
 			public FlowFunction<Pair<Value, Value>> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
-				SourceManager sourceManager = new DumbSourceManager(); 
+				SourceManager sourceManager;
+				//TODO: for testing only:
+				if(sourceList.size() == 0){
+					sourceManager = new DumbSourceManager(); 
+				} else {
+					sourceManager = new DefaultSourceManager(sourceList); 
+				}
+				
 				if(call instanceof JAssignStmt){
 					final JAssignStmt stmt = (JAssignStmt) call;
 					//obviously we have to check for the correct class, too (not only method)

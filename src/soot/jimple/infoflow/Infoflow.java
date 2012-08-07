@@ -153,37 +153,3 @@ public class Infoflow implements IInfoflow {
 	
 }
 
-
-//public void computeInfoflow(String classNameWithPath,
-//		boolean hasMainMethod, List<String> entryMethodNames) {
-//	//convert input:
-//	ClassAndMethods classmethods = new ClassAndMethods();
-//	classmethods.setMethodNames(entryMethodNames);
-//	classmethods.setClassName(classNameWithPath);
-//	classmethods.setNomain(!hasMainMethod);
-//	
-//	//add SceneTransformer:
-//	addSceneTransformer();
-//	
-//	//prepare soot arguments:
-//	ArgBuilder builder = new ArgBuilder();
-//	String [] args = builder.buildArgs(classmethods.getClassName());
-//	Options.v().parse(args);
-//	
-//	List<SootMethod> entryPoints;
-//	SootClass c = Scene.v().forceResolve(classmethods.getClassName(), SootClass.BODIES);
-//	Scene.v().loadNecessaryClasses();
-//	c.setApplicationClass();
-//	if(!hasMainMethod){
-//		entryPoints = createDummyMain(classmethods, c);
-//	} else{
-//		entryPoints = new ArrayList<SootMethod>();
-//		for(String methodName : classmethods.getMethodNames()){
-//			SootMethod method1 = c.getMethodByName(methodName);
-//			entryPoints.add(method1);
-//		}
-//	}
-//	
-//	Scene.v().setEntryPoints(entryPoints);
-//	PackManager.v().runPacks();
-//}

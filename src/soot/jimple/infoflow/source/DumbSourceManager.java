@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.permissionmap;
+package soot.jimple.infoflow.source;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +16,6 @@ public class DumbSourceManager extends SourceManager {
 	
 	@Override
 	public boolean isSourceMethod(Class<?> methodClass, String methodName) {
-		//TODO: check class, too.
-		//check: methodClass.getClasses() and look for interfaces/classes
-		System.out.println(methodClass.toString());
 		if(sourceMethodNames.contains(methodName)){
 			return true;
 		}

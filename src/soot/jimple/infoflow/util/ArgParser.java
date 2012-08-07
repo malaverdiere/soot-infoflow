@@ -25,6 +25,10 @@ public class ArgParser {
 		}
 			
 		}
+		if(argList.contains(MAINKEYWORD)){
+			cam.setNomain(true);
+		}
+		
 		return cam;
 	}
 	

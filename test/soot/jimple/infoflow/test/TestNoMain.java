@@ -6,14 +6,16 @@ public class TestNoMain {
 	
 	public String result = "";
 	
-	public void onChange(){
-		String b = "";
-		//works:
-		//TestNoMain nm = new TestNoMain();
-		//String l = nm.function1();
+	public void functionCallThis(){
 		String l = this.function1();
-		String v = l;
-		result = v.concat(b);
+		result = l;
+		
+	}
+	
+	public void functionCallOnObject(){
+		TestNoMain nm = new TestNoMain();
+		String l = nm.function1();
+		result = l;
 	}
 
 	public String function1(){
@@ -28,6 +30,6 @@ public class TestNoMain {
 	}
 	
 	public static void foo() {
-		new TestNoMain().onChange();
+		new TestNoMain().functionCallThis();
 	}
 }

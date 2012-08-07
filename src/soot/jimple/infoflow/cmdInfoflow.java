@@ -23,6 +23,10 @@ public class cmdInfoflow {
 				classmethods.setNomain(false);
 			}
 		}
+		if(classmethods.getClassName() == null || classmethods.getMethodNames() == null){
+			System.err.println("Parsen der Argumente war nicht erfolgreich!");
+			return;
+		}
 		IInfoflow infoflow = new Infoflow();
 		infoflow.computeInfoflow(classmethods.getClassName(), !classmethods.isNomain(), classmethods.getMethodNames());
 	}

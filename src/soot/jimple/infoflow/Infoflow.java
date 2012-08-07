@@ -23,6 +23,7 @@ import soot.jimple.JimpleBody;
 import soot.jimple.NewExpr;
 import soot.jimple.SpecialInvokeExpr;
 import soot.jimple.VirtualInvokeExpr;
+import soot.jimple.infoflow.data.AnalyzeClass;
 import soot.jimple.infoflow.util.ArgBuilder;
 import soot.jimple.infoflow.util.ClassAndMethods;
 import soot.jimple.interproc.ifds.solver.IFDSSolver;
@@ -31,6 +32,11 @@ import soot.toolkits.scalar.Pair;
 
 public class Infoflow implements IInfoflow {
 
+	@Override
+	public void computeInfoflow(List<AnalyzeClass> classes) {
+	
+	}
+	
 	@Override
 	public void computeInfoflow(String classNameWithPath,
 			boolean hasMainMethod, List<String> entryMethodNames) {
@@ -86,6 +92,7 @@ public class Infoflow implements IInfoflow {
 		body.getUnits().add(assignStmt);
 		body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
 		
+		//FIXME: optimized for test case onChangeWithReturn - for all other revert this
 		for(String methodName : classmethods.getMethodNames()){
 			Local stringLocal = generator.generateLocal(RefType.v("java.lang.String"));
 			SootMethod m = new SootMethod(methodName, new ArrayList<Type>(), RefType.v("java.lang.String"));

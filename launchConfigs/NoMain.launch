@@ -8,6 +8,6 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="soot.jimple.infoflow.cmdInfoflow"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-class soot.jimple.infoflow.test.TestNoMain -methods onChange"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-class soot.jimple.infoflow.test.TestNoMain -methods functionCallOnObject functionCallThis -nomain"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="soot-infoflow"/>
 </launchConfiguration>

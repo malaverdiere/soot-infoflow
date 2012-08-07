@@ -56,13 +56,14 @@ import soot.jimple.interproc.ifds.solver.IFDSSolver;
 import soot.jimple.interproc.ifds.template.JimpleBasedInterproceduralCFG;
 import soot.options.Options;
 import soot.toolkits.scalar.Pair;
-
+@Deprecated
 public class Main {
 	static boolean debug = true;
 
 	/**
 	 * @param args
 	 */
+	@Deprecated
 	public static void main(String[] args) {
 		
 		
@@ -327,10 +328,6 @@ public class Main {
 				newArgs = args;
 			}
 		}
-
-		//MainClassBuilder mcBuilder = new MainClassBuilder();
-		//mcBuilder.build(classmethods);
-		
 		
 		Options.v().parse(newArgs);
 		SootClass c = Scene.v().forceResolve(classmethods.getClassName(), SootClass.BODIES);
@@ -351,11 +348,13 @@ public class Main {
 			
 			
 			for(String methodName : classmethods.getMethodNames()){
-				//Local tempMethodLocal = generator.generateLocal(RefType.v(methodName));
-				SootMethod m = new SootMethod(methodName, new ArrayList<Type>(), VoidType.v());
+				Local stringLocal = generator.generateLocal(RefType.v("java.lang.String"));
+				SootMethod m = new SootMethod(methodName, new ArrayList<Type>(), RefType.v("java.lang.String"));
 				m.setDeclaringClass(c);
 				VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, m.makeRef());
-				body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
+				//original: body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
+				AssignStmt assignStmt2 = Jimple.v().newAssignStmt(stringLocal, vInvokeExpr);
+				body.getUnits().add(assignStmt2);
 			}
 			
 			SootMethod mainMethod = new SootMethod("dummyMainMethod", new ArrayList<Type>(), VoidType.v());

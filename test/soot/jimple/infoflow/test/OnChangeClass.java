@@ -15,5 +15,15 @@ public class OnChangeClass {
 		String v = b;
 		String t3 = t1;
 	}
+	
+	public String onChangeWithReturn(){
+		String t1 = TelephonyManager.getDeviceId();
+		String b = " ";
+		AccountManager manager = new AccountManager();
+		b = manager.getPassword();
+		String v = b;
+		String t3 = t1;
+		return t3;
+	}
 
 }

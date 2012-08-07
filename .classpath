@@ -5,7 +5,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/soot"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/soot-dex"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/soot-ifds"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/soot-dex"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

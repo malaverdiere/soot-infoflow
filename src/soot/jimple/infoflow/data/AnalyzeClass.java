@@ -24,7 +24,7 @@ public class AnalyzeClass {
 		this.methods = methods;
 	}
 
-	public boolean isHasMain() {
+	public boolean hasMain() {
 		return hasMain;
 	}
 

@@ -1,34 +1,43 @@
 package soot.jimple.infoflow;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import soot.jimple.infoflow.data.AnalyzeClass;
+import soot.jimple.infoflow.data.AnalyzeMethod;
 import soot.jimple.infoflow.util.ArgParser;
-import soot.jimple.infoflow.util.ClassAndMethods;
 
 public class cmdInfoflow {
 
 	public static void main(String[] args){
 		ArgParser parser = new ArgParser();
-		ClassAndMethods classmethods = null;
+		AnalyzeClass analyzeClass = null;
 		if(args.length>0){
 			if(Arrays.asList(args).contains(ArgParser.CLASSKEYWORD)){
-				classmethods = parser.parseClassArguments(args);
+				analyzeClass = parser.parseClassArguments(args);
 			} else if (Arrays.asList(args).contains(ArgParser.ANDROIDKEYWORD)){
 				//TODO: to be added by bachelor thesis
 			}else{
 				//just use normal args and provide default testclass
-				classmethods = new ClassAndMethods();
-				classmethods.setClassName("Test");
-				classmethods.addMethodName("main");
-				classmethods.setNomain(false);
-			}
+				analyzeClass = new AnalyzeClass();
+				analyzeClass.setNameWithPath("Test");
+				AnalyzeMethod aMethod = new AnalyzeMethod();
+				aMethod.setName("main");
+				List<AnalyzeMethod> methodList = new ArrayList<AnalyzeMethod>();
+				analyzeClass.setHasMain(true);
+				analyzeClass.setMethods(methodList);
+			
 		}
-		if(classmethods.getClassName() == null || classmethods.getMethodNames() == null){
+		if(analyzeClass.getNameWithPath() == null || analyzeClass.getMethods().size() == 0){
 			System.err.println("Parsen der Argumente war nicht erfolgreich!");
 			return;
 		}
 		IInfoflow infoflow = new Infoflow();
-		infoflow.computeInfoflow(classmethods.getClassName(), !classmethods.isNomain(), classmethods.getMethodNames());
+		List<AnalyzeClass> classList = new ArrayList<AnalyzeClass>();
+		classList.add(analyzeClass);
+		infoflow.computeInfoflow("", classList,null, null);
+		}
 	}
 	
 }

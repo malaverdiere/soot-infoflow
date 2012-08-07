@@ -7,14 +7,12 @@ import soot.jimple.infoflow.data.AnalyzeClass;
 public interface IInfoflow {
 
 	/**
-	 * 
-	 * @param path
-	 * @param classes
-	 * @param sources
-	 * @param sinks
+	 * computes the information flow
+	 * @param path the path to the main folder of the unpacked class files (for example from an .apk)
+	 * @param classes the entryPoint classes (including the entryPoint methods and other information)
+	 * @param sources list of source class+method (as String)
+	 * @param sinkslist of sink class+method (as String)
 	 */
 	public void computeInfoflow(String path, List<AnalyzeClass> classes, List<String> sources, List<String> sinks);
 	
-	
-	public void computeInfoflow(String classNameWithPath, boolean hasMainMethod, List<String> entryMethodNames);
 }

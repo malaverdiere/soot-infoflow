@@ -4,7 +4,7 @@ import java.util.List;
 
 public class AnalyzeMethod {
 	private String name; //for example: "doSomething"
-	private String returnValue; //full path, for example "java.lang.String"
+	private String returnType; //full path, for example "java.lang.String"
 	private List<String> parameters; //each with full path, for example: "java.lang.String"
 
 	public String getName() {
@@ -23,11 +23,11 @@ public class AnalyzeMethod {
 		this.parameters = parameters;
 	}
 
-	public String getReturnValue() {
-		return returnValue;
+	public String getReturnType() {
+		return returnType;
 	}
 
-	public void setReturnValue(String returnValue) {
-		this.returnValue = returnValue;
+	public void setReturnType(String returnType) {
+		this.returnType = returnType;
 	}
 }

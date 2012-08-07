@@ -6,7 +6,14 @@ import soot.jimple.infoflow.data.AnalyzeClass;
 
 public interface IInfoflow {
 
-	public void computeInfoflow(List<AnalyzeClass> classes);
+	/**
+	 * 
+	 * @param path
+	 * @param classes
+	 * @param sources
+	 * @param sinks
+	 */
+	public void computeInfoflow(String path, List<AnalyzeClass> classes, List<String> sources, List<String> sinks);
 	
 	
 	public void computeInfoflow(String classNameWithPath, boolean hasMainMethod, List<String> entryMethodNames);

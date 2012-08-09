@@ -14,7 +14,7 @@ public class TestNoMain {
 	
 	public String functionCallOnObject(){
 		TestNoMain nm = new TestNoMain();
-		String l = nm.function1();
+		String l = nm.function2("", "");
 		result = l;
 		return l;
 	}
@@ -22,6 +22,13 @@ public class TestNoMain {
 	public String function1(){
 		AccountManager aManager = new AccountManager();
 		String test = aManager.getPassword();
+		return test;
+	}
+	
+	public String function2(String a, String b){
+		AccountManager aManager = new AccountManager();
+		String test = a.concat(b);
+		test = aManager.getPassword();
 		return test;
 	}
 	

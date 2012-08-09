@@ -4,52 +4,51 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import soot.jimple.infoflow.data.AnalyzeClass;
-import soot.jimple.infoflow.data.AnalyzeMethod;
-
 public class ArgParser {
-	public static String CLASSKEYWORD = "-class";
-	public static String METHODKEYWORD = "-methods";
-	public static String ANDROIDKEYWORD = "-android";
-	public static String MAINKEYWORD = "-nomain";
+	public static String METHODKEYWORD = "-entrypoints";
+	public static String SOURCEKEYWORD = "-sources";
+	public static String SINKKEYWORD = "-sinks";
+	//public static String MAINKEYWORD = "-nomain";
 	
-	public AnalyzeClass parseClassArguments(String[] args){
-		AnalyzeClass aClass = new AnalyzeClass();
+	public List<List<String>> parseClassArguments(String[] args){
 		List<String> argList = Arrays.asList(args);
-		if(argList.contains(CLASSKEYWORD) && argList.indexOf(CLASSKEYWORD)+1 < argList.size() && !argList.get(argList.indexOf(CLASSKEYWORD)+1).startsWith("-")){
-			aClass.setNameWithPath(argList.get(argList.indexOf(CLASSKEYWORD)+1));
-			if(argList.contains(METHODKEYWORD)){ 
-				List<AnalyzeMethod> methodList = new ArrayList<AnalyzeMethod>();
-				int position = argList.indexOf(METHODKEYWORD);
-				while(position +1 < argList.size() && !argList.get(position+1).startsWith("-")){
-					AnalyzeMethod aMethod = new AnalyzeMethod();
-					aMethod.setName(argList.get(position+1));
-					methodList.add(aMethod);
-					position++;
-				}
-				aClass.setMethods(methodList);
+		List<String> ePointList;
+		List<String> sourceList = new ArrayList<String>();
+		List<String> sinkList = new ArrayList<String>();
+	
+		if(argList.contains(METHODKEYWORD)){
+			ePointList = getListToAttribute(argList, METHODKEYWORD);
 		} else{
 			System.err.println("parameter '"+ METHODKEYWORD+ "' is missing or has not enough arguments!");
 			return null;
 		}
-			
+		if(argList.contains(SOURCEKEYWORD)){
+			sourceList = getListToAttribute(argList, SOURCEKEYWORD);
 		}
-		if(argList.contains(MAINKEYWORD)){
-			aClass.setHasMain(false);
-		} else{
-			aClass.setHasMain(true);
+		if(argList.contains(SINKKEYWORD)){
+			sinkList = getListToAttribute(argList, SINKKEYWORD);
 		}
 		
-		return aClass;
+		 List<List<String>> resultlist = new ArrayList<List<String>>();
+		 resultlist.add(ePointList);
+		 resultlist.add(sourceList);
+		 resultlist.add(sinkList);
+		
+		return resultlist;
+		
 	}
-	
-	public String parseAndroidArguments(String[] args){
-		List<String> argList = Arrays.asList(args);
-		if(argList.contains(ANDROIDKEYWORD) && argList.indexOf(ANDROIDKEYWORD)+1 < argList.size() && !argList.get(argList.indexOf(ANDROIDKEYWORD)+1).startsWith("-")){
-			return argList.get(argList.indexOf(ANDROIDKEYWORD)+1);
-		}else{
-			System.err.println("parameter '"+ ANDROIDKEYWORD+"' is missing or has not enough arguments!");
+
+	private List<String> getListToAttribute(List<String> argList, String attr){
+		List<String> result = new ArrayList<String>();
+		if(argList.indexOf(attr)+1 < argList.size() && !argList.get(argList.indexOf(attr)+1).startsWith("-")){
+			int position = argList.indexOf(METHODKEYWORD);
+			while(position +1 < argList.size() && !argList.get(position+1).startsWith("-")){
+				result.add(argList.get(position+1));
+				position++;
+			}
 		}
-		return "";
+		
+		return result;
 	}
+
 }

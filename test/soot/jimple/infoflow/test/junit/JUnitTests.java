@@ -11,11 +11,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import soot.jimple.infoflow.IInfoflow;
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.cmdInfoflow;
-import soot.jimple.infoflow.data.AnalyzeClass;
-import soot.jimple.infoflow.data.AnalyzeMethod;
 
 public class JUnitTests {
 
@@ -42,7 +39,7 @@ public class JUnitTests {
     
     @Test
     public void OnChangeClass1Cmd() { 
-    	String[] args = new String[]{"-class", "soot.jimple.infoflow.test.OnChangeClass", "-methods", "onChange1", "-nomain"};
+    	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.OnChangeClass: void onChange1()>"};
     	
     	cmdInfoflow.main(args);
     	 
@@ -56,21 +53,10 @@ public class JUnitTests {
 
     @Test
     public void NoMainFunctionCallThis() { 
-    		
-    	AnalyzeClass analyzeClass = null;
-		analyzeClass = new AnalyzeClass();
-		analyzeClass.setNameWithPath("soot.jimple.infoflow.test.TestNoMain");
-		AnalyzeMethod aMethod = new AnalyzeMethod();
-		aMethod.setName("functionCallOnObject");
-		aMethod.setReturnType("java.lang.String");
-		List<AnalyzeMethod> methodList = new ArrayList<AnalyzeMethod>();
-		methodList.add(aMethod);
-		analyzeClass.setHasMain(false);
-		analyzeClass.setMethods(methodList);
-		IInfoflow infoflow = new Infoflow();
-		List<AnalyzeClass> classList = new ArrayList<AnalyzeClass>();
-		classList.add(analyzeClass);
-		infoflow.computeInfoflow("", classList,null, null);
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.TestNoMain: void functionCallThis()>");
+		infoflow.computeInfoflow("", epoints,null, null);
     	 
         assertTrue(errOutputStream.toString().contains("l contains value from")); 
 //        assertTrue(errOutputStream.toString().contains("t1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 
@@ -82,7 +68,7 @@ public class JUnitTests {
     
     @Test
     public void NoMainFunctionCallThisCmd() throws InterruptedException { 
-    	String[] args = new String[]{"-class", "soot.jimple.infoflow.test.TestNoMain", "-methods", "functionCallThis", "-nomain"};
+    	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.TestNoMain: void functionCallThis()>"};
     	Thread.sleep(1500);
     	cmdInfoflow.main(args);
     	 
@@ -95,7 +81,7 @@ public class JUnitTests {
     
     @Test
     public void NoMainFunctionCallOnObjectCmd() { 
-    	String[] args = new String[]{"-class", "soot.jimple.infoflow.test.TestNoMain", "-methods", "functionCallOnObject"};
+    	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.TestNoMain: java.lang.String functionCallOnObject()>"};
     	
     	cmdInfoflow.main(args);
     	 
@@ -105,14 +91,7 @@ public class JUnitTests {
 //        assertTrue(errOutputStream.toString().contains("b contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
 
     } 
-    
-    
 
-    
-    @Test
-    public void TestIf(){
-    	
-    }
 
 
 }

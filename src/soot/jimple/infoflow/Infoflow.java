@@ -1,6 +1,7 @@
 package soot.jimple.infoflow;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,8 @@ import soot.toolkits.scalar.Pair;
 
 public class Infoflow implements IInfoflow {
 
+	final List<SootMethod> originalEntryPoints = new ArrayList<SootMethod>();
+	
 	@Override
 	public void computeInfoflow(String path, List<AnalyzeClass> classes, List<String> sources, List<String> sinks) {
 		//add SceneTransformer:
@@ -41,21 +44,27 @@ public class Infoflow implements IInfoflow {
 			//prepare soot arguments:
 			ArgBuilder builder = new ArgBuilder();
 			String [] args = builder.buildArgs(currentClass.getNameWithPath());
+			Options.v().set_debug(true);
 			Options.v().parse(args);
 		
+			//entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method, we have to create a new main method and use it as entryPoint, but store our real entryPoints
 			List<SootMethod> entryPoints;
 			SootClass c = Scene.v().forceResolve(currentClass.getNameWithPath(), SootClass.BODIES);
 			Scene.v().loadNecessaryClasses();
 			c.setApplicationClass();
 			if(!currentClass.hasMain()){
 				entryPoints = createDummyMain(currentClass, c);
-			} else{
+			}else{
 				entryPoints = new ArrayList<SootMethod>();
-				for(AnalyzeMethod method : currentClass.getMethods()){
-					SootMethod method1 = c.getMethodByName(method.getName());
-					entryPoints.add(method1);
-				}
 			}
+			for(AnalyzeMethod method : currentClass.getMethods()){
+				SootMethod method1 = c.getMethodByName(method.getName());
+				originalEntryPoints.add(method1);
+				//if(currentClass.hasMain()){
+					entryPoints.add(method1);
+				//}
+			}
+			
 		
 			Scene.v().setEntryPoints(entryPoints);
 			PackManager.v().runPacks();
@@ -121,34 +130,49 @@ public class Infoflow implements IInfoflow {
 	}
 	
 	public void addSceneTransformer(){
-		PackManager.v().getPack("wjtp").add(new Transform("wjtp.ifds", new SceneTransformer() {
+		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
 				
-				InfoflowProblem problem = new InfoflowProblem();
-				for (SootMethod ep : Scene.v().getEntryPoints()) {
-					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst()); //TODO: change to real initialSeeds
+			InfoflowProblem problem = new InfoflowProblem();
+			for (SootMethod ep : Scene.v().getEntryPoints()) {
+				problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst()); //TODO: change to real initialSeeds
+			}
+			
+			IFDSSolver<Unit,Pair<Value, Value>,SootMethod> solver = new IFDSSolver<Unit,Pair<Value, Value>,SootMethod>(problem);	
+			solver.solve();
+			
+			for(SootMethod ep : Scene.v().getEntryPoints()) {
+				
+				Unit ret = ep.getActiveBody().getUnits().getLast();
+				
+				System.err.println(ep.getActiveBody());
+				
+				System.err.println("----------------------------------------------");
+				System.err.println("At end of: "+ep.getSignature());
+				System.err.println("Variables:");
+				System.err.println("----------------------------------------------");
+				
+				for(Pair<Value, Value> l: solver.ifdsResultsAt(ret)) {
+					System.err.println(l.getO1() + " contains value from " + l.getO2());
 				}
-				
-				IFDSSolver<Unit,Pair<Value, Value>,SootMethod> solver = new IFDSSolver<Unit,Pair<Value, Value>,SootMethod>(problem);	
-				solver.solve();
-				
-				for(SootMethod ep : Scene.v().getEntryPoints()) {
-					Unit ret = ep.getActiveBody().getUnits().getLast();
-					
-					System.err.println(ep.getActiveBody());
-					
-					System.err.println("----------------------------------------------");
-					System.err.println("At end of: "+ep.getSignature());
-					System.err.println("Variables:");
-					System.err.println("----------------------------------------------");
-					
-					for(Pair<Value, Value> l: solver.ifdsResultsAt(ret)) {
-						System.err.println(l.getO1() + " contains value from " + l.getO2());
-					}
+			}
+		}
+		});
+		if(PackManager.v().getPack("wjtp").get("wjtp.ifds") == null){
+			PackManager.v().getPack("wjtp").add(transform);
+		} else{
+			//TODO starting junit tests, we have to delete the Pack from the previous pack
+			Iterator it = PackManager.v().getPack("wjtp").iterator();
+			while(it.hasNext()){
+				Object current = it.next();
+				if(current instanceof Transform && ((Transform)current).getPhaseName().equals("wjtp.ifds")){
+					it.remove();
+					break;
 				}
 				
 			}
-		}));
+			PackManager.v().getPack("wjtp").add(transform);
+		}
 	}
 	
 }

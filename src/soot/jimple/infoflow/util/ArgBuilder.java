@@ -13,9 +13,6 @@ public class ArgBuilder {
 			"-p",
 			"cg.spark",
 			"on",
-//			"-p",
-//			"cg.spark",
-//			"on-fly-cg:false",
 			"-cp",
 			".",
 			"-pp",
@@ -36,14 +33,6 @@ public class ArgBuilder {
 		-src-prec apk
 		-cp F:\master\QueryContacts.apk -pp
 		com.appsolut.example.queryContacts.MainActivity
-	 * @param apkPath
-	 * @return
-	 */
-	public String[] buildArgsForAndroid(String apkPath){
-		String[] result = new String[0];
-		
-		
-		return result;
-	}
+	*/
 
 }

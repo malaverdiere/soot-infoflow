@@ -25,6 +25,7 @@ public class cmdInfoflow {
 				AnalyzeMethod aMethod = new AnalyzeMethod();
 				aMethod.setName("main");
 				List<AnalyzeMethod> methodList = new ArrayList<AnalyzeMethod>();
+				methodList.add(aMethod);
 				analyzeClass.setHasMain(true);
 				analyzeClass.setMethods(methodList);
 			
@@ -37,6 +38,7 @@ public class cmdInfoflow {
 		List<AnalyzeClass> classList = new ArrayList<AnalyzeClass>();
 		classList.add(analyzeClass);
 		infoflow.computeInfoflow("", classList,null, null);
+		infoflow = null;
 		}
 	}
 	

@@ -12,10 +12,11 @@ public class TestNoMain {
 		
 	}
 	
-	public void functionCallOnObject(){
+	public String functionCallOnObject(){
 		TestNoMain nm = new TestNoMain();
 		String l = nm.function1();
 		result = l;
+		return l;
 	}
 
 	public String function1(){

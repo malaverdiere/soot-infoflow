@@ -3,7 +3,6 @@ package soot.jimple.infoflow.test.junit;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,25 +15,30 @@ import soot.jimple.infoflow.cmdInfoflow;
 
 public class JUnitTests {
 
-  //  private static ByteArrayOutputStream sysOutputStream;
     private static ByteArrayOutputStream errOutputStream;
 
     @BeforeClass
     public static void setUp()
     {
-     //   sysOutputStream = new ByteArrayOutputStream();
-       // System.setOut(new PrintStream(sysOutputStream));
         errOutputStream = new ByteArrayOutputStream();
-        System.setErr(new PrintStream(errOutputStream));
+     //   System.setErr(new PrintStream(errOutputStream));
     }
 
     @AfterClass
     public static void tearDown()
     {
-        System.setOut(System.out);
         System.setErr(System.err);
     }
     
+    
+    @Test
+    public void listTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void writeReadTest()>");
+		infoflow.computeInfoflow("", epoints,null, null);
+		//TODO: weitere Tests
+    }
     
     
     @Test
@@ -91,7 +95,5 @@ public class JUnitTests {
 //        assertTrue(errOutputStream.toString().contains("b contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
 
     } 
-
-
-
+    
 }

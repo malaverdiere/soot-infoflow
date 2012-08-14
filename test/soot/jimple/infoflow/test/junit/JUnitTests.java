@@ -3,10 +3,12 @@ package soot.jimple.infoflow.test.junit;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -21,15 +23,35 @@ public class JUnitTests {
     public static void setUp()
     {
         errOutputStream = new ByteArrayOutputStream();
-     //   System.setErr(new PrintStream(errOutputStream));
+        //remove comment from the following line before running tests:
+        System.setErr(new PrintStream(errOutputStream));
     }
 
     @AfterClass
     public static void tearDown()
     {
         System.setErr(System.err);
+       
     }
     
+    @Before
+    public void resetSoot(){
+    	 soot.G.reset();
+    }
+    
+    @Test
+    public void arrayTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void concreteWriteReadTest()>");
+		infoflow.computeInfoflow("", epoints,null, null);
+		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>"));
+		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke"));
+		assertTrue(errOutputStream.toString().contains("tainted456 contains value from staticinvoke"));
+		assertTrue(errOutputStream.toString().contains("tainted123 contains value from staticinvoke"));
+		assertTrue(errOutputStream.toString().contains("alsoTainted contains value from staticinvoke"));
+		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke"));
+    }
     
     @Test
     public void listTest(){
@@ -37,7 +59,14 @@ public class JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void writeReadTest()>");
 		infoflow.computeInfoflow("", epoints,null, null);
-		//TODO: weitere Tests
+    }
+    
+    @Test
+    public void concreteListTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadTest()>");
+		infoflow.computeInfoflow("", epoints,null, null);
     }
     
     

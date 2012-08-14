@@ -13,6 +13,20 @@ import soot.jimple.infoflow.test.android.TelephonyManager;
  */
 public class ListTestCode {
 	
+	public void concreteWriteReadTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		ArrayList<String> list = new ArrayList<String>();
+		list.add("neutral");
+		list.add(tainted);
+		
+		String taintedElement = list.get(1);
+		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
+		String taintedElement2 = list.get(0);
+		
+		String complete = taintedElement.concat(taintedElement2);
+		
+	}
+	
 	
 	public void writeReadTest(){
 		String tainted = TelephonyManager.getDeviceId();

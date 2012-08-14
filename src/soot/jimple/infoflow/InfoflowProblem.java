@@ -19,6 +19,7 @@ import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InvokeExpr;
+import soot.jimple.InvokeStmt;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -112,14 +113,6 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 									}
 								//TODO: Modifiers der Methode überprüfen?
 									if(rightValue instanceof JVirtualInvokeExpr){
-										JVirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) rightValue;
-										System.out
-												.println(invokeExpr.getMethodRef().name());
-										System.out
-											.println(invokeExpr.getMethod().isNative());
-										System.out.println(invokeExpr.getMethod().getModifiers());
-										System.out.println(soot.Modifier.isNative(invokeExpr.getMethod().getModifiers()));
-									
 									 	if(((JVirtualInvokeExpr)rightValue).getMethodRef().name().equals("clone") ||
 											 ((JVirtualInvokeExpr)rightValue).getMethodRef().name().equals("concat") ){ //TODO: sonderfall, welche noch?
 										 if(source.getO1().equals(((JVirtualInvokeExpr) rightValue).getBaseBox().getValue())) {
@@ -156,7 +149,8 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 				final Stmt stmt = (Stmt) src;
 				
 				final InvokeExpr ie = stmt.getInvokeExpr();
-				System.out.println("Call "+ ie);
+				System.out.println("Call "+ ie); 
+				
 				final List<Value> callArgs = ie.getArgs();
 				final List<Value> paramLocals = new ArrayList<Value>();
 				for(int i=0;i<dest.getParameterCount();i++) {
@@ -211,10 +205,34 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 				} else {
 					sourceManager = new DefaultSourceManager(sourceList); 
 				}
-				
+				if(call instanceof InvokeStmt && ((InvokeStmt)call).getInvokeExpr().getMethod().isNative()){
+					InvokeStmt iStmt = (InvokeStmt)call;
+					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
+					final List<Value> paramLocals = new ArrayList<Value>();
+					for(int i=0;i<iStmt.getInvokeExpr().getArgCount();i++) {
+						paramLocals.add(iStmt.getInvokeExpr().getArg(i));
+					}
+					return new FlowFunction<Pair<Value, Value>>() {
+
+						public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
+							
+							int argIndex = callArgs.indexOf(source.getO1());
+							if(argIndex>-1) {
+								// "res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));" is not enough:
+								//java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
+								Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
+								for(int i=0; i < callArgs.size(); i++){
+									res.add(new Pair<Value, Value>(paramLocals.get(i), source.getO2()));
+								}
+								return res;
+							}
+							return Collections.emptySet();
+						}
+					};				
+				}
 				if(call instanceof JAssignStmt){
 					final JAssignStmt stmt = (JAssignStmt) call;
-					//obviously we have to check for the correct class, too (not only method)
+				
 					if(sourceManager.isSourceMethod(stmt.getInvokeExpr().getMethod().getClass(),stmt.getInvokeExpr().getMethodRef().name())){
 						return new FlowFunction<Pair<Value,Value>>() {
 

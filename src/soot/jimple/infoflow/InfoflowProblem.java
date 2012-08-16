@@ -10,6 +10,7 @@ import soot.Local;
 import soot.NullType;
 import soot.PointsToAnalysis;
 import soot.PointsToSet;
+import soot.PrimType;
 import soot.Scene;
 import soot.SootMethod;
 import soot.Unit;
@@ -210,7 +211,10 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
 					final List<Value> paramLocals = new ArrayList<Value>();
 					for(int i=0;i<iStmt.getInvokeExpr().getArgCount();i++) {
-						paramLocals.add(iStmt.getInvokeExpr().getArg(i));
+						Value argValue = iStmt.getInvokeExpr().getArg(i);
+						if(!(argValue.getType() instanceof PrimType)){
+							paramLocals.add(iStmt.getInvokeExpr().getArg(i));
+						}
 					}
 					return new FlowFunction<Pair<Value, Value>>() {
 
@@ -221,7 +225,7 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 								// "res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));" is not enough:
 								//java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
 								Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
-								for(int i=0; i < callArgs.size(); i++){
+								for(int i=0; i < paramLocals.size(); i++){
 									res.add(new Pair<Value, Value>(paramLocals.get(i), source.getO2()));
 								}
 								return res;

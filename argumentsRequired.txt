@@ -1,13 +1,10 @@
 program arguments:
 
-as usual (take default testcase)
+as usual (takes default testcase)
 
 OR:
 
 -class [classname] -methods [methodname1, methodname2,...]
 
-OR (not implemented yet):
-
--android [file.apk]
 
 

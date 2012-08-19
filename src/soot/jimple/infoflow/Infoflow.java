@@ -28,6 +28,7 @@ import soot.jimple.SpecialInvokeExpr;
 import soot.jimple.VirtualInvokeExpr;
 import soot.jimple.infoflow.util.ArgBuilder;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
+import soot.jimple.interproc.ifds.InterproceduralCFG;
 import soot.jimple.interproc.ifds.solver.IFDSSolver;
 import soot.options.Options;
 import soot.toolkits.scalar.Pair;
@@ -126,7 +127,8 @@ public class Infoflow implements IInfoflow {
 				problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst()); //TODO: change to real initialSeeds
 			}
 			
-			IFDSSolver<Unit,Pair<Value, Value>,SootMethod> solver = new IFDSSolver<Unit,Pair<Value, Value>,SootMethod>(problem);	
+			IFDSSolver<Unit,Pair<Value, Value>,SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit,Pair<Value, Value>,SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);	
+
 			solver.solve();
 			
 			for(SootMethod ep : Scene.v().getEntryPoints()) {

@@ -1,5 +1,8 @@
 package soot.jimple.infoflow;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -34,25 +37,30 @@ import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.interproc.ifds.FlowFunction;
 import soot.jimple.interproc.ifds.FlowFunctions;
-import soot.jimple.interproc.ifds.IFDSTabulationProblem;
 import soot.jimple.interproc.ifds.InterproceduralCFG;
 import soot.jimple.interproc.ifds.flowfunc.Identity;
 import soot.jimple.interproc.ifds.flowfunc.KillAll;
+import soot.jimple.interproc.ifds.template.DefaultIFDSTabulationProblem;
 import soot.jimple.interproc.ifds.template.JimpleBasedInterproceduralCFG;
 import soot.toolkits.scalar.Pair;
 
-public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, Value>,SootMethod>{
+public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Value>,InterproceduralCFG<Unit, SootMethod>>{
 	
 	final Set <Unit> initialSeeds = new HashSet<Unit>();
 	final List<Source> sourceList = new ArrayList<Source>();
 	final Pair<Value, Value> zeroValue = new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()),null);
 	
+	static final boolean DEBUG = true;
+	
 
-	public FlowFunctions<Unit, Pair<Value, Value>, SootMethod> flowFunctions() {
+	public FlowFunctions<Unit, Pair<Value, Value>, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit,Pair<Value, Value>,SootMethod>() {
 
 			public FlowFunction<Pair<Value, Value>> getNormalFlowFunction(Unit src, Unit dest) {
-			
+				if(src instanceof Stmt && DEBUG){
+
+					System.out.println("Normal: "+((Stmt)src));
+				}
 				if(src instanceof AssignStmt) {
 					AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
@@ -68,10 +76,19 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 						final Value leftValue =  left;
 						final Value rightValue = right;
 						
+						//TODO: test:
+						if(rightValue instanceof InstanceFieldRef){
+							System.out.println(rightValue);
+						}
+						
 						return new FlowFunction<Pair<Value, Value>>() {
 							
 							public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
 								boolean addLeftValue = false;
+								
+								if(rightValue instanceof InstanceFieldRef &&  source.getO1() instanceof Local && (((Local) source.getO1()).getName().contains("array"))){
+									System.out.println("x");
+								}
 								
 								//check if new infoflow is created here? Not necessary because this covers only calls of methods in the same class,
 								//which should not be source methods (not part of android api)
@@ -90,6 +107,38 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 												addLeftValue = true;
 											}
 										}
+										
+										if(rightValue instanceof InstanceFieldRef && source.getO1() instanceof Local){
+											Local rightBase = (Local)((InstanceFieldRef)rightValue).getBase();
+											PointsToSet ptsRight = pta.reachingObjects(rightBase);
+											PointsToSet ptsSource = pta.reachingObjects((Local)source.getO1());
+											if(ptsRight.hasNonEmptyIntersection(ptsSource)) {
+												addLeftValue = true;
+											}
+											InstanceFieldRef r = (InstanceFieldRef) rightValue;
+											//TODO: why does this not work?
+											PointsToSet test2 = pta.reachingObjects(ptsSource, r.getField());
+											//PointsToSet test = pta.reachingObjects(r.getField());
+											//if(test.hasNonEmptyIntersection(ptsSource)) {
+											if(!test2.isEmpty()) {
+												addLeftValue = true;
+											}
+											
+											
+											//does not work because use boxes only contain base not field
+//											List boxes = ((InstanceFieldRef)rightValue).getUseBoxes();
+//												for(int i= 0; i< boxes.size(); i++){
+//													System.out
+//													.println("contents1: "+boxes.get(i));
+//													if(boxes.get(i) instanceof Local){
+//														ptsRight = pta.reachingObjects((Local)boxes.get(i));
+//														if(ptsRight.hasNonEmptyIntersection(ptsSource)) {
+//															addLeftValue = true;
+//														}
+//													}
+//												}
+											}
+										
 										if(rightValue instanceof StaticFieldRef && source.getO1() instanceof StaticFieldRef){
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
 										StaticFieldRef sourceRef = (StaticFieldRef) source.getO1();
@@ -98,7 +147,6 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 											addLeftValue = true;
 										}
 									}
-								
 								
 									if(rightValue instanceof ArrayRef){ 
 										Local rightBase = (Local)((ArrayRef)rightValue).getBase();
@@ -112,7 +160,7 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 											addLeftValue = true;
 									 	}
 									}
-								//TODO: Modifiers der Methode überprüfen?
+								//TODO: Change and see if is possible by just using the native call
 									if(rightValue instanceof JVirtualInvokeExpr){
 									 	if(((JVirtualInvokeExpr)rightValue).getMethodRef().name().equals("clone") ||
 											 ((JVirtualInvokeExpr)rightValue).getMethodRef().name().equals("concat") ){ //TODO: sonderfall, welche noch?
@@ -126,6 +174,14 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 									if(source.getO1().equals(rightValue)) {
 										addLeftValue = true;
 									}
+									//also check if there are two arrays (or anything else?) that point to the same.. //TODO: does this help?!
+									if(source.getO1() instanceof Local && rightValue instanceof Local){
+											PointsToSet ptsRight = pta.reachingObjects((Local)rightValue);
+											PointsToSet ptsSource = pta.reachingObjects((Local)source.getO1());
+											if(ptsRight.hasNonEmptyIntersection(ptsSource)) {
+												addLeftValue = true;
+											}
+										}
 								
 									//if one of them is true -> add leftValue
 									if(addLeftValue){
@@ -150,8 +206,9 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 				final Stmt stmt = (Stmt) src;
 				
 				final InvokeExpr ie = stmt.getInvokeExpr();
-				System.out.println("Call "+ ie); 
-				
+				if(DEBUG){
+					System.out.println("Call "+ ie); 
+				}
 				final List<Value> callArgs = ie.getArgs();
 				final List<Value> paramLocals = new ArrayList<Value>();
 				for(int i=0;i<dest.getParameterCount();i++) {
@@ -173,6 +230,10 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 			}
 
 			public FlowFunction<Pair<Value, Value>> getReturnFlowFunction(Unit callSite, SootMethod callee, Unit exitStmt, Unit retSite) {
+				if(exitStmt instanceof Stmt & DEBUG){
+					System.out.println("ReturnExit: "+((Stmt)exitStmt));
+					System.out.println("ReturnStart: " + callSite.toString());
+				}
 				if (exitStmt instanceof ReturnStmt) {								
 					ReturnStmt returnStmt = (ReturnStmt) exitStmt;
 					Value op = returnStmt.getOp();
@@ -199,6 +260,10 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 			}
 
 			public FlowFunction<Pair<Value, Value>> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
+				if(DEBUG){
+					System.out.println("C2R c: "+ call);
+					System.out.println("C2R r: "+returnSite);
+				}
 				SourceManager sourceManager;
 				//TODO: for testing only:
 				if(sourceList.size() == 0){
@@ -208,6 +273,17 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 				}
 				if(call instanceof InvokeStmt && ((InvokeStmt)call).getInvokeExpr().getMethod().isNative()){
 					InvokeStmt iStmt = (InvokeStmt)call;
+					//Testoutput to collect all native calls from different runs of the analysis:
+					try {
+						FileWriter fstream = new FileWriter("nativeCalls.txt",true);
+						BufferedWriter out = new BufferedWriter(fstream);
+						out.write(iStmt.getInvokeExpr().getMethod().toString());
+						out.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					 
+					
 					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
 					final List<Value> paramLocals = new ArrayList<Value>();
 					for(int i=0;i<iStmt.getInvokeExpr().getArgCount();i++) {
@@ -257,13 +333,19 @@ public class InfoflowProblem implements IFDSTabulationProblem<Unit,Pair<Value, V
 		};						
 	}
 
-	public InterproceduralCFG<Unit,SootMethod> interproceduralCFG() {
-		return new JimpleBasedInterproceduralCFG();
-	}
 
+	public InfoflowProblem() {
+		super(new JimpleBasedInterproceduralCFG());		
+	}
+	
+	public InfoflowProblem(InterproceduralCFG<Unit,SootMethod> icfg) {
+		super(icfg);		
+	}
 	
 
-	public Pair<Value, Value> zeroValue() {
+	public Pair<Value, Value> createZeroValue() {
+		if(zeroValue == null)
+			return new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()),null);
 		return zeroValue;
 	}
 

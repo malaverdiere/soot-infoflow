@@ -130,6 +130,7 @@ public class Infoflow implements IInfoflow {
 			IFDSSolver<Unit,Pair<Value, Value>,SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit,Pair<Value, Value>,SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);	
 
 			solver.solve();
+			solver.dumpResults();
 			
 			for(SootMethod ep : Scene.v().getEntryPoints()) {
 				

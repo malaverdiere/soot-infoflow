@@ -15,12 +15,14 @@ import soot.PointsToAnalysis;
 import soot.PointsToSet;
 import soot.PrimType;
 import soot.Scene;
+import soot.SootField;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.FieldRef;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
@@ -86,6 +88,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
 								boolean addLeftValue = false;
 								
+								//FIXME: temporary:
 								if(rightValue instanceof InstanceFieldRef &&  source.getO1() instanceof Local && (((Local) source.getO1()).getName().contains("array"))){
 									System.out.println("x");
 								}
@@ -109,15 +112,11 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 										}
 										
 										if(rightValue instanceof InstanceFieldRef && source.getO1() instanceof Local){
-											Local rightBase = (Local)((InstanceFieldRef)rightValue).getBase();
-											PointsToSet ptsRight = pta.reachingObjects(rightBase);
 											PointsToSet ptsSource = pta.reachingObjects((Local)source.getO1());
-											if(ptsRight.hasNonEmptyIntersection(ptsSource)) {
-												addLeftValue = true;
-											}
 											InstanceFieldRef r = (InstanceFieldRef) rightValue;
+											SootField r2 = r.getField();
 											//TODO: why does this not work?
-											PointsToSet test2 = pta.reachingObjects(ptsSource, r.getField());
+											PointsToSet test2 = pta.reachingObjects(ptsSource, r2);
 											//PointsToSet test = pta.reachingObjects(r.getField());
 											//if(test.hasNonEmptyIntersection(ptsSource)) {
 											if(!test2.isEmpty()) {
@@ -219,12 +218,17 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 					public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
 						
 						int argIndex = callArgs.indexOf(source.getO1());
-						if(argIndex>-1) {
-							Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
-							res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));
-							return res;
+						Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
+						if(source.getO1() instanceof FieldRef){
+							FieldRef tempFieldRef = (FieldRef)source.getO1();
+							if(tempFieldRef.getField().getDeclaringClass().equals(dest.getDeclaringClass())){ //TODO: subclass etc required!
+								res.add(source);
+							}
 						}
-						return Collections.emptySet();
+						if(argIndex>-1) {
+							res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));
+						}
+						return res;
 					}
 				};
 			}
@@ -246,17 +250,33 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							return new FlowFunction<Pair<Value, Value>>() {
 
 								public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
+									Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
+									if(source.getO1() instanceof FieldRef){ //static is important but also global vars...//TODO: correct?
+										res.add(source);
+									}
 									if(source.getO1()==retLocal)
-										return Collections.singleton(new Pair<Value, Value>(tgtLocal, source.getO2()));
-									return Collections.emptySet();
+										res.add(new Pair<Value, Value>(tgtLocal, source.getO2()));
+									return res;
 								}
 									
 							};
 						}
 						
 					}
-				} 
-				return KillAll.v();
+				}
+				
+				//return KillAll.v();
+				//TODO: try this:
+				return new FlowFunction<Pair<Value, Value>>() {
+
+					public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
+						if(source.getO1() instanceof FieldRef){ //static is important but also global vars...//TODO: correct?
+							return Collections.singleton(source);
+						}
+						return Collections.emptySet();
+					}
+						
+				};
 			}
 
 			public FlowFunction<Pair<Value, Value>> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
@@ -277,7 +297,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 					try {
 						FileWriter fstream = new FileWriter("nativeCalls.txt",true);
 						BufferedWriter out = new BufferedWriter(fstream);
-						out.write(iStmt.getInvokeExpr().getMethod().toString());
+						out.write(iStmt.getInvokeExpr().getMethod().toString() + "\n");
 						out.close();
 					} catch (IOException e) {
 						e.printStackTrace();

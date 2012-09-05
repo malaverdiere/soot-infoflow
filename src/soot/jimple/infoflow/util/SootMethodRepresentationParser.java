@@ -56,9 +56,12 @@ public class SootMethodRepresentationParser {
         matcher = pattern.matcher(parseString);
         if(matcher.find()){
         	String params = matcher.group(1);
+        	
         	while(params.contains(",")){
-        		paramList.add(RefType.v(params.substring(0, params.indexOf(','))));
-        		params = params.substring(','+1);
+        		int index = params.indexOf(',');
+        		paramList.add(RefType.v(params.substring(0, index)));
+        		params = params.substring(index + 1);
+        		
         	}
         	if(!params.equals("")){
         		paramList.add(RefType.v(params));

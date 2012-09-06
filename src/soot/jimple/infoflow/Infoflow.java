@@ -48,7 +48,7 @@ public class Infoflow implements IInfoflow {
 		for(Entry<String, List<SootMethod>> classEntry : entryPointMap.entrySet()){
 			//prepare soot arguments:
 			ArgBuilder builder = new ArgBuilder();
-			String [] args = builder.buildArgs(classEntry.getKey());
+			String [] args = builder.buildArgs(path, classEntry.getKey());
 			Options.v().set_debug(true);
 			Options.v().parse(args);
 		
@@ -96,7 +96,7 @@ public class Infoflow implements IInfoflow {
 		for(SootMethod method : classEntry.getValue()){
 			Local stringLocal = null;
 			method.setDeclaringClass(createdClass);
-			VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, method.makeRef());
+			VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, method.makeRef()); //TODO: aufrufparameter
 			if(!(method.getReturnType() instanceof VoidType)){
 				stringLocal = generator.generateLocal(method.getReturnType());
 				AssignStmt assignStmt2 = Jimple.v().newAssignStmt(stringLocal, vInvokeExpr);

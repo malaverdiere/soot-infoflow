@@ -13,17 +13,32 @@ import soot.jimple.infoflow.test.android.TelephonyManager;
  */
 public class ListTestCode {
 	
+//	public void concreteWriteReadTest(){
+//		//String tainted = TelephonyManager.getDeviceId();
+//		Object tainted = TelephonyManager.getDeviceId();
+//		ArrayList<Object> list = new ArrayList<Object>();
+//		list.add("neutral");
+//		list.add(tainted);
+//		
+//		Object taintedElement = list.get(1);
+//		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
+//		Object taintedElement2 = list.get(0);
+//		
+//		String complete = taintedElement.toString()+(taintedElement2);
+//		
+//	}
+	
 	public void concreteWriteReadTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		ArrayList<String> list = new ArrayList<String>();
-		list.add("neutral");
+		//list.add("neutral");
 		list.add(tainted);
 		
-		String taintedElement = list.get(1);
+		//String taintedElement = list.get(1);
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = list.get(0);
 		
-		String complete = taintedElement.concat(taintedElement2);
+		String complete =taintedElement2;
 		
 	}
 	

@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.sun.xml.internal.ws.wsdl.writer.document.soap.Body;
+
 import soot.Local;
 import soot.NullType;
 import soot.PointsToAnalysis;
@@ -26,6 +28,7 @@ import soot.jimple.FieldRef;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
+import soot.jimple.Jimple;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -262,13 +265,14 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 								if (globalField.isStatic()) {
 									PointsToSet ptsGlobal = pta.reachingObjects(globalField);
 									if (!ptsRight.hasNonEmptyIntersection(ptsGlobal)) {
-										res.add(source);
+										res.add(new Pair<Value, Value>(Jimple.v().newStaticFieldRef(globalField.makeRef()), source.getO2()));
 									}
 								} else {
 									if (!pta.reachingObjects(ptsRight, globalField).isEmpty()) {
-										res.add(source);
+										res.add(new Pair<Value, Value>(Jimple.v().newInstanceFieldRef(calleeMethod.getActiveBody().getThisLocal(), globalField.makeRef()),source.getO2()));
 									}
 								}
+								
 								// res.add(new Pair<Value, Value>(globalField.makeRef(), source.getO2()));
 								// TODO: Notlösung, eigentlich möchte ich hier obige Zeile hinzufügen, geht aber nicht, weil SootField statt Field/FieldRef ->
 								// kann ich das irgendwie umwandeln?

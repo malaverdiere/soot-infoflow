@@ -7,14 +7,14 @@ public class ArgBuilder {
 	 * @param input
 	 * @return
 	 */
-	public String[] buildArgs(String className){
+	public String[] buildArgs(String path, String className){
 		String[] result = {
 			"-w",
 			"-p",
 			"cg.spark",
 			"on",
 			"-cp",
-			".",
+			path,//or ".\\bin",
 			"-pp",
 			className,
 			"-p",

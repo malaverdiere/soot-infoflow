@@ -2,6 +2,7 @@ package soot.jimple.infoflow.test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import soot.jimple.infoflow.test.android.TelephonyManager;
@@ -42,6 +43,15 @@ public class ListTestCode {
 		
 	}
 	
+	public void concreteWriteReadNegativeTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		ArrayList<String> list = new ArrayList<String>();
+		list.add("neutral");
+		String untaintedElement = list.get(0);
+		String complete =untaintedElement;
+		complete = tainted;
+	}
+	
 	
 	public void writeReadTest(){
 		String tainted = TelephonyManager.getDeviceId();
@@ -78,4 +88,55 @@ public class ListTestCode {
 		String taintedElement = subList.get(0);
 	}
 
+	
+	public void linkedListConcreteWriteReadTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		LinkedList<String> list = new LinkedList<String>();
+		//list.add("neutral");
+		list.add(tainted);
+		
+		//String taintedElement = list.get(1);
+		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
+		String taintedElement2 = list.get(0);
+		
+		String complete =taintedElement2;
+		
+	}
+	
+	
+	public void linkedListWriteReadTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		List<String> list = new LinkedList<String>();
+		list.add("neutral");
+		list.add(tainted);
+		
+		String taintedElement = list.get(1);
+		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
+		String taintedElement2 = list.get(0);
+		
+		String complete = taintedElement.concat(taintedElement2);
+		
+	}
+	
+	public void linkedListIteratorTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		List<String> list = new LinkedList<String>();
+		list.add("neutral");
+		list.add(tainted);
+		
+		Iterator<String> it = list.iterator();
+		String taintedElement = it.next();
+		String taintedElement2 = it.next();
+	}
+	
+	public void linkedListSubListTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		List<String> list = new LinkedList<String>();
+		list.add("neutral");
+		list.add(tainted);
+		
+		List<String> subList = list.subList(1, 1);
+		String taintedElement = subList.get(0);
+	}
+	
 }

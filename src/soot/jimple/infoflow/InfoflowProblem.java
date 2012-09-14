@@ -9,8 +9,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.sun.xml.internal.ws.wsdl.writer.document.soap.Body;
-
 import soot.Local;
 import soot.NullType;
 import soot.PointsToAnalysis;
@@ -54,7 +52,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 	final List<Source> sourceList = new ArrayList<Source>();
 	final Pair<Value, Value> zeroValue = new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()), null);
 
-	static final boolean DEBUG = true;
+	static boolean DEBUG = false;
 
 	public FlowFunctions<Unit, Pair<Value, Value>, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit, Pair<Value, Value>, SootMethod>() {
@@ -82,11 +80,6 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 							public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
 								boolean addLeftValue = false;
-
-								// FIXME: temporary:
-								if (rightValue instanceof InstanceFieldRef && source.getO1() instanceof Local && (((Local) source.getO1()).getName().contains("array"))) {
-									System.out.println("x");
-								}
 
 								// check if new infoflow is created here? Not necessary because this covers only calls of methods in the same class,
 								// which should not be source methods (not part of android api)
@@ -195,18 +188,21 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 				return new FlowFunction<Pair<Value, Value>>() {
 
 					public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
-
-						int argIndex = callArgs.indexOf(source.getO1());
 						Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
-						if (source.getO1() instanceof FieldRef) {
-							FieldRef tempFieldRef = (FieldRef) source.getO1();
-							if (tempFieldRef.getField().getDeclaringClass().equals(dest.getDeclaringClass())) { // TODO: subclass etc required!
-								res.add(source);
-							}
-						}
+						int argIndex = callArgs.indexOf(source.getO1());
 						if (argIndex > -1) {
 							res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));
 						}
+						if (source.getO1() instanceof FieldRef) {
+							//FieldRef tempFieldRef = (FieldRef) source.getO1();
+							
+							//if (tempFieldRef.getField().getDeclaringClass().equals(dest.getDeclaringClass())) { // not enough because might be used in this class...
+								
+							res.add(source);
+							//}
+						}
+						
+						
 						return res;
 					}
 				};
@@ -214,14 +210,12 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 			public FlowFunction<Pair<Value, Value>> getReturnFlowFunction(Unit callSite, SootMethod callee, Unit exitStmt, Unit retSite) {
 				final SootMethod calleeMethod = callee;
-
+				
 				if (exitStmt instanceof Stmt & DEBUG) {
 					System.out.println("ReturnExit: " + ((Stmt) exitStmt));
 					System.out.println("ReturnStart: " + callSite.toString());
 				}
-				if (callSite.toString().contains("add(")) {
-					System.out.println("salad");
-				}
+				
 				if (exitStmt instanceof ReturnStmt) {
 					ReturnStmt returnStmt = (ReturnStmt) exitStmt;
 					Value op = returnStmt.getOp();
@@ -234,6 +228,9 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							return new FlowFunction<Pair<Value, Value>>() {
 
 								public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
+									if(source.getO2()!= null){
+										//System.out.println("stop1");
+									}
 									Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
 									if (source.getO1() instanceof FieldRef) {
 										res.add(source);
@@ -249,14 +246,13 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 					}
 				}
 
-				// return KillAll.v();
-				// TODO: try this:
 				return new FlowFunction<Pair<Value, Value>>() {
 
 					public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
-						// test:
-						// get units check all if fieldref - performance pur :/ calleeMethod.getActiveBody().
-
+						if(source.getO2()!= null){
+							//System.out.println("stop!"); //for ArrayListTest
+						}
+						
 						Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
 						if (source.getO1() instanceof Local) {
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
@@ -264,19 +260,17 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
 								if (globalField.isStatic()) {
 									PointsToSet ptsGlobal = pta.reachingObjects(globalField);
-									if (!ptsRight.hasNonEmptyIntersection(ptsGlobal)) {
+									if (ptsRight.hasNonEmptyIntersection(ptsGlobal)) {
 										res.add(new Pair<Value, Value>(Jimple.v().newStaticFieldRef(globalField.makeRef()), source.getO2()));
 									}
 								} else {
-									if (!pta.reachingObjects(ptsRight, globalField).isEmpty()) {
+									//if (!pta.reachingObjects(ptsRight, globalField).isEmpty()) { //the following line does not work?
+									PointsToSet ptsGlobal = pta.reachingObjects((Local)source.getO1(), globalField);
+									if (!ptsGlobal.isEmpty()) {
 										res.add(new Pair<Value, Value>(Jimple.v().newInstanceFieldRef(calleeMethod.getActiveBody().getThisLocal(), globalField.makeRef()),source.getO2()));
 									}
 								}
 								
-								// res.add(new Pair<Value, Value>(globalField.makeRef(), source.getO2()));
-								// TODO: Notlösung, eigentlich möchte ich hier obige Zeile hinzufügen, geht aber nicht, weil SootField statt Field/FieldRef ->
-								// kann ich das irgendwie umwandeln?
-
 							}
 						}
 						if (source.getO1() instanceof FieldRef) {

@@ -2,7 +2,6 @@ package soot.jimple.infoflow.test.junit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -22,6 +21,7 @@ import soot.jimple.infoflow.cmdInfoflow;
 public class JUnitTests {
 
     private static ByteArrayOutputStream errOutputStream;
+    private static PrintStream pStream;
     private static String path;// = "F:\\master\\workspace\\soot-infoflow\\bin";
 
     @BeforeClass
@@ -31,8 +31,9 @@ public class JUnitTests {
     	 path = f.getCanonicalPath() + File.separator + "bin";
     	 
         errOutputStream = new ByteArrayOutputStream();
+        pStream = new PrintStream(errOutputStream);
         //remove comment from the following line before running tests:
-       System.setErr(new PrintStream(errOutputStream));
+       System.setErr(pStream);
     }
 
     @AfterClass
@@ -45,7 +46,9 @@ public class JUnitTests {
     @Before
     public void resetSootAndStream() throws IOException{
     	 soot.G.reset();
+    	 pStream.flush();
     	 errOutputStream.flush();
+    	 System.gc();
     }
     
     

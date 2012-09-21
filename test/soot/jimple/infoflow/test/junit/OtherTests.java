@@ -34,4 +34,19 @@ public class OtherTests extends JUnitTests{
 		assertTrue(errOutputStream.toString().contains("this.<soot.jimple.infoflow.test.utilclasses.ClassWithFinal: java.lang.String b> contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
     	
     }
+    
+    @Test
+    public void ptsTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.PTSTestCode: void testPointsToSet()>");
+		infoflow.computeInfoflow(path, epoints,null, null);
+		
+		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue(errOutputStream.toString().contains("s1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+    	
+    }
+    
+    
+    
 }

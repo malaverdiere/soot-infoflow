@@ -265,8 +265,8 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 									}
 								} else {
 									//if (!pta.reachingObjects(ptsRight, globalField).isEmpty()) { //the following line does not work?
-									PointsToSet ptsGlobal = pta.reachingObjects((Local)source.getO1(), globalField);
-									if (!ptsGlobal.isEmpty()) {
+									PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);									
+									if (ptsGlobal.hasNonEmptyIntersection(ptsRight)) {
 										res.add(new Pair<Value, Value>(Jimple.v().newInstanceFieldRef(calleeMethod.getActiveBody().getThisLocal(), globalField.makeRef()),source.getO2()));
 									}
 								}

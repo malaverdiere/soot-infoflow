@@ -58,16 +58,21 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 		return new FlowFunctions<Unit, Pair<Value, Value>, SootMethod>() {
 
 			public FlowFunction<Pair<Value, Value>> getNormalFlowFunction(Unit src, Unit dest) {
+				
 				if (src instanceof Stmt && DEBUG) {
-
 					System.out.println("Normal: " + ((Stmt) src));
 				}
+				
+				if(src instanceof soot.jimple.internal.JIfStmt){
+					soot.jimple.internal.JIfStmt ifStmt = (soot.jimple.internal.JIfStmt)src;
+					src = ifStmt.getTarget();
+				}
+				
 				if (src instanceof AssignStmt) {
 					AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
 					Value left = assignStmt.getLeftOp();
 
-					// FIXME: easy solution: take whole array instead of position:
 					if (left instanceof ArrayRef) {
 						left = ((ArrayRef) left).getBase();
 					}
@@ -80,7 +85,6 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 							public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
 								boolean addLeftValue = false;
-
 								// check if new infoflow is created here? Not necessary because this covers only calls of methods in the same class,
 								// which should not be source methods (not part of android api)
 
@@ -167,7 +171,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							}
 						};
 					}
-
+					
 				}
 				return Identity.v();
 			}
@@ -249,10 +253,6 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 				return new FlowFunction<Pair<Value, Value>>() {
 
 					public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
-						if(source.getO2()!= null){
-							//System.out.println("stop!"); //for ArrayListTest
-						}
-						
 						Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
 						if (source.getO1() instanceof Local) {
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
@@ -264,10 +264,11 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 										res.add(new Pair<Value, Value>(Jimple.v().newStaticFieldRef(globalField.makeRef()), source.getO2()));
 									}
 								} else {
-									//if (!pta.reachingObjects(ptsRight, globalField).isEmpty()) { //the following line does not work?
-									PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);									
-									if (ptsGlobal.hasNonEmptyIntersection(ptsRight)) {
-										res.add(new Pair<Value, Value>(Jimple.v().newInstanceFieldRef(calleeMethod.getActiveBody().getThisLocal(), globalField.makeRef()),source.getO2()));
+									if(!calleeMethod.isStatic()){ //otherwise runtime-exception
+										PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);									
+										if (ptsGlobal.hasNonEmptyIntersection(ptsRight)) {
+											res.add(new Pair<Value, Value>(Jimple.v().newInstanceFieldRef(calleeMethod.getActiveBody().getThisLocal(), globalField.makeRef()),source.getO2()));
+										}
 									}
 								}
 								

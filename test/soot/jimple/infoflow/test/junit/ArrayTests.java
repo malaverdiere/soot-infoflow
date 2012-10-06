@@ -19,10 +19,12 @@ public class ArrayTests extends JUnitTests {
 			infoflow.computeInfoflow(path, epoints,new ArrayList<String>(), new ArrayList<String>());
 			assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>"));
 			assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke"));
-			assertTrue(errOutputStream.toString().contains("tainted456 contains value from staticinvoke"));
-			assertTrue(errOutputStream.toString().contains("tainted123 contains value from staticinvoke"));
 			assertTrue(errOutputStream.toString().contains("alsoTainted contains value from staticinvoke"));
 			assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke"));
+			assertTrue(errOutputStream.toString().contains("tainted123 contains value from staticinvoke"));
+			assertTrue(errOutputStream.toString().contains("tainted789 contains value from staticinvoke"));
+			assertTrue(errOutputStream.toString().contains("tainted456 contains value from staticinvoke"));
+			
 	    }
 	    
 	    @Test
@@ -31,6 +33,8 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void arrayAsFieldOfClass()>");
 			infoflow.computeInfoflow(path, epoints,null, null);
+			
+			assertTrue(errOutputStream.toString().contains("y contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 	    	
 	    }
 	    

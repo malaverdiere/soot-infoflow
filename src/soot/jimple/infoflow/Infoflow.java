@@ -2,30 +2,21 @@ package soot.jimple.infoflow;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import soot.Local;
 import soot.PackManager;
-import soot.RefType;
 import soot.Scene;
 import soot.SceneTransformer;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
-import soot.Type;
 import soot.Unit;
 import soot.Value;
-import soot.VoidType;
-import soot.javaToJimple.LocalGenerator;
-import soot.jimple.AssignStmt;
-import soot.jimple.Jimple;
-import soot.jimple.JimpleBody;
-import soot.jimple.NewExpr;
-import soot.jimple.SpecialInvokeExpr;
-import soot.jimple.VirtualInvokeExpr;
 import soot.jimple.infoflow.util.ArgBuilder;
+import soot.jimple.infoflow.util.EntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.interproc.ifds.InterproceduralCFG;
 import soot.jimple.interproc.ifds.solver.IFDSSolver;
@@ -48,16 +39,28 @@ public class Infoflow implements IInfoflow {
 			// prepare soot arguments:
 			ArgBuilder builder = new ArgBuilder();
 			String[] args = builder.buildArgs(path, classEntry.getKey());
-			Options.v().set_debug(true);
+			
+			//Anpassungen fuer kuerzere Laufzeit:
+			List<String> includeList = new LinkedList<String>();
+			includeList.add("java.lang.");
+			includeList.add("java.util.");
+			Options.v().set_include(includeList);
+			Options.v().set_allow_phantom_refs(true);
+			Options.v().set_no_bodies_for_excluded(true);
+			
+			
 			Options.v().parse(args);
 
 			// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method, we have to create a new main method and use it as entryPoint, but store our real entryPoints
 			List<SootMethod> sootEntryPoints;
-			SootClass c = Scene.v().forceResolve(classEntry.getKey(), SootClass.BODIES);
 			Scene.v().loadNecessaryClasses();
+			SootClass c = Scene.v().forceResolve(classEntry.getKey(), SootClass.BODIES);
+			
 			c.setApplicationClass();
-			// FIXME: call this always? can't check if there is a main method or not?
-			sootEntryPoints = createDummyMain(classEntry, c);
+			
+			EntryPointCreator epCreator = new EntryPointCreator();
+			
+			sootEntryPoints = epCreator.createDummyMain(classEntry, c);
 
 			for (SootMethod method : classEntry.getValue()) {
 				SootMethod methodWithBody = c.getMethodByName(method.getName());
@@ -72,51 +75,7 @@ public class Infoflow implements IInfoflow {
 
 	}
 
-	/**
-	 * Soot requires a main method, so we create a dummy method which calls all entry functions.
-	 * 
-	 * @param classmethods
-	 *            the methods to call
-	 * @param createdClass
-	 *            the class which contains the methods
-	 * @return list of entryPoints
-	 */
-	public List<SootMethod> createDummyMain(Entry<String, List<SootMethod>> classEntry, SootClass createdClass) {
 
-		List<SootMethod> entryPoints = new ArrayList<SootMethod>();
-		JimpleBody body = Jimple.v().newBody();
-		LocalGenerator generator = new LocalGenerator(body);
-		Local tempLocal = generator.generateLocal(RefType.v(classEntry.getKey()));
-		NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(classEntry.getKey()));
-		AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
-		SpecialInvokeExpr sinvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, Scene.v().makeMethodRef(createdClass, "<init>", new ArrayList<Type>(), VoidType.v(), false));
-		body.getUnits().add(assignStmt);
-		body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
-
-		for (SootMethod method : classEntry.getValue()) {
-			Local stringLocal = null;
-			method.setDeclaringClass(createdClass);
-			VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, method.makeRef()); // TODO: aufrufparameter
-			if (!(method.getReturnType() instanceof VoidType)) {
-				stringLocal = generator.generateLocal(method.getReturnType());
-				AssignStmt assignStmt2 = Jimple.v().newAssignStmt(stringLocal, vInvokeExpr);
-				body.getUnits().add(assignStmt2);
-			} else {
-				body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
-			}
-
-		}
-
-		SootMethod mainMethod = new SootMethod("dummyMainMethod", new ArrayList<Type>(), VoidType.v());
-		body.setMethod(mainMethod);
-		mainMethod.setActiveBody(body);
-		SootClass mainClass = new SootClass("dummyMainClass");
-		mainClass.setApplicationClass();
-		mainClass.addMethod(mainMethod);
-		Scene.v().addClass(mainClass);
-		entryPoints.add(mainMethod);
-		return entryPoints;
-	}
 
 	public void addSceneTransformer() {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
@@ -129,8 +88,8 @@ public class Infoflow implements IInfoflow {
 
 				IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);
 
-				solver.solve();
-				solver.dumpResults();
+				solver.solve(0);
+				solver.dumpResults(); //only for debugging
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 
@@ -149,7 +108,7 @@ public class Infoflow implements IInfoflow {
 				}
 			}
 		});
-
+		
 		PackManager.v().getPack("wjtp").add(transform);
 
 	}

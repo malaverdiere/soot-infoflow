@@ -59,12 +59,19 @@ public class SootMethodRepresentationParser {
         	
         	while(params.contains(",")){
         		int index = params.indexOf(',');
-        		paramList.add(RefType.v(params.substring(0, index)));
+        		//TODO: error: we have to cut paramname before applying RefType:
+        		String param = params.substring(0, index).trim();
+        		if(param.contains(" ")){
+        			paramList.add(RefType.v(param.substring(0, param.indexOf(" "))));
+        		}
+        		
         		params = params.substring(index + 1);
         		
         	}
         	if(!params.equals("")){
-        		paramList.add(RefType.v(params));
+        		if(params.contains(" ")){
+        			paramList.add(RefType.v(params.substring(0, params.indexOf(" ")))); //TODO: convert int to Integer etc.
+        		}
         	}
         }
         SootMethod method = new SootMethod(name, paramList, returnType);
@@ -79,8 +86,8 @@ public class SootMethodRepresentationParser {
 			if(result.containsKey(smc.getClassString())){
 				result.get(smc.getClassString()).add(smc.getSootMethod());
 			} else{
-				List<SootMethod> methodList = new ArrayList<SootMethod>();
-				methodList.add(smc.getSootMethod());
+				List<SootMethod> methodList = new ArrayList<SootMethod>(); 
+				methodList.add(smc.getSootMethod()); 
 				result.put(smc.getClassString(), methodList);
 			}
 		}

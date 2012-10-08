@@ -10,9 +10,18 @@ public class ArgBuilder {
 	public String[] buildArgs(String path, String className){
 		String[] result = {
 			"-w",
+			"-no-bodies-for-excluded",
+//			"-allow-phantom-refs",
+			"-include",
+			"java.util",
+			"-include",
+			"java.lang",
 			"-p",
 			"cg.spark",
 			"on",
+//			"-p",
+//			"cg.spark",
+//			"dump-html",//"verbose:true",
 			"-cp",
 			path,//or ".\\bin",
 			"-pp",
@@ -20,9 +29,6 @@ public class ArgBuilder {
 			"-p",
 			"jb",
 			"use-original-names:true",
-			"-p",
-			"cg",
-			"verbose:true",
 		};
 		
 		return result;

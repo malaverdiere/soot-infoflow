@@ -58,16 +58,16 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 		return new FlowFunctions<Unit, Pair<Value, Value>, SootMethod>() {
 
 			public FlowFunction<Pair<Value, Value>> getNormalFlowFunction(Unit src, Unit dest) {
-				
+
 				if (src instanceof Stmt && DEBUG) {
 					System.out.println("Normal: " + ((Stmt) src));
 				}
-				
-				if(src instanceof soot.jimple.internal.JIfStmt){
-					soot.jimple.internal.JIfStmt ifStmt = (soot.jimple.internal.JIfStmt)src;
+
+				if (src instanceof soot.jimple.internal.JIfStmt) {
+					soot.jimple.internal.JIfStmt ifStmt = (soot.jimple.internal.JIfStmt) src;
 					src = ifStmt.getTarget();
 				}
-				
+
 				if (src instanceof AssignStmt) {
 					AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
@@ -96,11 +96,21 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 										InstanceFieldRef sourceRef = (InstanceFieldRef) source.getO1();
 
 										if (rightRef.getField().getName().equals(sourceRef.getField().getName())) {
-											Local rightBase = (Local) ((InstanceFieldRef) rightValue).getBase();
+											// isEmpty:
+											// PointsToSet pts2 = pta.reachingObjects(((Local)sourceRef.getBase()), sourceRef.getField());
+											// does not work because there is no SootMethod:
+											// PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);
+											
+											//does not work (any more?)
+											Local rightBase = (Local) rightRef.getBase();
 											PointsToSet ptsRight = pta.reachingObjects(rightBase);
-											Local sourceBase = (Local) ((InstanceFieldRef) source.getO1()).getBase();
-											PointsToSet ptsSource = pta.reachingObjects(sourceBase);
-											if (ptsRight.hasNonEmptyIntersection(ptsSource)) {
+											Local sourceBase = (Local) sourceRef.getBase();
+											PointsToSet ptsSource2 = pta.reachingObjects(sourceBase);
+											if (ptsRight.hasNonEmptyIntersection(ptsSource2)) {
+												addLeftValue = true;
+											}
+											//TODO: okay?
+											if(rightBase.getName().equals(sourceBase.getName()) && rightBase.getName().equals("this")){
 												addLeftValue = true;
 											}
 										}
@@ -171,7 +181,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							}
 						};
 					}
-					
+
 				}
 				return Identity.v();
 			}
@@ -198,15 +208,14 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));
 						}
 						if (source.getO1() instanceof FieldRef) {
-							//FieldRef tempFieldRef = (FieldRef) source.getO1();
-							
-							//if (tempFieldRef.getField().getDeclaringClass().equals(dest.getDeclaringClass())) { // not enough because might be used in this class...
-								
+							// FieldRef tempFieldRef = (FieldRef) source.getO1();
+
+							// if (tempFieldRef.getField().getDeclaringClass().equals(dest.getDeclaringClass())) { // not enough because might be used in this class...
+
 							res.add(source);
-							//}
+							// }
 						}
-						
-						
+
 						return res;
 					}
 				};
@@ -214,12 +223,12 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 			public FlowFunction<Pair<Value, Value>> getReturnFlowFunction(Unit callSite, SootMethod callee, Unit exitStmt, Unit retSite) {
 				final SootMethod calleeMethod = callee;
-				
+
 				if (exitStmt instanceof Stmt & DEBUG) {
 					System.out.println("ReturnExit: " + ((Stmt) exitStmt));
 					System.out.println("ReturnStart: " + callSite.toString());
 				}
-				
+
 				if (exitStmt instanceof ReturnStmt) {
 					ReturnStmt returnStmt = (ReturnStmt) exitStmt;
 					Value op = returnStmt.getOp();
@@ -232,8 +241,8 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							return new FlowFunction<Pair<Value, Value>>() {
 
 								public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
-									if(source.getO2()!= null){
-										//System.out.println("stop1");
+									if (source.getO2() != null) {
+										// System.out.println("stop1");
 									}
 									Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
 									if (source.getO1() instanceof FieldRef) {
@@ -257,6 +266,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 						if (source.getO1() instanceof Local) {
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 							PointsToSet ptsRight = pta.reachingObjects((Local) source.getO1());
+
 							for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
 								if (globalField.isStatic()) {
 									PointsToSet ptsGlobal = pta.reachingObjects(globalField);
@@ -264,14 +274,14 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 										res.add(new Pair<Value, Value>(Jimple.v().newStaticFieldRef(globalField.makeRef()), source.getO2()));
 									}
 								} else {
-									if(!calleeMethod.isStatic()){ //otherwise runtime-exception
-										PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);									
+									if (!calleeMethod.isStatic()) { // otherwise runtime-exception
+										PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);
 										if (ptsGlobal.hasNonEmptyIntersection(ptsRight)) {
-											res.add(new Pair<Value, Value>(Jimple.v().newInstanceFieldRef(calleeMethod.getActiveBody().getThisLocal(), globalField.makeRef()),source.getO2()));
+											res.add(new Pair<Value, Value>(Jimple.v().newInstanceFieldRef(calleeMethod.getActiveBody().getThisLocal(), globalField.makeRef()), source.getO2()));
 										}
 									}
 								}
-								
+
 							}
 						}
 						if (source.getO1() instanceof FieldRef) {

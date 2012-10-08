@@ -24,14 +24,37 @@ public class SetTests extends JUnitTests {
     }
     
     @Test
-    public void concreteSetTest(){
+    public void concreteHashSetTest(){
     	Infoflow infoflow = new Infoflow();
     	List<String> epoints = new ArrayList<String>();
-    	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadTest()>");
+    	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadHashTest()>");
 		infoflow.computeInfoflow(path, epoints,null, null);
 		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 		
     }
+    
+    @Test
+    public void concreteTreeSetTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadTreeTest()>");
+		infoflow.computeInfoflow(path, epoints,null, null);
+		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		
+    }
+    
+    @Test
+    public void concreteLinkedSetTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadLinkedTest()>");
+		infoflow.computeInfoflow(path, epoints,null, null);
+		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		
+    }
+    
     
     @Test
     public void setIteratorTest(){

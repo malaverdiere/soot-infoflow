@@ -1,11 +1,10 @@
 package soot.jimple.infoflow.test;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
@@ -18,28 +17,48 @@ public class SetTestCode {
 	
 
 	
-	public void concreteWriteReadTest(){
+	public void concreteWriteReadHashTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		HashSet<String> set = new HashSet<String>();
-		//list.add("neutral");
 		set.add(tainted);
-		
-		//String taintedElement = list.get(1);
-		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = set.iterator().next();
-		//todo: check contains?
+		//TODO: check contains?
 		
 		String complete =taintedElement2;
 		
 	}
 	
+	public void concreteWriteReadTreeTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		TreeSet<String> set = new TreeSet<String>();
+		set.add("neutral");
+		set.add(tainted);
+		
+		String taintedElement = set.last();
+		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
+		String taintedElement2 = set.iterator().next();
+		String complete =taintedElement2.concat(taintedElement);
+		
+	}
+	
+	public void concreteWriteReadLinkedTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		LinkedHashSet<String> set = new LinkedHashSet<String>();
+		set.add("neutral");
+		set.add(tainted);
+		Iterator<String> it = set.iterator();
+		String taintedElement = it.next();
+		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
+		String taintedElement2 = it.next();
+		String complete =taintedElement2.concat(taintedElement);
+		
+	}
 	
 	public void writeReadTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		Set<String> set = new HashSet<String>();
 		set.add(tainted);
 		String taintedElement = set.iterator().next();
-		
 		String complete = taintedElement;
 		
 	}

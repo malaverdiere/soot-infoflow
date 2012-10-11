@@ -41,7 +41,7 @@ public class SootMethodRepresentationParser {
         	if(retType.equals("void"))
         		returnType = VoidType.v();
         	else
-        		returnType = RefType.v(retType);
+        		returnType = RefType.v(convertCheck(retType));
         	//remove the string contents that are already found so easier regex is possible
         	parseString = parseString.substring(matcher.end(1));
         	
@@ -62,7 +62,7 @@ public class SootMethodRepresentationParser {
         		//TODO: error: we have to cut paramname before applying RefType:
         		String param = params.substring(0, index).trim();
         		if(param.contains(" ")){
-        			paramList.add(RefType.v(param.substring(0, param.indexOf(" "))));
+        			paramList.add(RefType.v(convertCheck(param.substring(0, param.indexOf(" ")))));
         		}
         		
         		params = params.substring(index + 1);
@@ -70,13 +70,37 @@ public class SootMethodRepresentationParser {
         	}
         	if(!params.equals("")){
         		if(params.contains(" ")){
-        			paramList.add(RefType.v(params.substring(0, params.indexOf(" ")))); //TODO: convert int to Integer etc.
+        			paramList.add(RefType.v(convertCheck(params.substring(0, params.indexOf(" "))))); //TODO: convert int to Integer etc.
         		}
         	}
         }
         SootMethod method = new SootMethod(name, paramList, returnType);
        return new SootMethodAndClass(method, className);
        
+	}
+	//returns classname and unresolved! method names and return types and parameters
+	public HashMap<String, List<String>> parseClassNames(List<String> methods){
+		HashMap<String, List<String>> result = new HashMap<String,  List<String>>();
+		for(String parseString : methods){
+			//parse className:
+			String className = "";
+			Pattern pattern = Pattern.compile("<(.*?):");
+	        Matcher matcher = pattern.matcher(parseString);
+	        if(matcher.find()){
+	        	className = matcher.group(1);
+	        	if(result.containsKey(className)){
+					result.get(className).add(parseString);
+				} else{
+					List<String> methodList = new ArrayList<String>(); 
+					methodList.add(parseString); 
+					result.put(className, methodList);
+				}
+	        }
+			
+		}
+		
+		return result;
+	
 	}
 	
 	public HashMap<String, List<SootMethod>> parseMethodList(List<String> methods){
@@ -93,6 +117,18 @@ public class SootMethodRepresentationParser {
 		}
 		
 		return result;
+	}
+	
+	private String convertCheck(String s){
+		if(s.equals("int")){
+			return "java.lang.Integer";
+		}
+		if(s.equals("boolean")){
+			return "Boolean";
+		}
+		return s;
+		
+		
 	}
 	
 }

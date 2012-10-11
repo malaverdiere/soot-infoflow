@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Stack;
 
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
@@ -45,11 +46,14 @@ public class ListTestCode {
 	
 	public void concreteWriteReadNegativeTest(){
 		String tainted = TelephonyManager.getDeviceId();
+		//ArrayList<String> notRelevantList = new ArrayList<String>();
 		ArrayList<String> list = new ArrayList<String>();
 		list.add("neutral");
+		//notRelevantList.add(tainted);
+		//String taintedElement = notRelevantList.get(0);
 		String untaintedElement = list.get(0);
 		String complete =untaintedElement;
-		complete = tainted;
+		complete = tainted;//.concat(taintedElement);
 	}
 	
 	
@@ -103,6 +107,18 @@ public class ListTestCode {
 		
 	}
 	
+	public void linkedListConcreteWriteReadNegativeTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		//LinkedList<String> notRelevantList = new LinkedList<String>();
+		LinkedList<String> list = new LinkedList<String>();
+		list.add("neutral");
+		//notRelevantList.add(tainted);
+		//String taintedElement = notRelevantList.get(0);
+		String untaintedElement = list.get(0);
+		String complete =untaintedElement;
+		complete = tainted;//.concat(taintedElement);
+	}
+	
 	
 	public void linkedListWriteReadTest(){
 		String tainted = TelephonyManager.getDeviceId();
@@ -137,6 +153,20 @@ public class ListTestCode {
 		
 		List<String> subList = list.subList(1, 1);
 		String taintedElement = subList.get(0);
+	}
+	
+	public void concreteWriteReadStackTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		Stack<String> stack = new Stack<String>();
+		stack.addElement("neutral");
+		stack.push(tainted);
+		
+		String taintedElement = stack.peek();
+		String taintedElement3 = stack.pop();
+		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
+		String taintedElement2 = stack.get(0);
+		String complete =taintedElement2.concat(taintedElement).concat(taintedElement3);
+		
 	}
 	
 }

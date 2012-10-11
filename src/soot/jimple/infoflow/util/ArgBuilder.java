@@ -33,12 +33,5 @@ public class ArgBuilder {
 		
 		return result;
 	}
-	
-	/**TODO
-	 * -android-jars F:\master\android-platforms\platforms
-		-src-prec apk
-		-cp F:\master\QueryContacts.apk -pp
-		com.appsolut.example.queryContacts.MainActivity
-	*/
 
 }

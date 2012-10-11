@@ -3,6 +3,7 @@ package soot.jimple.infoflow.test;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -76,6 +77,16 @@ public class SetTestCode {
 		String complete = taintedElement.concat(taintedElement2);
 	}
 	
-
+	public void concreteWriteReadNegativeTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		//TreeSet<String> notRelevantList = new TreeSet<String>();
+		TreeSet<String> list = new TreeSet<String>();
+		list.add("neutral");
+		//notRelevantList.add(tainted);
+		//String taintedElement = notRelevantList.get(0);
+		String untaintedElement = list.first();
+		String complete =untaintedElement;
+		complete = tainted;//.concat(taintedElement);
+	}
 	
 }

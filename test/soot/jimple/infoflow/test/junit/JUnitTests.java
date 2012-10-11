@@ -13,7 +13,7 @@ public abstract class JUnitTests {
 
     protected static ByteArrayOutputStream errOutputStream;
     protected static PrintStream pStream;
-    protected static String path;// = "F:\\master\\workspace\\soot-infoflow\\bin";
+    protected static String path;
 
     @BeforeClass
     public static void setUp() throws IOException
@@ -39,6 +39,7 @@ public abstract class JUnitTests {
     	 pStream.flush();
     	 errOutputStream.flush();
     	 System.gc();
+    	 
     }
     
 }

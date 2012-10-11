@@ -2,6 +2,7 @@ package soot.jimple.infoflow.test;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Vector;
 
 import soot.jimple.infoflow.test.android.TelephonyManager;
@@ -16,13 +17,12 @@ public class VectorTestCode {
 	public void concreteWriteReadTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		Vector<String> v = new Vector<String>();
-		v.add("neutral");
 		v.add(tainted);
+		//v.add("neutral");
 		
-		String taintedElement = v.get(1);
+		String taintedElement = v.get(0);
 		//because whole collection is tainted, even untainted elements are tainted if they are fetched 
 		String taintedElement2 = v.lastElement();
-		
 		
 		String complete =taintedElement2.concat(taintedElement);
 		
@@ -55,5 +55,16 @@ public class VectorTestCode {
 		String complete = taintedElement;
 	}
 	
+	public void concreteWriteReadNegativeTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		//Vector<String> notRelevantList = new Vector<String>();
+		Vector<String> list = new Vector<String>();
+		list.add("neutral");
+		//notRelevantList.add(tainted);
+		//String taintedElement = notRelevantList.get(0);
+		String untaintedElement = list.get(0);
+		String complete =untaintedElement;
+		complete = tainted;//.concat(taintedElement);
+	}
 	
 }

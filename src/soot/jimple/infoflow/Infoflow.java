@@ -1,6 +1,5 @@
 package soot.jimple.infoflow;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,57 +24,49 @@ import soot.toolkits.scalar.Pair;
 
 public class Infoflow implements IInfoflow {
 
-	final List<SootMethod> originalEntryPoints = new ArrayList<SootMethod>();
-
 	@Override
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
 		// convert to internal format:
 		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
-		HashMap<String, List<SootMethod>> entryPointMap = parser.parseMethodList(entryPoints);
+
+		// className as String and methodNames as string in soot representation
+		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints);
+
+		// HashMap<String, List<SootMethod>> entryPointMap = parser.parseMethodList(entryPoints);
 		// add SceneTransformer:
 		addSceneTransformer();
 
-		for (Entry<String, List<SootMethod>> classEntry : entryPointMap.entrySet()) {
+		for (Entry<String, List<String>> classEntry : classes.entrySet()) {
 			// prepare soot arguments:
 			ArgBuilder builder = new ArgBuilder();
 			String[] args = builder.buildArgs(path, classEntry.getKey());
-			
-			//Anpassungen fuer kuerzere Laufzeit:
+
+			// Anpassungen fuer kuerzere Laufzeit:
 			List<String> includeList = new LinkedList<String>();
 			includeList.add("java.lang.");
 			includeList.add("java.util.");
 			Options.v().set_include(includeList);
 			Options.v().set_allow_phantom_refs(true);
 			Options.v().set_no_bodies_for_excluded(true);
-			
-			
+
 			Options.v().parse(args);
 
 			// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method, we have to create a new main method and use it as entryPoint, but store our real entryPoints
 			List<SootMethod> sootEntryPoints;
 			Scene.v().loadNecessaryClasses();
 			SootClass c = Scene.v().forceResolve(classEntry.getKey(), SootClass.BODIES);
-			
+
 			c.setApplicationClass();
-			
+
 			EntryPointCreator epCreator = new EntryPointCreator();
-			
+
 			sootEntryPoints = epCreator.createDummyMain(classEntry, c);
-
-			for (SootMethod method : classEntry.getValue()) {
-				SootMethod methodWithBody = c.getMethodByName(method.getName());
-				originalEntryPoints.add(methodWithBody);
-				sootEntryPoints.add(methodWithBody);
-
-			}
 
 			Scene.v().setEntryPoints(sootEntryPoints);
 			PackManager.v().runPacks();
 		}
 
 	}
-
-
 
 	public void addSceneTransformer() {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
@@ -89,7 +80,7 @@ public class Infoflow implements IInfoflow {
 				IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);
 
 				solver.solve(0);
-				solver.dumpResults(); //only for debugging
+				solver.dumpResults(); // only for debugging
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 
@@ -108,7 +99,7 @@ public class Infoflow implements IInfoflow {
 				}
 			}
 		});
-		
+
 		PackManager.v().getPack("wjtp").add(transform);
 
 	}

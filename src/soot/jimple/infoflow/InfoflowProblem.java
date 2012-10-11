@@ -88,6 +88,10 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 								// check if new infoflow is created here? Not necessary because this covers only calls of methods in the same class,
 								// which should not be source methods (not part of android api)
 
+								if(source.getO2() != null){
+									//System.out.println("a");
+								}
+								
 								// normal check for infoflow
 								if (rightValue instanceof JVirtualInvokeExpr || !source.equals(zeroValue)) {
 									PointsToAnalysis pta = Scene.v().getPointsToAnalysis();

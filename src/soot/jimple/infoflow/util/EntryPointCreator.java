@@ -34,26 +34,32 @@ public class EntryPointCreator {
 	/**
 	 * Soot requires a main method, so we create a dummy method which calls all entry functions.
 	 * 
-	 * @param classmethods
-	 *            the methods to call
+	 * @param classEntry
+	 *            the methods to call (signature as String)
 	 * @param createdClass
 	 *            the class which contains the methods
 	 * @return list of entryPoints
 	 */
-	public List<SootMethod> createDummyMain(Entry<String, List<SootMethod>> classEntry, SootClass createdClass) {
+	public List<SootMethod> createDummyMain(Entry<String, List<String>> classEntry, SootClass createdClass) {
 
 		// create new class:
 		List<SootMethod> entryPoints = new ArrayList<SootMethod>();
 		JimpleBody body = Jimple.v().newBody();
-		LocalGenerator generator = new LocalGenerator(body);
-		Local tempLocal = generator.generateLocal(RefType.v(classEntry.getKey()));
-
 		// call class for the required methods - use every possible constructor
 		if (isConstructorGenerationPossible(createdClass)) {
-			generateClassConstructor(createdClass, body);
+			generateClassConstructor(createdClass, body, classEntry.getValue());
+			List<SootMethod> methodList =  createdClass.getMethods();
+			for(SootMethod m : methodList){
+				if(classEntry.getValue().contains(m.toString())){
+					entryPoints.add(m);
+				}
+			}
 		} else {
 			// backup: simplified form:
-
+			LocalGenerator generator = new LocalGenerator(body);
+			Local tempLocal = generator.generateLocal(RefType.v(classEntry.getKey())); //or: createdClass
+			
+			System.out.println("Warning - old code executed:");
 			NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(classEntry.getKey()));
 			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
 			SpecialInvokeExpr sinvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, Scene.v().makeMethodRef(createdClass, "<init>", new ArrayList<Type>(), VoidType.v(), false));
@@ -61,17 +67,19 @@ public class EntryPointCreator {
 			body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
 
 			// TODO: also call constructor of call params:
-			for (SootMethod method : classEntry.getValue()) {
+			for (String method : classEntry.getValue()) {
 				Local stringLocal = null;
-				method.setDeclaringClass(createdClass);
-				VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, method.makeRef()); // TODO: aufrufparameter
-				if (!(method.getReturnType() instanceof VoidType)) {
-					stringLocal = generator.generateLocal(method.getReturnType());
+				SootMethod sMethod = Scene.v().getMethod(method);
+				sMethod.setDeclaringClass(createdClass);
+				VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, sMethod.makeRef()); // TODO: aufrufparameter
+				if (!(sMethod.getReturnType() instanceof VoidType)) {
+					stringLocal = generator.generateLocal(sMethod.getReturnType());
 					AssignStmt assignStmt2 = Jimple.v().newAssignStmt(stringLocal, vInvokeExpr);
 					body.getUnits().add(assignStmt2);
 				} else {
 					body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
 				}
+				entryPoints.add(sMethod);
 
 			}
 
@@ -84,6 +92,7 @@ public class EntryPointCreator {
 		mainClass.setApplicationClass();
 		mainClass.addMethod(mainMethod);
 		Scene.v().addClass(mainClass);
+		//uncomment for checking build output of mainMethod:
 		entryPoints.add(mainMethod);
 		return entryPoints;
 	}
@@ -135,7 +144,7 @@ public class EntryPointCreator {
 		return oneOk;
 	}
 
-	private Value generateClassConstructor(SootClass createdClass, JimpleBody body) {
+	private Value generateClassConstructor(SootClass createdClass, JimpleBody body, List<String> startMethods ) {
 		System.out.println("XXX - " + createdClass.toString());
 		// if sootClass is simpleClass:
 		if (EntryPointCreator.isSimpleType(createdClass.toString())) {
@@ -147,8 +156,16 @@ public class EntryPointCreator {
 			return varLocal;
 		} else {
 
-			List<SootMethod> methodList = (List<SootMethod>) createdClass.getMethods();
+			List<SootMethod> methodList =  createdClass.getMethods();
 			Local returnLocal = null;
+			LocalGenerator generator = new LocalGenerator(body);
+			Local tempLocal = generator.generateLocal(RefType.v(createdClass));
+			
+			NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
+			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
+			body.getUnits().add(assignStmt);
+			
+			
 			for (SootMethod currentMethod : methodList) {
 				if (currentMethod.isPublic() && currentMethod.isConstructor()) {
 					@SuppressWarnings("unchecked")
@@ -160,16 +177,17 @@ public class EntryPointCreator {
 							SootClass typeClass = Scene.v().getSootClass(typeName);
 							// 2. Type not public:
 							if (typeClass.isPublic() && !typeClass.toString().equals(createdClass.toString())) { // avoid loops
-								params.add(generateClassConstructor(typeClass, body));
+								params.add(generateClassConstructor(typeClass, body, startMethods));
 							}
 						} else {
 							params.add(G.v().soot_jimple_NullConstant());	
 						}
 					}
-					LocalGenerator generator = new LocalGenerator(body);
-					Local tempLocal = generator.generateLocal(RefType.v(createdClass));
-					
 					VirtualInvokeExpr vInvokeExpr;
+					//oder:
+					//SpecialInvokeExpr sinvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, Scene.v().makeMethodRef(createdClass, "<init>", new ArrayList<Type>(), VoidType.v(), false));
+					//body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
+					
 					if (params.isEmpty()) {
 						vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef());
 					} else {
@@ -182,6 +200,19 @@ public class EntryPointCreator {
 					} else {
 						body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
 					}
+				} else if(startMethods.contains(currentMethod.toString())){
+					//call this method:
+					Local stringLocal = null;
+					currentMethod.setDeclaringClass(createdClass);
+					VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef()); // TODO: aufrufparameter
+					if (!(currentMethod.getReturnType() instanceof VoidType)) {
+						stringLocal = generator.generateLocal(currentMethod.getReturnType());
+						AssignStmt assignStmt2 = Jimple.v().newAssignStmt(stringLocal, vInvokeExpr);
+						body.getUnits().add(assignStmt2);
+					} else {
+						body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
+					}
+
 				}
 			}
 			return returnLocal;

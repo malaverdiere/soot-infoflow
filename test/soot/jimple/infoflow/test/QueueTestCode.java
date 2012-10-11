@@ -11,13 +11,14 @@ public class QueueTestCode {
 		SynchronousQueue<String> q = new SynchronousQueue<String>();
 		q.add(tainted);
 		String taintedElement = q.element();
-		String taintedElement2 = q.peek();
 		String taintedElement3 = q.poll();
 	
-		//TODO: check contains?
-		
-		String complete =taintedElement2.concat(taintedElement3).concat(taintedElement);
-		
+		String complete =taintedElement3.concat(taintedElement);
+	//TODO: does not terminate...	
 	}
+	
+	//TODO: negative test
+	
+	
 
 }

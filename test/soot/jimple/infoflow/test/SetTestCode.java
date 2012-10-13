@@ -3,10 +3,10 @@ package soot.jimple.infoflow.test;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.Set;
 import java.util.TreeSet;
 
+import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
 /**
@@ -25,7 +25,8 @@ public class SetTestCode {
 		String taintedElement2 = set.iterator().next();
 		//TODO: check contains?
 		
-		String complete =taintedElement2;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement2);
 		
 	}
 	
@@ -38,7 +39,10 @@ public class SetTestCode {
 		String taintedElement = set.last();
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = set.iterator().next();
-		String complete =taintedElement2.concat(taintedElement);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
 		
 	}
 	
@@ -51,7 +55,10 @@ public class SetTestCode {
 		String taintedElement = it.next();
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = it.next();
-		String complete =taintedElement2.concat(taintedElement);
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
 		
 	}
 	
@@ -60,7 +67,9 @@ public class SetTestCode {
 		Set<String> set = new HashSet<String>();
 		set.add(tainted);
 		String taintedElement = set.iterator().next();
-		String complete = taintedElement;
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
 		
 	}
 	
@@ -74,7 +83,9 @@ public class SetTestCode {
 		String taintedElement = it.next();
 		String taintedElement2 = it.next();
 		
-		String complete = taintedElement.concat(taintedElement2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
 	}
 	
 	public void concreteWriteReadNegativeTest(){
@@ -87,6 +98,9 @@ public class SetTestCode {
 		String untaintedElement = list.first();
 		String complete =untaintedElement;
 		complete = tainted;//.concat(taintedElement);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(complete);
 	}
 	
 }

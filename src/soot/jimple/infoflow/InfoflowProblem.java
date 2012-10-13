@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,9 +31,7 @@ import soot.jimple.Jimple;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.data.Source;
 import soot.jimple.infoflow.source.DefaultSourceManager;
-import soot.jimple.infoflow.source.DumbSourceManager;
 import soot.jimple.infoflow.source.SourceManager;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JCastExpr;
@@ -49,10 +48,14 @@ import soot.toolkits.scalar.Pair;
 public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Value>, InterproceduralCFG<Unit, SootMethod>> {
 
 	final Set<Unit> initialSeeds = new HashSet<Unit>();
-	final List<Source> sourceList = new ArrayList<Source>();
+	final SourceManager sourceManager;
+	final List<String> sinks;
+	final HashMap<String, List<String>> results;
 	final Pair<Value, Value> zeroValue = new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()), null);
 
 	static boolean DEBUG = false;
+	
+	
 
 	public FlowFunctions<Unit, Pair<Value, Value>, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit, Pair<Value, Value>, SootMethod>() {
@@ -147,7 +150,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 									}
 									// TODO: Change and see if is possible by just using the native call
 									if (rightValue instanceof JVirtualInvokeExpr) {
-										if (((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("clone") || ((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("concat")) { // TODO: sonderfall, welche noch?
+										if (((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("clone") || ((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("concat")) {
 											if (source.getO1().equals(((JVirtualInvokeExpr) rightValue).getBaseBox().getValue())) {
 												addLeftValue = true;
 											}
@@ -206,6 +209,16 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 						int argIndex = callArgs.indexOf(source.getO1());
 						if (argIndex > -1) {
 							res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));
+							if(sinks.contains(dest.toString())){
+								if(!results.containsKey(dest.toString())){
+									List<String> list = new ArrayList<String>();
+									list.add(source.getO2().toString());
+									results.put(dest.toString(), list);
+								} else{
+									results.get(dest.toString()).add(source.getO2().toString());
+								}
+							}
+							
 						}
 						if (source.getO1() instanceof FieldRef) {
 							// FieldRef tempFieldRef = (FieldRef) source.getO1();
@@ -298,13 +311,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 					System.out.println("C2R c: " + call);
 					System.out.println("C2R r: " + returnSite);
 				}
-				SourceManager sourceManager;
-				// TODO: for testing only:
-				if (sourceList.size() == 0) {
-					sourceManager = new DumbSourceManager();
-				} else {
-					sourceManager = new DefaultSourceManager(sourceList);
-				}
+				
 				if (call instanceof InvokeStmt && ((InvokeStmt) call).getInvokeExpr().getMethod().isNative()) {
 					InvokeStmt iStmt = (InvokeStmt) call;
 					// Testoutput to collect all native calls from different runs of the analysis:
@@ -346,7 +353,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 				if (call instanceof JAssignStmt) {
 					final JAssignStmt stmt = (JAssignStmt) call;
 
-					if (sourceManager.isSourceMethod(stmt.getInvokeExpr().getMethod().getClass(), stmt.getInvokeExpr().getMethodRef().name())) {
+					if (sourceManager.isSourceMethod(stmt.getInvokeExpr().getMethod())) {
 						return new FlowFunction<Pair<Value, Value>>() {
 
 							@Override
@@ -365,12 +372,19 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 		};
 	}
 
-	public InfoflowProblem() {
+	public InfoflowProblem(List<String> sourceList, List<String> sinks) {
 		super(new JimpleBasedInterproceduralCFG());
+		sourceManager = new DefaultSourceManager(sourceList);
+		this.sinks = sinks;
+		results = new HashMap<String, List<String>>();
 	}
 
-	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
+	
+	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinks) {
 		super(icfg);
+		sourceManager = new DefaultSourceManager(sourceList);
+		this.sinks = sinks;
+		results = new HashMap<String, List<String>>();
 	}
 
 	public Pair<Value, Value> createZeroValue() {

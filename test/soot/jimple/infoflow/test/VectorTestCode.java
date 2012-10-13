@@ -2,9 +2,9 @@ package soot.jimple.infoflow.test;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Vector;
 
+import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
 /**
@@ -24,7 +24,9 @@ public class VectorTestCode {
 		//because whole collection is tainted, even untainted elements are tainted if they are fetched 
 		String taintedElement2 = v.lastElement();
 		
-		String complete =taintedElement2.concat(taintedElement);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
 		
 	}
 	
@@ -34,12 +36,15 @@ public class VectorTestCode {
 		Collection<String> v = new Vector<String>();
 		v.add("neutral");
 		v.add(tainted);
+		@SuppressWarnings("rawtypes")
 		Iterator it = v.iterator();
 		String taintedElement = (String) it.next();
 		Object obj = it.next();
 		String taintedElement2 = (String) obj;
 		
-		String complete = taintedElement.concat(taintedElement2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
 		
 	}
 	
@@ -52,7 +57,8 @@ public class VectorTestCode {
 		Iterator<String> it = v.iterator();
 		String taintedElement = it.next();
 		
-		String complete = taintedElement;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
 	}
 	
 	public void concreteWriteReadNegativeTest(){
@@ -65,6 +71,9 @@ public class VectorTestCode {
 		String untaintedElement = list.get(0);
 		String complete =untaintedElement;
 		complete = tainted;//.concat(taintedElement);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(complete);
 	}
 	
 }

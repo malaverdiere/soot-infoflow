@@ -14,9 +14,13 @@ public class VariableTests extends JUnitTests {
 
     @Test
     public void OnChangeClass1Cmd() { 
-    	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.OnChangeClass: void onChange1()>", "-path", path};
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OnChangeClass: void onChange1()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+//    	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.OnChangeClass: void onChange1()>", "-path", path};
     	
-    	cmdInfoflow.main(args);
+//    	cmdInfoflow.main(args);
     	 
         assertTrue(errOutputStream.toString().contains("t3 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 
         assertTrue(errOutputStream.toString().contains("t1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 
@@ -31,7 +35,7 @@ public class VariableTests extends JUnitTests {
     	Infoflow infoflow = new Infoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.TestNoMain: void functionCallThis()>");
-		infoflow.computeInfoflow(path, epoints,null, null);
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
     	 
         assertTrue(errOutputStream.toString().contains("l contains value from")); 
 //        assertTrue(errOutputStream.toString().contains("t1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 
@@ -43,6 +47,7 @@ public class VariableTests extends JUnitTests {
     
     @Test
     public void NoMainFunctionCallThisCmd() throws InterruptedException { 
+    	
     	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.TestNoMain: void functionCallThis()>", "-path", path};
     	Thread.sleep(1500);
     	cmdInfoflow.main(args);
@@ -56,9 +61,14 @@ public class VariableTests extends JUnitTests {
     
     @Test
     public void NoMainFunctionCallOnObjectCmd() { 
-    	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.TestNoMain: java.lang.String functionCallOnObject()>", "-path", path};
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.TestNoMain: java.lang.String functionCallOnObject()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		
+//    	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.TestNoMain: java.lang.String functionCallOnObject()>", "-path", path};
     	
-    	cmdInfoflow.main(args);
+//    	cmdInfoflow.main(args);
     	 
         assertTrue(errOutputStream.toString().contains("l contains value from")); 
 //        assertTrue(errOutputStream.toString().contains("t1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 

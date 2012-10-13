@@ -17,7 +17,7 @@ public class OtherTests extends JUnitTests{
     	Infoflow infoflow = new Infoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void staticTest()>");
-		infoflow.computeInfoflow(path, epoints,null, null);
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		assertTrue(errOutputStream.toString().contains("alsoTainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 		assertTrue(errOutputStream.toString().contains("<soot.jimple.infoflow.test.utilclasses.ClassWithStatic: java.lang.String staticTitle> contains value from staticinvoke"));
 
@@ -28,7 +28,7 @@ public class OtherTests extends JUnitTests{
     	Infoflow infoflow = new Infoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void genericsfinalconstructorProblem()>");
-		infoflow.computeInfoflow(path, epoints,null, null);
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		
 		assertTrue(errOutputStream.toString().contains("alsoTainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 		assertTrue(errOutputStream.toString().contains("this.<soot.jimple.infoflow.test.utilclasses.ClassWithFinal: java.lang.String b> contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
@@ -40,7 +40,7 @@ public class OtherTests extends JUnitTests{
     	Infoflow infoflow = new Infoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.PTSTestCode: void testPointsToSet()>");
-		infoflow.computeInfoflow(path, epoints,null, null);
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		
 		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 		assertTrue(errOutputStream.toString().contains("s1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));

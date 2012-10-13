@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 
+import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
 /**
@@ -40,7 +41,9 @@ public class ListTestCode {
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = list.get(0);
 		
-		String complete =taintedElement2;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement2);
 		
 	}
 	
@@ -54,6 +57,9 @@ public class ListTestCode {
 		String untaintedElement = list.get(0);
 		String complete =untaintedElement;
 		complete = tainted;//.concat(taintedElement);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(complete);
 	}
 	
 	
@@ -67,7 +73,9 @@ public class ListTestCode {
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = list.get(0);
 		
-		String complete = taintedElement.concat(taintedElement2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
 		
 	}
 	
@@ -80,6 +88,10 @@ public class ListTestCode {
 		Iterator<String> it = list.iterator();
 		String taintedElement = it.next();
 		String taintedElement2 = it.next();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
 	}
 	
 	public void subListTest(){
@@ -90,6 +102,9 @@ public class ListTestCode {
 		
 		List<String> subList = list.subList(1, 1);
 		String taintedElement = subList.get(0);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
 	}
 
 	
@@ -103,20 +118,22 @@ public class ListTestCode {
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = list.get(0);
 		
-		String complete =taintedElement2;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement2);
 		
 	}
 	
 	public void linkedListConcreteWriteReadNegativeTest(){
 		String tainted = TelephonyManager.getDeviceId();
-		//LinkedList<String> notRelevantList = new LinkedList<String>();
+		LinkedList<String> notRelevantList = new LinkedList<String>();
 		LinkedList<String> list = new LinkedList<String>();
 		list.add("neutral");
-		//notRelevantList.add(tainted);
+		notRelevantList.add(tainted);
 		//String taintedElement = notRelevantList.get(0);
 		String untaintedElement = list.get(0);
-		String complete =untaintedElement;
-		complete = tainted;//.concat(taintedElement);
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(untaintedElement);
 	}
 	
 	
@@ -130,7 +147,9 @@ public class ListTestCode {
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = list.get(0);
 		
-		String complete = taintedElement.concat(taintedElement2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
 		
 	}
 	
@@ -143,6 +162,10 @@ public class ListTestCode {
 		Iterator<String> it = list.iterator();
 		String taintedElement = it.next();
 		String taintedElement2 = it.next();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
 	}
 	
 	public void linkedListSubListTest(){
@@ -153,6 +176,9 @@ public class ListTestCode {
 		
 		List<String> subList = list.subList(1, 1);
 		String taintedElement = subList.get(0);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
 	}
 	
 	public void concreteWriteReadStackTest(){
@@ -165,7 +191,11 @@ public class ListTestCode {
 		String taintedElement3 = stack.pop();
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = stack.get(0);
-		String complete =taintedElement2.concat(taintedElement).concat(taintedElement3);
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
+		cm.publish(taintedElement3);
 		
 	}
 	

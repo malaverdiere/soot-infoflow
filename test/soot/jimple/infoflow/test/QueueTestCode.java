@@ -2,6 +2,7 @@ package soot.jimple.infoflow.test;
 
 import java.util.concurrent.SynchronousQueue;
 
+import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
 public class QueueTestCode {
@@ -13,7 +14,10 @@ public class QueueTestCode {
 		String taintedElement = q.element();
 		String taintedElement3 = q.poll();
 	
-		String complete =taintedElement3.concat(taintedElement);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement3);
 	//TODO: does not terminate...	
 	}
 	

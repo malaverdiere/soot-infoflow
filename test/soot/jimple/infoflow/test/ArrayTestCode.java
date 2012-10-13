@@ -1,9 +1,9 @@
 package soot.jimple.infoflow.test;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
+import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 import soot.jimple.infoflow.test.utilclasses.ClassWithFinal;
 
@@ -34,9 +34,14 @@ public class ArrayTestCode {
 		String[] tainted456 = transTainted;
 		String[] tainted789 = globalTainted;
 		String[] alsoTainted = Arrays.copyOf(array, 100);
-		String complete = taintedElement.concat(taintedElement2);
-		complete = tainted456[0].concat(tainted123[0]).concat(tainted789[0]);
-		String x = alsoTainted[1];
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+		cm.publish(taintedElement2);
+		cm.publish(tainted123[0]);
+		cm.publish(tainted456[0]);
+		cm.publish(tainted789[0]);
+		cm.publish(alsoTainted[1]);
 		
 	}
 	
@@ -51,7 +56,9 @@ public class ArrayTestCode {
 		ClassWithFinal<String> c = new ClassWithFinal<String>(array);
 		String[] taintTaint = c.a;
 		String y = taintTaint[0];
-		String not = taintTaint[1]; //but is also tainted because wohle array is tainted
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(y);
 	}
 	
 	public void arrayAsListTest(){
@@ -62,7 +69,9 @@ public class ArrayTestCode {
 		String taintedElement = list.get(0);
 		String dummyString = taintedElement;
 		
-		//TODO: list is missing!
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(dummyString);
+		
 	}
 	
 	public void concreteWriteReadNegativeTest(){
@@ -77,6 +86,9 @@ public class ArrayTestCode {
 		String untaintedElement = array[0];
 		String complete =untaintedElement;
 		complete = tainted;//.concat(taintedElement);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(complete);
 	}
 
 }

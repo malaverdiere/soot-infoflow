@@ -58,7 +58,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 		return new FlowFunctions<Unit, Pair<Value, Value>, SootMethod>() {
 
 			public FlowFunction<Pair<Value, Value>> getNormalFlowFunction(Unit src, Unit dest) {
-
+				
 				if (src instanceof Stmt && DEBUG) {
 					System.out.println("Normal: " + ((Stmt) src));
 				}
@@ -75,6 +75,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 					if (left instanceof ArrayRef) {
 						left = ((ArrayRef) left).getBase();
+						
 					}
 
 					if (right instanceof Value && left instanceof Value) {
@@ -88,8 +89,11 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 								// check if new infoflow is created here? Not necessary because this covers only calls of methods in the same class,
 								// which should not be source methods (not part of android api)
 
+								if(leftValue.toString().contains("$r") && rightValue.toString().contains("$Node")){
+								//	System.out.println(leftValue.toString());
+								}
 								if(source.getO2() != null){
-									//System.out.println("a");
+								//	System.out.println("a");
 								}
 								
 								// normal check for infoflow
@@ -100,12 +104,6 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 										InstanceFieldRef sourceRef = (InstanceFieldRef) source.getO1();
 
 										if (rightRef.getField().getName().equals(sourceRef.getField().getName())) {
-											// isEmpty:
-											// PointsToSet pts2 = pta.reachingObjects(((Local)sourceRef.getBase()), sourceRef.getField());
-											// does not work because there is no SootMethod:
-											// PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);
-											
-											//does not work (any more?)
 											Local rightBase = (Local) rightRef.getBase();
 											PointsToSet ptsRight = pta.reachingObjects(rightBase);
 											Local sourceBase = (Local) sourceRef.getBase();
@@ -113,10 +111,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 											if (ptsRight.hasNonEmptyIntersection(ptsSource2)) {
 												addLeftValue = true;
 											}
-											//TODO: okay?
-											if(rightBase.getName().equals(sourceBase.getName()) && rightBase.getName().equals("this")){
-												addLeftValue = true;
-											}
+											
 										}
 									}
 
@@ -193,7 +188,8 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 			public FlowFunction<Pair<Value, Value>> getCallFlowFunction(Unit src, final SootMethod dest) {
 
 				final Stmt stmt = (Stmt) src;
-
+				//System.out.println(dest.toString());
+				
 				final InvokeExpr ie = stmt.getInvokeExpr();
 				if (DEBUG) {
 					System.out.println("Call " + ie);

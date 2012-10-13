@@ -11,7 +11,7 @@ public class ArgBuilder {
 		String[] result = {
 			"-w",
 			"-no-bodies-for-excluded",
-//			"-allow-phantom-refs",
+			"-allow-phantom-refs",
 			"-include",
 			"java.util",
 			"-include",
@@ -21,7 +21,8 @@ public class ArgBuilder {
 			"on",
 //			"-p",
 //			"cg.spark",
-//			"dump-html",//"verbose:true",
+//			//"dump-html",
+//			"verbose:true",
 			"-cp",
 			path,//or ".\\bin",
 			"-pp",

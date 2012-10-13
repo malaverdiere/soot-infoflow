@@ -45,6 +45,7 @@ public class Infoflow implements IInfoflow {
 			List<String> includeList = new LinkedList<String>();
 			includeList.add("java.lang.");
 			includeList.add("java.util.");
+			includeList.add("sun.misc.");
 			Options.v().set_include(includeList);
 			Options.v().set_allow_phantom_refs(true);
 			Options.v().set_no_bodies_for_excluded(true);
@@ -79,7 +80,7 @@ public class Infoflow implements IInfoflow {
 
 				IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);
 
-				solver.solve(0);
+				solver.solve();
 				solver.dumpResults(); // only for debugging
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {

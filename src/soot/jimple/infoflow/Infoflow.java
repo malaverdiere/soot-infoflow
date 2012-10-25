@@ -15,6 +15,7 @@ import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
 import soot.Value;
+import soot.jimple.infoflow.data.ExtendedValue;
 import soot.jimple.infoflow.util.ArgBuilder;
 import soot.jimple.infoflow.util.EntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
@@ -43,7 +44,6 @@ public class Infoflow implements IInfoflow {
 		// className as String and methodNames as string in soot representation
 		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints);
 
-		// HashMap<String, List<SootMethod>> entryPointMap = parser.parseMethodList(entryPoints);
 		// add SceneTransformer:
 		addSceneTransformer(sources, sinks);
 
@@ -89,12 +89,12 @@ public class Infoflow implements IInfoflow {
 
 				InfoflowProblem problem = new InfoflowProblem(sources, sinks);
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
-					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst()); // TODO: change to real initialSeeds
+					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst());
 				}
 
 				IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);
 
-				solver.solve();
+				solver.solve(0);
 				solver.dumpResults(); // only for debugging
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
@@ -105,12 +105,26 @@ public class Infoflow implements IInfoflow {
 
 					System.err.println("----------------------------------------------");
 					System.err.println("At end of: " + ep.getSignature());
-					System.err.println("Variables:");
+					System.err.println(solver.ifdsResultsAt(ret).size() + " Variables:");
 					System.err.println("----------------------------------------------");
 
 					for (Pair<Value, Value> l : solver.ifdsResultsAt(ret)) {
-						System.err.println(l.getO1() + " contains value from " + l.getO2());
-					}	
+						if(l.getO2() instanceof ExtendedValue){
+							ExtendedValue eVal = (ExtendedValue) l.getO2();
+							System.err.println(l.getO1() + " contains value from "+ eVal.getOriginalValue());
+							String hist = "";
+							for(Value h : eVal.getHistory()){
+								hist = hist + "; "+ h.getType() + ": "+ h +" (" + h.hashCode() + ")" ;
+								
+							}
+							System.err.println("--" + hist);
+						}else{
+							System.err.println(l.getO1() + " contains value from " + l.getO2());
+						}
+						
+						
+					}
+					System.err.println("---");
 				}
 				
 				HashMap<String, List<String>> results = problem.results;
@@ -118,11 +132,8 @@ public class Infoflow implements IInfoflow {
 					System.out.println("The sink " + entry.getKey() + " was called with values from the following sources:");
 					for(String str : entry.getValue()){
 						System.out.println("- " + str);
-					}
-					
+					}	
 				}
-				
-				
 			}
 		});
 

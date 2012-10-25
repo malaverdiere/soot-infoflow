@@ -25,6 +25,8 @@ public class ArgBuilder {
 			"-p",
 			"jb",
 			"use-original-names:true",
+			"-f",
+			"n"
 		};
 		
 		return result;

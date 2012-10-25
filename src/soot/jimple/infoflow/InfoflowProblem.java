@@ -17,6 +17,7 @@ import soot.PointsToSet;
 import soot.PrimType;
 import soot.Scene;
 import soot.SootField;
+import soot.SootFieldRef;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -44,6 +45,7 @@ import soot.jimple.interproc.ifds.flowfunc.Identity;
 import soot.jimple.interproc.ifds.template.DefaultIFDSTabulationProblem;
 import soot.jimple.interproc.ifds.template.JimpleBasedInterproceduralCFG;
 import soot.toolkits.scalar.Pair;
+import soot.jimple.infoflow.data.ExtendedValue;
 
 public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Value>, InterproceduralCFG<Unit, SootMethod>> {
 
@@ -61,7 +63,6 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 		return new FlowFunctions<Unit, Pair<Value, Value>, SootMethod>() {
 
 			public FlowFunction<Pair<Value, Value>> getNormalFlowFunction(Unit src, Unit dest) {
-				
 				if (src instanceof Stmt && DEBUG) {
 					System.out.println("Normal: " + ((Stmt) src));
 				}
@@ -78,7 +79,6 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 					if (left instanceof ArrayRef) {
 						left = ((ArrayRef) left).getBase();
-						
 					}
 
 					if (right instanceof Value && left instanceof Value) {
@@ -89,14 +89,9 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 							public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
 								boolean addLeftValue = false;
-								// check if new infoflow is created here? Not necessary because this covers only calls of methods in the same class,
-								// which should not be source methods (not part of android api)
-
-								if(leftValue.toString().contains("$r") && rightValue.toString().contains("$Node")){
-								//	System.out.println(leftValue.toString());
-								}
-								if(source.getO2() != null){
-								//	System.out.println("a");
+								//debug:
+								if(rightValue.toString().contains("$r0.<java.util.LinkedList$Node: java.lang.Object item>")){
+									leftValue.toString();
 								}
 								
 								// normal check for infoflow
@@ -108,6 +103,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 										if (rightRef.getField().getName().equals(sourceRef.getField().getName())) {
 											Local rightBase = (Local) rightRef.getBase();
+											
 											PointsToSet ptsRight = pta.reachingObjects(rightBase);
 											Local sourceBase = (Local) sourceRef.getBase();
 											PointsToSet ptsSource2 = pta.reachingObjects(sourceBase);
@@ -118,7 +114,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 										}
 									}
 
-									if (rightValue instanceof InstanceFieldRef && source.getO1() instanceof Local) {
+									if (rightValue instanceof InstanceFieldRef && source.getO1() instanceof Local && !source.equals(zeroValue) ) {
 										PointsToSet ptsSource = pta.reachingObjects((Local) source.getO1());
 										InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
 										PointsToSet ptsResult = pta.reachingObjects(ptsSource, rightRef.getField());
@@ -149,13 +145,13 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 										}
 									}
 									// TODO: Change and see if is possible by just using the native call
-									if (rightValue instanceof JVirtualInvokeExpr) {
-										if (((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("clone") || ((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("concat")) {
-											if (source.getO1().equals(((JVirtualInvokeExpr) rightValue).getBaseBox().getValue())) {
-												addLeftValue = true;
-											}
-										}
-									}
+//									if (rightValue instanceof JVirtualInvokeExpr) {
+//										if (((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("clone") || ((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("concat")) {
+//											if (source.getO1().equals(((JVirtualInvokeExpr) rightValue).getBaseBox().getValue())) {
+//												//addLeftValue = true;
+//											}
+//										}
+//									}
 
 									// generic case, is true for Locals, ArrayRefs that are equal etc..
 									if (source.getO1().equals(rightValue)) {
@@ -172,9 +168,12 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 									// if one of them is true -> add leftValue
 									if (addLeftValue) {
+										
 										Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
 										res.add(source);
-										res.add(new Pair<Value, Value>(leftValue, source.getO2()));
+										ExtendedValue val = new ExtendedValue(source.getO2());
+										val.addHistorie(source.getO1());
+										res.add(new Pair<Value, Value>(leftValue, val));
 										return res;
 									}
 								}
@@ -191,7 +190,6 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 			public FlowFunction<Pair<Value, Value>> getCallFlowFunction(Unit src, final SootMethod dest) {
 
 				final Stmt stmt = (Stmt) src;
-				//System.out.println(dest.toString());
 				
 				final InvokeExpr ie = stmt.getInvokeExpr();
 				if (DEBUG) {
@@ -205,10 +203,16 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 				return new FlowFunction<Pair<Value, Value>>() {
 
 					public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
+						
 						Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
-						int argIndex = callArgs.indexOf(source.getO1());
-						if (argIndex > -1) {
-							res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));
+						if(callArgs.contains(source.getO1())){
+							for(int i=0; i<callArgs.size();i++){
+								if(callArgs.get(i).equals(source.getO1())){
+									ExtendedValue val = new ExtendedValue(source.getO2());
+									val.addHistorie(source.getO1());
+									res.add(new Pair<Value, Value>(paramLocals.get(i), val));
+								}
+							}
 							if(sinks.contains(dest.toString())){
 								if(!results.containsKey(dest.toString())){
 									List<String> list = new ArrayList<String>();
@@ -218,15 +222,11 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 									results.get(dest.toString()).add(source.getO2().toString());
 								}
 							}
-							
 						}
 						if (source.getO1() instanceof FieldRef) {
-							// FieldRef tempFieldRef = (FieldRef) source.getO1();
-
 							// if (tempFieldRef.getField().getDeclaringClass().equals(dest.getDeclaringClass())) { // not enough because might be used in this class...
-
 							res.add(source);
-							// }
+							
 						}
 
 						return res;
@@ -236,7 +236,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 			public FlowFunction<Pair<Value, Value>> getReturnFlowFunction(Unit callSite, SootMethod callee, Unit exitStmt, Unit retSite) {
 				final SootMethod calleeMethod = callee;
-
+				
 				if (exitStmt instanceof Stmt & DEBUG) {
 					System.out.println("ReturnExit: " + ((Stmt) exitStmt));
 					System.out.println("ReturnStart: " + callSite.toString());
@@ -254,15 +254,16 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							return new FlowFunction<Pair<Value, Value>>() {
 
 								public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
-									if (source.getO2() != null) {
-										// System.out.println("stop1");
-									}
+									
 									Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
 									if (source.getO1() instanceof FieldRef) {
 										res.add(source);
 									}
-									if (source.getO1() == retLocal)
-										res.add(new Pair<Value, Value>(tgtLocal, source.getO2()));
+									if (source.getO1() == retLocal){
+										ExtendedValue val = new ExtendedValue(source.getO2());
+										val.addHistorie(source.getO1());
+										res.add(new Pair<Value, Value>(tgtLocal, val));
+									}
 									return res;
 								}
 
@@ -284,14 +285,21 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 								if (globalField.isStatic()) {
 									PointsToSet ptsGlobal = pta.reachingObjects(globalField);
 									if (ptsRight.hasNonEmptyIntersection(ptsGlobal)) {
-										res.add(new Pair<Value, Value>(Jimple.v().newStaticFieldRef(globalField.makeRef()), source.getO2()));
+										ExtendedValue val = new ExtendedValue(source.getO2());
+										val.addHistorie(source.getO1());
+										res.add(new Pair<Value, Value>(Jimple.v().newStaticFieldRef(globalField.makeRef()), val));
 									}
 								} else {
 									if (!calleeMethod.isStatic()) { // otherwise runtime-exception
 										PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);
 										if (ptsGlobal.hasNonEmptyIntersection(ptsRight)) {
-											res.add(new Pair<Value, Value>(Jimple.v().newInstanceFieldRef(calleeMethod.getActiveBody().getThisLocal(), globalField.makeRef()), source.getO2()));
-										}
+											Local thisL = calleeMethod.getActiveBody().getThisLocal();
+											SootFieldRef ref = globalField.makeRef();
+											InstanceFieldRef fRef = Jimple.v().newInstanceFieldRef(thisL, ref);
+											ExtendedValue val = new ExtendedValue(source.getO2());
+											val.addHistorie(source.getO1());
+											res.add(new Pair<Value, Value>(fRef, val));
+										} //maybe check for duplicates here (is already in source..?
 									}
 								}
 
@@ -313,7 +321,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 				}
 				
 				if (call instanceof InvokeStmt && ((InvokeStmt) call).getInvokeExpr().getMethod().isNative()) {
-					InvokeStmt iStmt = (InvokeStmt) call;
+					final InvokeStmt iStmt = (InvokeStmt) call;
 					// Testoutput to collect all native calls from different runs of the analysis:
 					try {
 						FileWriter fstream = new FileWriter("nativeCalls.txt", true);
@@ -336,13 +344,14 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 						public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
 
-							int argIndex = callArgs.indexOf(source.getO1());
-							if (argIndex > -1) {
+							if(callArgs.contains(source.getO1())){
 								// "res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));" is not enough:
 								// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
 								Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
 								for (int i = 0; i < paramLocals.size(); i++) {
-									res.add(new Pair<Value, Value>(paramLocals.get(i), source.getO2()));
+									ExtendedValue val = new ExtendedValue(source.getO2());
+									val.addHistorie(source.getO1());
+									res.add(new Pair<Value, Value>(paramLocals.get(i), val));
 								}
 								return res;
 							}
@@ -360,12 +369,12 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
 								Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
 								res.add(source);
-								res.add(new Pair<Value, Value>(stmt.getLeftOp(), stmt.getInvokeExpr()));
+								ExtendedValue val = new ExtendedValue(stmt.getInvokeExpr());
+								res.add(new Pair<Value, Value>(stmt.getLeftOp(), val));
 								return res;
 							}
 						};
 					}
-
 				}
 				return Identity.v();
 			}
@@ -389,7 +398,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 
 	public Pair<Value, Value> createZeroValue() {
 		if (zeroValue == null)
-			return new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()), null);
+			return new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()), new ExtendedValue(null));
 		return zeroValue;
 	}
 

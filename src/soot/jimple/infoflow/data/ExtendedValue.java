@@ -1,39 +1,91 @@
 package soot.jimple.infoflow.data;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import soot.Type;
+import soot.UnitPrinter;
 import soot.Value;
+import soot.util.Switch;
 
-public class ExtendedValue {
-	private Value value;
-	private boolean isStatic;
-	private boolean isGlobalVar;
+public class ExtendedValue implements Value {
 	
-	public ExtendedValue(Value newVal, boolean globalVar, boolean staticVar){
-		value = newVal;
-		isStatic = staticVar;
-		isGlobalVar = globalVar;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4396476847951832785L;
+	private Value originalValue;
+	private List<Value> historieValues;
+	
+	public ExtendedValue(Value val){
+		originalValue = val;
+		historieValues = new LinkedList<Value>();
+		if(val instanceof ExtendedValue){
+			for(Value v : ((ExtendedValue)val).getHistory()){
+				historieValues.add(v);
+			}
+		}
+	}
+	
+	public void addHistorie(Value val){
+		historieValues.add(val);
+	}
+	
+	public Value getOriginalValue(){
+		return originalValue;
+	}
+	
+	public List<Value> getHistory(){
+		return historieValues;
+	}
+	
+	public Object clone(){
+		Value v = (Value) originalValue.clone();
+		ExtendedValue e = new ExtendedValue(v);	
+		return e;
+		
+	}
+	
+	@Override
+	public void apply(Switch sw) {
+		originalValue.apply(sw);
+		
 	}
 
-	public Value getValue() {
-		return value;
+	@Override
+	public boolean equivTo(Object o) {
+		return originalValue.equivTo(o);
+		// TODO improve?
+	
 	}
 
-	public void setValue(Value value) {
-		this.value = value;
+	@Override
+	public int equivHashCode() {
+		return originalValue.equivHashCode();
+		// TODO improve?
+		
 	}
 
-	public boolean isStatic() {
-		return isStatic;
+	@SuppressWarnings("rawtypes")
+	@Override
+	public List getUseBoxes() {
+		return originalValue.getUseBoxes();
 	}
 
-	public void setStatic(boolean isStatic) {
-		this.isStatic = isStatic;
+	@Override
+	public Type getType() {
+		return originalValue.getType();
 	}
 
-	public boolean isGlobalVar() {
-		return isGlobalVar;
+	@Override
+	public void toString(UnitPrinter up) {
+		originalValue.toString(up);
+		
+	}
+	
+	@Override
+	public String toString(){
+		return originalValue.toString();
 	}
 
-	public void setGlobalVar(boolean isGlobalVar) {
-		this.isGlobalVar = isGlobalVar;
-	}
 }

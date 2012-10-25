@@ -1,5 +1,6 @@
 package soot.jimple.infoflow.test.junit;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -47,6 +48,17 @@ public class OtherTests extends JUnitTests{
     	
     }
     
+    @Test
+    public void negativeTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.EasyNegativeTestCode: void easyNegativeTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		
+		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertFalse(errOutputStream.toString().contains("untaintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+    	
+    }
     
     
 }

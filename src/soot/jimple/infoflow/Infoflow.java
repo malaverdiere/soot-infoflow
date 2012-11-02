@@ -14,15 +14,13 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
-import soot.Value;
-import soot.jimple.infoflow.data.ExtendedValue;
+import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.util.ArgBuilder;
 import soot.jimple.infoflow.util.EntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.interproc.ifds.InterproceduralCFG;
 import soot.jimple.interproc.ifds.solver.IFDSSolver;
 import soot.options.Options;
-import soot.toolkits.scalar.Pair;
 
 public class Infoflow implements IInfoflow {
 
@@ -60,6 +58,8 @@ public class Infoflow implements IInfoflow {
 			includeList.add("android.");
 			includeList.add("ch.");
 			includeList.add("org.");
+			includeList.add("de.test.");
+			includeList.add("java.net.");
 			Options.v().set_include(includeList);
 			Options.v().set_allow_phantom_refs(true);
 			Options.v().set_no_bodies_for_excluded(true);
@@ -79,6 +79,7 @@ public class Infoflow implements IInfoflow {
 
 			Scene.v().setEntryPoints(sootEntryPoints);
 			PackManager.v().runPacks();
+			
 		}
 
 	}
@@ -92,7 +93,7 @@ public class Infoflow implements IInfoflow {
 					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst());
 				}
 
-				IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit, Pair<Value, Value>, SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);
+				IFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);
 
 				solver.solve(0);
 				solver.dumpResults(); // only for debugging
@@ -108,21 +109,8 @@ public class Infoflow implements IInfoflow {
 					System.err.println(solver.ifdsResultsAt(ret).size() + " Variables:");
 					System.err.println("----------------------------------------------");
 
-					for (Pair<Value, Value> l : solver.ifdsResultsAt(ret)) {
-						if(l.getO2() instanceof ExtendedValue){
-							ExtendedValue eVal = (ExtendedValue) l.getO2();
-							System.err.println(l.getO1() + " contains value from "+ eVal.getOriginalValue());
-							String hist = "";
-							for(Value h : eVal.getHistory()){
-								hist = hist + "; "+ h.getType() + ": "+ h +" (" + h.hashCode() + ")" ;
-								
-							}
-							System.err.println("--" + hist);
-						}else{
-							System.err.println(l.getO1() + " contains value from " + l.getO2());
-						}
-						
-						
+					for (Abstraction l : solver.ifdsResultsAt(ret)) {
+						System.err.println(l.getTaintedObject() + " of " + l.getCorrespondingMethod()+ " contains value from " + l.getSource());
 					}
 					System.err.println("---");
 				}

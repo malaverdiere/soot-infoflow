@@ -32,6 +32,7 @@ import soot.jimple.Jimple;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.source.DefaultSourceManager;
 import soot.jimple.infoflow.source.SourceManager;
 import soot.jimple.internal.JAssignStmt;
@@ -44,34 +45,25 @@ import soot.jimple.interproc.ifds.InterproceduralCFG;
 import soot.jimple.interproc.ifds.flowfunc.Identity;
 import soot.jimple.interproc.ifds.template.DefaultIFDSTabulationProblem;
 import soot.jimple.interproc.ifds.template.JimpleBasedInterproceduralCFG;
-import soot.toolkits.scalar.Pair;
-import soot.jimple.infoflow.data.ExtendedValue;
 
-public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Value>, InterproceduralCFG<Unit, SootMethod>> {
+public class InfoflowProblem extends DefaultIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
 
 	final Set<Unit> initialSeeds = new HashSet<Unit>();
 	final SourceManager sourceManager;
 	final List<String> sinks;
 	final HashMap<String, List<String>> results;
-	final Pair<Value, Value> zeroValue = new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()), null);
+	final Abstraction zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), null);
 
-	static boolean DEBUG = false;
-	
-	
+	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
+		return new FlowFunctions<Unit, Abstraction, SootMethod>() {
 
-	public FlowFunctions<Unit, Pair<Value, Value>, SootMethod> createFlowFunctionsFactory() {
-		return new FlowFunctions<Unit, Pair<Value, Value>, SootMethod>() {
-
-			public FlowFunction<Pair<Value, Value>> getNormalFlowFunction(Unit src, Unit dest) {
-				if (src instanceof Stmt && DEBUG) {
-					System.out.println("Normal: " + ((Stmt) src));
-				}
-
+			public FlowFunction<Abstraction> getNormalFlowFunction(Unit src, Unit dest) {
+				// if-Stmt -> take target and evaluate it.
 				if (src instanceof soot.jimple.internal.JIfStmt) {
 					soot.jimple.internal.JIfStmt ifStmt = (soot.jimple.internal.JIfStmt) src;
 					src = ifStmt.getTarget();
 				}
-
+				// taint is propagated with assignStmt
 				if (src instanceof AssignStmt) {
 					AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
@@ -81,151 +73,147 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 						left = ((ArrayRef) left).getBase();
 					}
 
-					if (right instanceof Value && left instanceof Value) {
-						final Value leftValue = left;
-						final Value rightValue = right;
+					final Value leftValue = left;
+					final Value rightValue = right;
+					final Unit srcUnit = src;
 
-						return new FlowFunction<Pair<Value, Value>>() {
+					return new FlowFunction<Abstraction>() {
 
-							public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
-								boolean addLeftValue = false;
-								//debug:
-								if(rightValue.toString().contains("$r0.<java.util.LinkedList$Node: java.lang.Object item>")){
-									leftValue.toString();
+						public Set<Abstraction> computeTargets(Abstraction source) {
+							boolean addLeftValue = false;
+
+							//TODO: needs rework - with our alias-analysis
+							if (rightValue instanceof JVirtualInvokeExpr || !source.equals(zeroValue)) {
+								PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
+								if (source.getTaintedObject() instanceof InstanceFieldRef && rightValue instanceof InstanceFieldRef) {
+									InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
+									InstanceFieldRef sourceRef = (InstanceFieldRef) source.getTaintedObject();
+
+									if (rightRef.getField().getName().equals(sourceRef.getField().getName())) {
+										Local rightBase = (Local) rightRef.getBase();
+
+										PointsToSet ptsRight = pta.reachingObjects(rightBase);
+										Local sourceBase = (Local) sourceRef.getBase();
+										PointsToSet ptsSource2 = pta.reachingObjects(sourceBase);
+										if (ptsRight.hasNonEmptyIntersection(ptsSource2)) {
+											addLeftValue = true;
+										}
+
+									}
 								}
-								
-								// normal check for infoflow
-								if (rightValue instanceof JVirtualInvokeExpr || !source.equals(zeroValue)) {
-									PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-									if (source.getO1() instanceof InstanceFieldRef && rightValue instanceof InstanceFieldRef) {
-										InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
-										InstanceFieldRef sourceRef = (InstanceFieldRef) source.getO1();
 
-										if (rightRef.getField().getName().equals(sourceRef.getField().getName())) {
-											Local rightBase = (Local) rightRef.getBase();
-											
-											PointsToSet ptsRight = pta.reachingObjects(rightBase);
-											Local sourceBase = (Local) sourceRef.getBase();
-											PointsToSet ptsSource2 = pta.reachingObjects(sourceBase);
-											if (ptsRight.hasNonEmptyIntersection(ptsSource2)) {
-												addLeftValue = true;
-											}
-											
-										}
-									}
+								if (rightValue instanceof InstanceFieldRef && source.getTaintedObject() instanceof Local && !source.equals(zeroValue)) {
+									PointsToSet ptsSource = pta.reachingObjects((Local) source.getTaintedObject());
+									InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
+									PointsToSet ptsResult = pta.reachingObjects(ptsSource, rightRef.getField());
 
-									if (rightValue instanceof InstanceFieldRef && source.getO1() instanceof Local && !source.equals(zeroValue) ) {
-										PointsToSet ptsSource = pta.reachingObjects((Local) source.getO1());
-										InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
-										PointsToSet ptsResult = pta.reachingObjects(ptsSource, rightRef.getField());
-
-										if (!ptsResult.isEmpty()) {
-											addLeftValue = true;
-										}
-
-									}
-
-									if (rightValue instanceof StaticFieldRef && source.getO1() instanceof StaticFieldRef) {
-										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-										StaticFieldRef sourceRef = (StaticFieldRef) source.getO1();
-										if (rightRef.getFieldRef().name().equals(sourceRef.getFieldRef().name()) && rightRef.getFieldRef().declaringClass().equals(sourceRef.getFieldRef().declaringClass())) {
-											addLeftValue = true;
-										}
-									}
-
-									if (rightValue instanceof ArrayRef) {
-										Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
-										if (source.getO1().equals(rightBase) || (source.getO1() instanceof Local && pta.reachingObjects(rightBase).hasNonEmptyIntersection(pta.reachingObjects((Local) source.getO1())))) {
-											addLeftValue = true;
-										}
-									}
-									if (rightValue instanceof JCastExpr) {
-										if (source.getO1().equals(((JCastExpr) rightValue).getOpBox().getValue())) {
-											addLeftValue = true;
-										}
-									}
-									// TODO: Change and see if is possible by just using the native call
-//									if (rightValue instanceof JVirtualInvokeExpr) {
-//										if (((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("clone") || ((JVirtualInvokeExpr) rightValue).getMethodRef().name().equals("concat")) {
-//											if (source.getO1().equals(((JVirtualInvokeExpr) rightValue).getBaseBox().getValue())) {
-//												//addLeftValue = true;
-//											}
-//										}
-//									}
-
-									// generic case, is true for Locals, ArrayRefs that are equal etc..
-									if (source.getO1().equals(rightValue)) {
+									if (!ptsResult.isEmpty()) {
 										addLeftValue = true;
 									}
-									// also check if there are two arrays (or anything else?) that point to the same..
-									if (source.getO1() instanceof Local && rightValue instanceof Local) {
-										PointsToSet ptsRight = pta.reachingObjects((Local) rightValue);
-										PointsToSet ptsSource = pta.reachingObjects((Local) source.getO1());
-										if (ptsRight.hasNonEmptyIntersection(ptsSource)) {
-											addLeftValue = true;
-										}
-									}
 
-									// if one of them is true -> add leftValue
-									if (addLeftValue) {
-										
-										Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
-										res.add(source);
-										ExtendedValue val = new ExtendedValue(source.getO2());
-										val.addHistorie(source.getO1());
-										res.add(new Pair<Value, Value>(leftValue, val));
-										return res;
+								}
+
+								if (rightValue instanceof StaticFieldRef && source.getTaintedObject() instanceof StaticFieldRef) {
+									StaticFieldRef rightRef = (StaticFieldRef) rightValue;
+									StaticFieldRef sourceRef = (StaticFieldRef) source.getTaintedObject();
+									if (rightRef.getFieldRef().name().equals(sourceRef.getFieldRef().name()) && rightRef.getFieldRef().declaringClass().equals(sourceRef.getFieldRef().declaringClass())) {
+										addLeftValue = true;
 									}
 								}
-								return Collections.singleton(source);
 
+								if (rightValue instanceof ArrayRef) {
+									Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
+									if (source.getTaintedObject().equals(rightBase) || (source.getTaintedObject() instanceof Local && pta.reachingObjects(rightBase).hasNonEmptyIntersection(pta.reachingObjects((Local) source.getTaintedObject())))) {
+										addLeftValue = true;
+									}
+								}
+								if (rightValue instanceof JCastExpr) {
+									if (source.getTaintedObject().equals(((JCastExpr) rightValue).getOpBox().getValue())) {
+										addLeftValue = true;
+									}
+								}
+
+								// generic case, is true for Locals, ArrayRefs that are equal etc..
+								if (source.getTaintedObject().equals(rightValue)) {
+									addLeftValue = true;
+								}
+								// also check if there are two arrays (or anything else?) that have the same origin
+								if (source.getTaintedObject() instanceof Local && rightValue instanceof Local) {
+									PointsToSet ptsRight = pta.reachingObjects((Local) rightValue);
+									PointsToSet ptsSource = pta.reachingObjects((Local) source.getTaintedObject());
+									if (ptsRight.hasNonEmptyIntersection(ptsSource)) {
+										addLeftValue = true;
+									}
+								}
+
+								// if one of them is true -> add leftValue
+								if (addLeftValue) {
+									// TODO: go recursively through the definitions before, compute pts
+									Set<Abstraction> res = new HashSet<Abstraction>();
+									source.addToAlias(leftValue); // TODO: correct?
+									res.add(source);
+									res.add(new Abstraction(leftValue, source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+									return res;
+								}
 							}
-						};
-					}
+							return Collections.singleton(source);
+
+						}
+					};
 
 				}
 				return Identity.v();
 			}
 
-			public FlowFunction<Pair<Value, Value>> getCallFlowFunction(Unit src, final SootMethod dest) {
+			public FlowFunction<Abstraction> getCallFlowFunction(Unit src, final SootMethod dest) {
 
 				final Stmt stmt = (Stmt) src;
-				
 				final InvokeExpr ie = stmt.getInvokeExpr();
-				if (DEBUG) {
-					System.out.println("Call " + ie);
-				}
 				final List<Value> callArgs = ie.getArgs();
 				final List<Value> paramLocals = new ArrayList<Value>();
 				for (int i = 0; i < dest.getParameterCount(); i++) {
 					paramLocals.add(dest.getActiveBody().getParameterLocal(i));
 				}
-				return new FlowFunction<Pair<Value, Value>>() {
+				return new FlowFunction<Abstraction>() {
 
-					public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
+					public Set<Abstraction> computeTargets(Abstraction source) {
+
+						Set<Abstraction> res = new HashSet<Abstraction>();
 						
-						Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
-						if(callArgs.contains(source.getO1())){
-							for(int i=0; i<callArgs.size();i++){
-								if(callArgs.get(i).equals(source.getO1())){
-									ExtendedValue val = new ExtendedValue(source.getO2());
-									val.addHistorie(source.getO1());
-									res.add(new Pair<Value, Value>(paramLocals.get(i), val));
+						//check if param is tainted:
+						if (callArgs.contains(source.getTaintedObject())) {
+							for (int i = 0; i < callArgs.size(); i++) {
+								if (callArgs.get(i).equals(source.getTaintedObject())) {
+									Abstraction abs = new Abstraction(paramLocals.get(i), source.getSource(), dest);
+									abs.addToAlias(callArgs.get(i));
+									res.add(abs);
 								}
 							}
-							if(sinks.contains(dest.toString())){
-								if(!results.containsKey(dest.toString())){
+							//if we have called a sink we have to store the path from the source:
+							if (sinks.contains(dest.toString())) {
+								if (!results.containsKey(dest.toString())) {
 									List<String> list = new ArrayList<String>();
-									list.add(source.getO2().toString());
+									list.add(source.getSource().toString());
 									results.put(dest.toString(), list);
-								} else{
-									results.get(dest.toString()).add(source.getO2().toString());
+								} else {
+									results.get(dest.toString()).add(source.getSource().toString());
 								}
 							}
 						}
-						if (source.getO1() instanceof FieldRef) {
-							// if (tempFieldRef.getField().getDeclaringClass().equals(dest.getDeclaringClass())) { // not enough because might be used in this class...
-							res.add(source);
+						//fieldRefs must be analyzed even if they are not part of the params:
+						if (source.getTaintedObject() instanceof FieldRef) {
+						
+							res.add(source); // u.U. falsch weil es ja auf param gemappt werden muss!
+							if (source.getTaintedObject() instanceof InstanceFieldRef) {
+								InstanceFieldRef ref = (InstanceFieldRef) source.getTaintedObject();
+								for (int i = 0; i < callArgs.size(); i++) {
+									if (callArgs.get(i).equals(ref.getBase())) {
+										// callArgs.get(i). -> eigentlich muss ich hier das Field tainten von dem Parameter - komme ich aber nicht dran, also über PTS erkennen? TODO
+										// res.add(new Abstraction(ref, source.getSource()));
+									}
+								}
+							} 
+							//staticFieldRef should be okay
 							
 						}
 
@@ -234,78 +222,74 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 				};
 			}
 
-			public FlowFunction<Pair<Value, Value>> getReturnFlowFunction(Unit callSite, SootMethod callee, Unit exitStmt, Unit retSite) {
+			public FlowFunction<Abstraction> getReturnFlowFunction(Unit callSite, SootMethod callee, Unit exitStmt, Unit retSite) {
 				final SootMethod calleeMethod = callee;
-				
-				if (exitStmt instanceof Stmt & DEBUG) {
-					System.out.println("ReturnExit: " + ((Stmt) exitStmt));
-					System.out.println("ReturnStart: " + callSite.toString());
-				}
+				final Unit callUnit = callSite; // true? always stmt?
+				final Unit exitUnit = exitStmt;
 
-				if (exitStmt instanceof ReturnStmt) {
-					ReturnStmt returnStmt = (ReturnStmt) exitStmt;
-					Value op = returnStmt.getOp();
-					if (op instanceof Value) {
-						if (callSite instanceof DefinitionStmt) {
-							DefinitionStmt defnStmt = (DefinitionStmt) callSite;
-							Value leftOp = defnStmt.getLeftOp();
-							final Value tgtLocal = leftOp;
-							final Value retLocal = op;
-							return new FlowFunction<Pair<Value, Value>>() {
+				return new FlowFunction<Abstraction>() {
 
-								public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
+					public Set<Abstraction> computeTargets(Abstraction source) {
+						Set<Abstraction> res = new HashSet<Abstraction>();
+						
+						//if we have a returnStmt we have to look at the returned value:
+						if (exitUnit instanceof ReturnStmt) {
+							ReturnStmt returnStmt = (ReturnStmt) exitUnit;
+							Value op = returnStmt.getOp();
+							if (op instanceof Value) {
+								if (callUnit instanceof DefinitionStmt) {
+									DefinitionStmt defnStmt = (DefinitionStmt) callUnit;
+									Value leftOp = defnStmt.getLeftOp();
+									final Value retLocal = op;
 									
-									Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
-									if (source.getO1() instanceof FieldRef) {
+									if (source.getTaintedObject() instanceof FieldRef) {
 										res.add(source);
 									}
-									if (source.getO1() == retLocal){
-										ExtendedValue val = new ExtendedValue(source.getO2());
-										val.addHistorie(source.getO1());
-										res.add(new Pair<Value, Value>(tgtLocal, val));
+									if (source.getTaintedObject() == retLocal) {
+										res.add(new Abstraction(leftOp, source.getSource(), calleeMethod));
 									}
-									return res;
 								}
-
-							};
+			
+							}
 						}
-
-					}
-				}
-
-				return new FlowFunction<Pair<Value, Value>>() {
-
-					public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
-						Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
-						if (source.getO1() instanceof Local) {
+							
+						
+						if (source.getTaintedObject() instanceof Local) {
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-							PointsToSet ptsRight = pta.reachingObjects((Local) source.getO1());
+							PointsToSet ptsRight = pta.reachingObjects((Local) source.getTaintedObject());
 
 							for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
 								if (globalField.isStatic()) {
 									PointsToSet ptsGlobal = pta.reachingObjects(globalField);
 									if (ptsRight.hasNonEmptyIntersection(ptsGlobal)) {
-										ExtendedValue val = new ExtendedValue(source.getO2());
-										val.addHistorie(source.getO1());
-										res.add(new Pair<Value, Value>(Jimple.v().newStaticFieldRef(globalField.makeRef()), val));
+										res.add(new Abstraction(Jimple.v().newStaticFieldRef(globalField.makeRef()), source.getSource()));
 									}
 								} else {
-									if (!calleeMethod.isStatic()) { // otherwise runtime-exception
+									if (!calleeMethod.isStatic()) {
 										PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);
 										if (ptsGlobal.hasNonEmptyIntersection(ptsRight)) {
 											Local thisL = calleeMethod.getActiveBody().getThisLocal();
 											SootFieldRef ref = globalField.makeRef();
 											InstanceFieldRef fRef = Jimple.v().newInstanceFieldRef(thisL, ref);
-											ExtendedValue val = new ExtendedValue(source.getO2());
-											val.addHistorie(source.getO1());
-											res.add(new Pair<Value, Value>(fRef, val));
-										} //maybe check for duplicates here (is already in source..?
+											res.add(new Abstraction(fRef, source.getSource(), calleeMethod));
+										} // maybe check for duplicates here (is already in source..?)
 									}
 								}
 
 							}
 						}
-						if (source.getO1() instanceof FieldRef) {
+						// check if original params where modified:
+						if (callUnit instanceof Stmt) {
+							InvokeExpr ie = ((Stmt)callUnit).getInvokeExpr();
+							for (Value val : source.getAliasSet()) {
+								for (Value callArg : ie.getArgs()) {
+									if (val.equals(callArg)) {
+										res.add(new Abstraction(callArg, source.getSource(), calleeMethod));
+									}
+								}
+							}
+						}
+						if (source.getTaintedObject() instanceof FieldRef) {
 							res.add(source);
 						}
 						return res;
@@ -314,14 +298,13 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 				};
 			}
 
-			public FlowFunction<Pair<Value, Value>> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
-				if (DEBUG) {
-					System.out.println("C2R c: " + call);
-					System.out.println("C2R r: " + returnSite);
-				}
-				
+			public FlowFunction<Abstraction> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
+
+				final Unit unit = returnSite;
+				// special treatment for native methods:
 				if (call instanceof InvokeStmt && ((InvokeStmt) call).getInvokeExpr().getMethod().isNative()) {
 					final InvokeStmt iStmt = (InvokeStmt) call;
+
 					// Testoutput to collect all native calls from different runs of the analysis:
 					try {
 						FileWriter fstream = new FileWriter("nativeCalls.txt", true);
@@ -340,18 +323,16 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 							paramLocals.add(iStmt.getInvokeExpr().getArg(i));
 						}
 					}
-					return new FlowFunction<Pair<Value, Value>>() {
+					return new FlowFunction<Abstraction>() {
 
-						public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
+						public Set<Abstraction> computeTargets(Abstraction source) {
 
-							if(callArgs.contains(source.getO1())){
+							if (callArgs.contains(source.getTaintedObject())) {
 								// "res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));" is not enough:
 								// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
-								Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
+								Set<Abstraction> res = new HashSet<Abstraction>();
 								for (int i = 0; i < paramLocals.size(); i++) {
-									ExtendedValue val = new ExtendedValue(source.getO2());
-									val.addHistorie(source.getO1());
-									res.add(new Pair<Value, Value>(paramLocals.get(i), val));
+									res.add(new Abstraction(paramLocals.get(i), source.getSource(), interproceduralCFG().getMethodOf(unit)));
 								}
 								return res;
 							}
@@ -363,14 +344,13 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 					final JAssignStmt stmt = (JAssignStmt) call;
 
 					if (sourceManager.isSourceMethod(stmt.getInvokeExpr().getMethod())) {
-						return new FlowFunction<Pair<Value, Value>>() {
+						return new FlowFunction<Abstraction>() {
 
 							@Override
-							public Set<Pair<Value, Value>> computeTargets(Pair<Value, Value> source) {
-								Set<Pair<Value, Value>> res = new HashSet<Pair<Value, Value>>();
+							public Set<Abstraction> computeTargets(Abstraction source) {
+								Set<Abstraction> res = new HashSet<Abstraction>();
 								res.add(source);
-								ExtendedValue val = new ExtendedValue(stmt.getInvokeExpr());
-								res.add(new Pair<Value, Value>(stmt.getLeftOp(), val));
+								res.add(new Abstraction(stmt.getLeftOp(), stmt.getInvokeExpr(), interproceduralCFG().getMethodOf(unit)));
 								return res;
 							}
 						};
@@ -388,7 +368,6 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 		results = new HashMap<String, List<String>>();
 	}
 
-	
 	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinks) {
 		super(icfg);
 		sourceManager = new DefaultSourceManager(sourceList);
@@ -396,9 +375,10 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Pair<Value, Va
 		results = new HashMap<String, List<String>>();
 	}
 
-	public Pair<Value, Value> createZeroValue() {
+	public Abstraction createZeroValue() {
 		if (zeroValue == null)
-			return new Pair<Value, Value>(new JimpleLocal("zero", NullType.v()), new ExtendedValue(null));
+			return new Abstraction(new JimpleLocal("zero", NullType.v()), null);
+
 		return zeroValue;
 	}
 

@@ -110,7 +110,7 @@ public class Infoflow implements IInfoflow {
 					System.err.println("----------------------------------------------");
 
 					for (Abstraction l : solver.ifdsResultsAt(ret)) {
-						System.err.println(l.getTaintedObject() + " of " + l.getCorrespondingMethod()+ " contains value from " + l.getSource());
+						System.err.println(l.getCorrespondingMethod() +": "+ l.getTaintedObject() + " contains value from " + l.getSource());
 					}
 					System.err.println("---");
 				}

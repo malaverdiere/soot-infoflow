@@ -246,7 +246,7 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Abstraction, I
 										res.add(source);
 									}
 									if (source.getTaintedObject() == retLocal) {
-										res.add(new Abstraction(leftOp, source.getSource(), calleeMethod));
+										res.add(new Abstraction(leftOp, source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
 								}
 			

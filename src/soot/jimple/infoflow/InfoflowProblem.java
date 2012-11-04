@@ -202,8 +202,9 @@ public class InfoflowProblem extends DefaultIFDSTabulationProblem<Abstraction, I
 						}
 						//fieldRefs must be analyzed even if they are not part of the params:
 						if (source.getTaintedObject() instanceof FieldRef) {
-						
-							res.add(source); // u.U. falsch weil es ja auf param gemappt werden muss!
+							//is true if we call another object that has this field (is not included in params):
+							res.add(source); 
+							//check if the base is part of params:
 							if (source.getTaintedObject() instanceof InstanceFieldRef) {
 								InstanceFieldRef ref = (InstanceFieldRef) source.getTaintedObject();
 								for (int i = 0; i < callArgs.size(); i++) {

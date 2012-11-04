@@ -64,5 +64,38 @@ public class Abstraction {
 		this.correspondingMethod = correspondingMethod;
 	}
 	
+	@Override
+	public boolean equals(Object obj){
+		if(obj instanceof Abstraction){
+			Abstraction abs = (Abstraction) obj;
+			if(abs.getSource() == null && source == null){
+				if(abs.getTaintedObject() == null && taintedObject == null){
+					return true;
+				}
+				if(abs.getTaintedObject() != null && abs.getTaintedObject().equals(taintedObject)){
+					return true;
+				}
+				
+			}
+			if(abs.getSource() != null && abs.getSource().equals(source)){
+				if(abs.getTaintedObject() == null && taintedObject == null){
+					return true;
+				}
+				if(abs.getTaintedObject() != null && abs.getTaintedObject().equals(taintedObject)){
+					return true;
+				}
+				
+				
+			}
+		}
+		
+		return false;
+	}
+	
+	@Override
+	public int hashCode(){
+		return 13* (((source!= null)?source.hashCode():7) + ((taintedObject != null)?taintedObject.hashCode():17));
+	}
+	
 
 }

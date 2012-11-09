@@ -29,4 +29,16 @@ public class OtherTestCode {
 		
 	}
 
+	public void stringConcatTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		String concat1 = tainted.concat("eins");
+		String two = "zwei";
+		String concat2 = two.concat(tainted);
+		String concat3 = "test " + tainted;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(concat1.concat(concat2).concat(concat3));
+		
+	}
+	
 }

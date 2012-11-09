@@ -66,9 +66,36 @@ public class OtherTests extends JUnitTests{
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MailTest: void method()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		assertTrue(errOutputStream.toString().contains("x2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertFalse(errOutputStream.toString().contains("y2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+    	
+    }
+    
+    @Test
+    public void mail2Test(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.MailTest: void method2()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue(errOutputStream.toString().contains("taint contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue(errOutputStream.toString().contains("a.<soot.jimple.infoflow.test.MailTest$Foobar: java.lang.String field> contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertFalse(errOutputStream.toString().contains("b.<soot.jimple.infoflow.test.MailTest$Foobar: java.lang.String field> contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertFalse(errOutputStream.toString().contains("untaint contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		
+    }
+    
+    @Test
+    public void stringConcatTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void stringConcatTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		
 		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-		assertFalse(errOutputStream.toString().contains("untaintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+		assertTrue(errOutputStream.toString().contains("concat1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+		assertTrue(errOutputStream.toString().contains("concat2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+		assertTrue(errOutputStream.toString().contains("concat3 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
     	
     }
     

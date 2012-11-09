@@ -38,7 +38,7 @@ public abstract class JUnitTests {
 
         sinks.add("<soot.jimple.infoflow.test.android.ConnectionManager: void publish(java.lang.String)>");
         //remove comment from the following line before running tests:
-        System.setErr(pStream);
+//        System.setErr(pStream);
     }
 
     @AfterClass

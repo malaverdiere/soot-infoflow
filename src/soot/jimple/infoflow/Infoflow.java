@@ -21,6 +21,7 @@ import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.interproc.ifds.InterproceduralCFG;
 import soot.jimple.interproc.ifds.solver.IFDSSolver;
 import soot.options.Options;
+import soot.toolkits.scalar.LocalSplitter;
 
 public class Infoflow implements IInfoflow {
 
@@ -56,10 +57,11 @@ public class Infoflow implements IInfoflow {
 			includeList.add("java.util.");
 			includeList.add("sun.misc.");
 			includeList.add("android.");
-			includeList.add("ch.");
-			includeList.add("org.");
+//			includeList.add("ch.");
+//			includeList.add("org.");
 			includeList.add("de.test.");
-			includeList.add("java.net.");
+			includeList.add("soot.");
+//			includeList.add("java.net.");
 			Options.v().set_include(includeList);
 			Options.v().set_allow_phantom_refs(true);
 			Options.v().set_no_bodies_for_excluded(true);
@@ -76,8 +78,9 @@ public class Infoflow implements IInfoflow {
 			EntryPointCreator epCreator = new EntryPointCreator();
 
 			sootEntryPoints = epCreator.createDummyMain(classEntry, c);
-
+			
 			Scene.v().setEntryPoints(sootEntryPoints);
+			
 			PackManager.v().runPacks();
 			
 		}
@@ -96,7 +99,7 @@ public class Infoflow implements IInfoflow {
 				IFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);
 
 				solver.solve(0);
-				solver.dumpResults(); // only for debugging
+				//solver.dumpResults(); // only for debugging
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 
@@ -126,6 +129,25 @@ public class Infoflow implements IInfoflow {
 		});
 
 		PackManager.v().getPack("wjtp").add(transform);
+		
+		Transform transformLocals = new Transform("wjpp.splitLocals", new SceneTransformer() {
+			
+			@Override
+			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
+				for(SootClass sc : Scene.v().getClasses()){
+					//SootClass c = Scene.v().forceResolve(sc.getName(), SootClass.BODIES);
+					for(SootMethod sm : sc.getMethods()){
+						if(sm.hasActiveBody()){
+							LocalSplitter.v().transform(sm.getActiveBody());
+						}
+					}
+				}
+				
+				
+			}
+		});
+		
+		PackManager.v().getPack("wjpp").add(transformLocals);
 
 	}
 

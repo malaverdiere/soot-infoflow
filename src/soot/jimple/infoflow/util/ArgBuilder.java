@@ -26,7 +26,10 @@ public class ArgBuilder {
 			"jb",
 			"use-original-names:true",
 			"-f",
-			"n"
+			"n",
+			"-p",
+			"jb.ulp",
+			"off"
 		};
 		
 		return result;

@@ -97,5 +97,16 @@ public class Abstraction {
 		return 13* (((source!= null)?source.hashCode():7) + ((taintedObject != null)?taintedObject.hashCode():17));
 	}
 	
+	@Override
+	public String toString(){
+		if(taintedObject != null && source != null){
+			return taintedObject.toString() + "("+taintedObject.getType().toString()+ ") /source: "+ source.toString();
+		}
+		if(taintedObject != null){
+			return taintedObject.toString()+ "("+taintedObject.getType().toString() +")";
+		}
+		return "Abstraction (null)";
+	}
+	
 
 }

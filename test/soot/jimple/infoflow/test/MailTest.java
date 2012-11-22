@@ -26,15 +26,12 @@ public class MailTest {
 
 	}
 	
-	private class O2 extends O{
-		
-	}
+
 
 	
 	public void method2() {
 		String tainted = TelephonyManager.getDeviceId();
 		O a = new O();
-//		O b = new O2();
 		//Fehler wenn:
 		O b = new O();
 		
@@ -50,5 +47,36 @@ public class MailTest {
 	void foo(O obj, String s){
 		obj.field = s;
 	}
+	
+	
+	
+	public void method3(){
+		String tainted = TelephonyManager.getDeviceId();
+		String untainted = "hallo welt";
+		List1 a = new List1();
+		List1 b = new List1();
+		a.add(tainted);
+		b.add(untainted);
+		
+		String c = a.get();
+		String d = b.get();
+		
+		c.concat(d);
+	}
+	
+	private class List1 {
+		private String field;
+		
+		public void add(String e){
+			field = e;
+		}
+		
+		public String get(){
+			return field;
+		}
+
+	}
+	
+	
 	
 }

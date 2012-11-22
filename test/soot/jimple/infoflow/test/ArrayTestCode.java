@@ -76,16 +76,17 @@ public class ArrayTestCode {
 	
 	public void concreteWriteReadNegativeTest(){
 		String tainted = TelephonyManager.getDeviceId();
-		//LinkedList<String> notRelevantList = new LinkedList<String>();
+		String[] notRelevant = new String[1];
 		String[] array = new String[2];
 		array[0] = "neutral";
 		array[1] = "neutral2";
 		
-		//notRelevantList.add(tainted);
-		//String taintedElement = notRelevantList.get(0);
+		notRelevant[0] = tainted;
+		
+		String taintedElement = notRelevant[0];
 		String untaintedElement = array[0];
 		String complete =untaintedElement;
-		complete = tainted;//.concat(taintedElement);
+		complete = tainted.concat(taintedElement);
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(complete);

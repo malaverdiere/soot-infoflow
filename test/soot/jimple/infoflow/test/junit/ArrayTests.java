@@ -27,6 +27,16 @@ public class ArrayTests extends JUnitTests {
 			assertTrue(errOutputStream.toString().contains("tainted456 contains value from staticinvoke"));
 			
 	    }
+	  
+	  @Test
+	    public void arrayCopyTest(){
+	    	Infoflow infoflow = new Infoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void copyTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			assertTrue(errOutputStream.toString().contains("copyTainted contains value from staticinvoke"));
+			
+	    }
 	    
 	    @Test
 	    public void arrayAsFieldOfClassTest(){

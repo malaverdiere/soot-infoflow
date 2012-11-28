@@ -45,6 +45,15 @@ public class ArrayTestCode {
 		
 	}
 	
+	public void copyTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		String[] array = new String[2];
+		array[0] = tainted;
+		String[] copyTainted = Arrays.copyOf(array, 100);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(copyTainted[0]);
+	}
 	
 	public void arrayAsFieldOfClass(){
 		String tainted = TelephonyManager.getDeviceId();

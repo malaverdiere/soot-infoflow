@@ -114,5 +114,31 @@ public class OtherTests extends JUnitTests{
     	
     }
     
+    @Test
+    public void hierarchytaintedTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.HierarchyTestCode: void taintedOutputTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		
+		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue(errOutputStream.toString().contains("taintedOutput contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+		//TODO: PrintStream und sources ausgabe checken?
+		
+    }
+    
+    @Test
+    public void hierarchyuntaintedTest(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.HierarchyTestCode: void untaintedOutputTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		
+		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertFalse(errOutputStream.toString().contains("taintedOutput contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+		
+    }
+    
+    
     
 }

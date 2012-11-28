@@ -180,7 +180,9 @@ public class EntryPointCreator {
 								params.add(generateClassConstructor(typeClass, body, startMethods));
 							}
 						} else {
-							params.add(G.v().soot_jimple_NullConstant());	
+//							params.add(G.v().soot_jimple_NullConstant());
+							System.out.println("Warnung - Type not found");
+							params.add(generateClassConstructor(Scene.v().getSootClass("java.lang.Object"), body, startMethods));
 						}
 					}
 					VirtualInvokeExpr vInvokeExpr;
@@ -188,7 +190,7 @@ public class EntryPointCreator {
 					//SpecialInvokeExpr sinvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, Scene.v().makeMethodRef(createdClass, "<init>", new ArrayList<Type>(), VoidType.v(), false));
 					//body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
 					
-					if (params.isEmpty()) {
+					if (params.isEmpty() || params.contains(null)) {
 						vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef());
 					} else {
 						vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef(), params);

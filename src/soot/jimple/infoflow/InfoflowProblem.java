@@ -11,6 +11,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import de.bodden.ide.FlowFunction;
+import de.bodden.ide.FlowFunctions;
+import de.bodden.ide.InterproceduralCFG;
+import de.bodden.ide.flowfunc.Identity;
+
 import soot.Local;
 import soot.NullType;
 import soot.PointsToAnalysis;
@@ -40,15 +45,11 @@ import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JCastExpr;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JimpleLocal;
-import soot.jimple.interproc.ifds.FlowFunction;
-import soot.jimple.interproc.ifds.FlowFunctions;
-import soot.jimple.interproc.ifds.InterproceduralCFG;
-import soot.jimple.interproc.ifds.flowfunc.Identity;
-import soot.jimple.interproc.ifds.template.DefaultIFDSTabulationProblem;
-import soot.jimple.interproc.ifds.template.JimpleBasedInterproceduralCFG;
+import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
+import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.util.Chain;
 
-public class InfoflowProblem extends DefaultIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
+public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
 
 	final Set<Unit> initialSeeds = new HashSet<Unit>();
 	final SourceManager sourceManager;

@@ -18,9 +18,9 @@ import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.util.ArgBuilder;
 import soot.jimple.infoflow.util.EntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
-import soot.jimple.interproc.ifds.InterproceduralCFG;
-import soot.jimple.interproc.ifds.solver.IFDSSolver;
+import soot.jimple.toolkits.ide.JimpleIFDSSolver;
 import soot.options.Options;
+import de.bodden.ide.InterproceduralCFG;
 
 public class Infoflow implements IInfoflow {
 
@@ -97,7 +97,7 @@ public class Infoflow implements IInfoflow {
 					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst());
 				}
 
-				IFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>> solver = new IFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>>(problem);
+				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver = new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem);
 
 				solver.solve(0);
 //				solver.dumpResults(); // only for debugging

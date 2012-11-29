@@ -61,6 +61,7 @@ public class Infoflow implements IInfoflow {
 			includeList.add("de.test.");
 			includeList.add("soot.");
 			includeList.add("com.example");
+			includeList.add("com.jakobkontor");
 //			includeList.add("java.net.");
 			Options.v().set_include(includeList);
 			Options.v().set_allow_phantom_refs(true);

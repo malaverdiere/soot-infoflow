@@ -5,15 +5,41 @@ import soot.jimple.infoflow.test.android.TelephonyManager;
 
 public class StringTestCode {
 	
-	public void methodStringConcat(){
+	public void methodStringConcat1(){
 		String pre = "pre";
 		String tainted = TelephonyManager.getDeviceId();
 		
 		String result = pre.concat(tainted);
-		String post = tainted.concat(pre);
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(result);
+	}
+	
+	public void methodStringConcat1b(){
+		String var = "2";
+		String tainted = TelephonyManager.getDeviceId();
+		
+		var = var.concat(tainted);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(var);
+	}
+	
+	public void methodStringConcat1c(String var){
+		String tainted = TelephonyManager.getDeviceId();
+		
+		String result = var.concat(tainted);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(result);
+	}
+	
+	public void methodStringConcat2(){
+		String pre = "pre";
+		String tainted = TelephonyManager.getDeviceId();
+		String post = tainted.concat(pre);
+		
+		ConnectionManager cm = new ConnectionManager();
 		cm.publish(post);
 	}
 	

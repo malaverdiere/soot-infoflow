@@ -5,6 +5,7 @@ import java.util.Set;
 
 import soot.SootMethod;
 import soot.Value;
+import soot.jimple.internal.JInstanceFieldRef;
 
 public class Abstraction {
 	private Value taintedObject;
@@ -53,7 +54,24 @@ public class Abstraction {
 	}
 	
 	public void addToAlias(Value val){
-		aliasSet.add(val);
+		boolean found = false;
+		if(val instanceof JInstanceFieldRef){
+			for(Value current : aliasSet){
+				if(current instanceof JInstanceFieldRef){
+					JInstanceFieldRef r1 = (JInstanceFieldRef) current;
+					JInstanceFieldRef r2 = (JInstanceFieldRef) val;
+					if(r1.getBase().equals(r2.getBase()) &&
+							r1.getField().equals(r2.getField())){
+						found = true;
+					}
+					
+				}
+			}
+			
+		}
+		if(!found){
+			aliasSet.add(val);
+		}
 	}
 
 	public SootMethod getCorrespondingMethod() {

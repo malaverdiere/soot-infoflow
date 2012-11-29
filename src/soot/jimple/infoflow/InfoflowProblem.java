@@ -1,5 +1,10 @@
 package soot.jimple.infoflow;
 
+import heros.FlowFunction;
+import heros.FlowFunctions;
+import heros.InterproceduralCFG;
+import heros.flowfunc.Identity;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -11,10 +16,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import de.bodden.ide.FlowFunction;
-import de.bodden.ide.FlowFunctions;
-import de.bodden.ide.InterproceduralCFG;
-import de.bodden.ide.flowfunc.Identity;
 
 import soot.Local;
 import soot.NullType;

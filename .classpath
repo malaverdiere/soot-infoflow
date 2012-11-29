@@ -5,8 +5,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/soot"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/soot-ifds"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/heros"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/soot-dex"/>
-	<classpathentry kind="lib" path="/soot-ifds/guava-13.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import soot.BooleanType;
 import soot.G;
+import soot.IntType;
 import soot.Local;
 import soot.RefType;
 import soot.Scene;
@@ -43,7 +44,7 @@ public class EntryPointCreator {
 	public List<SootMethod> createDummyMain(Entry<String, List<String>> classEntry, SootClass createdClass) {
 
 		// create new class:
-		List<SootMethod> entryPoints = new ArrayList<SootMethod>();
+ 		List<SootMethod> entryPoints = new ArrayList<SootMethod>();
 		JimpleBody body = Jimple.v().newBody();
 		// call class for the required methods - use every possible constructor
 		if (isConstructorGenerationPossible(createdClass)) {
@@ -180,33 +181,61 @@ public class EntryPointCreator {
 								params.add(generateClassConstructor(typeClass, body, startMethods));
 							}
 						} else {
-//							params.add(G.v().soot_jimple_NullConstant());
-							System.out.println("Warnung - Type not found");
-							params.add(generateClassConstructor(Scene.v().getSootClass("java.lang.Object"), body, startMethods));
+							if(typeName.equals("int")){
+								Local varLocal =  generator.generateLocal(IntType.v());
+								
+								AssignStmt aStmt = Jimple.v().newAssignStmt(varLocal, getSimpleDefaultValue(typeName));
+								body.getUnits().add(aStmt);
+								params.add(varLocal);
+							}else{
+								System.out.println("Warnung - Type not found");
+								params.add(generateClassConstructor(Scene.v().getSootClass("java.lang.Object"), body, startMethods));
+							}
 						}
 					}
 					VirtualInvokeExpr vInvokeExpr;
-					//oder:
-					//SpecialInvokeExpr sinvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, Scene.v().makeMethodRef(createdClass, "<init>", new ArrayList<Type>(), VoidType.v(), false));
-					//body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
 					
 					if (params.isEmpty() || params.contains(null)) {
 						vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef());
 					} else {
 						vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef(), params);
 					}
-					if (!(currentMethod.getReturnType() instanceof VoidType)) { //should always be true?
-						returnLocal = generator.generateLocal(currentMethod.getReturnType());
+					if (!(currentMethod.getReturnType() instanceof VoidType)) { 
+						Local possibleReturn = generator.generateLocal(currentMethod.getReturnType());
+						if(possibleReturn != null){ //we only need one local that is != null
+							returnLocal = possibleReturn;
+						}
 						AssignStmt assignStmt2 = Jimple.v().newAssignStmt(returnLocal, vInvokeExpr);
 						body.getUnits().add(assignStmt2);
 					} else {
 						body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
 					}
 				} else if(startMethods.contains(currentMethod.toString())){
+					if(currentMethod.toString().contains("onPostExecute")){
+						System.out.println("ex");
+					}
+					
 					//call this method:
 					Local stringLocal = null;
 					currentMethod.setDeclaringClass(createdClass);
-					VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef()); // TODO: aufrufparameter
+					VirtualInvokeExpr vInvokeExpr;
+					if(currentMethod.getParameterCount()>0){
+						List<Object> args = new LinkedList<Object>();
+						for(Object ob :currentMethod.getParameterTypes()){
+							if(ob instanceof Type){
+								Type t = (Type)ob;
+								SootClass classToType = Scene.v().getSootClass(t.toString());
+								if(classToType != null){
+									Value val = generateClassConstructor(classToType, body, startMethods);
+									if(val != null)
+										args.add(val);
+								}
+							}
+						}
+						vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef(),args);
+					}else{
+						vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef());
+					}
 					if (!(currentMethod.getReturnType() instanceof VoidType)) {
 						stringLocal = generator.generateLocal(currentMethod.getReturnType());
 						AssignStmt assignStmt2 = Jimple.v().newAssignStmt(stringLocal, vInvokeExpr);
@@ -217,7 +246,7 @@ public class EntryPointCreator {
 
 				}
 			}
-			return returnLocal;
+			return tempLocal;
 		}
 	}
 

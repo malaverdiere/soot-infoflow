@@ -20,7 +20,6 @@ public class DefaultSourceManager extends SourceManager {
 	public boolean isSourceMethod(SootMethod sMethod) {
 		if(sources == null)
 			return false;
-		//TODO: more efficient?
 		if(sources.contains(sMethod.toString())){
 			return true;
 		}

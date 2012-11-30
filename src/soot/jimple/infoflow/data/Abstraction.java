@@ -12,7 +12,6 @@ public class Abstraction {
 	private Value source;
 	private Set<Value> aliasSet;
 	private SootMethod correspondingMethod;
-	//private List<Value> historieValues;
 	
 	public Abstraction(){
 		aliasSet = new HashSet<Value>();
@@ -83,36 +82,34 @@ public class Abstraction {
 	}
 	
 	@Override
-	public boolean equals(Object obj){
-		if(obj instanceof Abstraction){
-			Abstraction abs = (Abstraction) obj;
-			if(abs.getSource() == null && source == null){
-				if(abs.getTaintedObject() == null && taintedObject == null){
-					return true;
-				}
-				if(abs.getTaintedObject() != null && abs.getTaintedObject().equals(taintedObject)){
-					return true;
-				}
-				
-			}
-			if(abs.getSource() != null && abs.getSource().equals(source)){
-				if(abs.getTaintedObject() == null && taintedObject == null){
-					return true;
-				}
-				if(abs.getTaintedObject() != null && abs.getTaintedObject().equals(taintedObject)){
-					return true;
-				}
-				
-				
-			}
-		}
-		
-		return false;
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Abstraction other = (Abstraction) obj;
+		if (source == null) {
+			if (other.source != null)
+				return false;
+		} else if (!source.equals(other.source))
+			return false;
+		if (taintedObject == null) {
+			if (other.taintedObject != null)
+				return false;
+		} else if (!taintedObject.equals(other.taintedObject))
+			return false;
+		return true;
 	}
 	
 	@Override
-	public int hashCode(){
-		return 13* (((source!= null)?source.hashCode():7) + ((taintedObject != null)?taintedObject.hashCode():17));
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((source == null) ? 0 : source.hashCode());
+		result = prime * result + ((taintedObject == null) ? 0 : taintedObject.hashCode());
+		return result;
 	}
 	
 	@Override

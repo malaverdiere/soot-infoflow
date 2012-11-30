@@ -87,8 +87,8 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							boolean addLeftValue = false;
 
-								PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-								if (source.getTaintedObject() instanceof InstanceFieldRef && rightValue instanceof InstanceFieldRef) {
+							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
+							if (source.getTaintedObject() instanceof InstanceFieldRef && rightValue instanceof InstanceFieldRef) {
 									InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
 									InstanceFieldRef sourceRef = (InstanceFieldRef) source.getTaintedObject();
 
@@ -105,8 +105,8 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 										}
 
 									}
-								}
-								//special case:
+							}
+								//special case:TODO GENERALIZE IT!
 								if(source.getTaintedObject().getType().toString().equals("java.lang.String")){
 									if(rightValue instanceof InstanceFieldRef){
 										InstanceFieldRef ref = (InstanceFieldRef) rightValue;
@@ -423,7 +423,7 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 									if(val instanceof InstanceFieldRef){ //!val.equals(source.getTaintedObject() -> can be solved without alias set in easy case..
 										InstanceFieldRef newRef = (InstanceFieldRef)val.clone();
 										
-										newRef.setBase(originalBase);//TODO: does this work?
+										newRef.setBase(originalBase);
 										res.add(new Abstraction(newRef, source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
 								}
@@ -529,7 +529,6 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 			}
 
 			public FlowFunction<Abstraction> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
-
 				final Unit unit = returnSite;
 				// special treatment for native methods:
 				if (call instanceof Stmt && ((Stmt) call).getInvokeExpr().getMethod().isNative()) {
@@ -566,7 +565,7 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 								}
 								return res;
 							}
-							return Collections.emptySet();
+							return Collections.singleton(source);
 						}
 					};
 				}

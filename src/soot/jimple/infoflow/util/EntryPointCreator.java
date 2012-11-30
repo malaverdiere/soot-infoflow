@@ -67,19 +67,11 @@ public class EntryPointCreator {
 			body.getUnits().add(assignStmt);
 			body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
 
+			Value local = generateClassConstructor(Scene.v().getSootClass(classEntry.getKey()), body,classEntry.getValue());
+			
 			// TODO: also call constructor of call params:
 			for (String method : classEntry.getValue()) {
-				Local stringLocal = null;
 				SootMethod sMethod = Scene.v().getMethod(method);
-				sMethod.setDeclaringClass(createdClass);
-				VirtualInvokeExpr vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, sMethod.makeRef()); // TODO: aufrufparameter
-				if (!(sMethod.getReturnType() instanceof VoidType)) {
-					stringLocal = generator.generateLocal(sMethod.getReturnType());
-					AssignStmt assignStmt2 = Jimple.v().newAssignStmt(stringLocal, vInvokeExpr);
-					body.getUnits().add(assignStmt2);
-				} else {
-					body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
-				}
 				entryPoints.add(sMethod);
 
 			}
@@ -110,7 +102,7 @@ public class EntryPointCreator {
 		boolean oneOk = false; // we need at least one constructor that works
 		List<SootMethod> methodList = (List<SootMethod>) sClass.getMethods();
 		for (SootMethod currentMethod : methodList) {
-			if (currentMethod.isPublic() && currentMethod.isConstructor()) {
+			if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
 				boolean canGenerateConstructor = true;
 				List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
 				for (Type type : typeList) {
@@ -122,7 +114,12 @@ public class EntryPointCreator {
 					} else {
 						SootClass typeClass = Scene.v().getSootClass(typeName);
 						// 2. Type not public:
-						if (!typeClass.isPublic()) {
+						if (typeClass.isPrivate()) {
+							canGenerateConstructor = false;
+							break;
+						}
+						//no loops:
+						if(sClass.equals(typeClass)){
 							canGenerateConstructor = false;
 							break;
 						}
@@ -168,7 +165,7 @@ public class EntryPointCreator {
 			
 			
 			for (SootMethod currentMethod : methodList) {
-				if (currentMethod.isPublic() && currentMethod.isConstructor()) {
+				if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
 					@SuppressWarnings("unchecked")
 					List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
 					List<Object> params = new LinkedList<Object>();
@@ -177,7 +174,7 @@ public class EntryPointCreator {
 						if (Scene.v().containsClass(typeName)) {
 							SootClass typeClass = Scene.v().getSootClass(typeName);
 							// 2. Type not public:
-							if (typeClass.isPublic() && !typeClass.toString().equals(createdClass.toString())) { // avoid loops
+							if (!typeClass.isPrivate() && !typeClass.toString().equals(createdClass.toString())) { // avoid loops
 								params.add(generateClassConstructor(typeClass, body, startMethods));
 							}
 						} else {

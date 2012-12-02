@@ -100,7 +100,7 @@ public class Infoflow implements IInfoflow {
 				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver = new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem);
 
 				solver.solve(0);
-//				solver.dumpResults(); // only for debugging
+				solver.dumpResults(); // only for debugging
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 

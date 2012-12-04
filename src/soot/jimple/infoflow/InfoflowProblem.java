@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-
+import soot.EquivalentValue;
 import soot.Local;
 import soot.NullType;
 import soot.PointsToAnalysis;
@@ -56,7 +56,7 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 	final SourceManager sourceManager;
 	final List<String> sinks;
 	final HashMap<String, List<String>> results;
-	final Abstraction zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), null);
+	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null);
 
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit, Abstraction, SootMethod>() {
@@ -88,9 +88,9 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 							boolean addLeftValue = false;
 
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-							if (source.getTaintedObject() instanceof InstanceFieldRef && rightValue instanceof InstanceFieldRef) {
+							if (source.getTaintedObject().getValue() instanceof InstanceFieldRef && rightValue instanceof InstanceFieldRef) {
 									InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
-									InstanceFieldRef sourceRef = (InstanceFieldRef) source.getTaintedObject();
+									InstanceFieldRef sourceRef = (InstanceFieldRef) source.getTaintedObject().getValue();
 
 									if (rightRef.getField().getName().equals(sourceRef.getField().getName())) {
 										Local rightBase = (Local) rightRef.getBase();
@@ -106,102 +106,85 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 
 									}
 							}
-								//special case:TODO GENERALIZE IT!
-								if(source.getTaintedObject().getType().toString().equals("java.lang.String")){
-									if(rightValue instanceof InstanceFieldRef){
-										InstanceFieldRef ref = (InstanceFieldRef) rightValue;
-										if(source.getTaintedObject() instanceof Local){
-											PointsToSet ptsSource = pta.reachingObjects((Local)source.getTaintedObject());
-											PointsToSet ptsResult = pta.reachingObjects((Local)ref.getBase());
-											if (ptsResult.hasNonEmptyIntersection(ptsSource)) {
-												addLeftValue = true;
-											}
-										} //TODO: required for InstanceFieldRef, too?
 
-									}
-								}
-
-								if (rightValue instanceof InstanceFieldRef && source.getTaintedObject() instanceof Local && !source.equals(zeroValue)) {
-									PointsToSet ptsSource = pta.reachingObjects((Local) source.getTaintedObject());
-									InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
-									PointsToSet ptsResult = pta.reachingObjects(ptsSource, rightRef.getField());
-
-									if (!ptsResult.isEmpty()) {
-										addLeftValue = true;
-									}
-
-								}
-
-								if (rightValue instanceof StaticFieldRef && source.getTaintedObject() instanceof StaticFieldRef) {
-									StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-									StaticFieldRef sourceRef = (StaticFieldRef) source.getTaintedObject();
-									if (rightRef.getFieldRef().name().equals(sourceRef.getFieldRef().name()) && rightRef.getFieldRef().declaringClass().equals(sourceRef.getFieldRef().declaringClass())) {
-										addLeftValue = true;
-									}
-								}
-
-								if (rightValue instanceof ArrayRef) {
-									Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
-									if (source.getTaintedObject().equals(rightBase) || (source.getTaintedObject() instanceof Local && pta.reachingObjects(rightBase).hasNonEmptyIntersection(pta.reachingObjects((Local) source.getTaintedObject())))) {
-										addLeftValue = true;
-									}
-								}
-								if (rightValue instanceof JCastExpr) {
-									if (source.getTaintedObject().equals(((JCastExpr) rightValue).getOpBox().getValue())) {
-										addLeftValue = true;
-									}
-								}
-
-								// generic case, is true for Locals, ArrayRefs that are equal etc..
-								if (source.getTaintedObject().equals(rightValue)) {
+							if (rightValue instanceof InstanceFieldRef && source.getTaintedObject().getValue() instanceof Local && !source.equals(zeroValue)) {
+								PointsToSet ptsSource = pta.reachingObjects((Local) source.getTaintedObject().getValue());
+								InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
+								// fits to field:
+								PointsToSet ptsResult = pta.reachingObjects(ptsSource, rightRef.getField());
+								if (!ptsResult.isEmpty()) {
 									addLeftValue = true;
 								}
-								// also check if there are two arrays (or anything else?) that have the same origin
-								if (source.getTaintedObject() instanceof Local && rightValue instanceof Local) {
-									PointsToSet ptsRight = pta.reachingObjects((Local) rightValue);
-									PointsToSet ptsSource = pta.reachingObjects((Local) source.getTaintedObject());
-									if (ptsRight.hasNonEmptyIntersection(ptsSource)) {
-//										addLeftValue = true;//bei concreteArrayListNegativeTest: untainted hasnonemptyintersection with tainted Oo 
+								// fits to base:
+								ptsResult = pta.reachingObjects((Local) rightRef.getBase());
+								if (ptsResult.hasNonEmptyIntersection(ptsSource)) {
+									addLeftValue = true;
+								}
+
+							}
+
+							if (rightValue instanceof StaticFieldRef && source.getTaintedObject().getValue() instanceof StaticFieldRef) {
+								StaticFieldRef rightRef = (StaticFieldRef) rightValue;
+								StaticFieldRef sourceRef = (StaticFieldRef) source.getTaintedObject().getValue();
+								if (rightRef.getFieldRef().name().equals(sourceRef.getFieldRef().name()) && rightRef.getFieldRef().declaringClass().equals(sourceRef.getFieldRef().declaringClass())) {
+									addLeftValue = true;
+								}
+							}
+
+							if (rightValue instanceof ArrayRef) {
+								Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
+								if (source.getTaintedObject().getValue().equals(rightBase) || (source.getTaintedObject().getValue() instanceof Local && pta.reachingObjects(rightBase).hasNonEmptyIntersection(pta.reachingObjects((Local) source.getTaintedObject().getValue())))) {
+									addLeftValue = true;
+								}
+							}
+							if (rightValue instanceof JCastExpr) {
+								if (source.getTaintedObject().getValue().equals(((JCastExpr) rightValue).getOpBox().getValue())) {
+									addLeftValue = true;
+								}
+							}
+
+							// generic case, is true for Locals, ArrayRefs that are equal etc..
+							if (source.getTaintedObject().getValue().equals(rightValue)) {
+								addLeftValue = true;
+							}
+
+							// if one of them is true -> add leftValue
+							if (addLeftValue) {
+								Set<Abstraction> res = new HashSet<Abstraction>();
+								// performance improvement: do not insert this -
+								source.addToAlias(leftValue);
+								res.add(source);
+								res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+
+								// // TODO: go recursively through the definitions before, compute pts
+								SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
+								Chain<Local> localChain = m.getActiveBody().getLocals();
+								PointsToSet ptsLeft;
+								if (leftValue instanceof Local) {
+									ptsLeft = pta.reachingObjects((Local) leftValue);
+
+									for (Local c : localChain) {
+										PointsToSet ptsVal = pta.reachingObjects(c);
+										if (ptsLeft.hasNonEmptyIntersection(ptsVal) && !leftValue.equals(c)) {
+											// res.add(new Abstraction(c, source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+										}
+									}
+								} else if (leftValue instanceof InstanceFieldRef) {
+									for (Local c : localChain) {
+										PointsToSet pts = pta.reachingObjects(c, ((InstanceFieldRef) leftValue).getField());
+										if (!pts.isEmpty()) {
+											// res.add(new Abstraction(c, source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+										}
 									}
 								}
 
-								// if one of them is true -> add leftValue
-								if (addLeftValue) {
-									Set<Abstraction> res = new HashSet<Abstraction>();
-									//performance improvement: do not insert this -
-									source.addToAlias(leftValue);
-									res.add(source);
-									res.add(new Abstraction(leftValue, source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
-									
-									//// TODO: go recursively through the definitions before, compute pts
-									SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
-									Chain<Local> localChain = m.getActiveBody().getLocals();
-									PointsToSet ptsLeft;
-									if(leftValue instanceof Local){
-										ptsLeft = pta.reachingObjects((Local) leftValue);
-									
-										for(Local c :localChain){
-											PointsToSet ptsVal = pta.reachingObjects(c);
-											if(ptsLeft.hasNonEmptyIntersection(ptsVal) && !leftValue.equals(c)){
-//												res.add(new Abstraction(c, source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
-											}
-										}
-									} else if(leftValue instanceof InstanceFieldRef){
-										for(Local c :localChain){
-											PointsToSet pts = pta.reachingObjects(c, ((InstanceFieldRef)leftValue).getField());
-											if(!pts.isEmpty()){
-//												res.add(new Abstraction(c, source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
-											}
-										}
-									}
-									
-									return res;
+								return res;
 							}
 							//TODO: for delete insert whole magic from above again:
 							if (leftValue instanceof InstanceInvokeExpr) {
-								if (source.getTaintedObject() instanceof InstanceFieldRef && leftValue instanceof InstanceFieldRef) {
+								if (source.getTaintedObject().getValue() instanceof InstanceFieldRef && leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
-									InstanceFieldRef sourceRef = (InstanceFieldRef) source.getTaintedObject();
+									InstanceFieldRef sourceRef = (InstanceFieldRef) source.getTaintedObject().getValue();
 
 									if (leftRef.getField().getName().equals(sourceRef.getField().getName())) {
 										Local leftBase = (Local) leftRef.getBase();
@@ -218,7 +201,7 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 									}
 								}
 							}
-							if (source.getTaintedObject().equals(leftValue)) {
+							if (source.getTaintedObject().getValue().equals(leftValue)) {
 								return Collections.emptySet(); 
 							}
 							
@@ -232,7 +215,10 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 			}
 
 			public FlowFunction<Abstraction> getCallFlowFunction(Unit src, final SootMethod dest) {
-
+				if(dest.toString().contains("java.lang.String concat(java.lang.String)")){
+					System.out.println(dest.getActiveBody().toString());
+				}
+				
 				final Stmt stmt = (Stmt) src;
 				final InvokeExpr ie = stmt.getInvokeExpr();
 				final List<Value> callArgs = ie.getArgs();
@@ -243,20 +229,19 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 				return new FlowFunction<Abstraction>() {
 
 					public Set<Abstraction> computeTargets(Abstraction source) {
+						
 						PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 						Value base = null;
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						List<Value> taintedParams = new LinkedList<Value>();
 						//if taintedobject is  instancefieldRef we have to check if the object is delivered..
-						if(source.getTaintedObject() instanceof InstanceFieldRef && ie instanceof InstanceInvokeExpr){
+						if(source.getTaintedObject().getValue() instanceof InstanceFieldRef && ie instanceof InstanceInvokeExpr){
 							
 							//second, they might be changed as param - check this
-							InstanceFieldRef ref = (InstanceFieldRef) source.getTaintedObject();
+							InstanceFieldRef ref = (InstanceFieldRef) source.getTaintedObject().getValue();
 							base = ref.getBase();
 							//first, instancefieldRefs must be propagated if they come from the same class:
 							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
-															
-							
 									
 							PointsToSet ptsSource = pta.reachingObjects((Local)base);
 							PointsToSet ptsCall = pta.reachingObjects((Local)vie.getBase());
@@ -267,32 +252,30 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 						}
 												
 						//check if whole object is tainted (happens with strings, for example:)
-						if(!dest.isStatic() && ie instanceof InstanceInvokeExpr && source.getTaintedObject() instanceof Local){
+						if(!dest.isStatic() && ie instanceof InstanceInvokeExpr && source.getTaintedObject().getValue() instanceof Local){
 							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 							PointsToSet ptsSelf = pta.reachingObjects((Local) vie.getBase());
-							PointsToSet ptsSource = pta.reachingObjects((Local)source.getTaintedObject());
+							PointsToSet ptsSource = pta.reachingObjects((Local)source.getTaintedObject().getValue());
 							if (ptsSelf.hasNonEmptyIntersection(ptsSource)) {
-								res.add(new Abstraction(dest.getActiveBody().getThisLocal(), source.getSource(), dest));
-								
-								
+								res.add(new Abstraction(new EquivalentValue(dest.getActiveBody().getThisLocal()), source.getSource(), dest));
 							}
 						}
 						
 						//check if param is tainted:
 							for (int i = 0; i < callArgs.size(); i++) {
-								if (callArgs.get(i).equals(source.getTaintedObject())) {
-									Abstraction abs = new Abstraction(paramLocals.get(i), source.getSource(), dest);
+								if (callArgs.get(i).equals(source.getTaintedObject().getValue())) {
+									Abstraction abs = new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource(), dest);
 									abs.addToAlias(callArgs.get(i));
 									res.add(abs);
 									taintedParams.add(paramLocals.get(i));
 								}
 								//if base != null we have an instanceFieldRef
 								if(base != null && callArgs.get(i).equals(base)){
-									InstanceFieldRef ref = (InstanceFieldRef) source.getTaintedObject();
+									InstanceFieldRef ref = (InstanceFieldRef) source.getTaintedObject().getValue();
 									InstanceFieldRef testRef = (InstanceFieldRef) ref.clone();
 									testRef.setBase(paramLocals.get(i));
-									Abstraction abs = new Abstraction(testRef, source.getSource(), dest);
-									abs.addToAlias(source.getTaintedObject());
+									Abstraction abs = new Abstraction(new EquivalentValue(testRef), source.getSource(), dest);
+									abs.addToAlias(source.getTaintedObject().getValue());
 									taintedParams.add(paramLocals.get(i));
 									res.add(abs);
 								}
@@ -304,21 +287,21 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 								if(!taintedParams.isEmpty()){
 									if (!results.containsKey(dest.toString())) {
 										List<String> list = new ArrayList<String>();
-										list.add(source.getSource().toString());
+										list.add(source.getSource().getValue().toString());
 										results.put(dest.toString(), list);
 									} else {
-										results.get(dest.toString()).add(source.getSource().toString());
+										results.get(dest.toString()).add(source.getSource().getValue().toString());
 									}
 								}
 							}
 						
 						//TODO: erweitere results sodass auch objekte, deren fields tainted sind, ausgegeben werden!
 						//fieldRefs must be analyzed even if they are not part of the params:
-						if (source.getTaintedObject() instanceof StaticFieldRef) {
+						if (source.getTaintedObject().getValue() instanceof StaticFieldRef) {
 							res.add(source); 	
 						}
 						//zu allgemein, hier müsste wrapping/unwrapping greifen?
-						if(source.getTaintedObject() instanceof InstanceFieldRef){
+						if(source.getTaintedObject().getValue() instanceof InstanceFieldRef){
 							res.add(source);
 						}
 
@@ -334,8 +317,6 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 
 				return new FlowFunction<Abstraction>() {
 
-					
-					
 					public Set<Abstraction> computeTargets(Abstraction source) {
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						
@@ -349,18 +330,18 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 									Value leftOp = defnStmt.getLeftOp();
 									final Value retLocal = op;
 									
-									if (source.getTaintedObject().equals(retLocal)) {
-										res.add(new Abstraction(leftOp, source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+									if (source.getTaintedObject().getValue().equals(retLocal)) {
+										res.add(new Abstraction(new EquivalentValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
-									if(source.getTaintedObject() instanceof InstanceFieldRef){
-										InstanceFieldRef ifr = (InstanceFieldRef) source.getTaintedObject();
+									if(source.getTaintedObject().getValue() instanceof InstanceFieldRef){
+										InstanceFieldRef ifr = (InstanceFieldRef) source.getTaintedObject().getValue();
 										if(ifr.getBase().equals(retLocal)){
 											InstanceFieldRef newRef = (InstanceFieldRef)ifr.clone();
 											newRef.setBase(leftOp);
 											//if we have a type change we have to adjust the field ??
 											
 											
-											res.add(new Abstraction(newRef, source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+											res.add(new Abstraction(new EquivalentValue(newRef), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 										}
 										
 									}
@@ -376,15 +357,15 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 								InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) jiStmt.getInvokeExpr();
 								PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 								PointsToSet ptsThis = pta.reachingObjects((Local) iIExpr.getBase());
-								if(source.getTaintedObject() instanceof Local){
-									PointsToSet ptsSource = pta.reachingObjects((Local) source.getTaintedObject());
+								if(source.getTaintedObject().getValue() instanceof Local){
+									PointsToSet ptsSource = pta.reachingObjects((Local) source.getTaintedObject().getValue());
 									if(ptsSource.hasNonEmptyIntersection(ptsThis)){
 //										res.add(new Abstraction( iIExpr.getBase(), source.getTaintedObject(), interproceduralCFG().getMethodOf(callUnit) ));
 									}
-								}else if(source.getTaintedObject() instanceof InstanceFieldRef){
-									PointsToSet ptsSource = pta.reachingObjects((Local) ((InstanceFieldRef) source.getTaintedObject()).getBase());
+								}else if(source.getTaintedObject().getValue() instanceof InstanceFieldRef){
+									PointsToSet ptsSource = pta.reachingObjects((Local) ((InstanceFieldRef) source.getTaintedObject().getValue()).getBase());
 									if(ptsSource.hasNonEmptyIntersection(ptsThis)){
-										InstanceFieldRef newRef = (InstanceFieldRef) ((InstanceFieldRef) source.getTaintedObject()).clone();
+										InstanceFieldRef newRef = (InstanceFieldRef) ((InstanceFieldRef) source.getTaintedObject().getValue()).clone();
 										newRef.setBase(iIExpr.getBase());
 //										res.add(new Abstraction(newRef, source.getTaintedObject(), interproceduralCFG().getMethodOf(callUnit)));
 									}
@@ -396,13 +377,13 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 						}
 						
 						//easy: static
-						if (source.getTaintedObject() instanceof StaticFieldRef) {
+						if (source.getTaintedObject().getValue() instanceof StaticFieldRef) {
 							res.add(source);
 						}
 						
-						if(source.getTaintedObject() instanceof InstanceFieldRef){
+						if(source.getTaintedObject().getValue() instanceof InstanceFieldRef){
 							//check if base is param, if true exchange with alias-set
-							InstanceFieldRef ifr = (InstanceFieldRef) source.getTaintedObject();
+							InstanceFieldRef ifr = (InstanceFieldRef) source.getTaintedObject().getValue();
 							Value base = ifr.getBase();
 							//TODO: rekursiv gestalten?
 							boolean found = false;
@@ -424,7 +405,7 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 										InstanceFieldRef newRef = (InstanceFieldRef)val.clone();
 										
 										newRef.setBase(originalBase);
-										res.add(new Abstraction(newRef, source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+										res.add(new Abstraction(new EquivalentValue(newRef), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
 								}
 							}
@@ -443,7 +424,7 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 										}
 									}
 									if(!param){
-										res.add(new Abstraction(source.getTaintedObject(), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+										res.add(new Abstraction(new EquivalentValue(source.getTaintedObject().getValue()), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
 									
 								}else{
@@ -465,26 +446,23 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 											InstanceFieldRef newRef = (InstanceFieldRef) ifr.clone();
 											newRef.setBase(thisL);
 											
-											res.add(new Abstraction(newRef, source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+											res.add(new Abstraction(new EquivalentValue(newRef), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 										}
-										
 									}
-									
-	
 								}
 							}
 						}
 						
-						if (source.getTaintedObject() instanceof Local) {
+						if (source.getTaintedObject().getValue() instanceof Local) {
 							//reassign the ones we changed into local params:
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-							PointsToSet ptsRight = pta.reachingObjects((Local) source.getTaintedObject());
+							PointsToSet ptsRight = pta.reachingObjects((Local) source.getTaintedObject().getValue());
 
 							for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
 								if (globalField.isStatic()) {
 									PointsToSet ptsGlobal = pta.reachingObjects(globalField);
 									if (ptsRight.hasNonEmptyIntersection(ptsGlobal)) {
-										res.add(new Abstraction(Jimple.v().newStaticFieldRef(globalField.makeRef()), source.getSource()));
+										res.add(new Abstraction(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())), source.getSource()));
 									}
 								} else {
 									//might not work through several levels - base is always replaced - should be only replaced if
@@ -507,17 +485,17 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 											if(thisL != null){
 												SootFieldRef ref = globalField.makeRef();
 												InstanceFieldRef fRef = Jimple.v().newInstanceFieldRef(thisL, ref);
-												res.add(new Abstraction(fRef, source.getSource(), calleeMethod));
+												res.add(new Abstraction(new EquivalentValue(fRef), source.getSource(), calleeMethod));
 											}
 										}
 									}
 								}
 							}
 							for (int i = 0; i < calleeMethod.getParameterCount(); i++) {
-								if(calleeMethod.getActiveBody().getParameterLocal(i).equals(source.getTaintedObject())){ //or pts?
+								if(calleeMethod.getActiveBody().getParameterLocal(i).equals(source.getTaintedObject().getValue())){ //or pts?
 									if(callUnit instanceof Stmt){
 										Stmt iStmt = (Stmt) callUnit;
-										res.add(new Abstraction(iStmt.getInvokeExpr().getArg(i), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+										res.add(new Abstraction(new EquivalentValue(iStmt.getInvokeExpr().getArg(i)), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
 								}
 							}
@@ -528,7 +506,7 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 				};
 			}
 
-			public FlowFunction<Abstraction> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
+			public FlowFunction<Abstraction> getCallToReturnFlowFunction(Unit call, Unit returnSite) {	
 				final Unit unit = returnSite;
 				// special treatment for native methods:
 				if (call instanceof Stmt && ((Stmt) call).getInvokeExpr().getMethod().isNative()) {
@@ -556,12 +534,12 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 
 						public Set<Abstraction> computeTargets(Abstraction source) {
 
-							if (callArgs.contains(source.getTaintedObject())) {
+							if (callArgs.contains(source.getTaintedObject().getValue())) {
 								// "res.add(new Pair<Value, Value>(paramLocals.get(argIndex), source.getO2()));" is not enough:
 								// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
 								Set<Abstraction> res = new HashSet<Abstraction>();
 								for (int i = 0; i < paramLocals.size(); i++) {
-									res.add(new Abstraction(paramLocals.get(i), source.getSource(), interproceduralCFG().getMethodOf(unit)));
+									res.add(new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource(), interproceduralCFG().getMethodOf(unit)));
 								}
 								return res;
 							}
@@ -579,7 +557,7 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 							public Set<Abstraction> computeTargets(Abstraction source) {
 								Set<Abstraction> res = new HashSet<Abstraction>();
 								res.add(source);
-								res.add(new Abstraction(stmt.getLeftOp(), stmt.getInvokeExpr(), interproceduralCFG().getMethodOf(unit)));
+								res.add(new Abstraction(new EquivalentValue(stmt.getLeftOp()), new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
 								return res;
 							}
 						};
@@ -606,7 +584,7 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 
 	public Abstraction createZeroValue() {
 		if (zeroValue == null)
-			return new Abstraction(new JimpleLocal("zero", NullType.v()), null);
+			return new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null);
 
 		return zeroValue;
 	}
@@ -614,6 +592,5 @@ public class InfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstract
 	@Override
 	public Set<Unit> initialSeeds() {
 		return initialSeeds;
-
 	}
 }

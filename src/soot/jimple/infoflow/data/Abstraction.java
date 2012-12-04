@@ -3,13 +3,14 @@ package soot.jimple.infoflow.data;
 import java.util.HashSet;
 import java.util.Set;
 
+import soot.EquivalentValue;
 import soot.SootMethod;
 import soot.Value;
 import soot.jimple.internal.JInstanceFieldRef;
 
 public class Abstraction {
-	private Value taintedObject;
-	private Value source;
+	private EquivalentValue taintedObject;
+	private EquivalentValue source;
 	private Set<Value> aliasSet;
 	private SootMethod correspondingMethod;
 	
@@ -17,7 +18,7 @@ public class Abstraction {
 		aliasSet = new HashSet<Value>();
 	}
 	
-	public Abstraction(Value taint, Value src){
+	public Abstraction(EquivalentValue taint, EquivalentValue src){
 		aliasSet = new HashSet<Value>();
 		taintedObject = taint;
 		source = src;
@@ -25,7 +26,7 @@ public class Abstraction {
 		
 	}
 	
-	public Abstraction(Value taint, Value src, SootMethod m){
+	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m){
 		aliasSet = new HashSet<Value>();
 		taintedObject = taint;
 		source = src;
@@ -33,16 +34,16 @@ public class Abstraction {
 		correspondingMethod = m;
 	}
 	
-	public Value getTaintedObject() {
+	public EquivalentValue getTaintedObject() {
 		return taintedObject;
 	}
-	public void setTaintedObject(Value taintedObject) {
+	public void setTaintedObject(EquivalentValue taintedObject) {
 		this.taintedObject = taintedObject;
 	}
-	public Value getSource() {
+	public EquivalentValue getSource() {
 		return source;
 	}
-	public void setSource(Value source) {
+	public void setSource(EquivalentValue source) {
 		this.source = source;
 	}
 	public Set<Value> getAliasSet() {

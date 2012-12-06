@@ -87,14 +87,19 @@ public class StringTestCode {
 
 	public void methodStringBuilderURL() throws MalformedURLException{
 	
-	StringBuilder sb = new StringBuilder();
-	sb.append(TelephonyManager.getDeviceId());
-	String test = sb.toString();
-	URL url = new URL(test);
+		StringBuilder sb = new StringBuilder();
+		sb.append(TelephonyManager.getDeviceId());
+		String test = sb.toString();
+		URL url = new URL(test);
 	
-	url.toString();
+		url.toString();
 	
 	}
+	
+	public void testURL() throws MalformedURLException{
+		URL url = new URL(TelephonyManager.getDeviceId());
+		url.toString();
+		}
 
 	public void getChars(){
 		//like: str.getChars(0, len, value, count);

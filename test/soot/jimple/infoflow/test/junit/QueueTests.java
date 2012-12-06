@@ -1,5 +1,6 @@
 package soot.jimple.infoflow.test.junit;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -11,13 +12,24 @@ import soot.jimple.infoflow.Infoflow;
 
 public class QueueTests extends JUnitTests {
 	
-	 @Test
+	 	@Test
 	    public void concreteSynchronousQueueTest(){
 	    	Infoflow infoflow = new Infoflow();
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.QueueTestCode: void concreteWriteReadTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			assertTrue(errOutputStream.toString().contains("taintedElement3 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+			
+	    }
+	 	
+	 	@Test
+	    public void concreteSynchronousQueueNegativeTest(){
+	    	Infoflow infoflow = new Infoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.QueueTestCode: void concreteWriteReadNegativeTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+			assertFalse(errOutputStream.toString().contains("untaintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 			
 	    }
 

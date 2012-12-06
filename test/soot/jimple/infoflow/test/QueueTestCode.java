@@ -21,7 +21,22 @@ public class QueueTestCode {
 		cm.publish(taintedElement3);	
 	}
 	
-	//TODO: negative test
+	public void concreteWriteReadNegativeTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		String untainted = "Hello world!";
+		SynchronousQueue<String> q = new SynchronousQueue<String>();
+		SynchronousQueue<String> p = new SynchronousQueue<String>();
+		q.add(tainted);
+		p.add(untainted);
+		String taintedElement = q.poll();
+		String untaintedElement = p.poll();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);	
+		cm.publish(untaintedElement);
+	}
+	
+	
 	
 	
 

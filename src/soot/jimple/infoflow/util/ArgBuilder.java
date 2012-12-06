@@ -3,7 +3,6 @@ package soot.jimple.infoflow.util;
 public class ArgBuilder {
 	/**
 	 * build the arguments
-	 * at the moment this is build: -w -p cg.spark on -cp . -pp [className]
 	 * @param input
 	 * @return
 	 */
@@ -14,12 +13,8 @@ public class ArgBuilder {
 			"-p",
 			"cg.spark",
 			"on",
-//			"-p",
-//			"cg.spark",
-//			//"dump-html",
-//			"verbose:true",
 			"-cp",
-			path,//or ".\\bin",
+			path,
 			"-pp",
 			className,
 			"-p",
@@ -27,6 +22,7 @@ public class ArgBuilder {
 			"use-original-names:true",
 			"-f",
 			"n",
+			//do not merge variables (causes problems with PointsToSets)
 			"-p",
 			"jb.ulp",
 			"off"

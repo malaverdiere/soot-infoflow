@@ -1,7 +1,5 @@
 package soot.jimple.infoflow;
 
-import heros.InterproceduralCFG;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -92,7 +90,7 @@ public class Infoflow implements IInfoflow {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
 
-				InfoflowProblem problem = new InfoflowProblem(sources, sinks);
+				InfoflowLocalProblem problem = new InfoflowLocalProblem(sources, sinks);
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst());
 				}
@@ -100,7 +98,7 @@ public class Infoflow implements IInfoflow {
 				JimpleIFDSSolver<Abstraction> solver = new JimpleIFDSSolver<Abstraction>(problem);
 
 				solver.solve(0);
-				solver.dumpResults(); // only for debugging
+//				solver.dumpResults(); // only for debugging
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 

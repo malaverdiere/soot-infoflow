@@ -2,6 +2,7 @@ package soot.jimple.infoflow.test.junit;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,7 +63,8 @@ public class StringTest extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringConcatPlus()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue(errOutputStream.toString().contains("result contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue(errOutputStream.toString().contains("post contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 		
     }
     
@@ -84,9 +86,8 @@ public class StringTest extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder1()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		assertTrue(errOutputStream.toString().contains("test contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-		assertTrue(errOutputStream.toString().contains("result2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue((errOutputStream.toString().contains("test.<java.lang.String: char[] value> contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()") ||
+				errOutputStream.toString().contains("test contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")));
 		
     }
     
@@ -96,12 +97,20 @@ public class StringTest extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder2()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		assertTrue(errOutputStream.toString().contains("test contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-		assertTrue(errOutputStream.toString().contains("result2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		assertTrue((errOutputStream.toString().contains("test.<java.lang.String: char[] value> contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()") ||
+				errOutputStream.toString().contains("test contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")));
 		
     }
     
+    @Test //TODO implement URL check
+    public void stringBuilderTestURL(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilderURL()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		assertTrue(errOutputStream.toString().contains("test contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		
+    }
     @Test
     public void test133(){
     	Infoflow infoflow = new Infoflow();
@@ -110,5 +119,24 @@ public class StringTest extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
     }
     
+    @Test
+    public void testcharArray(){
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void getChars()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+    }
+    
+    @Test
+    public void testPrototyp() throws FileNotFoundException{
+    	Infoflow infoflow = new Infoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void originalFromPrototyp()>");
+//    	PrintStream p = new PrintStream(new File("localTest.txt"));
+//		System.setErr(p);
+    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		assertTrue((errOutputStream.toString().contains("this.<soot.jimple.infoflow.test.StringTestCode: java.lang.String URL> contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()") ||
+		errOutputStream.toString().contains("this contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()")));
+    }
 
 }

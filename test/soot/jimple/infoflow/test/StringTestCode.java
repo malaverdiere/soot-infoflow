@@ -1,5 +1,8 @@
 package soot.jimple.infoflow.test;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
@@ -71,7 +74,7 @@ public class StringTestCode {
 		cm.publish(test);
 		
 	}
-public void methodStringBuilder2(){
+	public void methodStringBuilder2(){
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(TelephonyManager.getDeviceId());
@@ -79,6 +82,36 @@ public void methodStringBuilder2(){
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(test);
+		
+	}
+
+	public void methodStringBuilderURL() throws MalformedURLException{
+	
+	StringBuilder sb = new StringBuilder();
+	sb.append(TelephonyManager.getDeviceId());
+	String test = sb.toString();
+	URL url = new URL(test);
+	
+	url.toString();
+	
+	}
+
+	public void getChars(){
+		//like: str.getChars(0, len, value, count);
+		String t = TelephonyManager.getDeviceId();
+		char[] x = new char[t.length()];
+		t.getChars(0, t.length(), x, 0);
+	
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(String.valueOf(x));
+	}
+
+	private String imei;
+	private String URL = "http://www.google.de/?q=";
+	public void originalFromPrototyp(){
+		imei = TelephonyManager.getDeviceId();
+		URL = URL.concat(imei);
+		
 		
 	}
 

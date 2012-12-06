@@ -18,14 +18,11 @@ public class VariableTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.OnChangeClass: void onChange1()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-//    	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.OnChangeClass: void onChange1()>", "-path", path};
-    	
-//    	cmdInfoflow.main(args);
     	 
         assertTrue(errOutputStream.toString().contains("t3 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 
         assertTrue(errOutputStream.toString().contains("t1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 
         assertTrue(errOutputStream.toString().contains("v contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
-        assertTrue(errOutputStream.toString().contains("b contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
+        assertTrue(errOutputStream.toString().contains("b#2 contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
 
     } 
     
@@ -37,11 +34,9 @@ public class VariableTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.TestNoMain: void functionCallThis()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
     	 
-        assertTrue(errOutputStream.toString().contains("l contains value from")); 
-//        assertTrue(errOutputStream.toString().contains("t1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 
-//        assertTrue(errOutputStream.toString().contains("v contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
-//        assertTrue(errOutputStream.toString().contains("b contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
-
+		assertTrue(errOutputStream.toString().contains("l contains value from virtualinvoke aManager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()")); 
+        assertTrue(errOutputStream.toString().contains("this contains value from virtualinvoke aManager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()")); 
+        
     } 
 
     
@@ -52,11 +47,9 @@ public class VariableTests extends JUnitTests {
     	Thread.sleep(1500);
     	cmdInfoflow.main(args);
     	 
-        assertTrue(errOutputStream.toString().contains("l contains value from")); 
-//        assertTrue(errOutputStream.toString().contains("t1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 
-//        assertTrue(errOutputStream.toString().contains("v contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
-//        assertTrue(errOutputStream.toString().contains("b contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
-
+        assertTrue(errOutputStream.toString().contains("l contains value from virtualinvoke aManager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()")); 
+        assertTrue(errOutputStream.toString().contains("this contains value from virtualinvoke aManager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()")); 
+        
     } 
     
     @Test
@@ -65,15 +58,11 @@ public class VariableTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.TestNoMain: java.lang.String functionCallOnObject()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		
-//    	String[] args = new String[]{"-entrypoints", "<soot.jimple.infoflow.test.TestNoMain: java.lang.String functionCallOnObject()>", "-path", path};
-    	
-//    	cmdInfoflow.main(args);
-    	 
-        assertTrue(errOutputStream.toString().contains("l contains value from")); 
-//        assertTrue(errOutputStream.toString().contains("t1 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()")); 
-//        assertTrue(errOutputStream.toString().contains("v contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
-//        assertTrue(errOutputStream.toString().contains("b contains value from virtualinvoke manager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()")); 
+
+        assertTrue(errOutputStream.toString().contains(" l contains value from virtualinvoke aManager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()")); 
+        assertTrue(errOutputStream.toString().contains(" this contains value from virtualinvoke aManager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()")); 
+        assertTrue(errOutputStream.toString().contains(" nm contains value from virtualinvoke aManager.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()")); 
+
     }
     
 }

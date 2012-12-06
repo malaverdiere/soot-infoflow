@@ -56,7 +56,7 @@ public class ArrayTests extends JUnitTests {
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void arrayAsListTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			
-			assertTrue(errOutputStream.toString().contains("<java.util.Arrays$ArrayList: java.lang.Object[] a> contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+			assertTrue(errOutputStream.toString().contains("list contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 			assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke"));
 	    }
 	    

@@ -41,4 +41,14 @@ public class OtherTestCode {
 		
 	}
 	
+	public void stringConcatTestSmall(){
+		String tainted = TelephonyManager.getDeviceId();
+		String two = "zwei";
+		String one = two.concat(tainted);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(one);
+		
+	}
+	
 }

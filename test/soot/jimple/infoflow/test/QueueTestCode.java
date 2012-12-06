@@ -11,14 +11,14 @@ public class QueueTestCode {
 		String tainted = TelephonyManager.getDeviceId();
 		SynchronousQueue<String> q = new SynchronousQueue<String>();
 		q.add(tainted);
-		String taintedElement = q.element();
+		//not implemented for SynchronousQueue:
+		//String taintedElement = q.element();
 		String taintedElement3 = q.poll();
 	
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(taintedElement);
-		cm.publish(taintedElement3);
-	//TODO: does not terminate...	
+		//cm.publish(taintedElement);
+		cm.publish(taintedElement3);	
 	}
 	
 	//TODO: negative test

@@ -1,5 +1,7 @@
 package soot.jimple.infoflow;
 
+import heros.InterproceduralCFG;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,6 +21,7 @@ import soot.jimple.infoflow.util.ArgBuilder;
 import soot.jimple.infoflow.util.EntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
+import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.options.Options;
 
 public class Infoflow implements IInfoflow {
@@ -95,7 +98,8 @@ public class Infoflow implements IInfoflow {
 					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst());
 				}
 
-				JimpleIFDSSolver<Abstraction> solver = new JimpleIFDSSolver<Abstraction>(problem);
+				JimpleIFDSSolver<Abstraction,InterproceduralCFG<Unit, SootMethod>> solver =
+						new JimpleIFDSSolver<Abstraction,InterproceduralCFG<Unit, SootMethod>>(problem);
 
 				solver.solve(0);
 //				solver.dumpResults(); // only for debugging

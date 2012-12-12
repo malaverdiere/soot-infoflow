@@ -6,6 +6,5 @@
 	<classpathentry kind="src" path="test"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/soot"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/heros"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/soot-dex"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

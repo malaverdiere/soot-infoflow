@@ -134,15 +134,6 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 					};
 
 				}
-				//debug-1:
-				try {
-					FileWriter fstream = new FileWriter("otherStatements.txt", true);
-					BufferedWriter out = new BufferedWriter(fstream);
-					out.write(src.toString() + "\n");
-					out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
 				
 				return Identity.v();
 			}

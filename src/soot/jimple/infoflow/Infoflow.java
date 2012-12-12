@@ -21,7 +21,6 @@ import soot.jimple.infoflow.util.ArgBuilder;
 import soot.jimple.infoflow.util.EntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
-import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.options.Options;
 
 public class Infoflow implements IInfoflow {
@@ -63,11 +62,11 @@ public class Infoflow implements IInfoflow {
 			includeList.add("soot.");
 			includeList.add("com.example.");
 			includeList.add("com.jakobkontor.");
-//			includeList.add("java.net.");
+			includeList.add("java.net.");
 			Options.v().set_include(includeList);
 			Options.v().set_allow_phantom_refs(true);
 			Options.v().set_no_bodies_for_excluded(true);
-
+			Options.v().set_output_format(Options.output_format_none);
 			Options.v().parse(args);
 
 			// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method, we have to create a new main method and use it as entryPoint, but store our real entryPoints

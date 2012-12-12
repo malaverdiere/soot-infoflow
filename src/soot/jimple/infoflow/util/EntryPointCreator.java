@@ -67,7 +67,7 @@ public class EntryPointCreator {
 			body.getUnits().add(assignStmt);
 			body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
 
-			Value local = generateClassConstructor(Scene.v().getSootClass(classEntry.getKey()), body,classEntry.getValue());
+			generateClassConstructor(Scene.v().getSootClass(classEntry.getKey()), body,classEntry.getValue());
 			
 			// TODO: also call constructor of call params:
 			for (String method : classEntry.getValue()) {
@@ -104,6 +104,7 @@ public class EntryPointCreator {
 		for (SootMethod currentMethod : methodList) {
 			if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
 				boolean canGenerateConstructor = true;
+				@SuppressWarnings("unchecked")
 				List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
 				for (Type type : typeList) {
 					String typeName = type.toString().replaceAll("\\[\\]]", "");
@@ -208,10 +209,6 @@ public class EntryPointCreator {
 						body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
 					}
 				} else if(startMethods.contains(currentMethod.toString())){
-					if(currentMethod.toString().contains("onPostExecute")){
-						System.out.println("ex");
-					}
-					
 					//call this method:
 					Local stringLocal = null;
 					currentMethod.setDeclaringClass(createdClass);

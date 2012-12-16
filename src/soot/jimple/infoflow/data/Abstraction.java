@@ -9,23 +9,12 @@ import soot.Value;
 import soot.jimple.internal.JInstanceFieldRef;
 
 public class Abstraction {
-	private EquivalentValue taintedObject;
-	private EquivalentValue source;
-	private Set<Value> aliasSet;
-	private SootMethod correspondingMethod;
+	private final EquivalentValue taintedObject;
+	private final EquivalentValue source;
+	private final Set<Value> aliasSet;
+	private final SootMethod correspondingMethod;
 	
-	public Abstraction(){
-		aliasSet = new HashSet<Value>();
-	}
-	
-	public Abstraction(EquivalentValue taint, EquivalentValue src){
-		aliasSet = new HashSet<Value>();
-		taintedObject = taint;
-		source = src;
-		aliasSet.add(taint);
-		
-	}
-	
+
 	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m){
 		aliasSet = new HashSet<Value>();
 		taintedObject = taint;
@@ -34,25 +23,26 @@ public class Abstraction {
 		correspondingMethod = m;
 	}
 	
+	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m, Set<Value> aliases){
+		aliasSet = aliases;
+		taintedObject = taint;
+		source = src;
+		correspondingMethod = m;
+	}
+	
 	public EquivalentValue getTaintedObject() {
 		return taintedObject;
 	}
-	public void setTaintedObject(EquivalentValue taintedObject) {
-		this.taintedObject = taintedObject;
-	}
+	
 	public EquivalentValue getSource() {
 		return source;
 	}
-	public void setSource(EquivalentValue source) {
-		this.source = source;
-	}
+	
 	public Set<Value> getAliasSet() {
 		return aliasSet;
 	}
-	public void setAliasSet(Set<Value> aliasSet) {
-		this.aliasSet = aliasSet;
-	}
 	
+	@Deprecated
 	public void addToAlias(Value val){
 		boolean found = false;
 		if(val instanceof JInstanceFieldRef){
@@ -78,9 +68,7 @@ public class Abstraction {
 		return correspondingMethod;
 	}
 
-	public void setCorrespondingMethod(SootMethod correspondingMethod) {
-		this.correspondingMethod = correspondingMethod;
-	}
+	
 	
 	@Override
 	public boolean equals(Object obj) {

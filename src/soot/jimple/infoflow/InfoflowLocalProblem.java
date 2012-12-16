@@ -55,7 +55,7 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 	final SourceManager sourceManager;
 	final List<String> sinks;
 	final HashMap<String, List<String>> results;
-	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null);
+	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
 
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit, Abstraction, SootMethod>() {
@@ -107,7 +107,7 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 							if (addLeftValue) {
 								Set<Abstraction> res = new HashSet<Abstraction>();
 								// performance improvement: do not insert this -
-								source.addToAlias(leftValue);
+								//TODO: this is not allowed, have to create new Abstraction: source.addToAlias(leftValue);
 								res.add(source);
 								res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
 
@@ -171,16 +171,20 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 						//check if param is tainted:
 						for (int i = 0; i < callArgs.size(); i++) {
 							if (callArgs.get(i).equals(source.getTaintedObject().getValue())) {
-								Abstraction abs = new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource(), dest);
-								abs.addToAlias(callArgs.get(i));
+								Set<Value> aliases = new HashSet<Value>();
+								aliases.add(callArgs.get(i));
+								aliases.add(paramLocals.get(i));
+								Abstraction abs = new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource(), dest, aliases);
 								res.add(abs);
 								taintedParams.add(paramLocals.get(i));
 							}
 							if(source.getTaintedObject().getValue() instanceof StaticFieldRef){
 								StaticFieldRef sfr = (StaticFieldRef) source.getTaintedObject().getValue();
 								if(sfr.getFieldRef().declaringClass().getType().equals((callArgs.get(i)).getType())){
-									Abstraction abs = new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource(), dest);
-									abs.addToAlias(callArgs.get(i));
+									Set<Value> aliases = new HashSet<Value>();
+									aliases.add(callArgs.get(i));
+									aliases.add(paramLocals.get(i));
+									Abstraction abs = new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource(), dest, aliases);
 									res.add(abs);
 									taintedParams.add(paramLocals.get(i));
 								}
@@ -391,7 +395,7 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 
 	public Abstraction createZeroValue() {
 		if (zeroValue == null)
-			return new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null);
+			return new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
 
 		return zeroValue;
 	}

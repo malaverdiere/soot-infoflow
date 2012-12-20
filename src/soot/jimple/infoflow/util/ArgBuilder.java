@@ -30,5 +30,28 @@ public class ArgBuilder {
 		
 		return result;
 	}
+	
+	public String[] buildArgs(String path){
+		String[] result = {
+			"-w",
+			"-no-bodies-for-excluded",
+			"-p",
+			"cg.spark",
+			"on",
+			"-cp",
+			path,
+			"-p",
+			"jb",
+			"use-original-names:true",
+			"-f",
+			"n",
+			//do not merge variables (causes problems with PointsToSets)
+			"-p",
+			"jb.ulp",
+			"off"
+		};
+		
+		return result;
+	}
 
 }

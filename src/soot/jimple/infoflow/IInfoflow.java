@@ -1,5 +1,6 @@
 package soot.jimple.infoflow;
 
+import java.util.HashMap;
 import java.util.List;
 
 public interface IInfoflow {
@@ -13,4 +14,8 @@ public interface IInfoflow {
 	 */
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks);
 	
+	
+	public HashMap<String, List<String>> getResults();
+	
+	public boolean isResultAvailable();
 }

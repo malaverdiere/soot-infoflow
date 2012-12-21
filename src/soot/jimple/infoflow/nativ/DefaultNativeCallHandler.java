@@ -1,7 +1,8 @@
 package soot.jimple.infoflow.nativ;
 
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import soot.EquivalentValue;
 import soot.PrimType;
@@ -12,8 +13,8 @@ import soot.jimple.infoflow.data.Abstraction;
 
 public class DefaultNativeCallHandler extends NativeCallHandler {
 
-	public List<Abstraction> getTaintedValues(Stmt call, Abstraction source, List<Value> params, SootMethod m){
-		LinkedList<Abstraction> list = new LinkedList<Abstraction>();
+	public Set<Abstraction> getTaintedValues(Stmt call, Abstraction source, List<Value> params, SootMethod m){
+		HashSet<Abstraction> set = new HashSet<Abstraction>();
 		
 		//check some evaluated methods:
 		
@@ -22,14 +23,14 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
         //Copies an array from the specified source array, beginning at the specified position, to the specified position of the destination array.
 		if(call.getInvokeExpr().getMethod().toString().contains("arraycopy")){
 			if(params.get(0).equals(source.getTaintedObject().getValue())){
-				list.add(new Abstraction(new EquivalentValue(params.get(2)), source.getSource(), m));
+				set.add(new Abstraction(new EquivalentValue(params.get(2)), source.getSource(), m));
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
 			for (int i = 0; i < params.size(); i++) {
 				Value argValue = params.get(i);
 				if (!(argValue.getType() instanceof PrimType)) {
-					list.add(new Abstraction(new EquivalentValue(argValue), source.getSource(), m));
+					set.add(new Abstraction(new EquivalentValue(argValue), source.getSource(), m));
 				}
 			}
 			
@@ -37,6 +38,6 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 		}
 		
 		
-		return list;
+		return set;
 	}
 }

@@ -11,9 +11,7 @@ public class StringTestCode {
 	public void methodStringConcat1(){
 		String pre = "pre";
 		String tainted = TelephonyManager.getDeviceId();
-		
 		String result = pre.concat(tainted);
-		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(result);
 	}
@@ -21,18 +19,14 @@ public class StringTestCode {
 	public void methodStringConcat1b(){
 		String var = "2";
 		String tainted = TelephonyManager.getDeviceId();
-		
 		var = var.concat(tainted);
-		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(var);
 	}
 	
 	public void methodStringConcat1c(String var){
 		String tainted = TelephonyManager.getDeviceId();
-		
 		String result = var.concat(tainted);
-		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(result);
 	}
@@ -41,31 +35,41 @@ public class StringTestCode {
 		String pre = "pre";
 		String tainted = TelephonyManager.getDeviceId();
 		String post = tainted.concat(pre);
-		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(post);
 	}
 	
-	public void methodStringConcatPlus(){
+	public void methodStringConcatPlus1(){
+		String pre = "pre";
+		String tainted = TelephonyManager.getDeviceId();;
+		String post =  tainted + pre;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(post);
+	}
+	
+	public void methodStringConcatPlus2(){
 		String pre = "pre";
 		String tainted = TelephonyManager.getDeviceId();
-		
 		String result = pre + tainted;
-		String post =  tainted + pre;
-		
-		result.concat(post);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(result);
 	}
 	
 	public void methodValueOf(){
 		String tainted = TelephonyManager.getDeviceId();
-		
 		String result = String.valueOf(tainted);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(result);
+	}
+	
+	public void methodtoString(){
+		String tainted = TelephonyManager.getDeviceId();
 		String result2 = tainted.toString();
-		result.concat(result2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(result2);
 	}
 	
 	public void methodStringBuilder1(){
-		
 		StringBuilder sb = new StringBuilder(TelephonyManager.getDeviceId());
 		//sb.append("123");
 		String test = sb.toString();
@@ -75,7 +79,6 @@ public class StringTestCode {
 		
 	}
 	public void methodStringBuilder2(){
-		
 		StringBuilder sb = new StringBuilder();
 		sb.append(TelephonyManager.getDeviceId());
 		String test = sb.toString();
@@ -86,19 +89,19 @@ public class StringTestCode {
 	}
 
 	public void methodStringBuilderURL() throws MalformedURLException{
-	
 		StringBuilder sb = new StringBuilder();
 		sb.append(TelephonyManager.getDeviceId());
 		String test = sb.toString();
 		URL url = new URL(test);
 	
-		url.toString();
-	
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(url.toString());
 	}
 	
 	public void testURL() throws MalformedURLException{
 		URL url = new URL(TelephonyManager.getDeviceId());
-		url.toString();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(url.toString());
 		}
 
 	public void getChars(){

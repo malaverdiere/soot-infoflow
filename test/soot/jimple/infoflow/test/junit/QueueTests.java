@@ -1,8 +1,5 @@
 package soot.jimple.infoflow.test.junit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,22 +11,24 @@ public class QueueTests extends JUnitTests {
 	
 	 	@Test
 	    public void concreteSynchronousQueueTest(){
-	    	Infoflow infoflow = new Infoflow();
+	 		Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.QueueTestCode: void concreteWriteReadTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			assertTrue(errOutputStream.toString().contains("taintedElement3 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+			checkInfoflow(infoflow);
+			//assertTrue(errOutputStream.toString().contains("taintedElement3 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 			
 	    }
 	 	
 	 	@Test
 	    public void concreteSynchronousQueueNegativeTest(){
-	    	Infoflow infoflow = new Infoflow();
+	 		Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.QueueTestCode: void concreteWriteReadNegativeTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-			assertFalse(errOutputStream.toString().contains("untaintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+			negativeCheckInfoflow(infoflow);
+			//assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+			//assertFalse(errOutputStream.toString().contains("untaintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 			
 	    }
 

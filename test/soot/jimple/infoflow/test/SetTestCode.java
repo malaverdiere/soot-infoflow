@@ -10,43 +10,58 @@ import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
 /**
- * tests list tainting, use with DumbsourceManager
+ * tests set tainting
  * @author Christian
  *
  */
 public class SetTestCode {
-	
-
 	
 	public void concreteWriteReadHashTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		HashSet<String> set = new HashSet<String>();
 		set.add(tainted);
 		String taintedElement2 = set.iterator().next();
-		//TODO: check contains?
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement2);
 		
 	}
 	
-	public void concreteWriteReadTreeTest(){
+	public void containsTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		HashSet<String> set = new HashSet<String>();
+		set.add(tainted);
+		boolean x = set.contains(tainted);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(String.valueOf(x));
+		
+	}
+	
+	public void concreteWriteReadTreePos0Test(){
 		String tainted = TelephonyManager.getDeviceId();
 		TreeSet<String> set = new TreeSet<String>();
 		set.add("neutral");
 		set.add(tainted);
 		
 		String taintedElement = set.last();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+	}
+	
+	public void concreteWriteReadTreePos1Test(){
+		String tainted = TelephonyManager.getDeviceId();
+		TreeSet<String> set = new TreeSet<String>();
+		set.add("neutral");
+		set.add(tainted);
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = set.iterator().next();
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(taintedElement);
 		cm.publish(taintedElement2);
-		
 	}
 	
-	public void concreteWriteReadLinkedTest(){
+	public void concreteWriteReadLinkedPos0Test(){
 		String tainted = TelephonyManager.getDeviceId();
 		LinkedHashSet<String> set = new LinkedHashSet<String>();
 		set.add("neutral");
@@ -54,12 +69,22 @@ public class SetTestCode {
 		Iterator<String> it = set.iterator();
 		String taintedElement = it.next();
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
-		String taintedElement2 = it.next();
 
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement);
+	}
+	
+	public void concreteWriteReadLinkedPos1Test(){
+		String tainted = TelephonyManager.getDeviceId();
+		LinkedHashSet<String> set = new LinkedHashSet<String>();
+		set.add("neutral");
+		set.add(tainted);
+		Iterator<String> it = set.iterator();
+		it.next();
+		String taintedElement2 = it.next();
+
+		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement2);
-		
 	}
 	
 	public void writeReadTest(){
@@ -80,27 +105,25 @@ public class SetTestCode {
 		set.add(tainted);
 		
 		Iterator<String> it = set.iterator();
-		String taintedElement = it.next();
+		it.next();
 		String taintedElement2 = it.next();
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(taintedElement);
 		cm.publish(taintedElement2);
 	}
 	
 	public void concreteWriteReadNegativeTest(){
 		String tainted = TelephonyManager.getDeviceId();
-		//TreeSet<String> notRelevantList = new TreeSet<String>();
+		TreeSet<String> notRelevantList = new TreeSet<String>();
 		TreeSet<String> list = new TreeSet<String>();
 		list.add("neutral");
-		//notRelevantList.add(tainted);
-		//String taintedElement = notRelevantList.get(0);
+		notRelevantList.add(tainted);
+		String taintedElement = notRelevantList.first();
 		String untaintedElement = list.first();
-		String complete =untaintedElement;
-		complete = tainted;//.concat(taintedElement);
+		taintedElement.toString();
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(complete);
+		cm.publish(untaintedElement);
 	}
 	
 }

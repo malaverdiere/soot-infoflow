@@ -11,7 +11,6 @@ public class OtherTestCode {
 		String tainted = TelephonyManager.getDeviceId();
 		ClassWithStatic static1 = new ClassWithStatic();
 		static1.setTitle(tainted);
-		
 		ClassWithStatic static2 = new ClassWithStatic();
 		String alsoTainted = static2.getTitle();
 		
@@ -37,7 +36,12 @@ public class OtherTestCode {
 		String concat3 = "test " + tainted;
 		
 		ConnectionManager cm = new ConnectionManager();
+		//this way it does not work:
 		cm.publish(concat1.concat(concat2).concat(concat3));
+		//this way, it works:
+//		cm.publish(concat1);
+//		cm.publish(concat2);
+//		cm.publish(concat3);
 		
 	}
 	
@@ -51,4 +55,13 @@ public class OtherTestCode {
 		
 	}
 	
+	public void stringConcatTestSmall2(){
+		String tainted = TelephonyManager.getDeviceId();
+		//String two = "zwei";
+		String one = tainted.concat("zwei").concat("eins");
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(one);
+		
+	}
 }

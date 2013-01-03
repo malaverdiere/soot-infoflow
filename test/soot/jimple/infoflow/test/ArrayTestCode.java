@@ -8,7 +8,7 @@ import soot.jimple.infoflow.test.android.TelephonyManager;
 import soot.jimple.infoflow.test.utilclasses.ClassWithFinal;
 
 /**
- * tests list tainting, use with DumbsourceManager
+ * tests array tainting
  * @author Christian
  *
  */
@@ -18,32 +18,64 @@ public class ArrayTestCode {
 	transient String[] transTainted;
 	String[] globalTainted;
 	
-	public void concreteWriteReadTest(){
+	public void concreteWriteReadSamePosTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		String[] array = new String[2];
+		array[0] = "neutral";
+		array[1] = tainted;
+		String taintedElement = array[1];
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement);
+	}
+	
+	public void concreteWriteReadDiffPosTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		String[] array = new String[2];
 		array[0] = "neutral";
 		array[1] = tainted;
 		
-		String taintedElement = array[1];
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = array[0];
-		globalTainted = array;
-		staticTainted = array;
-		String[] tainted123 = staticTainted;
-		transTainted = array;
-		String[] tainted456 = transTainted;
-		String[] tainted789 = globalTainted;
-		String[] alsoTainted = Arrays.copyOf(array, 100);
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(taintedElement);
-		cm.publish(taintedElement2);
-		cm.publish(tainted123[0]);
-		cm.publish(tainted456[0]);
-		cm.publish(tainted789[0]);
-		cm.publish(alsoTainted[1]);
-		
+		cm.publish(taintedElement2);	
 	}
+	
+	
+	public void concreteStaticTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		String[] array = new String[2];
+		array[0] = "neutral";
+		array[1] = tainted;
+		staticTainted = array;
+		String[] tainted123 = staticTainted;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(tainted123[0]);
+	}
+	
+	public void concreteTransientTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		String[] array = new String[2];
+		array[0] = "neutral";
+		array[1] = tainted;
+		transTainted = array;
+		String[] tainted456 = transTainted;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(tainted456[0]);
+	}
+	
+	public void concreteGlobalTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		String[] array = new String[2];
+		array[0] = "neutral";
+		array[1] = tainted;
+		globalTainted = array;
+		String[] tainted789 = globalTainted;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(tainted789[0]);		
+	}
+	
 	
 	public void copyTest(){
 		String tainted = TelephonyManager.getDeviceId();
@@ -94,11 +126,10 @@ public class ArrayTestCode {
 		
 		String taintedElement = notRelevant[0];
 		String untaintedElement = array[0];
-		String complete =untaintedElement;
-		complete = tainted.concat(taintedElement);
+		taintedElement.toString();
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(complete);
+		cm.publish(untaintedElement);
 	}
 
 }

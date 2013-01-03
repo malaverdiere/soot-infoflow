@@ -1,6 +1,7 @@
 package soot.jimple.infoflow.test;
 
 import soot.jimple.infoflow.test.android.AccountManager;
+import soot.jimple.infoflow.test.android.ConnectionManager;
 
 public class TestNoMain {
 	
@@ -9,13 +10,16 @@ public class TestNoMain {
 	public void functionCallThis(){
 		String l = this.function1();
 		result = l;
-		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(l);
 	}
 	
 	public String functionCallOnObject(){
 		TestNoMain nm = new TestNoMain();
 		String l = nm.function2("", "");
 		result = l;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(l);
 		return l;
 	}
 
@@ -32,10 +36,6 @@ public class TestNoMain {
 		return test;
 	}
 	
-	public void onCreate(String test) {
-		String c = test;
-		String x = c;
-	}
 	
 	public static void foo() {
 		new TestNoMain().functionCallThis();

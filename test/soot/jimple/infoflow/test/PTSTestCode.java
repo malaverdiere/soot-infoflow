@@ -1,5 +1,6 @@
 package soot.jimple.infoflow.test;
 
+import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
 public class PTSTestCode {
@@ -11,7 +12,9 @@ public class PTSTestCode {
 		String tainted = TelephonyManager.getDeviceId();
 		tc1.dummyMethod(tainted);
 		String s1 = (String) tc1.getIt();
-		String s2 = s1;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(s1);
 	}
 	
 	private class Testclass1{

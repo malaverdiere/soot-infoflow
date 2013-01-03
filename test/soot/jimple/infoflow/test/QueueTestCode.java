@@ -11,13 +11,10 @@ public class QueueTestCode {
 		String tainted = TelephonyManager.getDeviceId();
 		SynchronousQueue<String> q = new SynchronousQueue<String>();
 		q.add(tainted);
-		//not implemented for SynchronousQueue:
-		//String taintedElement = q.element();
+		//not implemented for SynchronousQueue: q.element();
 		String taintedElement3 = q.poll();
 	
-		
 		ConnectionManager cm = new ConnectionManager();
-		//cm.publish(taintedElement);
 		cm.publish(taintedElement3);	
 	}
 	
@@ -30,9 +27,8 @@ public class QueueTestCode {
 		p.add(untainted);
 		String taintedElement = q.poll();
 		String untaintedElement = p.poll();
-		
+		taintedElement.toString();
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(taintedElement);	
 		cm.publish(untaintedElement);
 	}
 	

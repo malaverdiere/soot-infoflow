@@ -10,27 +10,34 @@ import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
 /**
- * tests list tainting, use with DumbsourceManager
+ * tests list tainting
  * @author Christian
  *
  */
 public class ListTestCode {
 	
 	
-	public void concreteWriteReadTest(){
+	public void concreteWriteReadPos0Test(){
 		String tainted = TelephonyManager.getDeviceId();
 		ArrayList<String> list = new ArrayList<String>();
-		//list.add("neutral");
+		list.add("neutral");
+		list.add(tainted);
+
+		String taintedElement2 = list.get(0);		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement2);	
+	}
+	
+	public void concreteWriteReadPos1Test(){
+		String tainted = TelephonyManager.getDeviceId();
+		ArrayList<String> list = new ArrayList<String>();
+		list.add("neutral");
 		list.add(tainted);
 		
-		//String taintedElement = list.get(1);
+		String taintedElement = list.get(1);
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
-		String taintedElement2 = list.get(0);
-		
-		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(taintedElement2);
-		
+		cm.publish(taintedElement);	
 	}
 	
 	public void concreteWriteReadNegativeTest(){
@@ -39,13 +46,12 @@ public class ListTestCode {
 		ArrayList<String> list = new ArrayList<String>();
 		list.add("neutral");
 		notRelevantList.add(tainted);
-		//String taintedElement = notRelevantList.get(0);
+		String taintedElement = notRelevantList.get(0);
 		String untaintedElement = list.get(0);
-		String complete =untaintedElement;
-		complete = tainted;//.concat(taintedElement);
+		taintedElement.toString();
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(complete);
+		cm.publish(untaintedElement);
 	}
 	
 	
@@ -56,28 +62,22 @@ public class ListTestCode {
 		list.add(tainted);
 		
 		String taintedElement = list.get(1);
-		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
-		String taintedElement2 = list.get(0);
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement);
-		cm.publish(taintedElement2);
-		
 	}
 	
 	public void iteratorTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		List<String> list = new ArrayList<String>();
-		list.add("neutral");
 		list.add(tainted);
+		list.add("neutral");
+		
 		
 		Iterator<String> it = list.iterator();
 		String taintedElement = it.next();
-		String taintedElement2 = it.next();
-		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement);
-		cm.publish(taintedElement2);
 	}
 	
 	public void subListTest(){
@@ -85,7 +85,6 @@ public class ListTestCode {
 		List<String> list = new ArrayList<String>();
 		list.add("neutral");
 		list.add(tainted);
-		
 		List<String> subList = list.subList(1, 1);
 		String taintedElement = subList.get(0);
 		
@@ -97,16 +96,13 @@ public class ListTestCode {
 	public void linkedListConcreteWriteReadTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		LinkedList<String> list = new LinkedList<String>();
-		//list.add("neutral");
+		list.add("neutral");
 		list.add(tainted);
-		
-		//String taintedElement = list.get(1);
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = list.get(0);
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement2);
-		
 	}
 	
 	public void linkedListConcreteWriteReadNegativeTest(){
@@ -115,9 +111,9 @@ public class ListTestCode {
 		LinkedList<String> list = new LinkedList<String>();
 		list.add("neutral");
 		notRelevantList.add(tainted);
-		//String taintedElement = notRelevantList.get(0);
+		String taintedElement = notRelevantList.get(0);
 		String untaintedElement = list.get(0);
-
+		taintedElement.toString();
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(untaintedElement);
 	}
@@ -130,12 +126,9 @@ public class ListTestCode {
 		list.add(tainted);
 		
 		String taintedElement = list.get(1);
-		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
-		String taintedElement2 = list.get(0);
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement);
-		cm.publish(taintedElement2);
 		
 	}
 	
@@ -146,11 +139,10 @@ public class ListTestCode {
 		list.add(tainted);
 		
 		Iterator<String> it = list.iterator();
-		String taintedElement = it.next();
+		it.next();
 		String taintedElement2 = it.next();
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(taintedElement);
 		cm.publish(taintedElement2);
 	}
 	
@@ -167,22 +159,57 @@ public class ListTestCode {
 		cm.publish(taintedElement);
 	}
 	
-	public void concreteWriteReadStackTest(){
+	public void concreteWriteReadStackGetTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		Stack<String> stack = new Stack<String>();
+		stack.addElement("neutral");
+		stack.push(tainted);
+		
+		String taintedElement2 = stack.get(0);
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement2);	
+	}
+	
+	public void concreteWriteReadStackPeekTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		Stack<String> stack = new Stack<String>();
 		stack.addElement("neutral");
 		stack.push(tainted);
 		
 		String taintedElement = stack.peek();
-		String taintedElement3 = stack.pop();
-		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
-		String taintedElement2 = stack.get(0);
 
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement);
-		cm.publish(taintedElement2);
-		cm.publish(taintedElement3);
+	}
+	
+	public void concreteWriteReadStackPopTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		Stack<String> stack = new Stack<String>();
+		stack.addElement("neutral");
+		stack.push(tainted);
 		
+		String taintedElement3 = stack.pop();
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement3);	
+	}
+	
+	public void concreteWriteReadStackNegativeTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		Stack<String> stack = new Stack<String>();
+		Stack<String> stack2 = new Stack<String>();
+		stack.addElement("neutral");
+		stack2.push(tainted);
+		stack2.add(tainted);
+		String untaintedElement = stack.get(0);
+		String taintedElement = stack2.peek();
+		taintedElement = stack2.pop();
+		taintedElement = stack2.get(0);
+		taintedElement.toString();
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(untaintedElement);
 	}
 	
 }

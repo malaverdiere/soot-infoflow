@@ -97,7 +97,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(runningEnd);
 				
 				//4. onPause:
-				JNopStmt onPauseStmt = searchAndBuildMethod("<"+ currentClass.toString() +": void onPause()>", currentClass, entryPoints, classLocal);
+				searchAndBuildMethod("<"+ currentClass.toString() +": void onPause()>", currentClass, entryPoints, classLocal);
 				//goTo Stop, Resume or Create:
 				JNopStmt pauseToStopStmt = new JNopStmt();
 				createIfStmt(pauseToStopStmt);
@@ -106,7 +106,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			
 				body.getUnits().add(pauseToStopStmt);
 				//5. onStop:
-				JNopStmt onStopStmt = searchAndBuildMethod("<"+ currentClass.toString() +": void onStop()>", currentClass, entryPoints, classLocal);
+				searchAndBuildMethod("<"+ currentClass.toString() +": void onStop()>", currentClass, entryPoints, classLocal);
 				//goTo onDestroy, onRestart or onCreate:
 				conditionCounter++;
 				JNopStmt stopToDestroyStmt = new JNopStmt();
@@ -117,13 +117,13 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				
 				//6. onRestart:
 				body.getUnits().add(stopToRestartStmt);
-				JNopStmt onRestartStmt = searchAndBuildMethod("<"+ currentClass.toString() +": void onRestart()>", currentClass, entryPoints, classLocal);
+				searchAndBuildMethod("<"+ currentClass.toString() +": void onRestart()>", currentClass, entryPoints, classLocal);
 				JGotoStmt startGoto = new JGotoStmt(onStartStmt);
 				body.getUnits().add(startGoto);
 				
 				//7. onDestroy
 				body.getUnits().add(stopToDestroyStmt);
-				JNopStmt onDestroyStmt = searchAndBuildMethod("<"+ currentClass.toString() +": void onDestroy()>", currentClass, entryPoints, classLocal);
+				searchAndBuildMethod("<"+ currentClass.toString() +": void onDestroy()>", currentClass, entryPoints, classLocal);
 				JGotoStmt endGoto = new JGotoStmt(endClassStmt);
 				body.getUnits().add(endGoto);
 				

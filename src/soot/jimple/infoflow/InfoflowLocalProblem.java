@@ -10,7 +10,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,22 +38,19 @@ import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.source.DefaultSourceManager;
 import soot.jimple.infoflow.source.SourceManager;
-import soot.jimple.infoflow.util.BaseSelector;
+import soot.jimple.infoflow.util.LocalBaseSelector;
 import soot.jimple.internal.InvokeExprBox;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JIfStmt;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JimpleLocal;
-import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.util.Chain;
 
-public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
+public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 
-	final Set<Unit> initialSeeds = new HashSet<Unit>();
 	final SourceManager sourceManager;
 	final List<String> sinks;
-	final HashMap<String, List<String>> results;
 	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
 
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
@@ -63,7 +59,7 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 			public FlowFunction<Abstraction> getNormalFlowFunction(Unit src, Unit dest) {
 				// if-Stmt -> take target and evaluate it.
 				if (src instanceof JIfStmt) {
-					src =BaseSelector.selectBase(src);
+					src =LocalBaseSelector.selectBase(src);
 				}
 				
 				// taint is propagated with assignStmt
@@ -73,8 +69,8 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 					Value left = assignStmt.getLeftOp();
 
 					//find appropriate leftValue:
-					left = BaseSelector.selectBase(left);
-					right = BaseSelector.selectBase(right);
+					left = LocalBaseSelector.selectBase(left);
+					right = LocalBaseSelector.selectBase(right);
 
 					final Value leftValue = left;
 					final Value rightValue = right;
@@ -85,11 +81,11 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							boolean addLeftValue = false;
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-							//on NormalFlow taint cannot be created:
+							//on NormalFlow taint cannot be created
 							if(source.equals(zeroValue)){
 								return Collections.singleton(source);
 							}
-
+							//static variable can be identified by name and declaring class
 							if (rightValue instanceof StaticFieldRef && source.getTaintedObject().getValue() instanceof StaticFieldRef) {
 								StaticFieldRef rightRef = (StaticFieldRef) rightValue;
 								StaticFieldRef sourceRef = (StaticFieldRef) source.getTaintedObject().getValue();
@@ -106,8 +102,6 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
 								Set<Abstraction> res = new HashSet<Abstraction>();
-								// performance improvement: do not insert this -
-								//TODO: this is not allowed, have to create new Abstraction: source.addToAlias(leftValue);
 								res.add(source);
 								res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
 
@@ -234,7 +228,7 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 									final Value retLocal = op;
 									
 									if (source.getTaintedObject().getValue().equals(retLocal)) {
-										res.add(new Abstraction(new EquivalentValue(BaseSelector.selectBase(leftOp)), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+										res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(leftOp)), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
 								}
 			
@@ -368,7 +362,7 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 							public Set<Abstraction> computeTargets(Abstraction source) {
 								Set<Abstraction> res = new HashSet<Abstraction>();
 								res.add(source);
-								res.add(new Abstraction(new EquivalentValue(BaseSelector.selectBase(stmt.getLeftOp())), new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
+								res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(stmt.getLeftOp())), new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
 								return res;
 							}
 						};
@@ -383,14 +377,12 @@ public class InfoflowLocalProblem extends DefaultJimpleIFDSTabulationProblem<Abs
 		super(new JimpleBasedInterproceduralCFG());
 		sourceManager = new DefaultSourceManager(sourceList);
 		this.sinks = sinks;
-		results = new HashMap<String, List<String>>();
 	}
 
 	public InfoflowLocalProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinks) {
 		super(icfg);
 		sourceManager = new DefaultSourceManager(sourceList);
 		this.sinks = sinks;
-		results = new HashMap<String, List<String>>();
 	}
 
 	public Abstraction createZeroValue() {

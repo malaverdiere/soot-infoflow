@@ -92,28 +92,4 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator implements I
 		return mainMethod;
 	}
 
-	
-//	 else {
-//			// backup: simplified form:
-//			
-//			Local tempLocal = generator.generateLocal(RefType.v(classMap.getKey())); //or: createdClass
-//			
-//			System.out.println("Warning - old code executed:");
-//			NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(classMap.getKey()));
-//			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
-//			SpecialInvokeExpr sinvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, Scene.v().makeMethodRef(createdClass, "<init>", new ArrayList<Type>(), VoidType.v(), false));
-//			body.getUnits().add(assignStmt);
-//			body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
-//
-//			generateClassConstructor(Scene.v().getSootClass(classMap.getKey()), body,classMap.getValue());
-//			
-//			// TODO: also call constructor of call params:
-//			for (String method : classMap.getValue()) {
-//				SootMethod sMethod = Scene.v().getMethod(method);
-//				entryPoints.add(sMethod);
-//
-//			}
-//
-//		}
-
 }

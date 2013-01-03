@@ -27,6 +27,7 @@ import soot.options.Options;
 public class Infoflow implements IInfoflow {
 	
 	public static boolean DEBUG = true;
+	public boolean local = false;
 	public HashMap<String, List<String>> results;
 
 	@Override
@@ -48,19 +49,17 @@ public class Infoflow implements IInfoflow {
 		
 		// convert to internal format:
 		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
-		// className as String and methodNames as string in soot representation
+		// parse classNames as String and methodNames as string in soot representation
 		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints);
 
-		// add SceneTransformer:
+		// add SceneTransformer which calculates and prints infoflow
 		addSceneTransformer(sources, sinks);
-
-		
 		
 		// prepare soot arguments:
 		ArgBuilder builder = new ArgBuilder();
 		String[] args = builder.buildArgs(path, classes.entrySet().iterator().next().getKey()); //TODO: sufficient to add DummyMain?
 			
-		// Anpassungen fuer kuerzere Laufzeit:
+		// explicitly include packages for shorter runtime:
 		List<String> includeList = new LinkedList<String>();
 		includeList.add("java.lang.");
 		includeList.add("java.util.");
@@ -77,7 +76,7 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_output_format(Options.output_format_none);
 		Options.v().parse(args);
-			// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method, we have to create a new main method and use it as entryPoint, but store our real entryPoints
+		//load all entryPoint classes with their bodies
 		Scene.v().loadNecessaryClasses();
 		for (Entry<String, List<String>> classEntry : classes.entrySet()) {
 			SootClass c = Scene.v().forceResolve(classEntry.getKey(), SootClass.BODIES);
@@ -91,6 +90,8 @@ public class Infoflow implements IInfoflow {
 				}
 			}
 		}
+		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method, 
+		//we have to create a new main method and use it as entryPoint and store our real entryPoints
 		IEntryPointCreator epCreator = new DefaultEntryPointCreator();
 		List<SootMethod> entrys = new LinkedList<SootMethod>();
 		
@@ -103,7 +104,14 @@ public class Infoflow implements IInfoflow {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
 
-				InfoflowLocalProblem problem = new InfoflowLocalProblem(sources, sinks);
+				AbstractInfoflowProblem problem;
+				
+				if(local){
+					problem = new InfoflowLocalProblem(sources, sinks);
+				} else{
+					problem = new InfoflowProblem(sources, sinks);
+				}
+				 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst());
 				}
@@ -117,7 +125,6 @@ public class Infoflow implements IInfoflow {
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 
 					Unit ret = ep.getActiveBody().getUnits().getLast();
-
 					System.err.println(ep.getActiveBody());
 
 					System.err.println("----------------------------------------------");
@@ -144,16 +151,21 @@ public class Infoflow implements IInfoflow {
 		PackManager.v().getPack("wjtp").add(transform);
 	}
 	
-	
+	@Override
 	public HashMap<String, List<String>> getResults(){
 		return results;
 	}
 	
+	@Override
+	public void setLocalInfoflow(boolean local){
+		this.local = local;
+	}
+	
+	@Override
 	public boolean isResultAvailable(){
 		if(results == null){
 			return false;
 		}
 		return true;
 	}
-
 }

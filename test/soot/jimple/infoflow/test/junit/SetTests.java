@@ -20,7 +20,7 @@ public class SetTests extends JUnitTests {
 //		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
     }
     
-    @Test
+ //TODO: include strict mode which tracks even this?   @Test
     public void containsTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

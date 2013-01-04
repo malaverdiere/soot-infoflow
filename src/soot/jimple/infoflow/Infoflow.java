@@ -17,8 +17,8 @@ import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.util.AndroidEntryPointCreator;
 import soot.jimple.infoflow.util.ArgBuilder;
-import soot.jimple.infoflow.util.DefaultEntryPointCreator;
 import soot.jimple.infoflow.util.IEntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
@@ -92,7 +92,7 @@ public class Infoflow implements IInfoflow {
 		}
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method, 
 		//we have to create a new main method and use it as entryPoint and store our real entryPoints
-		IEntryPointCreator epCreator = new DefaultEntryPointCreator();
+		IEntryPointCreator epCreator = new AndroidEntryPointCreator();
 		List<SootMethod> entrys = new LinkedList<SootMethod>();
 		
 		entrys.add(epCreator.createDummyMain(classes));

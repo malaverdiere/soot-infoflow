@@ -84,11 +84,11 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				List<String> entryPoints = entry.getValue();
 				
 				// 1. onCreate:
-				JNopStmt onCreateStmt = searchAndBuildMethod("<"+ currentClass.toString() +": void onCreate(android.os.Bundle)>", currentClass, entryPoints, classLocal);
+				JNopStmt onCreateStmt = searchAndBuildMethod("void onCreate(android.os.Bundle)", currentClass, entryPoints, classLocal);
 				//2. onStart:
-				JNopStmt onStartStmt = searchAndBuildMethod("<"+ currentClass.toString() +": void onStart()>", currentClass, entryPoints, classLocal);
+				JNopStmt onStartStmt = searchAndBuildMethod("void onStart()", currentClass, entryPoints, classLocal);
 				//3. onResume:
-				JNopStmt onResumeStmt = searchAndBuildMethod("<"+ currentClass.toString() +": void onResume()>", currentClass, entryPoints, classLocal);
+				JNopStmt onResumeStmt = searchAndBuildMethod("void onResume()", currentClass, entryPoints, classLocal);
 				
 				JNopStmt runningStart = new JNopStmt();
 				JGotoStmt runningGoto = new JGotoStmt(runningStart);
@@ -97,7 +97,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(runningEnd);
 				
 				//4. onPause:
-				searchAndBuildMethod("<"+ currentClass.toString() +": void onPause()>", currentClass, entryPoints, classLocal);
+				searchAndBuildMethod("void onPause()", currentClass, entryPoints, classLocal);
 				//goTo Stop, Resume or Create:
 				JNopStmt pauseToStopStmt = new JNopStmt();
 				createIfStmt(pauseToStopStmt);
@@ -106,7 +106,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			
 				body.getUnits().add(pauseToStopStmt);
 				//5. onStop:
-				searchAndBuildMethod("<"+ currentClass.toString() +": void onStop()>", currentClass, entryPoints, classLocal);
+				searchAndBuildMethod("void onStop()", currentClass, entryPoints, classLocal);
 				//goTo onDestroy, onRestart or onCreate:
 				conditionCounter++;
 				JNopStmt stopToDestroyStmt = new JNopStmt();
@@ -117,13 +117,13 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				
 				//6. onRestart:
 				body.getUnits().add(stopToRestartStmt);
-				searchAndBuildMethod("<"+ currentClass.toString() +": void onRestart()>", currentClass, entryPoints, classLocal);
+				searchAndBuildMethod("void onRestart()", currentClass, entryPoints, classLocal);
 				JGotoStmt startGoto = new JGotoStmt(onStartStmt);
 				body.getUnits().add(startGoto);
 				
 				//7. onDestroy
 				body.getUnits().add(stopToDestroyStmt);
-				searchAndBuildMethod("<"+ currentClass.toString() +": void onDestroy()>", currentClass, entryPoints, classLocal);
+				searchAndBuildMethod("void onDestroy()", currentClass, entryPoints, classLocal);
 				JGotoStmt endGoto = new JGotoStmt(endClassStmt);
 				body.getUnits().add(endGoto);
 				
@@ -163,6 +163,26 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				JGotoStmt lifecycleGoto = new JGotoStmt(runningEnd);
 				body.getUnits().add(lifecycleGoto);
 				
+			}else{
+				for(SootMethod currentMethod : currentClass.getMethods()){
+					if(entry.getValue().contains(currentMethod.toString())){
+						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+						conditionCounter++;
+						JNopStmt thenStmt = new JNopStmt();
+						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+						body.getUnits().add(ifStmt);
+						JNopStmt elseStmt = new JNopStmt();
+						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+						body.getUnits().add(elseGoto);
+						
+						body.getUnits().add(thenStmt);
+						buildMethodCall(currentMethod, body, classLocal, generator);
+						
+						body.getUnits().add(new JGotoStmt(endClassStmt)); //TODO: correct?
+						body.getUnits().add(elseStmt);
+					}
+				}
+				
 			}
 			
 			
@@ -176,17 +196,14 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	}
 	
 	private JNopStmt searchAndBuildMethod(String signature, SootClass currentClass, List<String> entryPoints, Local classLocal){
-		SootMethod onMethod = currentClass.getMethod(signature);
 		JNopStmt onMethodStmt = new JNopStmt();
 		body.getUnits().add(onMethodStmt);
-		if(onMethod != null){
-			//write Method
-			buildMethodCall(onMethod, body, classLocal, generator);
-			for(int i=0; i< entryPoints.size(); i++){
-				if(entryPoints.get(i).contains(signature)){
-					entryPoints.remove(i);
-					i--;
-				}
+		if(currentClass.declaresMethod(signature)){
+			SootMethod onMethod = currentClass.getMethod(signature);
+			if(onMethod != null){
+				//write Method
+				buildMethodCall(onMethod, body, classLocal, generator);
+				entryPoints.remove("<"+ currentClass.toString()+ ": "+signature+">");
 			}
 		}
 		return onMethodStmt;

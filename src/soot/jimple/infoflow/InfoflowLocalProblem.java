@@ -125,7 +125,13 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 									Value base = ((InstanceFieldRef)originalLeft).getBase();
 									Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), originalsrc, base, ((InstanceFieldRef)originalLeft).getFieldRef());
 									for(Value v : aliases){
-										res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+										//for normal analysis this would be enough but since this is local analysis we have to "truncate" instancefieldrefs
+										//res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+										if(v instanceof InstanceFieldRef){
+											res.add(new Abstraction(new EquivalentValue(((InstanceFieldRef)v).getBase()), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+										} else{
+											res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+										}
 									}
 								}
 								

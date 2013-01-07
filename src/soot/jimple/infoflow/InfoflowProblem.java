@@ -44,8 +44,8 @@ import soot.jimple.infoflow.source.SourceManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.internal.InvokeExprBox;
 import soot.jimple.internal.JAssignStmt;
-import soot.jimple.internal.JCastExpr;
 import soot.jimple.internal.JIfStmt;
+import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
@@ -62,6 +62,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 			public FlowFunction<Abstraction> getNormalFlowFunction(Unit src, Unit dest) {
 				// if-Stmt -> take target and evaluate it.
+				final Unit originalsrc = src;
 				if (src instanceof JIfStmt) {
 					src =BaseSelector.selectBase(src);
 				}
@@ -72,8 +73,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					Value right = assignStmt.getRightOp();
 					Value left = assignStmt.getLeftOp();
 
+					//find rightValue (remove casts):
+					right = BaseSelector.selectBase(right, true);
+					
 					//find appropriate leftValue:
-					left = BaseSelector.selectBase(left);
+					left = BaseSelector.selectBase(left, false);
 
 					final Value leftValue = left;
 					final Value rightValue = right;
@@ -83,6 +87,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							boolean addLeftValue = false;
+							Set<Abstraction> res = new HashSet<Abstraction>();
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 							//on NormalFlow taint cannot be created:
 							if(source.equals(zeroValue)){
@@ -134,7 +139,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								PointsToSet ptsSourceBase = pta.reachingObjects(base);
 								PointsToSet ptsRight = pta.reachingObjects((Local)rightValue);
 								if(ptsSourceBase.hasNonEmptyIntersection(ptsRight)){
-									addLeftValue = true;
+									if(leftValue instanceof Local){
+										JInstanceFieldRef ref = new JInstanceFieldRef(leftValue, ((InstanceFieldRef) source.getTaintedObject().getValue()).getFieldRef());
+										res.add(new Abstraction(new EquivalentValue(ref), source.getSource(), source.getCorrespondingMethod()));
+									}
 								}
 								//TODO: is this ok w/ pts?
 							}
@@ -154,12 +162,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									addLeftValue = true;
 								}
 							}
-							if (rightValue instanceof JCastExpr) {
-								if (source.getTaintedObject().getValue().equals(((JCastExpr) rightValue).getOpBox().getValue())) {
-									addLeftValue = true; //TODO: not sufficient, might be multiple JCastExpr -> rekursiv implementieren!
-								}
-							}
-
+							
 							// generic case, is true for Locals, ArrayRefs that are equal etc..
 							if (source.getTaintedObject().getValue().equals(rightValue)) {
 								addLeftValue = true;
@@ -167,12 +170,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
-								Set<Abstraction> res = new HashSet<Abstraction>();
+								
 								res.add(source);
 								res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
 
-								// TODO: go recursively through the definitions before, compute pts - does not work because for each alias
-								//		 we create a new source so not all aliases are stored in the first source which leads to many duplicates 
 								SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
 								Chain<Local> localChain = m.getActiveBody().getLocals();
 								PointsToSet ptsLeft;
@@ -188,13 +189,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								} else if (leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
 									
-									res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
-									
-									for (Local c : localChain) {
-										PointsToSet pts = pta.reachingObjects(c, ifr.getField());
-										if (!pts.isEmpty()) {
-											// res.add(new Abstraction(c, source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
-										}
+									Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), originalsrc, ifr.getBase(), ifr.getFieldRef());
+									for(Value v : aliases){
+										res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
 									}
 								}
 								return res;

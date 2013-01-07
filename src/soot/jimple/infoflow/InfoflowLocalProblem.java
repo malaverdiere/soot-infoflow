@@ -15,12 +15,10 @@ import java.util.Set;
 import soot.EquivalentValue;
 import soot.Local;
 import soot.NullType;
-import soot.PatchingChain;
 import soot.PointsToAnalysis;
 import soot.PointsToSet;
 import soot.Scene;
 import soot.SootField;
-import soot.SootFieldRef;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -42,7 +40,6 @@ import soot.jimple.infoflow.util.LocalBaseSelector;
 import soot.jimple.internal.InvokeExprBox;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JIfStmt;
-import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
@@ -149,33 +146,6 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 				return Identity.v();
 			}
 			
-			private Set<Value> getAliasesinMethod(PatchingChain<Unit> units, Unit stopUnit, Value base, SootFieldRef instanceField){
-				HashSet<Value> val = new HashSet<Value>();
-				for(Unit u : units){
-					if(u.equals(stopUnit)){
-						return val;
-					}
-					if(u instanceof AssignStmt){ //TODO: hier ebenfalls checken ob nicht ifstmt (wie oben)
-						AssignStmt aStmt = (AssignStmt) u;
-						if(aStmt.getLeftOp().toString().equals(base.toString()) && aStmt.getRightOp() != null){
-							//create new alias
-							if(aStmt.getRightOp() instanceof Local){ //otherwise no fieldRef possible (and therefore cannot be referenced)
-								JInstanceFieldRef newRef = new JInstanceFieldRef(aStmt.getRightOp(), instanceField);
-								val.add(newRef);
-							}
-							val.addAll(getAliasesinMethod(units, u, aStmt.getRightOp(), instanceField));
-						} //not nice - change this - do not use toString (although it should be valid because we are only looking inside one method and are looking for the same object)
-						if(aStmt.getRightOp().toString().equals(base.toString()) && aStmt.getLeftOp() != null){
-							if(aStmt.getLeftOp() instanceof Local){ //otherwise no fieldRef possible (and therefore cannot be referenced)
-								JInstanceFieldRef newRef = new JInstanceFieldRef(aStmt.getLeftOp(), instanceField);
-								val.add(newRef);
-							}
-							val.addAll(getAliasesinMethod(units, u, aStmt.getLeftOp(), instanceField));
-						}
-					}
-				}
-				return val;
-			}
 
 			public FlowFunction<Abstraction> getCallFlowFunction(Unit src, final SootMethod dest) {
 				final Stmt stmt = (Stmt) src;

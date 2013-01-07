@@ -78,7 +78,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					activity = true;
 				}
 			}
-			//############################ ACTIVITY ####################################################
 			if(activity){
 				//analyse entryPoints:
 				List<String> entryPoints = entry.getValue();

@@ -1,11 +1,9 @@
 package soot.jimple.infoflow.util;
 
-import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.internal.JCastExpr;
-import soot.jimple.internal.JIfStmt;
 
 public class LocalBaseSelector {
 	
@@ -21,18 +19,10 @@ public class LocalBaseSelector {
 		}
 		
 		if (val instanceof JCastExpr) {
-			return selectBase((((JCastExpr) val).getOpBox().getValue()));
+			return selectBase((((JCastExpr) val).getOp()));
 		}
 		
 		return val;
-	}
-	
-	public static Unit selectBase(Unit u){
-		if (u instanceof JIfStmt) {
-			return LocalBaseSelector.selectBase(((soot.jimple.internal.JIfStmt) u).getTarget());	
-		}
-		return u;
-		
 	}
 
 }

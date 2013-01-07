@@ -5,9 +5,6 @@ import heros.FlowFunctions;
 import heros.InterproceduralCFG;
 import heros.flowfunc.Identity;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -18,15 +15,18 @@ import java.util.Set;
 import soot.EquivalentValue;
 import soot.Local;
 import soot.NullType;
+import soot.PatchingChain;
 import soot.PointsToAnalysis;
 import soot.PointsToSet;
 import soot.Scene;
 import soot.SootField;
+import soot.SootFieldRef;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
@@ -42,6 +42,7 @@ import soot.jimple.infoflow.util.LocalBaseSelector;
 import soot.jimple.internal.InvokeExprBox;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JIfStmt;
+import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
@@ -58,6 +59,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 
 			public FlowFunction<Abstraction> getNormalFlowFunction(Unit src, Unit dest) {
 				// if-Stmt -> take target and evaluate it.
+				final Unit originalsrc = src;
 				if (src instanceof JIfStmt) {
 					src =LocalBaseSelector.selectBase(src);
 				}
@@ -69,6 +71,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 					Value left = assignStmt.getLeftOp();
 
 					//find appropriate leftValue:
+					final Value originalLeft = left;
 					left = LocalBaseSelector.selectBase(left);
 					right = LocalBaseSelector.selectBase(right);
 
@@ -105,20 +108,28 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 								res.add(source);
 								res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
 
-								// // TODO: go recursively through the definitions before, compute pts -> pts are not correct at the moment, too much is tainted
 								SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
 								Chain<Local> localChain = m.getActiveBody().getLocals();
 								PointsToSet ptsLeft;
 								if (leftValue instanceof Local) { //always true
 									ptsLeft = pta.reachingObjects((Local) leftValue);
-
+									
 									for (Local c : localChain) {
 										PointsToSet ptsVal = pta.reachingObjects(c);
-										if (ptsLeft.hasNonEmptyIntersection(ptsVal) && !leftValue.equals(c)) {
-											//res.add(new Abstraction(new EquivalentValue(c), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+										if (c.getType().equals(leftValue.getType()) && ptsLeft.hasNonEmptyIntersection(ptsVal) && !leftValue.equals(c)) {
+//											res.add(new Abstraction(new EquivalentValue(c), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
 										}
 									}
 								}
+								if(originalLeft instanceof InstanceFieldRef){
+									Value base = ((InstanceFieldRef)originalLeft).getBase();
+									Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), originalsrc, base, ((InstanceFieldRef)originalLeft).getFieldRef());
+									for(Value v : aliases){
+										res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+									}
+								}
+								
+								
 								return res;
 							}
 							
@@ -130,6 +141,34 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 				}
 				
 				return Identity.v();
+			}
+			
+			private Set<Value> getAliasesinMethod(PatchingChain<Unit> units, Unit stopUnit, Value base, SootFieldRef instanceField){
+				HashSet<Value> val = new HashSet<Value>();
+				for(Unit u : units){
+					if(u.equals(stopUnit)){
+						return val;
+					}
+					if(u instanceof AssignStmt){ //TODO: hier ebenfalls checken ob nicht ifstmt (wie oben)
+						AssignStmt aStmt = (AssignStmt) u;
+						if(aStmt.getLeftOp().toString().equals(base.toString()) && aStmt.getRightOp() != null){
+							//create new alias
+							if(aStmt.getRightOp() instanceof Local){ //otherwise no fieldRef possible (and therefore cannot be referenced)
+								JInstanceFieldRef newRef = new JInstanceFieldRef(aStmt.getRightOp(), instanceField);
+								val.add(newRef);
+							}
+							val.addAll(getAliasesinMethod(units, u, aStmt.getRightOp(), instanceField));
+						} //not nice - change this - do not use toString (although it should be valid because we are only looking inside one method and are looking for the same object)
+						if(aStmt.getRightOp().toString().equals(base.toString()) && aStmt.getLeftOp() != null){
+							if(aStmt.getLeftOp() instanceof Local){ //otherwise no fieldRef possible (and therefore cannot be referenced)
+								JInstanceFieldRef newRef = new JInstanceFieldRef(aStmt.getLeftOp(), instanceField);
+								val.add(newRef);
+							}
+							val.addAll(getAliasesinMethod(units, u, aStmt.getLeftOp(), instanceField));
+						}
+					}
+				}
+				return val;
 			}
 
 			public FlowFunction<Abstraction> getCallFlowFunction(Unit src, final SootMethod dest) {
@@ -154,7 +193,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 							PointsToSet ptsSource = pta.reachingObjects((Local)source.getTaintedObject().getValue());
 							if (ptsSelf.hasNonEmptyIntersection(ptsSource)) {
 								//res.add(new Abstraction(new EquivalentValue(dest.getActiveBody().getThisLocal()), source.getSource(), dest));
-								// sorry, returns true far too often.
+								// returns true far too often.
 							}
 							//this might be enough because every call must happen with a local variable which is tainted itself:
 							if(vie.getBase().equals(source.getTaintedObject().getValue())){
@@ -195,6 +234,19 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 									results.put(dest.toString(), list);
 								} else {
 									results.get(dest.toString()).add(source.getSource().getValue().toString());
+								}
+							}
+							//only for LocalAnalysis at the moment: if the base object which executes the method is tainted the sink is reached, too.
+							if(ie instanceof InstanceInvokeExpr){
+								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
+								if(vie.getBase().equals(source.getTaintedObject().getValue())){
+									if (!results.containsKey(dest.toString())) {
+										List<String> list = new ArrayList<String>();
+										list.add(source.getSource().getValue().toString());
+										results.put(dest.toString(), list);
+									} else {
+										results.get(dest.toString()).add(source.getSource().getValue().toString());
+									}
 								}
 							}
 						}
@@ -325,16 +377,6 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 				if (call instanceof Stmt && ((Stmt) call).getInvokeExpr().getMethod().isNative()) {
 					final Stmt iStmt = (Stmt) call;
 					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
-
-					// Testoutput to collect all native calls from different runs of the analysis:
-					try {
-						FileWriter fstream = new FileWriter("nativeCalls.txt", true);
-						BufferedWriter out = new BufferedWriter(fstream);
-						out.write(iStmt.getInvokeExpr().getMethod().toString() + "\n");
-						out.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
 					
 					return new FlowFunction<Abstraction>() {
 

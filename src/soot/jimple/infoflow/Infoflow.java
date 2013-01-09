@@ -116,8 +116,7 @@ public class Infoflow implements IInfoflow {
 					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst());
 				}
 
-				JimpleIFDSSolver<Abstraction,InterproceduralCFG<Unit, SootMethod>> solver =
-						new JimpleIFDSSolver<Abstraction,InterproceduralCFG<Unit, SootMethod>>(problem);
+				JimpleIFDSSolver<Abstraction> solver = new JimpleIFDSSolver<Abstraction>(problem);
 
 				solver.solve(0);
 				solver.dumpResults(); // only for debugging

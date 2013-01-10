@@ -86,7 +86,7 @@ public class BaseEntryPointCreator implements IEntryPointCreator {
 		// if sootClass is simpleClass:
 		if (isSimpleType(createdClass.toString())) {
 			LocalGenerator generator = new LocalGenerator(body);
-			Local varLocal =  generator.generateLocal(createdClass.getType());
+			Local varLocal =  generator.generateLocal(getSimpleTypeFromType(createdClass.getType()));
 			
 			AssignStmt aStmt = Jimple.v().newAssignStmt(varLocal, getSimpleDefaultValue(createdClass.toString()));
 			body.getUnits().add(aStmt);
@@ -160,8 +160,41 @@ public class BaseEntryPointCreator implements IEntryPointCreator {
 		}
 	}
 
+	private Type getSimpleTypeFromType(RefType type) {
+		if (type.toString().equals("java.lang.String"))
+			return soot.IntType.v();
+		if (type.toString().equals("void"))
+			return soot.VoidType.v();
+		if (type.toString().equals("char"))
+			return soot.CharType.v();
+		if (type.toString().equals("byte"))
+			return soot.ByteType.v();
+		if (type.toString().equals("short"))
+			return soot.ShortType.v();
+		if (type.toString().equals("int"))
+			return soot.IntType.v();
+		if (type.toString().equals("float"))
+			return soot.FloatType.v();
+		if (type.toString().equals("long"))
+			return soot.LongType.v();
+		if (type.toString().equals("double"))
+			return soot.DoubleType.v();
+		if (type.toString().equals("boolean"))
+			return soot.BooleanType.v();
+		throw new RuntimeException("Unknown simple type: " + type);
+	}
+
 	protected static boolean isSimpleType(String t) {
-		if (t.equals("java.lang.String") || t.equals("void") || t.equals("char") || t.equals("byte") || t.equals("short") || t.equals("int") || t.equals("float") || t.equals("long") || t.equals("double") || t.equals("boolean")) {
+		if (t.equals("java.lang.String")
+				|| t.equals("void")
+				|| t.equals("char")
+				|| t.equals("byte")
+				|| t.equals("short")
+				|| t.equals("int")
+				|| t.equals("float")
+				|| t.equals("long")
+				|| t.equals("double")
+				|| t.equals("boolean")) {
 			return true;
 		} else {
 			return false;

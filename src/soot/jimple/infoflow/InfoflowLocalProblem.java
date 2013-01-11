@@ -174,7 +174,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 				};
 			}
 
-			public FlowFunction<Abstraction> getReturnFlowFunction(Unit callSite, SootMethod callee, Unit exitStmt, Unit retSite) {
+			public FlowFunction<Abstraction> getReturnFlowFunction(Unit callSite, SootMethod callee, Unit exitStmt, final Unit retSite) {
 				final SootMethod calleeMethod = callee;
 				final Unit callUnit = callSite;
 				final Unit exitUnit = exitStmt;
@@ -189,12 +189,19 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 						// if we have a returnStmt we have to look at the returned value:
 						if (exitUnit instanceof ReturnStmt) {
 							ReturnStmt returnStmt = (ReturnStmt) exitUnit;
-							Value op = returnStmt.getOp();
-							if (op.equals(source.getAccessPath().getPlainValue())) {
-								if (callUnit instanceof DefinitionStmt) {
-									DefinitionStmt defnStmt = (DefinitionStmt) callUnit;
-									Value leftOp = defnStmt.getLeftOp();
+							Value retLocal = returnStmt.getOp();
+							if (callUnit instanceof DefinitionStmt) {
+								DefinitionStmt defnStmt = (DefinitionStmt) callUnit;
+								Value leftOp = defnStmt.getLeftOp();
+								if (retLocal.equals(source.getAccessPath().getPlainValue())) {
 									res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(leftOp)), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+								}
+								//this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
+								Set<Value> aliases = getAliasesinMethod(calleeMethod.getActiveBody().getUnits(), retSite, retLocal, null);
+								for (Value v : aliases) {
+									if(v.equals(source.getAccessPath().getPlainValue())){
+										res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(leftOp)), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+									}
 								}
 							}
 						}

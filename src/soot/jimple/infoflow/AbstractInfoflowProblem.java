@@ -34,7 +34,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 			if(u.equals(stopUnit)){
 				return val;
 			}
-			if(u instanceof AssignStmt){ //TODO: hier ebenfalls checken ob nicht ifstmt (wie oben)
+			if(u instanceof AssignStmt){
 				AssignStmt aStmt = (AssignStmt) u;
 				if(aStmt.getLeftOp().toString().equals(base.toString()) && aStmt.getRightOp() != null){
 					//create new alias
@@ -49,8 +49,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 					val.addAll(getAliasesinMethod(units, u, aStmt.getRightOp(), instanceField));
 				} //not nice - change this - do not use toString (although it should be valid because we are only looking inside one method and are looking for the same object)
 				if(aStmt.getRightOp().toString().equals(base.toString()) && aStmt.getLeftOp() != null){
-					if(aStmt.getLeftOp() instanceof Local){ //otherwise no fieldRef possible (and therefore cannot be referenced)
-						
+					if(aStmt.getLeftOp() instanceof Local){ //otherwise no fieldRef possible (and therefore cannot be referenced)	
 						if(instanceField != null){
 							JInstanceFieldRef newRef = new JInstanceFieldRef(aStmt.getLeftOp(), instanceField);
 							val.add(newRef);

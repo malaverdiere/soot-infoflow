@@ -104,16 +104,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									Local sourceBase = (Local) source.getAccessPath().getPlainValue();
 									PointsToSet ptsSource = pta.reachingObjects(sourceBase);
 									if (ptsRight.hasNonEmptyIntersection(ptsSource)) {
-										if(source.getAccessPath().isInstanceFieldRef()){
+										if (source.getAccessPath().isInstanceFieldRef()) {
 											if (rightRef.getField().getName().equals(source.getAccessPath().getField())) {
 												addLeftValue = true;
 											}
-										} else{
+										} else {
 											addLeftValue = true;
 										}
 									}
 								}
-								
+
 								// indirect taint propagation:
 								// if rightvalue is local and source is instancefield of this local:
 								if (rightValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
@@ -129,7 +129,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										}
 									}
 								}
-								
+
 								if (rightValue instanceof ArrayRef) {
 									Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
 									if (rightBase.equals(source.getAccessPath().getPlainValue()) || (source.getAccessPath().isLocal() && pta.reachingObjects(rightBase).hasNonEmptyIntersection(pta.reachingObjects((Local) source.getAccessPath().getPlainValue())))) {
@@ -182,16 +182,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
-						
+
 						PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-						Value base =  source.getAccessPath().getPlainValue();
+						Value base = source.getAccessPath().getPlainValue();
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// if taintedobject is instancefieldRef we have to check if the object is delivered..
 						if (source.getAccessPath().isInstanceFieldRef()) {
 
 							// second, they might be changed as param - check this
 
-							
 							// first, instancefieldRefs must be propagated if they come from the same class:
 							if (ie instanceof InstanceInvokeExpr) {
 								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
@@ -243,27 +242,27 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
-						
+
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
 						// if we have a returnStmt we have to look at the returned value:
 						if (exitUnit instanceof ReturnStmt) {
 							ReturnStmt returnStmt = (ReturnStmt) exitUnit;
-							Value op = returnStmt.getOp();
+							Value retLocal = returnStmt.getOp();
+
 							if (callUnit instanceof DefinitionStmt) {
 								DefinitionStmt defnStmt = (DefinitionStmt) callUnit;
 								Value leftOp = defnStmt.getLeftOp();
-								final Value retLocal = op;
-
 								if (retLocal.equals(source.getAccessPath().getPlainValue())) {
 									res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 								}
-								//this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
+								// this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
 								Set<Value> aliases = getAliasesinMethod(calleeMethod.getActiveBody().getUnits(), retSite, retLocal, null);
 								for (Value v : aliases) {
-									res.add(new Abstraction(source.getAccessPath().copyWithNewValue(v), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+									if (v.equals(source.getAccessPath().getPlainValue())) {
+										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+									}
 								}
-								
 							}
 						}
 
@@ -272,8 +271,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							res.add(source);
 						}
 
-						//checks: this/params/fields
-						
+						// checks: this/params/fields
+
 						// check one of the call params are tainted (not if simple type)
 						Value sourceBase = source.getAccessPath().getPlainValue();
 						Value originalCallArg = null;
@@ -282,10 +281,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callUnit instanceof Stmt) {
 									Stmt iStmt = (Stmt) callUnit;
 									originalCallArg = iStmt.getInvokeExpr().getArg(i);
-									if(!(originalCallArg instanceof NullConstant) && !(originalCallArg.getType() instanceof PrimType)){
-										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(originalCallArg), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));	
+									if (!(originalCallArg instanceof NullConstant) && !(originalCallArg.getType() instanceof PrimType)) {
+										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(originalCallArg), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
-								}	
+								}
 							}
 						}
 
@@ -297,7 +296,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 						if (thisL != null) {
 							if (thisL.equals(sourceBase)) {
-								//TODO: either remove PTS check here or remove the if-condition above!
+								// TODO: either remove PTS check here or remove the if-condition above!
 								// there is only one case in which this must be added, too: if the caller-Method has the same thisLocal - check this:
 								// for super-calls we have to use pts
 								PointsToSet ptsThis = pta.reachingObjects(thisL);
@@ -328,9 +327,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 							}
-							//remember that we only support max(length(accesspath))==1 -> if source is a fieldref, only its base is taken!
+							// remember that we only support max(length(accesspath))==1 -> if source is a fieldref, only its base is taken!
 							for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
-								if(!globalField.isStatic()){ //else is checked later
+								if (!globalField.isStatic()) { // else is checked later
 									PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);
 									if (ptsGlobal.hasNonEmptyIntersection(ptsSource)) {
 										Local callBaseVar = null;
@@ -354,7 +353,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 						}
-						
+
 						for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
 							if (globalField.isStatic()) {
 								PointsToSet ptsGlobal = pta.reachingObjects(globalField);
@@ -363,7 +362,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 						}
-						
+
 						return res;
 					}
 
@@ -393,7 +392,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.add(source);
-							
+
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
 								if (callArgs.contains(source.getAccessPath().getPlainValue())) {
 									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
@@ -402,7 +401,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									res.addAll(ncHandler.getTaintedValues(iStmt, source, callArgs, interproceduralCFG().getMethodOf(unit)));
 								}
 							}
-							
+
 							if (iStmt instanceof JAssignStmt) {
 								final JAssignStmt stmt = (JAssignStmt) iStmt;
 
@@ -410,7 +409,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									res.add(new Abstraction(new EquivalentValue(stmt.getLeftOp()), new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
 								}
 							}
-							
+
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
 							if (sinks.contains(iStmt.getInvokeExpr().getMethod().toString())) {
 								boolean taintedParam = false;
@@ -436,7 +435,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										results.get(iStmt.getInvokeExpr().getMethod().toString()).add(source.getSource().getValue().toString());
 									}
 								}
-								//TODO: required? only for LocalAnalysis at the moment: if the base object which executes the method is tainted the sink is reached, too.
+								// TODO: required? only for LocalAnalysis at the moment: if the base object which executes the method is tainted the sink is reached, too.
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 									InstanceInvokeExpr vie = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 									if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
@@ -450,7 +449,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 							}
-							return res;	
+							return res;
 						}
 					};
 				}
@@ -458,8 +457,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			}
 		};
 	}
-	
-	
 
 	public InfoflowProblem(List<String> sourceList, List<String> sinks) {
 		super(new JimpleBasedInterproceduralCFG());

@@ -8,6 +8,7 @@ import soot.EquivalentValue;
 import soot.PrimType;
 import soot.SootMethod;
 import soot.Value;
+import soot.jimple.DefinitionStmt;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 
@@ -22,7 +23,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 		//arraycopy(Object src, int srcPos, Object dest, int destPos, int length)
         //Copies an array from the specified source array, beginning at the specified position, to the specified position of the destination array.
 		if(call.getInvokeExpr().getMethod().toString().contains("arraycopy")){
-			if(params.get(0).equals(source.getTaintedObject().getValue())){
+			if(params.get(0).equals(source.getAccessPath().getPlainValue())){
 				set.add(new Abstraction(new EquivalentValue(params.get(2)), source.getSource(), m));
 			}
 		}else{
@@ -32,11 +33,13 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 				if (!(argValue.getType() instanceof PrimType)) {
 					set.add(new Abstraction(new EquivalentValue(argValue), source.getSource(), m));
 				}
-			}
-			
-			
+			}	
 		}
-		
+		//add the  returnvalue:
+		if(call instanceof DefinitionStmt){
+			DefinitionStmt dStmt = (DefinitionStmt) call;
+			set.add(new Abstraction(new EquivalentValue(dStmt.getLeftOp()), source.getSource(), m));
+		}
 		
 		return set;
 	}

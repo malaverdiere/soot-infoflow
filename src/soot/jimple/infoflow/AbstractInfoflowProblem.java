@@ -13,6 +13,7 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.AssignStmt;
+import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
@@ -38,21 +39,35 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 				if(aStmt.getLeftOp().toString().equals(base.toString()) && aStmt.getRightOp() != null){
 					//create new alias
 					if(aStmt.getRightOp() instanceof Local){ //otherwise no fieldRef possible (and therefore cannot be referenced)
-						JInstanceFieldRef newRef = new JInstanceFieldRef(aStmt.getRightOp(), instanceField);
-						val.add(newRef);
+						if(instanceField != null){
+							JInstanceFieldRef newRef = new JInstanceFieldRef(aStmt.getRightOp(), instanceField);
+							val.add(newRef);
+						}else{
+							val.add(aStmt.getRightOp());
+						}
 					}
 					val.addAll(getAliasesinMethod(units, u, aStmt.getRightOp(), instanceField));
 				} //not nice - change this - do not use toString (although it should be valid because we are only looking inside one method and are looking for the same object)
 				if(aStmt.getRightOp().toString().equals(base.toString()) && aStmt.getLeftOp() != null){
 					if(aStmt.getLeftOp() instanceof Local){ //otherwise no fieldRef possible (and therefore cannot be referenced)
-						JInstanceFieldRef newRef = new JInstanceFieldRef(aStmt.getLeftOp(), instanceField);
-						val.add(newRef);
+						
+						if(instanceField != null){
+							JInstanceFieldRef newRef = new JInstanceFieldRef(aStmt.getLeftOp(), instanceField);
+							val.add(newRef);
+						}else{
+							val.add(aStmt.getLeftOp());
+						}
+						
 					}
 					val.addAll(getAliasesinMethod(units, u, aStmt.getLeftOp(), instanceField));
 				}
 			}
 		}
 		return val;
+	}
+	
+	protected static String getStaticFieldRefStringRepresentation(StaticFieldRef ref){
+		return ref.getFieldRef().declaringClass().getName() + "."+ref.getFieldRef().name();
 	}
 
 }

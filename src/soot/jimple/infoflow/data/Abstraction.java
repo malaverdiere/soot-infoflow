@@ -1,45 +1,42 @@
 package soot.jimple.infoflow.data;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import soot.EquivalentValue;
 import soot.SootMethod;
-import soot.Value;
+import soot.jimple.InstanceFieldRef;
+import soot.jimple.StaticFieldRef;
 
 public class Abstraction {
-	private final EquivalentValue taintedObject;
+	private final AccessPath accessPath;
 	private final EquivalentValue source;
-	private final Set<Value> aliasSet;
 	private final SootMethod correspondingMethod;
 	
 
 	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m){
-		aliasSet = new HashSet<Value>();
-		taintedObject = taint;
-		source = src;
-		aliasSet.add(taint);
-		correspondingMethod = m;
-	}
-	
-	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m, Set<Value> aliases){
-		aliasSet = aliases;
-		taintedObject = taint;
 		source = src;
 		correspondingMethod = m;
+		if(taint.getValue() instanceof StaticFieldRef){
+			StaticFieldRef ref = (StaticFieldRef) taint.getValue();
+			accessPath = new AccessPath(ref.getFieldRef().declaringClass().getName() + "."+ref.getFieldRef().name());
+		} else if(taint.getValue() instanceof InstanceFieldRef){
+			InstanceFieldRef ref = (InstanceFieldRef) taint.getValue();
+			accessPath = new AccessPath(ref.getBase(), ref.getField().getName());
+		}else{
+			accessPath = new AccessPath(taint);
+		}
+		
 	}
 	
-	public EquivalentValue getTaintedObject() {
-		return taintedObject;
+	public Abstraction(AccessPath p, EquivalentValue src, SootMethod m){
+		source = src;
+		correspondingMethod = m;
+		accessPath = p;
+		
 	}
 	
 	public EquivalentValue getSource() {
 		return source;
 	}
 	
-	public Set<Value> getAliasSet() {
-		return aliasSet;
-	}
 	
 	public SootMethod getCorrespondingMethod() {
 		return correspondingMethod;
@@ -54,15 +51,15 @@ public class Abstraction {
 		if (getClass() != obj.getClass())
 			return false;
 		Abstraction other = (Abstraction) obj;
+		if (accessPath == null) {
+			if (other.accessPath != null)
+				return false;
+		} else if (!accessPath.equals(other.accessPath))
+			return false;
 		if (source == null) {
 			if (other.source != null)
 				return false;
 		} else if (!source.equals(other.source))
-			return false;
-		if (taintedObject == null) {
-			if (other.taintedObject != null)
-				return false;
-		} else if (!taintedObject.equals(other.taintedObject))
 			return false;
 		return true;
 	}
@@ -71,21 +68,24 @@ public class Abstraction {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
 		result = prime * result + ((source == null) ? 0 : source.hashCode());
-		result = prime * result + ((taintedObject == null) ? 0 : taintedObject.hashCode());
 		return result;
 	}
 	
 	@Override
 	public String toString(){
-		if(taintedObject != null && source != null){
-			return taintedObject.toString() + "("+taintedObject.getType().toString()+ ") /source: "+ source.toString();
+		if(accessPath != null && source != null){
+			return accessPath.toString() + " /source: "+ source.toString();
 		}
-		if(taintedObject != null){
-			return taintedObject.toString()+ "("+taintedObject.getType().toString() +")";
+		if(accessPath != null){
+			return accessPath.toString();
 		}
 		return "Abstraction (null)";
 	}
 	
+	public AccessPath getAccessPath(){
+		return accessPath;
+	}
 
 }

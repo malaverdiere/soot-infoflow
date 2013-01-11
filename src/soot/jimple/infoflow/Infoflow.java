@@ -3,6 +3,7 @@ package soot.jimple.infoflow;
 import heros.InterproceduralCFG;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,7 +19,6 @@ import soot.Transform;
 import soot.Unit;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.util.AndroidEntryPointCreator;
-import soot.jimple.infoflow.util.ArgBuilder;
 import soot.jimple.infoflow.util.IEntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
@@ -56,8 +56,8 @@ public class Infoflow implements IInfoflow {
 		addSceneTransformer(sources, sinks);
 		
 		// prepare soot arguments:
-		ArgBuilder builder = new ArgBuilder();
-		String[] args = builder.buildArgs(path, classes.entrySet().iterator().next().getKey()); //TODO: sufficient to add DummyMain?
+//		ArgBuilder builder = new ArgBuilder();
+		//String[] args = builder.buildArgs(path, classes.entrySet().iterator().next().getKey()); 
 			
 		// explicitly include packages for shorter runtime:
 		List<String> includeList = new LinkedList<String>();
@@ -75,7 +75,17 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_allow_phantom_refs(true);
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_output_format(Options.output_format_none);
-		Options.v().parse(args);
+		Options.v().set_whole_program(true);
+		Options.v().set_soot_classpath(path);
+		soot.options.Options.v().set_prepend_classpath(true);
+		Options.v().set_process_dir(Arrays.asList(classes.keySet().toArray()));
+		soot.options.Options.v().setPhaseOption("cg.spark","on");
+		soot.options.Options.v().setPhaseOption("jb","use-original-names:true");
+		//do not merge variables (causes problems with PointsToSets)
+		soot.options.Options.v().setPhaseOption("jb.ulp","off");
+		
+		
+		//Options.v().parse(args);
 		//load all entryPoint classes with their bodies
 		Scene.v().loadNecessaryClasses();
 		for (Entry<String, List<String>> classEntry : classes.entrySet()) {
@@ -116,8 +126,11 @@ public class Infoflow implements IInfoflow {
 					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst());
 				}
 
-				JimpleIFDSSolver<Abstraction> solver = new JimpleIFDSSolver<Abstraction>(problem);
+				//JimpleIFDSSolver<Abstraction> solver = new JimpleIFDSSolver<Abstraction>(problem);
+				JimpleIFDSSolver<Abstraction,InterproceduralCFG<Unit, SootMethod>> solver =
+						new JimpleIFDSSolver<Abstraction,InterproceduralCFG<Unit, SootMethod>>(problem);
 
+				
 				solver.solve(0);
 				solver.dumpResults(); // only for debugging
 
@@ -132,7 +145,7 @@ public class Infoflow implements IInfoflow {
 					System.err.println("----------------------------------------------");
 
 					for (Abstraction l : solver.ifdsResultsAt(ret)) {
-						System.err.println(l.getCorrespondingMethod() +": "+ l.getTaintedObject() + " contains value from " + l.getSource());
+						System.err.println(l.getCorrespondingMethod() +": "+ l.getAccessPath() + " contains value from " + l.getSource());
 					}
 					System.err.println("---");
 				}

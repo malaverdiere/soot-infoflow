@@ -23,6 +23,7 @@ import soot.jimple.internal.JNopStmt;
 
 /**
  * based on: http://developer.android.com/reference/android/app/Activity.html#ActivityLifecycle
+ * and http://developer.android.com/reference/android/app/Service.html
  * @author Christian
  *
  */
@@ -71,13 +72,22 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			JNopStmt endClassStmt = new JNopStmt();
 			//if currentClass extends Activity use activity model
 			boolean activity = false;
-			Scene.v().getSootClass("android.app.Activity");
+			boolean service = false;
+			//broadcastreceiver has only one method in lifecycle - so we use default methodcreator
+			//see: http://developer.android.com/reference/android/content/BroadcastReceiver.html
+			
+			//Scene.v().getSootClass("android.app.Activity");
 			List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
 			for(SootClass sc :extendedClasses){
 				if(sc.getName().equals("android.app.Activity")){
 					activity = true;
 				}
+				if(sc.getName().equals("android.app.Service")){
+					service = true;
+				}
+				
 			}
+			//TODO: service und activity gleichzeitig implementiert - geht das?
 			if(activity){
 				//analyse entryPoints:
 				List<String> entryPoints = entry.getValue();
@@ -161,6 +171,38 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				
 				JGotoStmt lifecycleGoto = new JGotoStmt(runningEnd);
 				body.getUnits().add(lifecycleGoto);
+				
+			}else if(service){
+				//analyse entryPoints:
+				List<String> entryPoints = entry.getValue();
+				
+				// 1. onCreate:
+				JNopStmt onCreateStmt = searchAndBuildMethod("void onCreate()", currentClass, entryPoints, classLocal);
+				
+				//service has two different lifecycles:
+				//lifecycle1:
+				//2. onStart:
+				JNopStmt onStartStmt = searchAndBuildMethod("void onStart(android.content.Intent, int)", currentClass, entryPoints, classLocal);
+				JNopStmt onStart2Stmt = searchAndBuildMethod("int onStartCommand(android.content.Intent, int, int)", currentClass, entryPoints, classLocal);
+				//methods
+				//lifecycle1 end
+				
+				//lifecycle2 start
+				
+				//onBind:
+				JNopStmt onBindStmt = searchAndBuildMethod("android.os.IBinder onBind(android.content.Intent)", currentClass, entryPoints, classLocal);
+				//methods
+				
+				//onRebind:
+				JNopStmt onRebindStmt = searchAndBuildMethod("void onBind(android.content.Intent)", currentClass, entryPoints, classLocal);
+				
+				//onUnbind:
+				JNopStmt onUnbindStmt = searchAndBuildMethod("boolean onUnbind(android.content.Intent)", currentClass, entryPoints, classLocal);
+				
+				//lifecycle2 end
+				
+				//onDestroy:
+				searchAndBuildMethod("void onDestroy()", currentClass, entryPoints, classLocal);
 				
 			}else{
 				for(SootMethod currentMethod : currentClass.getMethods()){

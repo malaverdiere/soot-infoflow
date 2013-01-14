@@ -27,7 +27,18 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		super(icfg);
 		results = new HashMap<String, List<String>>();
 	}
-	
+	/**
+	 * this method solves the problem that a field gets tainted inside a method which is assigned before, e.g.:
+	 * 1 a = x
+	 * 2 x.f = taintedValue
+	 * 3 return a.f 
+	 * --> return value must be tainted
+	 * @param units the units of the method
+	 * @param stopUnit the unit in which the taint is happening (line 2 in example) - we do not have to look further
+	 * @param base the base value which gets tainted (x in example)
+	 * @param instanceField the field which gets tainted (f in example)
+	 * @return set of aliases (a.f in example)
+	 */
 	protected Set<Value> getAliasesinMethod(PatchingChain<Unit> units, Unit stopUnit, Value base, SootFieldRef instanceField){
 		HashSet<Value> val = new HashSet<Value>();
 		for(Unit u : units){

@@ -63,6 +63,7 @@ public class Infoflow implements IInfoflow {
 		List<String> includeList = new LinkedList<String>();
 		includeList.add("java.lang.");
 		includeList.add("java.util.");
+		includeList.add("java.io.");
 		includeList.add("sun.misc.");
 		includeList.add("android.");
 		includeList.add("org.apache.http.");
@@ -83,7 +84,6 @@ public class Infoflow implements IInfoflow {
 		soot.options.Options.v().setPhaseOption("jb","use-original-names:true");
 		//do not merge variables (causes problems with PointsToSets)
 		soot.options.Options.v().setPhaseOption("jb.ulp","off");
-		
 		
 		//Options.v().parse(args);
 		//load all entryPoint classes with their bodies

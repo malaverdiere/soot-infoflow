@@ -98,8 +98,8 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 								res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(src)));
 
 								SootMethod m = interproceduralCFG().getMethodOf(src);
-								assert leftValue instanceof Local; // always true
 								if (originalLeft instanceof InstanceFieldRef) {
+									assert leftValue instanceof Local: "Should be local but is " +leftValue.getClass(); // always true
 									Value base = ((InstanceFieldRef) originalLeft).getBase();
 									Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), src, base, ((InstanceFieldRef) originalLeft).getFieldRef());
 									for (Value v : aliases) {

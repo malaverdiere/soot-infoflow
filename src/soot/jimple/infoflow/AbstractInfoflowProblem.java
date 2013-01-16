@@ -13,6 +13,7 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.AssignStmt;
+import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.internal.JInstanceFieldRef;
@@ -56,6 +57,9 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 						}else{
 							val.add(aStmt.getRightOp());
 						}
+					}else if(aStmt.getRightOp() instanceof InstanceFieldRef || aStmt.getRightOp() instanceof StaticFieldRef){
+						//because of max(length(accesspath)) = 1 we can only taint whole instancefield:
+						val.add(aStmt.getRightOp());
 					}
 					val.addAll(getAliasesinMethod(units, u, aStmt.getRightOp(), instanceField));
 				} //not nice - change this - do not use toString (although it should be valid because we are only looking inside one method and are looking for the same object)
@@ -68,6 +72,9 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 							val.add(aStmt.getLeftOp());
 						}
 						
+					}else if(aStmt.getLeftOp() instanceof InstanceFieldRef || aStmt.getLeftOp() instanceof StaticFieldRef){
+						//because of max(length(accesspath)) = 1 we can only taint whole instancefield:
+						val.add(aStmt.getLeftOp());
 					}
 					val.addAll(getAliasesinMethod(units, u, aStmt.getLeftOp(), instanceField));
 				}

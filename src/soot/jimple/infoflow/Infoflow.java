@@ -93,8 +93,8 @@ public class Infoflow implements IInfoflow {
 			c.setApplicationClass();
 			if(DEBUG){
 				for(String methodSignature : classEntry.getValue()){
-					SootMethod method = Scene.v().getMethod(methodSignature);
-					if(method != null){
+					if (Scene.v().containsMethod(methodSignature)) {
+						SootMethod method = Scene.v().getMethod(methodSignature);
 						System.err.println(method.retrieveActiveBody().toString());
 					}
 				}

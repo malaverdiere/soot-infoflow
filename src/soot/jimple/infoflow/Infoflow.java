@@ -75,7 +75,10 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_include(includeList);
 		Options.v().set_allow_phantom_refs(true);
 		Options.v().set_no_bodies_for_excluded(true);
-		Options.v().set_output_format(Options.output_format_none);
+		if (DEBUG)
+			Options.v().set_output_format(Options.output_format_jimple);
+		else
+			Options.v().set_output_format(Options.output_format_none);
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
 		soot.options.Options.v().set_prepend_classpath(true);
@@ -108,6 +111,8 @@ public class Infoflow implements IInfoflow {
 		entrys.add(epCreator.createDummyMain(classes));
 		Scene.v().setEntryPoints(entrys);
 		PackManager.v().runPacks();
+		if (DEBUG)
+			PackManager.v().writeOutput();
 	}	
 
 	public void addSceneTransformer(final List<String> sources, final List<String> sinks) {

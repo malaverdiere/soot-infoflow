@@ -16,6 +16,7 @@ import soot.javaToJimple.LocalGenerator;
 import soot.jimple.IntConstant;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
+import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JEqExpr;
 import soot.jimple.internal.JGotoStmt;
 import soot.jimple.internal.JIfStmt;
@@ -92,6 +93,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				//analyse entryPoints:
 				List<String> entryPoints = entry.getValue();
 				
+				//test:
+				JAssignStmt assignStmt = new JAssignStmt(intCounter, IntConstant.v(conditionCounter));
+				body.getUnits().add(assignStmt);
+				
 				// 1. onCreate:
 				JNopStmt onCreateStmt = searchAndBuildMethod("void onCreate(android.os.Bundle)", currentClass, entryPoints, classLocal);
 				//2. onStart:
@@ -101,6 +106,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				
 				JNopStmt runningStart = new JNopStmt();
 				JGotoStmt runningGoto = new JGotoStmt(runningStart);
+				
+				
 				body.getUnits().add(runningGoto);
 				JNopStmt runningEnd = new JNopStmt();
 				body.getUnits().add(runningEnd);
@@ -112,7 +119,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				createIfStmt(pauseToStopStmt);
 				createIfStmt(onResumeStmt);
 				createIfStmt(onCreateStmt);
-			
+				
 				body.getUnits().add(pauseToStopStmt);
 				//5. onStop:
 				searchAndBuildMethod("void onStop()", currentClass, entryPoints, classLocal);
@@ -127,8 +134,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				//6. onRestart:
 				body.getUnits().add(stopToRestartStmt);
 				searchAndBuildMethod("void onRestart()", currentClass, entryPoints, classLocal);
-				JGotoStmt startGoto = new JGotoStmt(onStartStmt);
-				body.getUnits().add(startGoto);
+				if(onStartStmt != null){
+					JGotoStmt startGoto = new JGotoStmt(onStartStmt);
+					body.getUnits().add(startGoto);
+				}
 				
 				//7. onDestroy
 				body.getUnits().add(stopToDestroyStmt);
@@ -165,8 +174,9 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(gotoStmt);
 				
 				body.getUnits().add(endWhileStmt);
-				JGotoStmt gotoStart = new JGotoStmt(startWhileStmt);
-				body.getUnits().add(gotoStart);
+				createIfStmt(startWhileStmt);
+//				JGotoStmt gotoStart = new JGotoStmt(startWhileStmt);
+//				body.getUnits().add(gotoStart);
 				
 				
 				JGotoStmt lifecycleGoto = new JGotoStmt(runningEnd);
@@ -237,24 +247,31 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	}
 	
 	private JNopStmt searchAndBuildMethod(String signature, SootClass currentClass, List<String> entryPoints, Local classLocal){
-		JNopStmt onMethodStmt = new JNopStmt();
-		body.getUnits().add(onMethodStmt);
 		if(currentClass.declaresMethod(signature)){
 			SootMethod onMethod = currentClass.getMethod(signature);
 			if(onMethod != null){
+				JNopStmt onMethodStmt = new JNopStmt();
+				body.getUnits().add(onMethodStmt);
+				
 				//write Method
 				buildMethodCall(onMethod, body, classLocal, generator);
 				entryPoints.remove("<"+ currentClass.toString()+ ": "+signature+">");
+				return onMethodStmt;
 			}
 		}
-		return onMethodStmt;
+		return null;
 	}
 	
 	private void createIfStmt(Unit target){
+		if(target == null){
+			return;
+		}
 		JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
 		conditionCounter++;
 		JIfStmt ifStmt = new JIfStmt(cond, target);
 		body.getUnits().add(ifStmt);
+//		JAssignStmt assignStmt = new JAssignStmt(intCounter, IntConstant.v(conditionCounter));
+//		body.getUnits().add(assignStmt);
 	}
 	
 

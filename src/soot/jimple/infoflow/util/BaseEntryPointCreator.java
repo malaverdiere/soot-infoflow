@@ -44,9 +44,11 @@ public class BaseEntryPointCreator implements IEntryPointCreator {
 		body.setMethod(mainMethod);
 		mainMethod.setActiveBody(body);
 		SootClass mainClass = new SootClass("dummyMainClass");
-		mainClass.setApplicationClass();
 		mainClass.addMethod(mainMethod);
+		// First add class to scene, then make it an application class
+		// as addClass contains a call to "setLibraryClass" 
 		Scene.v().addClass(mainClass);
+		mainClass.setApplicationClass();
 		return mainMethod;
 	}
 	

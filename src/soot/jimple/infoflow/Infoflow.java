@@ -137,7 +137,8 @@ public class Infoflow implements IInfoflow {
 
 				
 				solver.solve(0);
-				solver.dumpResults(); // only for debugging
+				if (DEBUG)
+					solver.dumpResults(); // only for debugging
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 

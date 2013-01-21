@@ -29,6 +29,31 @@ public class Infoflow implements IInfoflow {
 	public static boolean DEBUG = true;
 	public boolean local = false;
 	public HashMap<String, List<String>> results;
+	
+	private final String androidPath;
+	private final boolean forceAndroidJar;
+	
+	/**
+	 * Creates a new instance of the InfoFlow class for analyzing plain Java
+	 * code without any references to APKs or the Android SDK.
+	 */
+	public Infoflow() {
+		this.androidPath = "";
+		this.forceAndroidJar = false;
+	}
+	
+	/**
+	 * Creates a new instance of the InfoFlow class for analyzing Android APK
+	 * files. This constructor sets the right options for analyzing APK files.
+	 * @param androidPath If forceAndroidJar is false, this is the base directory
+	 * of the platform files in the Android SDK. If forceAndroidJar is true, this
+	 * is the full path of a single android.jar file.
+	 * @param forceAndroidJar
+	 */
+	public Infoflow(String androidPath, boolean forceAndroidJar) {
+		this.androidPath = androidPath;
+		this.forceAndroidJar = forceAndroidJar;
+	}
 
 	@Override
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
@@ -87,6 +112,13 @@ public class Infoflow implements IInfoflow {
 		soot.options.Options.v().setPhaseOption("jb","use-original-names:true");
 		//do not merge variables (causes problems with PointsToSets)
 		soot.options.Options.v().setPhaseOption("jb.ulp","off");
+		if (!this.androidPath.isEmpty()) {
+			soot.options.Options.v().set_src_prec(Options.src_prec_apk);
+			if (this.forceAndroidJar)
+				soot.options.Options.v().set_force_android_jar(this.androidPath);
+			else
+				soot.options.Options.v().set_android_jars(this.androidPath);
+		}
 		
 		//Options.v().parse(args);
 		//load all entryPoint classes with their bodies

@@ -18,8 +18,8 @@ import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.source.DefaultSourceManager;
-import soot.jimple.infoflow.source.SourceManager;
+import soot.jimple.infoflow.source.DefaultSourceSinkManager;
+import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.AndroidEntryPointCreator;
 import soot.jimple.infoflow.util.IEntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
@@ -59,21 +59,15 @@ public class Infoflow implements IInfoflow {
 
 	@Override
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, entryPoints, new DefaultSourceManager(sources), sinks);
+		this.computeInfoflow(path, entryPoints, new DefaultSourceSinkManager(sources, sinks));
 	}
 	
 	@Override
-	public void computeInfoflow(String path, List<String> entryPoints, SourceManager sources, List<String> sinks) {
+	public void computeInfoflow(String path, List<String> entryPoints, SourceSinkManager sourcesSinks) {
 		results = null;
-		if(sources == null){
+		if(sourcesSinks == null){
 			System.out.println("Error: sources are empty!");
 			return;
-		}
-		if(sinks == null || sinks.isEmpty()){
-			if(sinks == null){
-				sinks = new ArrayList<String>();
-			}
-			System.out.println("Warning: sinks are empty!");
 		}
 		
 		//reset Soot:
@@ -85,7 +79,7 @@ public class Infoflow implements IInfoflow {
 		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints);
 
 		// add SceneTransformer which calculates and prints infoflow
-		addSceneTransformer(sources, sinks);
+		addSceneTransformer(sourcesSinks);
 		
 		// prepare soot arguments:
 //		ArgBuilder builder = new ArgBuilder();
@@ -154,16 +148,16 @@ public class Infoflow implements IInfoflow {
 			PackManager.v().writeOutput();
 	}	
 
-	private void addSceneTransformer(final SourceManager sources, final List<String> sinks) {
+	private void addSceneTransformer(final SourceSinkManager sourcesSinks) {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
 
 				AbstractInfoflowProblem problem;
 				
 				if(local){
-					problem = new InfoflowLocalProblem(sources, sinks);
+					problem = new InfoflowLocalProblem(sourcesSinks);
 				} else{
-					problem = new InfoflowProblem(sources, sinks);
+					problem = new InfoflowProblem(sourcesSinks);
 				}
 				 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {

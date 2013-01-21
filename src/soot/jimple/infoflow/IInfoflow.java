@@ -3,7 +3,7 @@ package soot.jimple.infoflow;
 import java.util.HashMap;
 import java.util.List;
 
-import soot.jimple.infoflow.source.SourceManager;
+import soot.jimple.infoflow.source.SourceSinkManager;
 
 public interface IInfoflow {
 
@@ -20,10 +20,9 @@ public interface IInfoflow {
 	 * computes the information flow
 	 * @param path the path to the main folder of the (unpacked) class files
 	 * @param entryPoints the entryPoints (string conforms to SootMethod representation)
-	 * @param sources manager class for identifying sources in the source code
-	 * @param sinks list of sink class+method (as string conforms to SootMethod representation)
+	 * @param sourcesSinks manager class for identifying sources andsinks in the source code
 	 */
-	public void computeInfoflow(String path, List<String> entryPoints, SourceManager sources, List<String> sinks);
+	public void computeInfoflow(String path, List<String> entryPoints, SourceSinkManager sourcesSinks);
 	
 	public HashMap<String, List<String>> getResults();
 	

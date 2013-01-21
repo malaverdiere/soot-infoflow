@@ -33,8 +33,8 @@ import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
-import soot.jimple.infoflow.source.DefaultSourceManager;
-import soot.jimple.infoflow.source.SourceManager;
+import soot.jimple.infoflow.source.DefaultSourceSinkManager;
+import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.LocalBaseSelector;
 import soot.jimple.internal.InvokeExprBox;
 import soot.jimple.internal.JAssignStmt;
@@ -44,8 +44,7 @@ import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 
 public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 
-	final SourceManager sourceManager;
-	final List<String> sinks;
+	final SourceSinkManager sourceSinkManager;
 	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
 
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
@@ -317,12 +316,12 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 							if (iStmt instanceof JAssignStmt) {
 								final JAssignStmt stmt = (JAssignStmt) iStmt;
 
-								if (sourceManager.isSourceMethod(stmt.getInvokeExpr().getMethod())) {
+								if (sourceSinkManager.isSourceMethod(stmt.getInvokeExpr().getMethod())) {
 									res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(stmt.getLeftOp())), new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
 								}
 							}
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
-							if (sinks.contains(iStmt.getInvokeExpr().getMethod().toString())) {
+							if (sourceSinkManager.isSinkMethod(iStmt.getInvokeExpr().getMethod())) {
 								boolean taintedParam = false;
 								for (int i = 0; i < callArgs.size(); i++) {
 									if (callArgs.get(i).equals(source.getAccessPath().getPlainValue())) {
@@ -372,28 +371,24 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 		};
 	}
 
-	public InfoflowLocalProblem(List<String> sourceList, List<String> sinks) {
+	public InfoflowLocalProblem(List<String> sourceList, List<String> sinkList) {
 		super(new JimpleBasedInterproceduralCFG());
-		this.sourceManager = new DefaultSourceManager(sourceList);
-		this.sinks = sinks;
+		this.sourceSinkManager = new DefaultSourceSinkManager(sourceList, sinkList);
 	}
 
-	public InfoflowLocalProblem(SourceManager sourceManager, List<String> sinks) {
+	public InfoflowLocalProblem(SourceSinkManager sourceSinkManager) {
 		super(new JimpleBasedInterproceduralCFG());
-		this.sourceManager = sourceManager;
-		this.sinks = sinks;
+		this.sourceSinkManager = sourceSinkManager;
 	}
 
-	public InfoflowLocalProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinks) {
+	public InfoflowLocalProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinkList) {
 		super(icfg);
-		this.sourceManager = new DefaultSourceManager(sourceList);
-		this.sinks = sinks;
+		this.sourceSinkManager = new DefaultSourceSinkManager(sourceList, sinkList);
 	}
 
-	public InfoflowLocalProblem(InterproceduralCFG<Unit, SootMethod> icfg, SourceManager sourceManager, List<String> sinks) {
+	public InfoflowLocalProblem(InterproceduralCFG<Unit, SootMethod> icfg, SourceSinkManager sourceSinkManager) {
 		super(icfg);
-		this.sourceManager = sourceManager;
-		this.sinks = sinks;
+		this.sourceSinkManager = sourceSinkManager;
 	}
 
 	public Abstraction createZeroValue() {

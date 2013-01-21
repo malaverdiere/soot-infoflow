@@ -227,12 +227,15 @@ public class BaseEntryPointCreator implements IEntryPointCreator {
 		if (sClass == null) {
 			return false;
 		}
+		if (sClass.isPhantom() || sClass.isPhantomClass()) {
+			System.out.println("Cannot generate constructor for phantom class " + sClass.getName());
+			return false;
+		}
 		if(isSimpleType(sClass.toString())){
 			return true;
 		}
 		
 		// look for constructors:
-		boolean oneOk = false; // we need at least one constructor that works
 		List<SootMethod> methodList = (List<SootMethod>) sClass.getMethods();
 		for (SootMethod currentMethod : methodList) {
 			if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
@@ -267,16 +270,12 @@ public class BaseEntryPointCreator implements IEntryPointCreator {
 
 					// -> no nicer way for this?
 				}
-				if (canGenerateConstructor) {
-					oneOk = true;
-				} else{
-					
-				}
-
+				if (canGenerateConstructor)
+					return true;
 			}
 
 		}
-		return oneOk;
+		return false;
 	}
 
 }

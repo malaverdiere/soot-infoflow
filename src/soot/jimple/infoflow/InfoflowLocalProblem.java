@@ -374,13 +374,25 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 
 	public InfoflowLocalProblem(List<String> sourceList, List<String> sinks) {
 		super(new JimpleBasedInterproceduralCFG());
-		sourceManager = new DefaultSourceManager(sourceList);
+		this.sourceManager = new DefaultSourceManager(sourceList);
+		this.sinks = sinks;
+	}
+
+	public InfoflowLocalProblem(SourceManager sourceManager, List<String> sinks) {
+		super(new JimpleBasedInterproceduralCFG());
+		this.sourceManager = sourceManager;
 		this.sinks = sinks;
 	}
 
 	public InfoflowLocalProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinks) {
 		super(icfg);
-		sourceManager = new DefaultSourceManager(sourceList);
+		this.sourceManager = new DefaultSourceManager(sourceList);
+		this.sinks = sinks;
+	}
+
+	public InfoflowLocalProblem(InterproceduralCFG<Unit, SootMethod> icfg, SourceManager sourceManager, List<String> sinks) {
+		super(icfg);
+		this.sourceManager = sourceManager;
 		this.sinks = sinks;
 	}
 

@@ -55,9 +55,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	final List<String> sinks;
 	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
 
+	@Override
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit, Abstraction, SootMethod>() {
 
+			@Override
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, Unit dest) {
 				// taint is propagated with assignStmt
 				if (src instanceof AssignStmt) {
@@ -77,6 +79,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					return new FlowFunction<Abstraction>() {
 
+						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							boolean addLeftValue = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
@@ -168,6 +171,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				return Identity.v();
 			}
 
+			@Override
 			public FlowFunction<Abstraction> getCallFlowFunction(Unit src, final SootMethod dest) {
 				final Stmt stmt = (Stmt) src;
 				final InvokeExpr ie = stmt.getInvokeExpr();
@@ -176,8 +180,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				for (int i = 0; i < dest.getParameterCount(); i++) {
 					paramLocals.add(dest.getActiveBody().getParameterLocal(i));
 				}
+							
 				return new FlowFunction<Abstraction>() {
 
+					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
@@ -231,6 +237,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				};
 			}
 
+			@Override
 			public FlowFunction<Abstraction> getReturnFlowFunction(Unit callSite, SootMethod callee, Unit exitStmt, final Unit retSite) {
 				final SootMethod calleeMethod = callee;
 				final Unit callUnit = callSite;
@@ -238,6 +245,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 				return new FlowFunction<Abstraction>() {
 
+					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
@@ -369,6 +377,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				};
 			}
 
+			@Override
 			public FlowFunction<Abstraction> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
 				final Unit unit = returnSite;
 				// special treatment for native methods:
@@ -389,6 +398,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					}
 					return new FlowFunction<Abstraction>() {
 
+						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.add(source);
@@ -460,16 +470,29 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 	public InfoflowProblem(List<String> sourceList, List<String> sinks) {
 		super(new JimpleBasedInterproceduralCFG());
-		sourceManager = new DefaultSourceManager(sourceList);
+		this.sourceManager = new DefaultSourceManager(sourceList);
+		this.sinks = sinks;
+	}
+
+	public InfoflowProblem(SourceManager sourceManager, List<String> sinks) {
+		super(new JimpleBasedInterproceduralCFG());
+		this.sourceManager = sourceManager;
 		this.sinks = sinks;
 	}
 
 	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinks) {
 		super(icfg);
-		sourceManager = new DefaultSourceManager(sourceList);
+		this.sourceManager = new DefaultSourceManager(sourceList);
 		this.sinks = sinks;
 	}
 
+	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, SourceManager sourceManager, List<String> sinks) {
+		super(icfg);
+		this.sourceManager = sourceManager;
+		this.sinks = sinks;
+	}
+
+	@Override
 	public Abstraction createZeroValue() {
 		if (zeroValue == null)
 			return new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);

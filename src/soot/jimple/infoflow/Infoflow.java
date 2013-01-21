@@ -18,6 +18,8 @@ import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.source.DefaultSourceManager;
+import soot.jimple.infoflow.source.SourceManager;
 import soot.jimple.infoflow.util.AndroidEntryPointCreator;
 import soot.jimple.infoflow.util.IEntryPointCreator;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
@@ -57,8 +59,13 @@ public class Infoflow implements IInfoflow {
 
 	@Override
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
+		this.computeInfoflow(path, entryPoints, new DefaultSourceManager(sources), sinks);
+	}
+	
+	@Override
+	public void computeInfoflow(String path, List<String> entryPoints, SourceManager sources, List<String> sinks) {
 		results = null;
-		if(sources == null || sources.isEmpty()){
+		if(sources == null){
 			System.out.println("Error: sources are empty!");
 			return;
 		}
@@ -98,8 +105,8 @@ public class Infoflow implements IInfoflow {
 		includeList.add("com.jakobkontor.");
 		includeList.add("java.net.");
 		Options.v().set_include(includeList);
-		Options.v().set_allow_phantom_refs(true);
-		Options.v().set_no_bodies_for_excluded(true);
+//		Options.v().set_allow_phantom_refs(true);
+//		Options.v().set_no_bodies_for_excluded(true);
 		if (DEBUG)
 			Options.v().set_output_format(Options.output_format_jimple);
 		else
@@ -147,7 +154,7 @@ public class Infoflow implements IInfoflow {
 			PackManager.v().writeOutput();
 	}	
 
-	public void addSceneTransformer(final List<String> sources, final List<String> sinks) {
+	private void addSceneTransformer(final SourceManager sources, final List<String> sinks) {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
 

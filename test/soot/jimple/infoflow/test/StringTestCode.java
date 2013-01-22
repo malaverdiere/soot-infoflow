@@ -87,6 +87,16 @@ public class StringTestCode {
 		cm.publish(test);
 		
 	}
+	
+	public void methodStringBuilder3(){
+		String tainted = TelephonyManager.getDeviceId();
+		StringBuilder sb = new StringBuilder("Hello World");
+        sb.append(tainted);
+        String test = sb.toString();
+
+        ConnectionManager cm = new ConnectionManager();
+		cm.publish(test);
+	}
 
 	public void methodStringBuilderURL() throws MalformedURLException{
 		StringBuilder sb = new StringBuilder();
@@ -114,13 +124,11 @@ public class StringTestCode {
 		cm.publish(String.valueOf(x));
 	}
 
-	private String imei;
-	private String URL = "http://www.google.de/?q=";
-	public void originalFromPrototyp(){
-		imei = TelephonyManager.getDeviceId();
-		URL = URL.concat(imei);
-		
-		
-	}
+//	private String imei;
+//	private String URL = "http://www.google.de/?q=";
+//	public void originalFromPrototyp(){
+//		imei = TelephonyManager.getDeviceId();
+//		URL = URL.concat(imei);
+//	}
 
 }

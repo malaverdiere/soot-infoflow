@@ -1,6 +1,11 @@
 package soot.jimple.infoflow.test.junit;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -126,6 +131,15 @@ public class StringTest extends JUnitTests {
     }
     
     @Test
+    public void stringBuilderTest3(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder3()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);	
+    }
+    
+    @Test
     public void stringBuilderTestURL() throws FileNotFoundException{
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -138,12 +152,19 @@ public class StringTest extends JUnitTests {
     }
     
     @Test
-    public void testURL(){
+    public void testURL() throws IOException{
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void testURL()>");
+    	OutputStream streamOut = 
+                new FileOutputStream(new File("urldebug.txt"));
+		PrintStream writerOut = new PrintStream(streamOut);
+		//System.setErr(writerOut);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		
 		checkInfoflow(infoflow);
+		writerOut.close();
+		streamOut.close();
 //		assertTrue(errOutputStream.toString().contains("url contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 		
     }

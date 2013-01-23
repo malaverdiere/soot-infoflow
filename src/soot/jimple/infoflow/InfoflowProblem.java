@@ -5,9 +5,6 @@ import heros.FlowFunctions;
 import heros.InterproceduralCFG;
 import heros.flowfunc.Identity;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -28,12 +25,12 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
+import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
-import soot.jimple.NullConstant;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -288,7 +285,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callUnit instanceof Stmt) {
 									Stmt iStmt = (Stmt) callUnit;
 									originalCallArg = iStmt.getInvokeExpr().getArg(i);
-									if (!(originalCallArg instanceof NullConstant) && !(originalCallArg.getType() instanceof PrimType)) {
+									if (!(originalCallArg instanceof Constant) && !(originalCallArg.getType() instanceof PrimType)) {
 										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(originalCallArg), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
 								}
@@ -384,17 +381,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					final Stmt iStmt = (Stmt) call;
 					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
 
-					// Testoutput to collect all native calls from different runs of the analysis:
-					if (iStmt.getInvokeExpr().getMethod().isNative()) {
-						try {
-							FileWriter fstream = new FileWriter("nativeCalls.txt", true);
-							BufferedWriter out = new BufferedWriter(fstream);
-							out.write(iStmt.getInvokeExpr().getMethod().toString() + "\n");
-							out.close();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
 					return new FlowFunction<Abstraction>() {
 
 						@Override
@@ -444,7 +430,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										results.get(iStmt.getInvokeExpr().getMethod().toString()).add(source.getSource().getValue().toString());
 									}
 								}
-								// TODO: required? only for LocalAnalysis at the moment: if the base object which executes the method is tainted the sink is reached, too.
+								//if the base object which executes the method is tainted the sink is reached, too.
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 									InstanceInvokeExpr vie = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 									if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {

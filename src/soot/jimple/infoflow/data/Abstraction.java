@@ -2,8 +2,6 @@ package soot.jimple.infoflow.data;
 
 import soot.EquivalentValue;
 import soot.SootMethod;
-import soot.jimple.InstanceFieldRef;
-import soot.jimple.StaticFieldRef;
 
 public class Abstraction {
 	private final AccessPath accessPath;
@@ -14,15 +12,7 @@ public class Abstraction {
 	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m){
 		source = src;
 		correspondingMethod = m;
-		if(taint.getValue() instanceof StaticFieldRef){
-			StaticFieldRef ref = (StaticFieldRef) taint.getValue();
-			accessPath = new AccessPath(ref.getFieldRef().declaringClass().getName() + "."+ref.getFieldRef().name());
-		} else if(taint.getValue() instanceof InstanceFieldRef){
-			InstanceFieldRef ref = (InstanceFieldRef) taint.getValue();
-			accessPath = new AccessPath(ref.getBase(), ref.getField().getName());
-		}else{
-			accessPath = new AccessPath(taint);
-		}
+		accessPath = new AccessPath(taint);
 		
 	}
 	

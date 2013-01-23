@@ -25,6 +25,7 @@ import soot.jimple.internal.JNopStmt;
 /**
  * based on: http://developer.android.com/reference/android/app/Activity.html#ActivityLifecycle
  * and http://developer.android.com/reference/android/app/Service.html
+ * and http://developer.android.com/reference/android/content/BroadcastReceiver.html#ReceiverLifecycle
  * 
  * broadcastreceiver has only one method in lifecycle - so we use default methodcreator
  *	see: http://developer.android.com/reference/android/content/BroadcastReceiver.html
@@ -79,7 +80,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
 			Local classLocal = localVarsForClasses.get(entry.getKey());
 			JNopStmt endClassStmt = new JNopStmt();
-			//if currentClass extends Activity use activity model
+
 			boolean activity = false;
 			boolean service = false;
 			boolean broadcastReceiver = false;
@@ -94,6 +95,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				}
 				if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS)){
 					service = true;
+				}
+				if(sc.getName().equals(AndroidEntryPointConstants.BROADCASTRECEIVERCLASS)){
+					broadcastReceiver = true;
+				}
+				if(sc.getName().equals(AndroidEntryPointConstants.CONTENTPROVIDERCLASS)){
+					contentProvider = true;
 				}
 				
 			}
@@ -135,8 +142,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 						body.getUnits().add(elseStmt);
 					}
 				}
-
-				
 				body.getUnits().add(endWhileStmt);
 				createIfStmt(startWhileStmt);
 				
@@ -170,9 +175,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				//7. onDestroy
 				body.getUnits().add(stopToDestroyStmt);
 				searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONDESTROY, currentClass, entryPoints, classLocal);
-				JGotoStmt endGoto = new JGotoStmt(endClassStmt);
-				body.getUnits().add(endGoto);
-				
+
+				createIfStmt(endClassStmt);
 				
 			}
 			if(service){
@@ -185,27 +189,141 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				//service has two different lifecycles:
 				//lifecycle1:
 				//2. onStart:
-				JNopStmt onStartStmt = searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONSTART1, currentClass, entryPoints, classLocal);
-				JNopStmt onStart2Stmt = searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONSTART2, currentClass, entryPoints, classLocal);
-				//methods
+				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONSTART1, currentClass, entryPoints, classLocal);
+				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONSTART2, currentClass, entryPoints, classLocal);
+				//methods: 
+				//all other entryPoints of this class:
+				JNopStmt startWhileStmt = new JNopStmt();
+				JNopStmt endWhileStmt = new JNopStmt();
+				body.getUnits().add(startWhileStmt);
+				for(SootMethod currentMethod : currentClass.getMethods()){
+					if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getServiceLifecycleMethods().contains(currentMethod.getSubSignature())){
+						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+						conditionCounter++;
+						JNopStmt thenStmt = new JNopStmt();
+						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+						body.getUnits().add(ifStmt);
+						JNopStmt elseStmt = new JNopStmt();
+						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+						body.getUnits().add(elseGoto);
+						
+						body.getUnits().add(thenStmt);
+						buildMethodCall(currentMethod, body, classLocal, generator);
+
+						body.getUnits().add(elseStmt);
+					}
+				}
+				body.getUnits().add(endWhileStmt);
+				createIfStmt(startWhileStmt);
+				
 				//lifecycle1 end
 				
 				//lifecycle2 start
-				
 				//onBind:
 				JNopStmt onBindStmt = searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONBIND, currentClass, entryPoints, classLocal);
+				
+				JNopStmt beforemethodsStmt = new JNopStmt();
+				body.getUnits().add(beforemethodsStmt);
 				//methods
+				JNopStmt startWhile2Stmt = new JNopStmt();
+				JNopStmt endWhile2Stmt = new JNopStmt();
+				body.getUnits().add(startWhile2Stmt);
+				for(SootMethod currentMethod : currentClass.getMethods()){
+					if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getServiceLifecycleMethods().contains(currentMethod.getSubSignature())){
+						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+						conditionCounter++;
+						JNopStmt thenStmt = new JNopStmt();
+						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+						body.getUnits().add(ifStmt);
+						JNopStmt elseStmt = new JNopStmt();
+						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+						body.getUnits().add(elseGoto);
+						
+						body.getUnits().add(thenStmt);
+						buildMethodCall(currentMethod, body, classLocal, generator);
+
+						body.getUnits().add(elseStmt);
+					}
+				}
+				body.getUnits().add(endWhile2Stmt);
+				createIfStmt(startWhile2Stmt);
 				
 				//onRebind:
-				JNopStmt onRebindStmt = searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONREBIND, currentClass, entryPoints, classLocal);
-				
+				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONREBIND, currentClass, entryPoints, classLocal);
+				createIfStmt(beforemethodsStmt);
 				//onUnbind:
-				JNopStmt onUnbindStmt = searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONUNBIND, currentClass, entryPoints, classLocal);
-				
+				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONUNBIND, currentClass, entryPoints, classLocal);
+				createIfStmt(onBindStmt);
 				//lifecycle2 end
 				
 				//onDestroy:
 				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONDESTROY, currentClass, entryPoints, classLocal);
+				
+				//either begin or end or next class:
+				createIfStmt(onCreateStmt);
+				createIfStmt(endClassStmt);
+				
+			}
+			if(broadcastReceiver){
+				List<String> entryPoints = entry.getValue();
+				JNopStmt onReceiveStmt = searchAndBuildMethod(AndroidEntryPointConstants.BROADCAST_ONRECEIVE, currentClass, entryPoints, classLocal);
+				//methods
+				JNopStmt startWhileStmt = new JNopStmt();
+				JNopStmt endWhileStmt = new JNopStmt();
+				body.getUnits().add(startWhileStmt);
+				for(SootMethod currentMethod : currentClass.getMethods()){
+					if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getBroadcastLifecycleMethods().contains(currentMethod.getSubSignature())){
+						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+						conditionCounter++;
+						JNopStmt thenStmt = new JNopStmt();
+						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+						body.getUnits().add(ifStmt);
+						JNopStmt elseStmt = new JNopStmt();
+						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+						body.getUnits().add(elseGoto);
+						
+						body.getUnits().add(thenStmt);
+						buildMethodCall(currentMethod, body, classLocal, generator);
+
+						body.getUnits().add(elseStmt);
+					}
+				}
+				body.getUnits().add(endWhileStmt);
+				createIfStmt(startWhileStmt);
+				
+				createIfStmt(onReceiveStmt);
+				
+			}
+			if(contentProvider){
+				List<String> entryPoints = entry.getValue();
+				JNopStmt onCreateStmt = searchAndBuildMethod(AndroidEntryPointConstants.CONTENTPROVIDER_ONCREATE, currentClass, entryPoints, classLocal);
+				//TODO: which methods?
+				// see: http://developer.android.com/reference/android/content/ContentProvider.html
+				//methods
+				JNopStmt startWhileStmt = new JNopStmt();
+				JNopStmt endWhileStmt = new JNopStmt();
+				body.getUnits().add(startWhileStmt);
+				for(SootMethod currentMethod : currentClass.getMethods()){
+					if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getContentproviderLifecycleMethods().contains(currentMethod.getSubSignature())){
+						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+						conditionCounter++;
+						JNopStmt thenStmt = new JNopStmt();
+						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+						body.getUnits().add(ifStmt);
+						JNopStmt elseStmt = new JNopStmt();
+						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+						body.getUnits().add(elseGoto);
+						
+						body.getUnits().add(thenStmt);
+						buildMethodCall(currentMethod, body, classLocal, generator);
+
+						body.getUnits().add(elseStmt);
+					}
+				}
+				body.getUnits().add(endWhileStmt);
+				createIfStmt(startWhileStmt);
+				
+				createIfStmt(onCreateStmt);
 				
 			}
 			if(plain){
@@ -223,7 +341,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 						body.getUnits().add(thenStmt);
 						buildMethodCall(currentMethod, body, classLocal, generator);
 						
-						body.getUnits().add(new JGotoStmt(endClassStmt)); //TODO: correct?
+						createIfStmt(endClassStmt);
 						body.getUnits().add(elseStmt);
 					}
 				}

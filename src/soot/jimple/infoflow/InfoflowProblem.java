@@ -402,6 +402,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 								if (sourceSinkManager.isSourceMethod(stmt.getInvokeExpr().getMethod())) {
 									res.add(new Abstraction(new EquivalentValue(stmt.getLeftOp()), new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
+									res.remove(zeroValue);
 								}
 							}
 

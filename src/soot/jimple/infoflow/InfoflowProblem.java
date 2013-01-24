@@ -40,8 +40,8 @@ import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
-import soot.jimple.internal.InvokeExprBox;
 import soot.jimple.internal.JAssignStmt;
+import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
@@ -181,6 +181,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
+						if(taintWrapper != null && taintWrapper.supportsTaintWrappingForClass(ie.getMethod().getDeclaringClass())){
+							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
+							return Collections.emptySet();
+						}
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
@@ -314,17 +318,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										}
 									}
 									if (!param) {
-										if (callUnit instanceof JInvokeStmt) {
-											JInvokeStmt jiStmt = (JInvokeStmt) callUnit;
-											if (jiStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
-												InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) jiStmt.getInvokeExpr();
-												res.add(new Abstraction(source.getAccessPath().copyWithNewValue(iIExpr.getBase()), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
-											}
-										}
-										if (callUnit instanceof JAssignStmt) {
-											JAssignStmt jaStmt = (JAssignStmt) callUnit;
-											if (jaStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
-												InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) jaStmt.getInvokeExpr();
+										if (callUnit instanceof Stmt) {
+											Stmt stmt = (Stmt) callUnit;
+											if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+												InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
 												res.add(new Abstraction(source.getAccessPath().copyWithNewValue(iIExpr.getBase()), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 											}
 										}
@@ -343,8 +340,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 										if (callUnit instanceof JInvokeStmt) {
 											JInvokeStmt iStmt = (JInvokeStmt) callUnit;
-											InvokeExprBox ieb = (InvokeExprBox) iStmt.getInvokeExprBox();
-											Value v = ieb.getValue();
+											Value v = iStmt.getInvokeExprBox().getValue();
 											InstanceInvokeExpr jvie = (InstanceInvokeExpr) v;
 											callBaseVar = (Local) jvie.getBase();
 										}
@@ -388,6 +384,34 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.add(source);
 
+							if(taintWrapper != null && taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass())){
+								int taintedPos = -1;
+								for(int i=0; i< callArgs.size(); i++){
+									if(source.getAccessPath().isLocal() && callArgs.get(i).equals(source.getAccessPath().getPlainValue())){
+										taintedPos = i;
+									}
+								}
+								Value taintedBase = null;
+								if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr){
+									InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
+									if(iiExpr.getBase().equals(source.getAccessPath().getPlainValue())){
+										if(source.getAccessPath().isLocal()){
+											taintedBase = iiExpr.getBase();
+										}else if(source.getAccessPath().isInstanceFieldRef()){
+											taintedBase = new JInstanceFieldRef(iiExpr.getBase(),iStmt.getInvokeExpr().getMethod().getDeclaringClass().getFieldByName(source.getAccessPath().getField()).makeRef());
+										}
+									}
+									if(source.getAccessPath().isStaticFieldRef()){
+										//TODO
+									}
+								}
+								
+								Value val = taintWrapper.getTaintForMethod(iStmt, taintedPos, taintedBase);
+								if(val != null){
+									res.add(new Abstraction(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod()));
+								}
+							}
+							
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
 								if (callArgs.contains(source.getAccessPath().getPlainValue())) {
 									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
@@ -481,7 +505,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 		return zeroValue;
 	}
-
+	
 	@Override
 	public Set<Unit> initialSeeds() {
 		return initialSeeds;

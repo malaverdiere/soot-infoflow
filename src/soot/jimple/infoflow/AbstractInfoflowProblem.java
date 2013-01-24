@@ -16,6 +16,7 @@ import soot.jimple.AssignStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 
@@ -23,11 +24,17 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 
 	final Set<Unit> initialSeeds = new HashSet<Unit>();
 	final HashMap<String, List<String>> results;
+	ITaintPropagationWrapper taintWrapper;
 	
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
 		results = new HashMap<String, List<String>>();
 	}
+	
+	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
+		taintWrapper = wrapper;
+	}
+	
 	/**
 	 * this method solves the problem that a field gets tainted inside a method which is assigned before, e.g.:
 	 * 1 a = x

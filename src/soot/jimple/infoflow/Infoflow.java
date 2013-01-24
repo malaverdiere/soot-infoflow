@@ -24,6 +24,7 @@ import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.AndroidEntryPointCreator;
 import soot.jimple.infoflow.util.IEntryPointCreator;
+import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
 import soot.options.Options;
@@ -36,6 +37,7 @@ public class Infoflow implements IInfoflow {
 
 	private final String androidPath;
 	private final boolean forceAndroidJar;
+	private ITaintPropagationWrapper taintWrapper;
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
@@ -55,6 +57,10 @@ public class Infoflow implements IInfoflow {
 	public Infoflow(String androidPath, boolean forceAndroidJar) {
 		this.androidPath = androidPath;
 		this.forceAndroidJar = forceAndroidJar;
+	}
+	
+	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
+		taintWrapper = wrapper;
 	}
 
 	@Override
@@ -154,6 +160,7 @@ public class Infoflow implements IInfoflow {
 				} else {
 					problem = new InfoflowProblem(sourcesSinks);
 				}
+				problem.setTaintWrapper(taintWrapper);
 
 				//look for sources in whole program, add the unit to initialSeeds
 				for (SootClass c : Scene.v().getApplicationClasses()) {

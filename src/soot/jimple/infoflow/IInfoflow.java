@@ -4,8 +4,11 @@ import java.util.HashMap;
 import java.util.List;
 
 import soot.jimple.infoflow.source.SourceSinkManager;
+import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 
 public interface IInfoflow {
+	
+	public void setTaintWrapper(ITaintPropagationWrapper wrapper);
 
 	/**
 	 * computes the information flow

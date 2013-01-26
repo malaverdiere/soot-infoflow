@@ -101,7 +101,8 @@ public class Infoflow implements IInfoflow {
 		includeList.add("com.jakobkontor.");
 		includeList.add("java.net.");
 		Options.v().set_include(includeList);
-		// Options.v().set_no_bodies_for_excluded(true);
+		Options.v().set_no_bodies_for_excluded(true);
+		Options.v().set_allow_phantom_refs(true);
 		if (DEBUG)
 			Options.v().set_output_format(Options.output_format_jimple);
 		else
@@ -120,9 +121,6 @@ public class Infoflow implements IInfoflow {
 				soot.options.Options.v().set_force_android_jar(this.androidPath);
 			else
 				soot.options.Options.v().set_android_jars(this.androidPath);
-		} else{
-			//TODO: required for launch with soot-infoflow-android. Not sure if not always required?
-			Options.v().set_allow_phantom_refs(true);
 		}
 
 		// load all entryPoint classes with their bodies

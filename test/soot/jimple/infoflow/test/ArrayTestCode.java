@@ -54,6 +54,16 @@ public class ArrayTestCode {
 		cm.publish(tainted123[0]);
 	}
 	
+	public void concreteStaticTest2(){
+		String tainted = TelephonyManager.getDeviceId();
+		String[] array = new String[2];
+		array[0] = "neutral";
+		array[1] = tainted;
+		staticTainted = array;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(staticTainted[0]);
+	}
+	
 	public void concreteTransientTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		String[] array = new String[2];

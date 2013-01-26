@@ -8,8 +8,17 @@ import org.junit.Test;
 import soot.jimple.infoflow.Infoflow;
 
 public class OtherTests extends JUnitTests{
+	
 
-
+	@Test
+    public void fieldTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void testWithField()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+	
     @Test
     public void staticTest(){
     	Infoflow infoflow = initInfoflow();
@@ -124,6 +133,33 @@ public class OtherTests extends JUnitTests{
     	epoints.add("<soot.jimple.infoflow.test.MailTest: void method3NotTainted()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		negativeCheckInfoflow(infoflow);
+    }
+    
+    @Test
+    public void mail4(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.MailTest: void method4()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+    
+    @Test
+    public void mail5(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.MailTest: void method5()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+    
+    @Test
+    public void mail6(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.MailTest: void method6()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
     }
     
    @Test

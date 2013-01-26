@@ -2,10 +2,24 @@ package soot.jimple.infoflow.test;
 
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
+import soot.jimple.infoflow.test.utilclasses.ClassWithField;
 import soot.jimple.infoflow.test.utilclasses.ClassWithFinal;
 import soot.jimple.infoflow.test.utilclasses.ClassWithStatic;
 
 public class OtherTestCode {
+	
+	
+	public void testWithField(){
+		ClassWithField fclass = new ClassWithField();
+		fclass.field = TelephonyManager.getDeviceId();
+		
+//		ClassWithField fclass2 = new ClassWithField();
+//		fclass2.field = TelephonyManager.getDeviceId();
+//		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(fclass.field);
+		cm.publish(fclass.field);
+	}
 	
 	public void staticTest(){
 		String tainted = TelephonyManager.getDeviceId();

@@ -5,6 +5,7 @@ import java.net.URL;
 
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
+import soot.jimple.infoflow.test.utilclasses.ClassWithField;
 
 public class StringTestCode {
 	
@@ -93,9 +94,25 @@ public class StringTestCode {
 		StringBuilder sb = new StringBuilder("Hello World");
         sb.append(tainted);
         String test = sb.toString();
-
         ConnectionManager cm = new ConnectionManager();
 		cm.publish(test);
+	}
+
+	
+	public void methodStringBuilder4(String a){
+		String b = a;
+		fieldc.field = b;
+		String tainted = TelephonyManager.getDeviceId();
+		StringBuilder sb = new StringBuilder("Hello World");
+        sb.append(tainted);
+        String test = sb.toString();
+        String c = fieldc.field;
+        ConnectionManager cm = new ConnectionManager();
+		cm.publish(test);
+		cm.publish(c);
+		
+		ClassWithField cf = new ClassWithField();
+		cf.field = fieldc.field;
 	}
 
 	public void methodStringBuilderURL() throws MalformedURLException{
@@ -124,8 +141,10 @@ public class StringTestCode {
 		cm.publish(String.valueOf(x));
 	}
 
+
 //	private String imei;
-//	private String URL = "http://www.google.de/?q=";
+	private String URL = "http://www.google.de/?q=";
+	private ClassWithField fieldc = new ClassWithField();
 //	public void originalFromPrototyp(){
 //		imei = TelephonyManager.getDeviceId();
 //		URL = URL.concat(imei);

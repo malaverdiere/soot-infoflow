@@ -131,6 +131,15 @@ public class StringTest extends JUnitTests {
     }
     
     @Test
+    public void stringBuilderTest4(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder4(java.lang.String)>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);	
+    }
+    
+    @Test
     public void stringBuilderTest3(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

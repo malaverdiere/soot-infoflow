@@ -58,10 +58,12 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		if(classList.containsKey(c.getName())){
 			return true;
 		}
-		List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
-		for(SootClass sclass : superclasses){
-			if(classList.containsKey(sclass.getName()))
-				return true;
+		if(!c.isInterface()){
+			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
+			for(SootClass sclass : superclasses){
+				if(classList.containsKey(sclass.getName()))
+					return true;
+			}
 		}
 		for(String interfaceString : classList.keySet()){
 			if(c.implementsInterface(interfaceString))
@@ -100,10 +102,12 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		if(classList.containsKey(c.getName())){
 			return classList.get(c.getName());
 		}
-		List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
-		for(SootClass sclass : superclasses){
-			if(classList.containsKey(sclass.getName()))
-				return classList.get(sclass.getName());
+		if(!c.isInterface()){
+			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
+			for(SootClass sclass : superclasses){
+				if(classList.containsKey(sclass.getName()))
+					return classList.get(sclass.getName());
+			}
 		}
 
 		for(String interfaceString : classList.keySet()){

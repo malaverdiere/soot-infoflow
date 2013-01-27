@@ -82,7 +82,7 @@ public class Infoflow implements IInfoflow {
 		// convert to internal format:
 		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
 		// parse classNames as String and methodNames as string in soot representation
-		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints);
+		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints, false);
 
 		// add SceneTransformer which calculates and prints infoflow
 		addSceneTransformer(sourcesSinks);

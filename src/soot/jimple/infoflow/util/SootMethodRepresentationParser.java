@@ -79,7 +79,7 @@ public class SootMethodRepresentationParser {
        
 	}
 	//returns classname and unresolved! method names and return types and parameters
-	public HashMap<String, List<String>> parseClassNames(List<String> methods){
+	public HashMap<String, List<String>> parseClassNames(List<String> methods, boolean subSignature){
 		HashMap<String, List<String>> result = new HashMap<String,  List<String>>();
 		for(String parseString : methods){
 			//parse className:
@@ -89,18 +89,23 @@ public class SootMethodRepresentationParser {
 	        if(matcher.find()){
 	        	className = matcher.group(1);
 	        	if(result.containsKey(className)){
-					result.get(className).add(parseString);
+					if(subSignature){
+						result.get(className).add(parseString.substring(parseString.indexOf(':')+2,parseString.length()-1));
+					}else{
+						result.get(className).add(parseString);
+					}
 				} else{
 					List<String> methodList = new ArrayList<String>(); 
-					methodList.add(parseString); 
+					if(subSignature){
+						methodList.add(parseString.substring(parseString.indexOf(':')+2,parseString.length()-1));
+					}else{
+						methodList.add(parseString);
+					}
 					result.put(className, methodList);
 				}
 	        }
-			
 		}
-		
 		return result;
-	
 	}
 	
 	public HashMap<String, List<SootMethod>> parseMethodList(List<String> methods){

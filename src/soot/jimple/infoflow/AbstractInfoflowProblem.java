@@ -31,6 +31,11 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		results = new HashMap<String, List<String>>();
 	}
 	
+	@Override
+	public boolean followReturnsPastSeeds(){
+		return true;
+	}
+	
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
 		taintWrapper = wrapper;
 	}

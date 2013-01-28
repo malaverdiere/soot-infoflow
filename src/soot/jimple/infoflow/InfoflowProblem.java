@@ -510,4 +510,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	public Set<Unit> initialSeeds() {
 		return initialSeeds;
 	}
+	
+	@Override
+	public boolean autoAddZero() {
+		return false;
+	}
 }

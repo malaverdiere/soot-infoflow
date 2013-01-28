@@ -402,4 +402,10 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 	public Set<Unit> initialSeeds() {
 		return initialSeeds;
 	}
+	
+	@Override
+	public boolean autoAddZero() {
+		return false;
+	}
+
 }

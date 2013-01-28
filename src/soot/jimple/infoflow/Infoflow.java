@@ -10,15 +10,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import soot.PackManager;
-import soot.PatchingChain;
 import soot.Scene;
 import soot.SceneTransformer;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
-import soot.jimple.InvokeExpr;
-import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
@@ -100,6 +97,7 @@ public class Infoflow implements IInfoflow {
 		includeList.add("com.example.");
 		includeList.add("com.jakobkontor.");
 		includeList.add("java.net.");
+		includeList.add("libcore.icu.");
 		Options.v().set_include(includeList);
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
@@ -163,27 +161,30 @@ public class Infoflow implements IInfoflow {
 				problem.setTaintWrapper(taintWrapper);
 
 				//look for sources in whole program, add the unit to initialSeeds
-				for (SootClass c : Scene.v().getApplicationClasses()) {
-					for (SootMethod m : c.getMethods()) {
-						if (m.hasActiveBody()) {
-							PatchingChain<Unit> units = m.getActiveBody().getUnits();
-							for (Unit u : units) {
-								Stmt s = (Stmt) u;
-								if (s.containsInvokeExpr()) {
-									InvokeExpr ie = s.getInvokeExpr();
-									if (sourcesSinks.isSourceMethod(ie.getMethod()))
-										problem.initialSeeds.add(u);
-								}
-							}
-						}
-					}
+//				for (SootClass c : Scene.v().getApplicationClasses()) {
+//					for (SootMethod m : c.getMethods()) {
+//						if (m.hasActiveBody()) {
+//							PatchingChain<Unit> units = m.getActiveBody().getUnits();
+//							for (Unit u : units) {
+//								Stmt s = (Stmt) u;
+//								if (s.containsInvokeExpr()) {
+//									InvokeExpr ie = s.getInvokeExpr();
+//									if (sourcesSinks.isSourceMethod(ie.getMethod()))
+//										problem.initialSeeds.add(u);
+//								}
+//							}
+//						}
+//					}
+//				}
+				for (SootMethod ep : Scene.v().getEntryPoints()) {
+					problem.initialSeeds.add(ep.getActiveBody().getUnits().getFirst());
 				}
 				if(problem.initialSeeds.isEmpty()){
 					System.err.println("No Sources found!");
 					return;
 				}
 
-				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver = new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem, DEBUG,false);
+				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver = new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem, DEBUG,true);
 
 				solver.solve(0);
 

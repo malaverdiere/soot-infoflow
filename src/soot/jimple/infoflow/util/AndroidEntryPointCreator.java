@@ -26,9 +26,7 @@ import soot.jimple.internal.JNopStmt;
  * based on: http://developer.android.com/reference/android/app/Activity.html#ActivityLifecycle
  * and http://developer.android.com/reference/android/app/Service.html
  * and http://developer.android.com/reference/android/content/BroadcastReceiver.html#ReceiverLifecycle
- * 
- * broadcastreceiver has only one method in lifecycle - so we use default methodcreator
- *	see: http://developer.android.com/reference/android/content/BroadcastReceiver.html
+ * and http://developer.android.com/reference/android/content/BroadcastReceiver.html
  * @author Christian
  *
  */
@@ -37,6 +35,19 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	private LocalGenerator generator;
 	private int conditionCounter;
 	private Value intCounter;
+	
+	/**
+	 *  Soot requires a main method, so we create a dummy method which calls all entry functions. 
+	 *  Androids components are detected and treated according to their lifecycles.  
+	 *  
+	 * @param methodSignatureList a list of method signatures in soot syntax ( <class: returntype methodname(arguments)> )
+	 * @return the dummyMethod which was created
+	 */
+	public SootMethod createDummyMain(List<String> methodSignatureList){
+		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
+		HashMap<String, List<String>> classes = parser.parseClassNames(methodSignatureList, false);
+		return createDummyMain(classes);
+	}
 	
 	/**
 	 * Soot requires a main method, so we create a dummy method which calls all entry functions.

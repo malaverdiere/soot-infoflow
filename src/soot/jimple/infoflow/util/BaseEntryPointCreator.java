@@ -31,7 +31,7 @@ import soot.jimple.Stmt;
 import soot.jimple.StringConstant;
 import soot.jimple.VirtualInvokeExpr;
 
-public class BaseEntryPointCreator implements IEntryPointCreator {
+public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 
 	@Override
 	public SootMethod createDummyMain(Map<String, List<String>> classMap) {
@@ -107,7 +107,6 @@ public class BaseEntryPointCreator implements IEntryPointCreator {
 			
 			for (SootMethod currentMethod : methodList) {
 				if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
-					@SuppressWarnings("unchecked")
 					List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
 					List<Object> params = new LinkedList<Object>();
 					for (Type type : typeList) {
@@ -240,7 +239,6 @@ public class BaseEntryPointCreator implements IEntryPointCreator {
 		for (SootMethod currentMethod : methodList) {
 			if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
 				boolean canGenerateConstructor = true;
-				@SuppressWarnings("unchecked")
 				List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
 				for (Type type : typeList) {
 					String typeName = type.toString().replaceAll("\\[\\]]", "");

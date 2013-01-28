@@ -178,6 +178,10 @@ public class Infoflow implements IInfoflow {
 						}
 					}
 				}
+				if(problem.initialSeeds.isEmpty()){
+					System.err.println("No Sources found!");
+					return;
+				}
 
 				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver = new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem, DEBUG,false);
 
@@ -190,7 +194,7 @@ public class Infoflow implements IInfoflow {
 
 					System.err.println("----------------------------------------------");
 					System.err.println("At end of: " + ep.getSignature());
-					System.err.println(solver.ifdsResultsAt(ret).size() + " Variables:");
+					System.err.println(solver.ifdsResultsAt(ret).size() + " Variables (with "+ problem.results.size() +" source-to-sink connections):");
 					System.err.println("----------------------------------------------");
 
 					for (Abstraction l : solver.ifdsResultsAt(ret)) {

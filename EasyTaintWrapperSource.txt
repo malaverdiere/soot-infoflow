@@ -1,1 +1,11 @@
 <java.util.List: boolean add(java.lang.Object)>
+<java.util.List: boolean addAll(java.util.Collection)>
+<java.util.LinkedList: void addFirst(java.lang.Object)>
+<java.util.LinkedList: void addLast(java.lang.Object)>
+<java.util.Vector: void addElement(java.lang.Object)>
+<java.lang.StringBuilder: void <init>(java.lang.String)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.Object)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.CharSequence)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.StringBuffer)>
+<java.util.Stack: java.lang.Object push(java.lang.Object)>

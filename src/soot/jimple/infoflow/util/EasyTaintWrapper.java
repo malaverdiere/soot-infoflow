@@ -99,22 +99,23 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	}
 	
 	public List<String> getMethodsForClass(SootClass c){
+		List<String> methodList = new LinkedList<String>();
 		if(classList.containsKey(c.getName())){
-			return classList.get(c.getName());
+			methodList.addAll(classList.get(c.getName()));
 		}
 		if(!c.isInterface()){
 			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
 			for(SootClass sclass : superclasses){
 				if(classList.containsKey(sclass.getName()))
-					return classList.get(sclass.getName());
+					methodList.addAll(classList.get(sclass.getName()));
 			}
 		}
 
 		for(String interfaceString : classList.keySet()){
 			if(c.implementsInterface(interfaceString))
-				return classList.get(interfaceString);
+				methodList.addAll(classList.get(interfaceString));
 		}
-		return new LinkedList<String>();
+		return methodList;
 	}
 
 }

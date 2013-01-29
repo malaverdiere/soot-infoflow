@@ -1,11 +1,42 @@
+<java.util.Stack: java.lang.Object push(java.lang.Object)>
+
+<java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>
+% <java.util.HashMap: java.lang.Object put(java.lang.Object,java.lang.Object)>
+% <java.util.WeakHashMap: java.lang.Object put(java.lang.Object,java.lang.Object)>
+
 <java.util.List: boolean add(java.lang.Object)>
 <java.util.List: boolean addAll(java.util.Collection)>
-<java.util.LinkedList: void addFirst(java.lang.Object)>
-<java.util.LinkedList: void addLast(java.lang.Object)>
+% <java.util.LinkedList: void addFirst(java.lang.Object)>
+% <java.util.LinkedList: void addLast(java.lang.Object)>
+% <java.util.ArrayList: boolean add(java.lang.Object)>
+% <java.util.ArrayList: boolean addAll(java.util.Collection)>
+
+<java.util.Set: boolean add(java.lang.Object)>
+<java.util.Set: boolean addAll(java.util.Collection)>
+
+<java.util.Collection: boolean add(java.lang.Object)>
+<java.util.Collection: boolean addAll(java.util.Collection)>
+
 <java.util.Vector: void addElement(java.lang.Object)>
+
 <java.lang.StringBuilder: void <init>(java.lang.String)>
 <java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>
 <java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.Object)>
 <java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.CharSequence)>
 <java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.StringBuffer)>
-<java.util.Stack: java.lang.Object push(java.lang.Object)>
+
+<android.content.ContentValues: void put(java.lang.String,java.lang.Integer)>
+
+<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String[])>
+<android.content.Intent: android.content.Intent putExtra(java.lang.String,long)>
+<android.content.Intent: android.content.Intent putExtra(java.lang.String,long[])>
+<android.content.Intent: android.content.Intent putExtra(java.lang.String,int)>
+<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean)>
+<android.content.Intent: android.content.Intent addFlags(int)>
+<android.content.Intent: android.content.Intent setFlags(int)>
+
+<android.content.IntentFilter: void addAction(java.lang.String)>
+
+<android.database.MatrixCursor: void addRow(java.lang.Object[])>
+
+<android.os.Bundle: void putBoolean(java.lang.String,boolean)>

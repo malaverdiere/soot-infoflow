@@ -104,7 +104,6 @@ public class EntryPointCreator {
 		for (SootMethod currentMethod : methodList) {
 			if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
 				boolean canGenerateConstructor = true;
-				@SuppressWarnings("unchecked")
 				List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
 				for (Type type : typeList) {
 					String typeName = type.toString().replaceAll("\\[\\]]", "");
@@ -167,7 +166,6 @@ public class EntryPointCreator {
 			
 			for (SootMethod currentMethod : methodList) {
 				if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
-					@SuppressWarnings("unchecked")
 					List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
 					List<Object> params = new LinkedList<Object>();
 					for (Type type : typeList) {

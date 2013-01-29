@@ -19,6 +19,24 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow);
     }
 	
+	@Test
+    public void staticInheritanceTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void testWithStaticInheritance()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+	
+	@Test
+    public void fieldInheritanceTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void testWithFieldInheritance()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+	
     @Test
     public void staticTest(){
     	Infoflow infoflow = initInfoflow();

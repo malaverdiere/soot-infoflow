@@ -3,11 +3,22 @@ package soot.jimple.infoflow.test;
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 import soot.jimple.infoflow.test.utilclasses.ClassWithField;
+import soot.jimple.infoflow.test.utilclasses.ClassWithField2;
 import soot.jimple.infoflow.test.utilclasses.ClassWithFinal;
 import soot.jimple.infoflow.test.utilclasses.ClassWithStatic;
+import soot.jimple.infoflow.test.utilclasses.D1static;
 
 public class OtherTestCode {
+
+	public void testWithStaticInheritance(){
+		D1static obj = new D1static(TelephonyManager.getDeviceId());
+		obj.taintIt();
+	}
 	
+	public void testWithFieldInheritance(){
+		ClassWithField2 obj = new ClassWithField2(TelephonyManager.getDeviceId());
+		obj.taintIt();
+	}
 	
 	public void testWithField(){
 		ClassWithField fclass = new ClassWithField();

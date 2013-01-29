@@ -5,6 +5,7 @@ import soot.Local;
 import soot.Value;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
+import soot.jimple.infoflow.util.StaticFieldUtil;
 
 public class AccessPath {
 	private EquivalentValue value;
@@ -14,7 +15,7 @@ public class AccessPath {
 		assert !(val instanceof EquivalentValue);
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
-			field = ref.getFieldRef().declaringClass().getName() + "."+ref.getFieldRef().name();
+			field = StaticFieldUtil.getCorrectClassForStaticField(ref).getName() + "."+ref.getFieldRef().name();
 		} else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
 			value = new EquivalentValue(ref.getBase());

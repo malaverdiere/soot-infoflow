@@ -22,6 +22,7 @@ import soot.jimple.AssignStmt;
 import soot.jimple.DoubleConstant;
 import soot.jimple.FloatConstant;
 import soot.jimple.IntConstant;
+import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
 import soot.jimple.LongConstant;
@@ -54,7 +55,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	
 	public void buildMethodCall(SootMethod currentMethod, JimpleBody body, Local classLocal, LocalGenerator gen){
 		Local stringLocal = null;
-		VirtualInvokeExpr vInvokeExpr;
+		InvokeExpr invokeExpr;
 		if(currentMethod.getParameterCount()>0){
 			List<Object> args = new LinkedList<Object>();
 			for(Object ob :currentMethod.getParameterTypes()){
@@ -68,18 +69,26 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 					}
 				}
 			}
-			vInvokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef(),args);
+			if(currentMethod.isStatic()){
+				invokeExpr = Jimple.v().newStaticInvokeExpr(currentMethod.makeRef(), args);
+			}else{
+				invokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef(),args);
+			}
 		}else{
-			vInvokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef());
+			if(currentMethod.isStatic()){
+				invokeExpr = Jimple.v().newStaticInvokeExpr(currentMethod.makeRef());
+			}else{
+				invokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef());
+			}
 		}
 		 
 		Stmt stmt;
 		if (!(currentMethod.getReturnType() instanceof VoidType)) {
 			stringLocal = gen.generateLocal(currentMethod.getReturnType());
-			stmt = Jimple.v().newAssignStmt(stringLocal, vInvokeExpr);
+			stmt = Jimple.v().newAssignStmt(stringLocal, invokeExpr);
 			
 		} else {
-			stmt = Jimple.v().newInvokeStmt(vInvokeExpr);
+			stmt = Jimple.v().newInvokeStmt(invokeExpr);
 		}
 		body.getUnits().add(stmt);
 	}

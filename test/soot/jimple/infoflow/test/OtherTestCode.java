@@ -32,6 +32,17 @@ public class OtherTestCode {
 		cm.publish(alsoTainted);
 		}
 	
+	public static void static2Test(){
+		String tainted = TelephonyManager.getDeviceId();
+		ClassWithStatic static1 = new ClassWithStatic();
+		static1.setTitle(tainted);
+		ClassWithStatic static2 = new ClassWithStatic();
+		String alsoTainted = static2.getTitle();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(alsoTainted);
+		}
+	
 	public void genericsfinalconstructorProblem(){
 		String tainted = TelephonyManager.getDeviceId();
 		ClassWithFinal<String> c0 = new ClassWithFinal<String>(tainted, false);

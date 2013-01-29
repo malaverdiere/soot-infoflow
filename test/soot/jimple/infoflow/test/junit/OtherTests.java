@@ -32,6 +32,15 @@ public class OtherTests extends JUnitTests{
     }
     
     @Test
+    public void static2Test(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void static2Test()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+    
+    @Test
     public void ConstructorFinalClassTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

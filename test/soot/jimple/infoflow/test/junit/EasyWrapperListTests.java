@@ -1,6 +1,7 @@
 package soot.jimple.infoflow.test.junit;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,11 @@ import soot.jimple.infoflow.util.EasyTaintWrapper;
 
 public class EasyWrapperListTests extends JUnitTests {
 	
-	EasyTaintWrapper easyWrapper = new EasyTaintWrapper(new File("EasyTaintWrapperSource.txt"));
+	private final EasyTaintWrapper easyWrapper;
+	
+	public EasyWrapperListTests() throws IOException {
+		easyWrapper = new EasyTaintWrapper(new File("EasyTaintWrapperSource.txt"));
+	}
 
 	@Test
     public void concreteArrayListPos0Test(){

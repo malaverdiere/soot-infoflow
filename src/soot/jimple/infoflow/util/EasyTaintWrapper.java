@@ -30,25 +30,24 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		classList = l;
 	}
 	
-	public EasyTaintWrapper(File f){
-		if(f.exists()){
-			try{
-				FileReader freader = new FileReader(f);
-				BufferedReader reader = new BufferedReader(freader);
-				String line = reader.readLine();
-				SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
-				List<String> methodList = new LinkedList<String>();
-				while(line != null){
+	public EasyTaintWrapper(File f) throws IOException{
+		BufferedReader reader = null;
+		try{
+			FileReader freader = new FileReader(f);
+			reader = new BufferedReader(freader);
+			String line = reader.readLine();
+			SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
+			List<String> methodList = new LinkedList<String>();
+			while(line != null){
+				if (!line.isEmpty() && !line.startsWith("%"))
 					methodList.add(line);
-					line = reader.readLine();
-				}
-				classList = parser.parseClassNames(methodList, true);
-			}catch(IOException e){
-				System.err.println("Could not read file " + f+ "! "+e);
+				line = reader.readLine();
 			}
-			
-		}else{
-			System.err.println("File "+ f + " does not exist!");
+			classList = parser.parseClassNames(methodList, true);
+		}
+		finally {
+			if (reader != null)
+				reader.close();
 		}
 	}
 	

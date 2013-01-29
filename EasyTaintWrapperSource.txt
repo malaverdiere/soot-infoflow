@@ -1,15 +1,19 @@
 <java.util.Stack: java.lang.Object push(java.lang.Object)>
 
 <java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>
-% <java.util.HashMap: java.lang.Object put(java.lang.Object,java.lang.Object)>
-% <java.util.WeakHashMap: java.lang.Object put(java.lang.Object,java.lang.Object)>
+
+<java.util.HashMap: void <init>(java.util.Map)>
+<java.util.WeakHashMap: void <init>(java.util.Map)>
+<java.util.ConcurrentHashMap: void <init>(java.util.Map)>
+<java.util.LinkedHashMap: void <init>(java.util.Map)>
 
 <java.util.List: boolean add(java.lang.Object)>
+<java.util.List: void add(int,java.lang.Object)>
 <java.util.List: boolean addAll(java.util.Collection)>
-% <java.util.LinkedList: void addFirst(java.lang.Object)>
-% <java.util.LinkedList: void addLast(java.lang.Object)>
-% <java.util.ArrayList: boolean add(java.lang.Object)>
-% <java.util.ArrayList: boolean addAll(java.util.Collection)>
+<java.util.List: boolean addAll(int,java.util.Collection)>
+
+<java.util.ArrayList: void <init>(java.util.Collection)>
+<java.util.LinkedList: void <init>(java.util.Collection)>
 
 <java.util.Set: boolean add(java.lang.Object)>
 <java.util.Set: boolean addAll(java.util.Collection)>
@@ -17,13 +21,182 @@
 <java.util.Collection: boolean add(java.lang.Object)>
 <java.util.Collection: boolean addAll(java.util.Collection)>
 
+<java.lang.Vector: void <init>(java.util.Collection)>
+<java.util.Vector: void add(int,java.lang.Object)>
+<java.util.Vector: boolean add(java.lang.Object)>
+<java.util.Vector: boolean addAll(java.util.Collection)>
 <java.util.Vector: void addElement(java.lang.Object)>
 
+<java.io.StringReader: void <init>(java.lang.String)>
+
 <java.lang.StringBuilder: void <init>(java.lang.String)>
-<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(boolean)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(char)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(char[])>
+<java.lang.StringBuilder: java.lang.StringBuilder append(char[],int,int)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(double)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(float)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(int)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(long)>
 <java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.Object)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>
 <java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.CharSequence)>
+<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.CharSequence,int,int)>
 <java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.StringBuffer)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,boolean)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,char)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,char[])>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,char[],int,int)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,double)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,float)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,int)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,long)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,java.lang.Object)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,java.lang.String)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,java.lang.CharSequence)>
+<java.lang.StringBuilder: java.lang.StringBuilder insert(int,java.lang.CharSequence,int,int)>
+
+<java.lang.StringBuffer: void <init>(java.lang.String)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(boolean)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(char)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(char[])>
+<java.lang.StringBuffer: java.lang.StringBuffer append(char[],int,int)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(double)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(float)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(int)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(long)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.String)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.CharSequence)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.CharSequence,int,int)>
+<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.StringBuffer)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,boolean)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,char)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,char[])>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,char[],int,int)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,double)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,float)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,int)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,long)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,java.lang.Object)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,java.lang.String)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,java.lang.CharSequence)>
+<java.lang.StringBuffer: java.lang.StringBuffer insert(int,java.lang.CharSequence,int,int)>
+
+<java.lang.String: void <init>(byte[])>
+<java.lang.String: void <init>(byte[],int,int)>
+<java.lang.String: void <init>(byte[],int,int,java.lang.String)>
+<java.lang.String: void <init>(byte[],java.lang.String)>
+<java.lang.String: void <init>(char[])>
+<java.lang.String: void <init>(char[],int,int)>
+<java.lang.String: void <init>(int[],int,int)>
+<java.lang.String: void <init>(java.lang.String)>
+<java.lang.String: void <init>(java.lang.StringBuffer)>
+<java.lang.String: void <init>(java.lang.StringBuilder)>
+
+<java.lang.String: java.lang.String valueOf(boolean)>
+<java.lang.String: java.lang.String valueOf(char)>
+<java.lang.String: java.lang.String valueOf(char[])>
+<java.lang.String: java.lang.String valueOf(char[],int,int)>
+<java.lang.String: java.lang.String valueOf(double)>
+<java.lang.String: java.lang.String valueOf(float)>
+<java.lang.String: java.lang.String valueOf(int)>
+<java.lang.String: java.lang.String valueOf(long)>
+<java.lang.String: java.lang.String valueOf(java.lang.Object)>
+
+<java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>
+<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>
+
+<java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>
+
+<java.lang.Integer: java.lang.String toBinaryString(int)>
+<java.lang.Integer: java.lang.String toHexString(int)>
+<java.lang.Integer: java.lang.String toOctalString(int)>
+
+<java.lang.Integer: void <init>(int)>
+<java.lang.Integer: void <init>(java.lang.String)>
+<java.lang.Integer: int parseInt(java.lang.String)>
+<java.lang.Integer: int parseInt(java.lang.String,int)>
+<java.lang.Integer: java.lang.Integer valueOf(int)>
+<java.lang.Integer: java.lang.Integer valueOf(java.lang.String)>
+<java.lang.Integer: java.lang.Integer valueOf(java.lang.String,int)>
+
+<java.lang.Long: void <init>(long)>
+<java.lang.Long: void <init>(java.lang.String)>
+<java.lang.Long: long parseLong(java.lang.String)>
+<java.lang.Long: long parseLong(java.lang.String,int)>
+<java.lang.Long: java.lang.Long valueOf(long)>
+<java.lang.Long: java.lang.Long valueOf(java.lang.String)>
+<java.lang.Long: java.lang.Long valueOf(java.lang.String,int)>
+
+<java.lang.Float: void <init>(float)>
+<java.lang.Float: void <init>(java.lang.String)>
+<java.lang.Float: float parseFloat(java.lang.String)>
+<java.lang.Float: java.lang.Float valueOf(float)>
+<java.lang.Float: java.lang.Float valueOf(java.lang.String)>
+
+<java.lang.Double: void <init>(double)>
+<java.lang.Double: void <init>(java.lang.String)>
+<java.lang.Double: double parseDouble(java.lang.String)>
+<java.lang.Double: java.lang.Double valueOf(float)>
+<java.lang.Double: java.lang.Double valueOf(java.lang.String)>
+
+<java.lang.Boolean: void <init>(boolean)>
+<java.lang.Boolean: void <init>(java.lang.String)>
+<java.lang.Boolean: java.lang.Boolean valueOf(boolean)>
+<java.lang.Boolean: java.lang.Boolean valueOf(java.lang.String)>
+
+<java.lang.Character: void <init>(char)>
+<java.lang.Character: java.lang.Boolean valueOf(char)>
+
+<java.lang.Error: void <init>(java.lang.String)>
+
+<java.lang.Exception: void <init>(java.lang.String)>
+
+<java.lang.ref.Reference: void <init>()>
+<java.lang.ref.WeakReference: void <init>(java.lang.Object)>
+
+<java.math.BigDecimal: void <init>(int)>
+
+<java.math.BigInteger: void <init>(byte[])>
+<java.math.BigInteger: void <init>(int,byte[])>
+<java.math.BigInteger: void <init>(java.lang.String)>
+<java.math.BigInteger: void <init>(java.lang.String,int)>
+<java.math.BigInteger: java.math.BigInteger valueOf(long)>
+
+<java.io.FileInputStream: void <init>(java.io.File)>
+
+<java.text.MessageFormat: void <init>(java.lang.String)>
+<java.text.MessageFormat: void <init>(java.lang.String,java.util.Locale)>
+<java.text.MessageFormat: java.lang.String format(java.lang.String,java.lang.Object[])>
+
+<java.net.URI: void <init>(java.lang.String)>
+<java.net.URI: void <init>(java.lang.String,java.lang.String,java.lang.String)>
+<java.net.URI: void <init>(java.lang.String,java.lang.String,java.lang.String,int,java.lang.String,java.lang.String,java.lang.String)>
+<java.net.URI: void <init>(java.lang.String,java.lang.String,java.lang.String,java.lang.String)>
+<java.net.URI: void <init>(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)>
+<java.net.URI: java.net.URI create(java.lang.String)>
+
+<java.net.URL: void <init>(java.lang.String)>
+<java.net.URL: void <init>(java.lang.String,java.lang.String,int,java.lang.String)>
+<java.net.URL: void <init>(java.lang.String,java.lang.String,int,java.lang.String,java.net.URLStreamHandler)>
+<java.net.URL: void <init>(java.lang.String,java.lang.String,java.lang.String)>
+<java.net.URL: void <init>(java.net.URL,java.lang.String)>
+<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>
+
+<java.util.Collections: java.util.List synchronizedCollection(java.util.Collection)>
+<java.util.Collections: java.util.List synchronizedList(java.util.List)>
+<java.util.Collections: java.util.List synchronizedMap(java.util.Map)>
+<java.util.Collections: java.util.List synchronizedSet(java.util.Set)>
+<java.util.Collections: java.util.List synchronizedSortedMap(java.util.SortedMap)>
+<java.util.Collections: java.util.List synchronizedSortedSet(java.util.SortedSet)>
+
+<java.util.Collections: java.util.List unmodifiableCollection(java.util.Collection)>
+<java.util.Collections: java.util.List unmodifiableList(java.util.List)>
+<java.util.Collections: java.util.List unmodifiableMap(java.util.Map)>
+<java.util.Collections: java.util.List unmodifiableSet(java.util.Set)>
+<java.util.Collections: java.util.List unmodifiableSortedMap(java.util.SortedMap)>
+<java.util.Collections: java.util.List unmodifiableSortedSet(java.util.SortedSet)>
 
 <android.content.ContentValues: void put(java.lang.String,java.lang.Integer)>
 
@@ -40,3 +213,12 @@
 <android.database.MatrixCursor: void addRow(java.lang.Object[])>
 
 <android.os.Bundle: void putBoolean(java.lang.String,boolean)>
+
+<org.apache.http.message.BasicNameValuePair: void <init>(java.lang.String,java.lang.String)>
+
+<org.apache.http.entity.StringEntity: void <init>(java.lang.String)>
+<org.apache.http.entity.StringEntity: void <init>(java.lang.String,java.nio.charset.Charset)>
+<org.apache.http.entity.StringEntity: void <init>(java.lang.String,org.apache.http.entity.ContentType)>
+<org.apache.http.entity.StringEntity: void <init>(java.lang.String,java.lang.String)>
+<org.apache.http.entity.StringEntity: void <init>(java.lang.String,java.lang.String,java.lang.String)>
+

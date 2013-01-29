@@ -371,13 +371,15 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	
 	private JNopStmt searchAndBuildMethod(String subsignature, SootClass currentClass, List<String> entryPoints, Local classLocal){
 		if(currentClass.declaresMethod(subsignature)){
-			return getMethodStmt(subsignature, currentClass, entryPoints, classLocal);
+			entryPoints.remove("<"+ currentClass.toString()+ ": "+subsignature+">");
+			return getMethodStmt(subsignature, currentClass, classLocal);
 		}else{
 			//look in history (at least the framework method itself will implement class:
 			List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
 			for(SootClass sclass : extendedClasses){
 				if(sclass.declaresMethod(subsignature)){
-					return getMethodStmt(subsignature, sclass, entryPoints, classLocal);
+					entryPoints.remove("<"+ currentClass.toString()+ ": "+subsignature+">");
+					return getMethodStmt(subsignature, sclass, classLocal);
 				}
 			}		
 		}
@@ -385,7 +387,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		return null;
 	}
 	
-	private JNopStmt getMethodStmt(String signature, SootClass sclass, List<String> entryPoints, Local classLocal){
+	private JNopStmt getMethodStmt(String signature, SootClass sclass, Local classLocal){
 		SootMethod onMethod = sclass.getMethod(signature);
 		
 		JNopStmt onMethodStmt = new JNopStmt();
@@ -393,7 +395,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			
 		//write Method
 		buildMethodCall(onMethod, body, classLocal, generator);
-		entryPoints.remove("<"+ sclass.toString()+ ": "+signature+">");
 		return onMethodStmt;
 	}
 	

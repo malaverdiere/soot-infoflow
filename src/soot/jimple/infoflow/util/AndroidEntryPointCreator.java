@@ -69,13 +69,26 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		HashMap<String, Local> localVarsForClasses = new HashMap<String, Local>();
 		
 		// create constructors:
-		for(String className : classMap.keySet()){
-			SootClass createdClass = Scene.v().getSootClass(className);
-			if (isConstructorGenerationPossible(createdClass)) {
-				Local localVal = generateClassConstructor(createdClass, body);
-				localVarsForClasses.put(className, localVal);
-			}else{
-				System.out.println("Constructor cannot be generated for "+ createdClass);
+		for(Entry<String, List<String>> entry : classMap.entrySet()){
+			//check if one of the methods is instance:
+			boolean instanceNeeded = false;
+			for(String method : entry.getValue()){
+				if(Scene.v().containsMethod(method)){
+					if(!Scene.v().getMethod(method).isStatic()){
+						instanceNeeded = true;
+						break;
+					}
+				}
+			}
+			if(instanceNeeded){
+				String className = entry.getKey();
+				SootClass createdClass = Scene.v().getSootClass(className);
+				if (isConstructorGenerationPossible(createdClass)) {
+					Local localVal = generateClassConstructor(createdClass, body);
+					localVarsForClasses.put(className, localVal);
+				}else{
+					System.out.println("Constructor cannot be generated for "+ createdClass);
+				}
 			}
 		}
 		

@@ -54,6 +54,10 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	}
 	
 	public void buildMethodCall(SootMethod currentMethod, JimpleBody body, Local classLocal, LocalGenerator gen){
+		assert currentMethod != null : "Current method was null";
+		assert body != null : "Body was null";
+		assert gen != null : "Local generator was null";
+		
 		Local stringLocal = null;
 		InvokeExpr invokeExpr;
 		if(currentMethod.getParameterCount()>0){
@@ -72,12 +76,14 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			if(currentMethod.isStatic()){
 				invokeExpr = Jimple.v().newStaticInvokeExpr(currentMethod.makeRef(), args);
 			}else{
+				assert classLocal != null : "Class local method was null for non-static method call";
 				invokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef(),args);
 			}
 		}else{
 			if(currentMethod.isStatic()){
 				invokeExpr = Jimple.v().newStaticInvokeExpr(currentMethod.makeRef());
 			}else{
+				assert classLocal != null : "Class local method was null for non-static method call";
 				invokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef());
 			}
 		}

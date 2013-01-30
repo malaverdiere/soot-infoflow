@@ -67,31 +67,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		generator = new LocalGenerator(body);
 		HashMap<String, Local> localVarsForClasses = new HashMap<String, Local>();
-		
-		// create constructors:
-		for(Entry<String, List<String>> entry : classMap.entrySet()){
-			//check if one of the methods is instance:
-			boolean instanceNeeded = false;
-			for(String method : entry.getValue()){
-				if(Scene.v().containsMethod(method)){
-					if(!Scene.v().getMethod(method).isStatic()){
-						instanceNeeded = true;
-						break;
-					}
-				}
-			}
-			if(instanceNeeded){
-				String className = entry.getKey();
-				SootClass createdClass = Scene.v().getSootClass(className);
-				if (isConstructorGenerationPossible(createdClass)) {
-					Local localVal = generateClassConstructor(createdClass, body);
-					localVarsForClasses.put(className, localVal);
-				}else{
-					System.out.println("Constructor cannot be generated for "+ createdClass);
-				}
-			}
-		}
-		
+				
 		// add entrypoint calls
 		conditionCounter = 0;
 		intCounter = generator.generateLocal(IntType.v());
@@ -102,7 +78,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		for(Entry<String, List<String>> entry : classMap.entrySet()){
 			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
-			Local classLocal = localVarsForClasses.get(entry.getKey());
 			JNopStmt endClassStmt = new JNopStmt();
 
 			boolean activity = false;
@@ -128,10 +103,34 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				}
 				
 			}
-			if(!activity && !service && !broadcastReceiver && !contentProvider){
+			if(!activity && !service && !broadcastReceiver && !contentProvider)
 				plain = true;
+
+			//check if one of the methods is instance:
+			boolean instanceNeeded = activity || service || broadcastReceiver || contentProvider;
+			if (!instanceNeeded)
+				for(String method : entry.getValue()){
+					if(Scene.v().containsMethod(method)){
+						if(!Scene.v().getMethod(method).isStatic()){
+							instanceNeeded = true;
+							break;
+						}
+					}
+				}
+
+			// if we need to call a constructor, we insert the respective Jimple statement here
+			if(instanceNeeded){
+				String className = entry.getKey();
+				SootClass createdClass = Scene.v().getSootClass(className);
+				if (isConstructorGenerationPossible(createdClass)) {
+					Local localVal = generateClassConstructor(createdClass, body);
+					localVarsForClasses.put(className, localVal);
+				}else{
+					System.out.println("Constructor cannot be generated for "+ createdClass);
+				}
 			}
-			
+			Local classLocal = localVarsForClasses.get(entry.getKey());
+
 			if(activity){
 				//analyse entryPoints:
 				List<String> entryPoints = entry.getValue();
@@ -402,6 +401,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	
 	private JNopStmt getMethodStmt(String signature, SootClass sclass, Local classLocal){
 		SootMethod onMethod = sclass.getMethod(signature);
+		assert onMethod.isStatic() || classLocal != null : "Class local was null for non-static method "
+			+ signature + " in class " + sclass;
 		
 		JNopStmt onMethodStmt = new JNopStmt();
 		body.getUnits().add(onMethodStmt);

@@ -18,7 +18,6 @@ import soot.PointsToAnalysis;
 import soot.PointsToSet;
 import soot.PrimType;
 import soot.Scene;
-import soot.SootClass;
 import soot.SootField;
 import soot.SootFieldRef;
 import soot.SootMethod;
@@ -41,7 +40,6 @@ import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
-import soot.jimple.infoflow.util.StaticFieldUtil;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
@@ -91,8 +89,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (source.getAccessPath().isStaticFieldRef()) {
 								if (rightValue instanceof StaticFieldRef) {
 									StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-									SootClass classOfField = StaticFieldUtil.getCorrectClassForStaticField(rightRef);
-									if (classOfField != null && source.getAccessPath().getField().equals(classOfField.getName()+ "." + rightRef.getField().getName())) {
+									if (source.getAccessPath().getField().equals(InfoflowProblem.getStaticFieldRefStringRepresentation(rightRef))) {
 										addLeftValue = true;
 									}
 								}

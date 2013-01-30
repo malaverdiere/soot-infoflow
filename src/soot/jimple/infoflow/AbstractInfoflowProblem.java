@@ -96,7 +96,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 	protected static String getStaticFieldRefStringRepresentation(StaticFieldRef ref){
-		return ref.getFieldRef().declaringClass().getName() + "."+ref.getFieldRef().name();
+		return ref.getField().getDeclaringClass().getName() + "."+ref.getFieldRef().name();
 	}
 
 }

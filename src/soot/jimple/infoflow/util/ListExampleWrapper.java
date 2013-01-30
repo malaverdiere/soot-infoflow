@@ -1,11 +1,15 @@
 package soot.jimple.infoflow.util;
 
+import java.util.List;
+
 import soot.Local;
 import soot.SootClass;
 import soot.Value;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JAssignStmt;
+
+import com.google.common.collect.Lists;
 
 public class ListExampleWrapper implements ITaintPropagationWrapper {
 
@@ -18,15 +22,15 @@ public class ListExampleWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public Value getTaintForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+	public List<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
 		// method add + added element is tainted -> whole list is tainted
 		if(stmt.getInvokeExpr().getMethod().getSubSignature().equals("boolean add(java.lang.Object)") && taintedparam == 0){
-			return ((InstanceInvokeExpr) stmt.getInvokeExprBox().getValue()).getBase();
+			return Lists.newArrayList(((InstanceInvokeExpr) stmt.getInvokeExprBox().getValue()).getBase());
 		}
 		// method get + whole list is tainted -> returned element is tainted
 		if(stmt.getInvokeExpr().getMethod().getSubSignature().equals("java.lang.Object get(int)") && taintedBase instanceof Local){
 			if(stmt instanceof JAssignStmt){
-				return ((JAssignStmt)stmt).getLeftOp();
+				return Lists.newArrayList(((JAssignStmt)stmt).getLeftOp());
 			}
 		}
 		return null;

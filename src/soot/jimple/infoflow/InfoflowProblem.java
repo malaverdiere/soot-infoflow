@@ -176,7 +176,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				for (int i = 0; i < dest.getParameterCount(); i++) {
 					paramLocals.add(dest.getActiveBody().getParameterLocal(i));
 				}
-							
+				
+				if (dest.getName().contains("doLog"))
+					System.out.println("DOLOG: " + dest.getActiveBody());
+				
 				return new FlowFunction<Abstraction>() {
 
 					@Override
@@ -406,10 +409,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 								
-								Value val = taintWrapper.getTaintForMethod(iStmt, taintedPos, taintedBase);
-								if(val != null){
-									res.add(new Abstraction(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod()));
-								}
+								List<Value> vals = taintWrapper.getTaintsForMethod(iStmt, taintedPos, taintedBase);
+								if(vals != null)
+									for (Value val : vals)
+										res.add(new Abstraction(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod()));
 							}
 							
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {

@@ -1,5 +1,7 @@
 package soot.jimple.infoflow.util;
 
+import java.util.List;
+
 import soot.SootClass;
 import soot.Value;
 import soot.jimple.Stmt;
@@ -21,6 +23,6 @@ public interface ITaintPropagationWrapper {
 	 * @param taintedBase returns null if base object is not tainted or the base object or a fieldref which includes the tainted field of the base object
 	 * @return
 	 */
-	public Value getTaintForMethod(Stmt stmt, int taintedparam, Value taintedBase);
+	public List<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase);
 
 }

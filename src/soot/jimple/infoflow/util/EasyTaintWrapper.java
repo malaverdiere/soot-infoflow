@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,7 +14,6 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Value;
 import soot.jimple.InstanceInvokeExpr;
-import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JAssignStmt;
 /**
@@ -73,28 +73,41 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public Value getTaintForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+	public List<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+		List<Value> taints = new ArrayList<Value>();
+		
 		//if param is tainted && classList contains classname && if list. contains signature of method -> add propagation
 		if(taintedparam >= 0){
 			SootMethod method = stmt.getInvokeExpr().getMethod();
 			List<String> methodList = getMethodsForClass(method.getDeclaringClass());
 		
 			if(methodList.contains(method.getSubSignature())){
-				if(stmt.getInvokeExprBox().getValue() instanceof InstanceInvokeExpr){
-					return ((InstanceInvokeExpr) stmt.getInvokeExprBox().getValue()).getBase();
-				}else if(stmt.getInvokeExprBox().getValue() instanceof StaticInvokeExpr){ //TODO: static
+				// If we call a method on an instance, this instance is assumed to be tainted
+				if(stmt.getInvokeExprBox().getValue() instanceof InstanceInvokeExpr) {
+					taints.add(((InstanceInvokeExpr) stmt.getInvokeExprBox().getValue()).getBase());
+					
+					// If make sure to also taint the left side of an assignment
+					// if the object just got tainted 
+					if(stmt instanceof JAssignStmt)
+						taints.add(((JAssignStmt)stmt).getLeftOp());
+				}
+				
+				/* handled further down anyway (SA)
+				else if(stmt.getInvokeExprBox().getValue() instanceof StaticInvokeExpr)
 					if(stmt instanceof JAssignStmt){
 						return ((JAssignStmt)stmt).getLeftOp();
 					}
-				}
+				*/
 			}
 		}
-		if(taintedBase != null){
-			if(stmt instanceof JAssignStmt){
-				return ((JAssignStmt)stmt).getLeftOp();
-			}
-		}
-		return null;
+		
+		// If the base object is tainted, all calls to its methods always return
+		// tainted values
+		if (taintedBase != null)
+			if(stmt instanceof JAssignStmt)
+				taints.add(((JAssignStmt)stmt).getLeftOp());
+		
+		return taints;
 	}
 	
 	public List<String> getMethodsForClass(SootClass c){

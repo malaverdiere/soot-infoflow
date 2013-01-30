@@ -1,5 +1,7 @@
 package soot.jimple.infoflow.test.utilclasses;
 
+import soot.jimple.infoflow.test.android.TelephonyManager;
+
 public class C1static {
 	public static String field1;
 	
@@ -9,5 +11,9 @@ public class C1static {
 	
 	public String getField(){
 		return field1;
+	}
+	
+	public void start(){
+		field1 = TelephonyManager.getDeviceId();
 	}
 }

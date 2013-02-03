@@ -14,6 +14,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.util.EasyTaintWrapper;
 
 public abstract class JUnitTests {
 
@@ -24,6 +25,7 @@ public abstract class JUnitTests {
     protected static final String sinkString = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(java.lang.String)>";
     protected static final String sourceString = "staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()";
     protected static boolean local = false;
+    protected static boolean taintWrapper = false;
    
     @BeforeClass
     public static void setUp() throws IOException
@@ -70,6 +72,17 @@ public abstract class JUnitTests {
     protected Infoflow initInfoflow(){
     	Infoflow result = new Infoflow();
     	result.setLocalInfoflow(local);
+    	if(taintWrapper){
+    		EasyTaintWrapper easyWrapper;
+			try {
+				easyWrapper = new EasyTaintWrapper(new File("EasyTaintWrapperSource.txt"));
+				result.setTaintWrapper(easyWrapper);
+			} catch (IOException e) {
+				System.err.println("Could not initialized Taintwrapper:");
+				e.printStackTrace();
+			}
+    		
+    	}
     	return result;
     }
     

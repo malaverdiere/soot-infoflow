@@ -2,13 +2,16 @@ package soot.jimple.infoflow;
 
 import heros.InterproceduralCFG;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import soot.MethodOrMethodContext;
 import soot.PackManager;
 import soot.PatchingChain;
 import soot.Scene;
@@ -26,6 +29,7 @@ import soot.jimple.infoflow.util.AndroidEntryPointCreator;
 import soot.jimple.infoflow.util.IEntryPointCreator;
 import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
+import soot.jimple.toolkits.callgraph.ReachableMethods;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
 import soot.options.Options;
 
@@ -78,7 +82,7 @@ public class Infoflow implements IInfoflow {
 
 		// reset Soot:
 		soot.G.reset();
-
+		
 		// convert to internal format:
 		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
 		// parse classNames as String and methodNames as string in soot representation
@@ -129,15 +133,19 @@ public class Infoflow implements IInfoflow {
 		for (Entry<String, List<String>> classEntry : classes.entrySet()) {
 			SootClass c = Scene.v().forceResolve(classEntry.getKey(), SootClass.BODIES);
 			c.setApplicationClass();
-			if (DEBUG) {
-				for (String methodSignature : classEntry.getValue()) {
-					if (Scene.v().containsMethod(methodSignature)) {
+			
+		}
+		if (DEBUG) {
+			for (List<String> methodList : classes.values()) {
+				for(String methodSignature : methodList){
+				if (Scene.v().containsMethod(methodSignature)) {
 						SootMethod method = Scene.v().getMethod(methodSignature);
 						System.err.println(method.retrieveActiveBody().toString());
 					}
 				}
 			}
 		}
+		
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method,
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
 		IEntryPointCreator epCreator = new AndroidEntryPointCreator();
@@ -164,21 +172,26 @@ public class Infoflow implements IInfoflow {
 				problem.setTaintWrapper(taintWrapper);
 
 				//look for sources in whole program, add the unit to initialSeeds
-				for (SootClass c : Scene.v().getApplicationClasses()) {
-					for (SootMethod m : c.getMethods()) {
-						if (m.hasActiveBody()) {
-							PatchingChain<Unit> units = m.getActiveBody().getUnits();
-							for (Unit u : units) {
-								Stmt s = (Stmt) u;
-								if (s.containsInvokeExpr()) {
-									InvokeExpr ie = s.getInvokeExpr();
-									if (sourcesSinks.isSourceMethod(ie.getMethod()))
-										problem.initialSeeds.add(u);
-								}
+				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
+				eps.addAll(Scene.v().getEntryPoints());
+				ReachableMethods reachableMethods = new ReachableMethods(Scene.v().getCallGraph(), eps.iterator(), null);
+				reachableMethods.update();
+				for(Iterator<MethodOrMethodContext> iter = reachableMethods.listener(); iter.hasNext(); ) {
+					SootMethod m = iter.next().method();
+					if (m.hasActiveBody()) {
+						PatchingChain<Unit> units = m.getActiveBody().getUnits();
+						for (Unit u : units) {
+							Stmt s = (Stmt) u;
+							if (s.containsInvokeExpr()) {
+								InvokeExpr ie = s.getInvokeExpr();
+								if (sourcesSinks.isSourceMethod(ie.getMethod()))
+									problem.initialSeeds.add(u);
 							}
 						}
 					}
+
 				}
+
 				if(problem.initialSeeds.isEmpty()){
 					System.err.println("No Sources found!");
 					return;

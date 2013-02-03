@@ -37,6 +37,25 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow);
     }
 	
+	@Test
+    public void defaultlifecycleTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.utilclasses.D1static: boolean start()>");
+    	epoints.add("<soot.jimple.infoflow.test.utilclasses.D1static: boolean taintIt()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+	
+	@Test
+    public void defaultlifecycle2Test(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.InheritanceTestCode: void testInheritance1()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+	
     @Test
     public void staticTest(){
     	Infoflow infoflow = initInfoflow();

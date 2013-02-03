@@ -13,7 +13,8 @@ public class C1static {
 		return field1;
 	}
 	
-	public void start(){
+	public boolean start(){
 		field1 = TelephonyManager.getDeviceId();
+		return true;
 	}
 }

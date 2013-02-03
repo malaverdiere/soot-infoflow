@@ -8,9 +8,10 @@ public class D1static extends C1static {
 		super(c);
 	}
 	
-	public void taintIt(){
+	public boolean taintIt(){
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(field1);
+		return true;
 	}
 
 }

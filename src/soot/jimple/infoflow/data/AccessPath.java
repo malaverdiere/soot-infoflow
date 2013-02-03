@@ -27,7 +27,7 @@ public class AccessPath {
 	public AccessPath(EquivalentValue val){
 		if(val.getValue() instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val.getValue();
-			field = ref.getFieldRef().declaringClass().getName() + "."+ref.getFieldRef().name();
+			field = ref.getField().getDeclaringClass().getName() + "."+ref.getFieldRef().name();
 		} else if(val.getValue() instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val.getValue();
 			value = new EquivalentValue(ref.getBase());

@@ -350,8 +350,9 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				
 			}
 			if(plain){
-				for(SootMethod currentMethod : currentClass.getMethods()){
-					if(entry.getValue().contains(currentMethod.toString())){
+				for(String method : entry.getValue()){
+					SootMethod currentMethod = findMethod(currentClass, method.substring(method.indexOf(':')+1, method.length()-1).trim());
+					if(currentMethod != null){
 						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
 						conditionCounter++;
 						JNopStmt thenStmt = new JNopStmt();
@@ -368,7 +369,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 						body.getUnits().add(elseStmt);
 					}
 				}
-				
 			}
 			
 			
@@ -420,6 +420,16 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		conditionCounter++;
 		JIfStmt ifStmt = new JIfStmt(cond, target);
 		body.getUnits().add(ifStmt);
+	}
+	
+	protected SootMethod findMethod(SootClass currentClass, String subsignature){
+		if(currentClass.declaresMethod(subsignature)){
+			return currentClass.getMethod(subsignature);
+		}
+		if(currentClass.hasSuperclass()){
+			return findMethod(currentClass.getSuperclass(), subsignature);
+		}
+		return null;
 	}
 	
 

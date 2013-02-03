@@ -222,3 +222,5 @@
 <org.apache.http.entity.StringEntity: void <init>(java.lang.String,java.lang.String)>
 <org.apache.http.entity.StringEntity: void <init>(java.lang.String,java.lang.String,java.lang.String)>
 
+<java.util.Arrays: java.util.List asList(java.lang.Object[])>
+<java.util.Arrays: java.lang.Object[] copyOf(java.lang.Object[],int)>

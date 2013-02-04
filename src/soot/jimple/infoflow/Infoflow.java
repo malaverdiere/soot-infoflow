@@ -1,6 +1,6 @@
 package soot.jimple.infoflow;
 
-import heros.InterproceduralCFG;
+import heros.solver.CountingThreadPoolExecutor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +10,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import soot.MethodOrMethodContext;
 import soot.PackManager;
@@ -23,6 +25,8 @@ import soot.Unit;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.heros.BackwardSolver;
+import soot.jimple.infoflow.heros.ForwardSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.AndroidEntryPointCreator;
@@ -30,7 +34,6 @@ import soot.jimple.infoflow.util.IEntryPointCreator;
 import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
-import soot.jimple.toolkits.ide.JimpleIFDSSolver;
 import soot.options.Options;
 
 public class Infoflow implements IInfoflow {
@@ -138,7 +141,7 @@ public class Infoflow implements IInfoflow {
 		if (DEBUG) {
 			for (List<String> methodList : classes.values()) {
 				for(String methodSignature : methodList){
-				if (Scene.v().containsMethod(methodSignature)) {
+					if (Scene.v().containsMethod(methodSignature)) {
 						SootMethod method = Scene.v().getMethod(methodSignature);
 						System.err.println(method.retrieveActiveBody().toString());
 					}
@@ -162,14 +165,14 @@ public class Infoflow implements IInfoflow {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
 
-				AbstractInfoflowProblem problem;
+//				AbstractInfoflowProblem problem;
 
-				if (local) {
-					problem = new InfoflowLocalProblem(sourcesSinks);
-				} else {
-					problem = new InfoflowProblem(sourcesSinks);
-				}
-				problem.setTaintWrapper(taintWrapper);
+//				if (local) {
+//					problem = new InfoflowLocalProblem(sourcesSinks);
+//				} else {
+				InfoflowProblem	forwardProblem = new InfoflowProblem(sourcesSinks);
+//				}
+				forwardProblem.setTaintWrapper(taintWrapper);
 
 				//look for sources in whole program, add the unit to initialSeeds
 				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
@@ -185,21 +188,25 @@ public class Infoflow implements IInfoflow {
 							if (s.containsInvokeExpr()) {
 								InvokeExpr ie = s.getInvokeExpr();
 								if (sourcesSinks.isSourceMethod(ie.getMethod()))
-									problem.initialSeeds.add(u);
+									forwardProblem.initialSeeds.add(u);
 							}
 						}
 					}
 
 				}
 
-				if(problem.initialSeeds.isEmpty()){
+				if(forwardProblem.initialSeeds.isEmpty()){
 					System.err.println("No Sources found!");
 					return;
 				}
-
-				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver = new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem, DEBUG);
-
-				solver.solve();
+				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+				ForwardSolver forwardSolver = new ForwardSolver(forwardProblem, DEBUG, executor);				
+				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem(sourcesSinks);
+				BackwardSolver backSolver = new BackwardSolver(backProblem, DEBUG, executor);
+				forwardProblem.setBackwardSolver(backSolver);
+				backProblem.setForwardSolver(forwardSolver);
+				
+				forwardSolver.solve();
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 
@@ -208,16 +215,16 @@ public class Infoflow implements IInfoflow {
 
 					System.err.println("----------------------------------------------");
 					System.err.println("At end of: " + ep.getSignature());
-					System.err.println(solver.ifdsResultsAt(ret).size() + " Variables (with "+ problem.results.size() +" source-to-sink connections):");
+					System.err.println(forwardSolver.ifdsResultsAt(ret).size() + " Variables (with "+ forwardProblem.results.size() +" source-to-sink connections):");
 					System.err.println("----------------------------------------------");
 
-					for (Abstraction l : solver.ifdsResultsAt(ret)) {
+					for (Abstraction l : forwardSolver.ifdsResultsAt(ret)) {
 						System.err.println(l.getCorrespondingMethod() + ": " + l.getAccessPath() + " contains value from " + l.getSource());
 					}
 					System.err.println("---");
 				}
 
-				results = problem.results;
+				results = forwardProblem.results;
 				for (Entry<String, List<String>> entry : results.entrySet()) {
 					System.out.println("The sink " + entry.getKey() + " was called with values from the following sources:");
 					for (String str : entry.getValue()) {

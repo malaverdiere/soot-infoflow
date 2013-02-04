@@ -48,6 +48,8 @@ import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
+	private final static boolean DEBUG = true;
+	
 	final SourceSinkManager sourceSinkManager;
 	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
 
@@ -392,6 +394,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								for(int i=0; i< callArgs.size(); i++){
 									if(source.getAccessPath().isLocal() && callArgs.get(i).equals(source.getAccessPath().getPlainValue())){
 										taintedPos = i;
+										break;
 									}
 								}
 								Value taintedBase = null;
@@ -428,6 +431,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								final JAssignStmt stmt = (JAssignStmt) iStmt;
 
 								if (sourceSinkManager.isSourceMethod(stmt.getInvokeExpr().getMethod())) {
+									if (DEBUG)
+										System.out.println("Found source: " + stmt.getInvokeExpr().getMethod());
 									res.add(new Abstraction(new EquivalentValue(stmt.getLeftOp()), new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
 									res.remove(zeroValue);
 								}

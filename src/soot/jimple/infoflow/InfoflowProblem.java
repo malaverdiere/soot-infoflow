@@ -4,6 +4,7 @@ import heros.FlowFunction;
 import heros.FlowFunctions;
 import heros.InterproceduralCFG;
 import heros.flowfunc.Identity;
+import heros.solver.PathEdge;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -148,14 +149,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (addLeftValue) {
 
 								res.add(source);
-								res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+								Abstraction newAbs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
+								res.add(newAbs);
 
 								SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
 								if (leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
-									bSolver.getProblem().initialSeeds().add(srcUnit);									
-									bSolver.solve();
-									
+
+									bSolver.scheduleEdgeProcessing(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, srcUnit, newAbs));
 									
 									Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), src, ifr.getBase(), ifr.getFieldRef());
 									for (Value v : aliases) {

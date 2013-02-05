@@ -2,6 +2,7 @@ package soot.jimple.infoflow;
 
 import heros.FlowFunction;
 import heros.FlowFunctions;
+import heros.InterproceduralCFG;
 import heros.flowfunc.Identity;
 import heros.solver.PathEdge;
 
@@ -36,7 +37,7 @@ import soot.jimple.NewExpr;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.heros.ForwardSolver;
+import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.source.SourceSinkManager;
@@ -47,15 +48,15 @@ import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
 
-public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, BackwardsInterproceduralCFG>{
+public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit,SootMethod>>{
 	Set<Unit> initialSeeds = new HashSet<Unit>();
 	final HashMap<String, List<String>> results;
 	final SourceSinkManager sourceSinkManager;
 	Abstraction zeroValue;
-	ForwardSolver fSolver;
+	InfoflowSolver fSolver;
 	
 	
-	public BackwardsInfoflowProblem(BackwardsInterproceduralCFG icfg, SourceSinkManager manager) {
+	public BackwardsInfoflowProblem(InterproceduralCFG<Unit,SootMethod> icfg, SourceSinkManager manager) {
 		super(icfg);
 		results = new HashMap<String, List<String>>();
 		sourceSinkManager = manager;
@@ -67,7 +68,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 		sourceSinkManager = manager;
 	}
 	
-	public void setForwardSolver(ForwardSolver forwardSolver){
+	public void setForwardSolver(InfoflowSolver forwardSolver){
 		fSolver = forwardSolver;
 	}
 
@@ -134,13 +135,13 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 								if(ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())){
 									Abstraction abs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
 									//TODO: wie kann ich Nachfolger finden? SuccsOf liefert Vorgänger...
-									fSolver.scheduleEdgeProcessing(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
+									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
 									
 								}
 							}else{
 								if(rightValue.equals(source.getAccessPath().getPlainValue())){
 									Abstraction abs = new Abstraction(source.getAccessPath().copyWithNewValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
-									fSolver.scheduleEdgeProcessing(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
+									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
 									
 								}
 							}

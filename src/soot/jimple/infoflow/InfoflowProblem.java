@@ -36,7 +36,7 @@ import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.heros.BackwardSolver;
+import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
@@ -52,7 +52,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 	final SourceSinkManager sourceSinkManager;
 	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
-	BackwardSolver bSolver;
+	InfoflowSolver bSolver;
 
 	
 	@Override
@@ -154,7 +154,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						
 								if (leftValue instanceof InstanceFieldRef) {
 									//call backwards-check:
-									bSolver.scheduleEdgeProcessing(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, srcUnit, newAbs));
+									bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, srcUnit, newAbs));
 									//TODO: aliases are not needed (only in case that full backward analysis can be switched on/off)
 									InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
 									SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
@@ -526,7 +526,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		return false;
 	}
 	
-	public void setBackwardSolver(BackwardSolver backwardSolver){
+	public void setBackwardSolver(InfoflowSolver backwardSolver){
 		bSolver = backwardSolver;
 	}
 }

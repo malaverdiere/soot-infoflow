@@ -25,8 +25,7 @@ import soot.Unit;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.heros.BackwardSolver;
-import soot.jimple.infoflow.heros.ForwardSolver;
+import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.AndroidEntryPointCreator;
@@ -200,9 +199,9 @@ public class Infoflow implements IInfoflow {
 					return;
 				}
 				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-				ForwardSolver forwardSolver = new ForwardSolver(forwardProblem, DEBUG, executor);				
+				InfoflowSolver forwardSolver = new InfoflowSolver(forwardProblem, DEBUG, executor);				
 				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem(sourcesSinks);
-				BackwardSolver backSolver = new BackwardSolver(backProblem, DEBUG, executor);
+				InfoflowSolver backSolver = new InfoflowSolver(backProblem, DEBUG, executor);
 				forwardProblem.setBackwardSolver(backSolver);
 				backProblem.setForwardSolver(forwardSolver);
 				

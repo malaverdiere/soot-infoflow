@@ -12,4 +12,6 @@ public abstract class NativeCallHandler {
 
 	
 	public abstract Set<Abstraction> getTaintedValues(Stmt call, Abstraction source, List<Value> params, SootMethod m);
+	
+	public abstract Set<Abstraction> getTaintedValuesForBackwardAnalysis(Stmt call, Abstraction source, List<Value> params, SootMethod m);
 }

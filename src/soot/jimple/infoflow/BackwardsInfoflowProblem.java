@@ -43,7 +43,6 @@ import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInvokeStmt;
-import soot.jimple.internal.JNewExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
@@ -133,13 +132,16 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							if(rightValue instanceof InstanceFieldRef){
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
 								if(ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())){
-									Abstraction abs = new Abstraction(source.getAccessPath().copyWithNewValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
-									fSolver.scheduleEdgeProcessing(new PathEdge<Unit, Abstraction, SootMethod>(abs, dest, abs));
+									Abstraction abs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
+									//TODO: wie kann ich Nachfolger finden? SuccsOf liefert Vorgänger...
+									fSolver.scheduleEdgeProcessing(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
+									
 								}
 							}else{
 								if(rightValue.equals(source.getAccessPath().getPlainValue())){
 									Abstraction abs = new Abstraction(source.getAccessPath().copyWithNewValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
-									fSolver.scheduleEdgeProcessing(new PathEdge<Unit, Abstraction, SootMethod>(abs, dest, abs));
+									fSolver.scheduleEdgeProcessing(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
+									
 								}
 							}
 							//termination shortcut:
@@ -434,8 +436,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							
-							
+																		
 							//only pass source if the source is not created by this methodcall
 							if(!(iStmt instanceof DefinitionStmt) || !((DefinitionStmt)iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								res.add(source);
@@ -470,11 +471,11 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 //							}
 							
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
-								if (callArgs.contains(source.getAccessPath().getPlainValue())) {
+								if (callArgs.contains(source.getAccessPath().getPlainValue()) || (iStmt instanceof DefinitionStmt && ((DefinitionStmt)iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue()) )) {
 									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
-//TODO: extra method for backwards (taint all params if one param or return value is tainted)
+									// taint all params if one param or return value is tainted)
 									NativeCallHandler ncHandler = new DefaultNativeCallHandler();
-									res.addAll(ncHandler.getTaintedValues(iStmt, source, callArgs, interproceduralCFG().getMethodOf(unit)));
+									res.addAll(ncHandler.getTaintedValuesForBackwardAnalysis(iStmt, source, callArgs, interproceduralCFG().getMethodOf(unit)));
 								}
 							}
 

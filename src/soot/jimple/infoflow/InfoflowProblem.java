@@ -106,7 +106,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									PointsToSet ptsRight = pta.reachingObjects(rightBase);
 									Local sourceBase = (Local) source.getAccessPath().getPlainValue();
 									PointsToSet ptsSource = pta.reachingObjects(sourceBase);
-									if (ptsRight.hasNonEmptyIntersection(ptsSource)) {
+									if (rightBase.equals(sourceBase) || ptsRight.hasNonEmptyIntersection(ptsSource)) {
 										if (source.getAccessPath().isInstanceFieldRef()) {
 											if (rightRef.getField().getName().equals(source.getAccessPath().getField())) {
 												addLeftValue = true;
@@ -151,13 +151,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								res.add(source);
 								Abstraction newAbs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
 								res.add(newAbs);
-
-								SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
+						
 								if (leftValue instanceof InstanceFieldRef) {
-									InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
-
+									//call backwards-check:
 									bSolver.scheduleEdgeProcessing(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, srcUnit, newAbs));
-									
+									//TODO: aliases are not needed (only in case that full backward analysis can be switched on/off)
+									InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
+									SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
 									Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), src, ifr.getBase(), ifr.getFieldRef());
 									for (Value v : aliases) {
 										res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));

@@ -18,4 +18,13 @@ public class HeapTests extends JUnitTests {
 			checkInfoflow(infoflow);
 	    }
 	  
+	  @Test
+	    public void testExample1(){
+		  Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.ForwardBackwardTest: void testMethod()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow);
+	    }
+	  
 }

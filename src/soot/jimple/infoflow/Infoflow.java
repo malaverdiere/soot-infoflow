@@ -211,12 +211,12 @@ public class Infoflow implements IInfoflow {
 				}
 			}
 		}
-
-		SootMethod ep = Scene.v().getMethod(entryPoint);
-		if (ep == null) {
+		
+		if (!Scene.v().containsMethod(entryPoint)) {
 			System.err.println("Entry point not found");
 			return;
 		}
+		SootMethod ep = Scene.v().getMethod(entryPoint);
 		Scene.v().setEntryPoints(Collections.singletonList(ep));
 		PackManager.v().runPacks();
 		if (DEBUG)

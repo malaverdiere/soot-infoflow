@@ -4,12 +4,14 @@ import heros.InterproceduralCFG;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import soot.MethodOrMethodContext;
 import soot.PackManager;
@@ -22,6 +24,8 @@ import soot.Transform;
 import soot.Unit;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
+import soot.jimple.infoflow.InfoflowResults.SourceInfo;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
@@ -37,11 +41,12 @@ public class Infoflow implements IInfoflow {
 
 	public static boolean DEBUG = false;
 	public boolean local = false;
-	public HashMap<String, List<String>> results;
+	public InfoflowResults results;
 
 	private final String androidPath;
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
+	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
@@ -66,6 +71,16 @@ public class Infoflow implements IInfoflow {
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
 		taintWrapper = wrapper;
 	}
+	
+	/**
+	 * Sets whether and how the paths between the sources and sinks shall be
+	 * tracked
+	 * @param method The method for tracking data flow paths through the
+	 * program.
+	 */
+	public void setPathTracking(PathTrackingMethod method) {
+		this.pathTracking = method;
+	}
 
 	@Override
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
@@ -73,21 +88,14 @@ public class Infoflow implements IInfoflow {
 	}
 
 	@Override
-	public void computeInfoflow(String path, List<String> entryPoints, SourceSinkManager sourcesSinks) {
-		results = null;
-		if (sourcesSinks == null) {
-			System.out.println("Error: sources are empty!");
-			return;
-		}
-
+	public void computeInfoflow(String path, String entryPoint, List<String> sources, List<String> sinks) {
+		this.computeInfoflow(path, entryPoint, new DefaultSourceSinkManager(sources, sinks));
+	}
+	
+	private void initializeSoot(String path, Set<String> classes, SourceSinkManager sourcesSinks) {
 		// reset Soot:
 		soot.G.reset();
 		
-		// convert to internal format:
-		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
-		// parse classNames as String and methodNames as string in soot representation
-		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints, false);
-
 		// add SceneTransformer which calculates and prints infoflow
 		addSceneTransformer(sourcesSinks);
 
@@ -115,7 +123,7 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
 		soot.options.Options.v().set_prepend_classpath(true);
-		Options.v().set_process_dir(Arrays.asList(classes.keySet().toArray()));
+		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
 		soot.options.Options.v().setPhaseOption("cg.spark", "on");
 		soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
 		// do not merge variables (causes problems with PointsToSets)
@@ -127,14 +135,37 @@ public class Infoflow implements IInfoflow {
 			else
 				soot.options.Options.v().set_android_jars(this.androidPath);
 		}
-
+		
 		// load all entryPoint classes with their bodies
 		Scene.v().loadNecessaryClasses();
-		for (Entry<String, List<String>> classEntry : classes.entrySet()) {
-			SootClass c = Scene.v().forceResolve(classEntry.getKey(), SootClass.BODIES);
+		boolean hasClasses = false;
+		for (String className : classes) {
+			SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
 			c.setApplicationClass();
-			
+			if (c != null && !c.isPhantomClass() && !c.isPhantom())
+				hasClasses = true;
 		}
+		if (!hasClasses) {
+			System.out.println("Only phantom classes loaded, skipping analysis...");
+			return;
+		}
+	}
+	
+	@Override
+	public void computeInfoflow(String path, List<String> entryPoints, SourceSinkManager sourcesSinks) {
+		results = null;
+		if (sourcesSinks == null) {
+			System.out.println("Error: sources are empty!");
+			return;
+		}
+	
+		// convert to internal format:
+		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
+		// parse classNames as String and methodNames as string in soot representation
+		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints, false);
+
+		initializeSoot(path, classes.keySet(), sourcesSinks);
+
 		if (DEBUG) {
 			for (List<String> methodList : classes.values()) {
 				for(String methodSignature : methodList){
@@ -149,10 +180,44 @@ public class Infoflow implements IInfoflow {
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method,
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
 		IEntryPointCreator epCreator = new AndroidEntryPointCreator();
-		List<SootMethod> entrys = new LinkedList<SootMethod>();
+		Scene.v().setEntryPoints(Collections.singletonList(epCreator.createDummyMain(classes)));
+		PackManager.v().runPacks();
+		if (DEBUG)
+			PackManager.v().writeOutput();
+	}
 
-		entrys.add(epCreator.createDummyMain(classes));
-		Scene.v().setEntryPoints(entrys);
+	@Override
+	public void computeInfoflow(String path, String entryPoint, SourceSinkManager sourcesSinks) {
+		results = null;
+		if (sourcesSinks == null) {
+			System.out.println("Error: sources are empty!");
+			return;
+		}
+
+		// convert to internal format:
+		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
+		// parse classNames as String and methodNames as string in soot representation
+		HashMap<String, List<String>> classes = parser.parseClassNames(Collections.singletonList(entryPoint), false);
+
+		initializeSoot(path, classes.keySet(), sourcesSinks);
+
+		if (DEBUG) {
+			for (List<String> methodList : classes.values()) {
+				for(String methodSignature : methodList){
+				if (Scene.v().containsMethod(methodSignature)) {
+						SootMethod method = Scene.v().getMethod(methodSignature);
+						System.err.println(method.retrieveActiveBody().toString());
+					}
+				}
+			}
+		}
+
+		SootMethod ep = Scene.v().getMethod(entryPoint);
+		if (ep == null) {
+			System.err.println("Entry point not found");
+			return;
+		}
+		Scene.v().setEntryPoints(Collections.singletonList(ep));
 		PackManager.v().runPacks();
 		if (DEBUG)
 			PackManager.v().writeOutput();
@@ -170,6 +235,7 @@ public class Infoflow implements IInfoflow {
 					problem = new InfoflowProblem(sourcesSinks);
 				}
 				problem.setTaintWrapper(taintWrapper);
+				problem.setPathTracking(pathTracking);
 
 				//look for sources in whole program, add the unit to initialSeeds
 				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
@@ -197,7 +263,8 @@ public class Infoflow implements IInfoflow {
 					return;
 				}
 
-				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver = new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem, DEBUG);
+				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver =
+						new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem, DEBUG);
 
 				solver.solve();
 
@@ -218,10 +285,16 @@ public class Infoflow implements IInfoflow {
 				}
 
 				results = problem.results;
-				for (Entry<String, List<String>> entry : results.entrySet()) {
+				for (Entry<String, List<SourceInfo>> entry : results.getResults().entrySet()) {
 					System.out.println("The sink " + entry.getKey() + " was called with values from the following sources:");
-					for (String str : entry.getValue()) {
-						System.out.println("- " + str);
+					for (SourceInfo source : entry.getValue()) {
+						System.out.println("- " + source.getSource());
+						if (source.getPath() != null && !source.getPath().isEmpty()) {
+							System.out.println("\ton Path: ");
+							for (String p : source.getPath()) {
+								System.out.println("\t\t -> " + p);
+							}
+						}
 					}
 				}
 			}
@@ -231,7 +304,7 @@ public class Infoflow implements IInfoflow {
 	}
 
 	@Override
-	public HashMap<String, List<String>> getResults() {
+	public InfoflowResults getResults() {
 		return results;
 	}
 

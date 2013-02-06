@@ -114,7 +114,7 @@ public class Infoflow implements IInfoflow {
 		includeList.add("java.net.");
 		includeList.add("libcore.icu.");
 		Options.v().set_include(includeList);
-//		Options.v().set_no_bodies_for_excluded(true);
+		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
 		if (DEBUG)
 			Options.v().set_output_format(Options.output_format_jimple);
@@ -122,7 +122,7 @@ public class Infoflow implements IInfoflow {
 			Options.v().set_output_format(Options.output_format_none);
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
-		soot.options.Options.v().set_prepend_classpath(true);
+//		soot.options.Options.v().set_prepend_classpath(true);
 		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
 		soot.options.Options.v().setPhaseOption("cg.spark", "on");
 		soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
@@ -211,12 +211,16 @@ public class Infoflow implements IInfoflow {
 				}
 			}
 		}
-		
-		if (!Scene.v().containsMethod(entryPoint)) {
+
+		if (!Scene.v().containsMethod(entryPoint)){
 			System.err.println("Entry point not found");
 			return;
 		}
 		SootMethod ep = Scene.v().getMethod(entryPoint);
+		if (!ep.isConcrete()) {
+			System.err.println("Skipping non-concrete method " + ep);
+			return;
+		}
 		Scene.v().setEntryPoints(Collections.singletonList(ep));
 		PackManager.v().runPacks();
 		if (DEBUG)

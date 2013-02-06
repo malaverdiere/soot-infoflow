@@ -35,7 +35,7 @@ import soot.options.Options;
 
 public class Infoflow implements IInfoflow {
 
-	public static boolean DEBUG = true;
+	public static boolean DEBUG = false;
 	public boolean local = false;
 	public HashMap<String, List<String>> results;
 

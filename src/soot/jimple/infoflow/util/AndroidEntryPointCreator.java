@@ -125,6 +125,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			if(instanceNeeded){
 				String className = entry.getKey();
 				SootClass createdClass = Scene.v().getSootClass(className);
+				if (className.contains("AccountManager"))
+					System.out.println("x");
 				if (isConstructorGenerationPossible(createdClass)) {
 					Local localVal = generateClassConstructor(createdClass, body);
 					localVarsForClasses.put(className, localVal);
@@ -354,6 +356,11 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			}
 			if(plain){
 				for(SootMethod currentMethod : plainMethods.values()){
+					if (!currentMethod.isStatic() && classLocal == null) {
+						System.out.println("Skipping method " + currentMethod + " because we have no instance");
+						continue;
+					}
+					
 					JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
 					conditionCounter++;
 					JNopStmt thenStmt = new JNopStmt();

@@ -7,6 +7,7 @@ public class Abstraction {
 	private final AccessPath accessPath;
 	private final EquivalentValue source;
 	private final SootMethod correspondingMethod;
+	//private final Value param; //only required for backward analysis
 	
 
 	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m){
@@ -14,6 +15,12 @@ public class Abstraction {
 		correspondingMethod = m;
 		accessPath = new AccessPath(taint);
 		
+	}
+	
+	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m, boolean fieldtainted){
+		source = src;
+		correspondingMethod = m;
+		accessPath = new AccessPath(taint, fieldtainted);	
 	}
 	
 	public Abstraction(AccessPath p, EquivalentValue src, SootMethod m){

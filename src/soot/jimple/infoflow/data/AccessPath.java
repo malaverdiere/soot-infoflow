@@ -9,6 +9,8 @@ import soot.jimple.StaticFieldRef;
 public class AccessPath {
 	private EquivalentValue value;
 	private String field;
+	//in contrast to a certain value which is tainted unknownfieldtainted says that any (*) field of the value is tainted
+	private boolean unknownfieldtainted; //also known as star/*
 	
 	public AccessPath(Value val){
 		assert !(val instanceof EquivalentValue);
@@ -22,6 +24,7 @@ public class AccessPath {
 		}else{
 			value = new EquivalentValue(val);
 		}
+		unknownfieldtainted = false;
 	}
 	
 	public AccessPath(EquivalentValue val){
@@ -35,22 +38,24 @@ public class AccessPath {
 		}else{
 			value = val;
 		}
+		unknownfieldtainted = false;
+	}
+	
+	public AccessPath(EquivalentValue val, boolean fieldtainted){
+		if(val.getValue() instanceof StaticFieldRef){
+			StaticFieldRef ref = (StaticFieldRef) val.getValue();
+			field = ref.getField().getDeclaringClass().getName() + "."+ref.getFieldRef().name();
+		} else if(val.getValue() instanceof InstanceFieldRef){
+			InstanceFieldRef ref = (InstanceFieldRef) val.getValue();
+			value = new EquivalentValue(ref.getBase());
+			field = ref.getField().getName();
+		}else{
+			value = val;
+		}
+		unknownfieldtainted = fieldtainted;
 		
 	}
 	
-	public AccessPath(String staticfieldref){
-		field = staticfieldref;
-	}
-	
-	public AccessPath(Value base, String field){
-		value = new EquivalentValue(base);
-		this.field = field;
-	}
-	
-	public AccessPath(EquivalentValue base, String field){
-		value = base;
-		this.field = field;
-	}
 	
 	/**
 	 * replaces value and returns it if matches with val, otherwise original is returned
@@ -138,6 +143,14 @@ public class AccessPath {
 		return false;
 	}
 	
+	/**
+	 * only fields (*) are tainted, not the object itself 
+	 * @return
+	 */
+	public boolean isOnlyFieldsTainted(){
+		return unknownfieldtainted;
+	}
+	
 	public boolean isLocal(){
 		if(value != null && value.getValue() instanceof Local && field == null){
 			return true;
@@ -154,7 +167,8 @@ public class AccessPath {
 		if(field != null){
 			str += field;
 		}
-		
+		if(unknownfieldtainted)
+			str += ".*";
 		return str;
 	}
 	
@@ -162,6 +176,7 @@ public class AccessPath {
 		if(val instanceof Local){
 			AccessPath a = new AccessPath(val);
 			a.field = this.field;
+			a.unknownfieldtainted = this.unknownfieldtainted;
 			return a;
 		}else{
 			return new AccessPath(val);

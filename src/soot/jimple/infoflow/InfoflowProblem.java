@@ -53,6 +53,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	final SourceSinkManager sourceSinkManager;
 	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
 	InfoflowSolver bSolver;
+	boolean forwardbackward = true;
 
 	
 	@Override
@@ -82,6 +83,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							boolean addLeftValue = false;
+							boolean keepAllFieldTaintStar = true;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 							// shortcuts:
@@ -113,6 +115,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											}
 										} else {
 											addLeftValue = true;
+											keepAllFieldTaintStar = false;
 										}
 									}
 								}
@@ -128,7 +131,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftValue), source.getSource(), source.getCorrespondingMethod()));
 										} else {
 											// access path length = 1 - taint entire value if left is field reference
-											res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), source.getCorrespondingMethod()));
+											res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), source.getCorrespondingMethod(), true));
 										}
 									}
 								}
@@ -141,7 +144,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 
 								// generic case, is true for Locals, ArrayRefs that are equal etc..
-								if (rightValue.equals(source.getAccessPath().getPlainValue())) {
+								if (rightValue.equals(source.getAccessPath().getPlainValue()) && !source.getAccessPath().isOnlyFieldsTainted()) {
 									addLeftValue = true;
 								}
 							}
@@ -149,18 +152,20 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (addLeftValue) {
 
 								res.add(source);
-								Abstraction newAbs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
+								Abstraction newAbs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
 								res.add(newAbs);
 						
 								if (leftValue instanceof InstanceFieldRef) {
+									if(forwardbackward){
 									//call backwards-check:
-									bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, srcUnit, newAbs));
-									//TODO: aliases are not needed (only in case that full backward analysis can be switched on/off)
-									InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
-									SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
-									Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), src, ifr.getBase(), ifr.getFieldRef());
-									for (Value v : aliases) {
-										res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+										bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, srcUnit, newAbs));
+									}else{
+										InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
+										SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
+										Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), src, ifr.getBase(), ifr.getFieldRef());
+										for (Value v : aliases) {
+											res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(srcUnit)));
+										}
 									}
 								}
 								return res;
@@ -184,8 +189,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					paramLocals.add(dest.getActiveBody().getParameterLocal(i));
 				}
 				
-				if (dest.getName().contains("doLog"))
-					System.out.println("DOLOG: " + dest.getActiveBody());
 				
 				return new FlowFunction<Abstraction>() {
 
@@ -275,10 +278,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 								}
 								// this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
-								Set<Value> aliases = getAliasesinMethod(calleeMethod.getActiveBody().getUnits(), retSite, retLocal, null);
-								for (Value v : aliases) {
-									if (v.equals(source.getAccessPath().getPlainValue())) {
-										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+								if(!forwardbackward){
+									Set<Value> aliases = getAliasesinMethod(calleeMethod.getActiveBody().getUnits(), retSite, retLocal, null);
+									for (Value v : aliases) {
+										if (v.equals(source.getAccessPath().getPlainValue())) {
+											res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+										}
 									}
 								}
 							}

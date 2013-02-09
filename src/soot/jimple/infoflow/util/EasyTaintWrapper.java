@@ -14,6 +14,7 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Value;
 import soot.jimple.InstanceInvokeExpr;
+import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JAssignStmt;
 /**
@@ -90,14 +91,11 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 					// if the object just got tainted 
 					if(stmt instanceof JAssignStmt)
 						taints.add(((JAssignStmt)stmt).getLeftOp());
-				}
-				
-				/* handled further down anyway (SA)
+				}				
 				else if(stmt.getInvokeExprBox().getValue() instanceof StaticInvokeExpr)
 					if(stmt instanceof JAssignStmt){
-						return ((JAssignStmt)stmt).getLeftOp();
+						taints.add(((JAssignStmt)stmt).getLeftOp());
 					}
-				*/
 			}
 		}
 		

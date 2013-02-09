@@ -31,6 +31,7 @@ import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
@@ -45,7 +46,7 @@ import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 
 	final SourceSinkManager sourceSinkManager;
-	final Abstraction zeroValue = new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
+	Abstraction zeroValue = null;
 
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit, Abstraction, SootMethod>() {
@@ -292,7 +293,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 				};
 			}
 
-			public FlowFunction<Abstraction> getCallToReturnFlowFunction(Unit call, Unit returnSite) {
+			public FlowFunction<Abstraction> getCallToReturnFlowFunction(final Unit call, Unit returnSite) {
 				final Unit unit = returnSite;
 				if (call instanceof Stmt) {
 					final Stmt iStmt = (Stmt) call;
@@ -310,7 +311,6 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
 									NativeCallHandler ncHandler = new DefaultNativeCallHandler();
 									res.addAll(ncHandler.getTaintedValues(iStmt, source, callArgs, interproceduralCFG().getMethodOf(unit)));
-
 								}
 							}
 							if (iStmt instanceof JAssignStmt) {
@@ -337,25 +337,27 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 								}
 
 								if (taintedParam) {
-									if (!results.containsKey(iStmt.getInvokeExpr().getMethod().toString())) {
-										List<String> list = new ArrayList<String>();
-										list.add(source.getSource().getValue().toString());
-										results.put(iStmt.getInvokeExpr().getMethod().toString(), list);
-									} else {
-										results.get(iStmt.getInvokeExpr().getMethod().toString()).add(source.getSource().getValue().toString());
-									}
+									if (pathTracking != PathTrackingMethod.NoTracking)
+										results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
+												source.getSource().getValue().toString(),
+												((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
+												call.toString());
+									else
+										results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
+												source.getSource().getValue().toString());
 								}
 								// only for LocalAnalysis at the moment: if the base object which executes the method is tainted the sink is reached, too.
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 									InstanceInvokeExpr vie = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 									if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
-										if (!results.containsKey(iStmt.getInvokeExpr().getMethod().toString())) {
-											List<String> list = new ArrayList<String>();
-											list.add(source.getSource().getValue().toString());
-											results.put(iStmt.getInvokeExpr().getMethod().toString(), list);
-										} else {
-											results.get(iStmt.getInvokeExpr().getMethod().toString()).add(source.getSource().getValue().toString());
-										}
+										if (pathTracking != PathTrackingMethod.NoTracking)
+											results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
+													source.getSource().getValue().toString(),
+													((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
+													call.toString());
+										else
+											results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
+													source.getSource().getValue().toString());
 									}
 								}
 							}
@@ -392,9 +394,11 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 	}
 
 	public Abstraction createZeroValue() {
-		if (zeroValue == null)
-			return new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
-
+		if (zeroValue == null) {
+			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
+					new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null) :
+					new AbstractionWithPath(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
+		}
 		return zeroValue;
 	}
 

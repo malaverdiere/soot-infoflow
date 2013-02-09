@@ -108,20 +108,25 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 
 			//check if one of the methods is instance:
 			boolean instanceNeeded = activity || service || broadcastReceiver || contentProvider;
-			if (!instanceNeeded)
+			Map<String, SootMethod> plainMethods = new HashMap<String, SootMethod>();
+			if (!instanceNeeded || plain)
 				for(String method : entry.getValue()){
 					if(Scene.v().containsMethod(method)){
-						if(!Scene.v().getMethod(method).isStatic()){
+						SootMethod m = Scene.v().getMethod(method);
+						plainMethods.put(method, m);
+						if(!m.isStatic()){
 							instanceNeeded = true;
 							break;
 						}
 					}
 				}
-
+						
 			// if we need to call a constructor, we insert the respective Jimple statement here
 			if(instanceNeeded){
 				String className = entry.getKey();
 				SootClass createdClass = Scene.v().getSootClass(className);
+				if (className.contains("AccountManager"))
+					System.out.println("x");
 				if (isConstructorGenerationPossible(createdClass)) {
 					Local localVal = generateClassConstructor(createdClass, body);
 					localVarsForClasses.put(className, localVal);
@@ -350,24 +355,26 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				
 			}
 			if(plain){
-				for(String method : entry.getValue()){
-					SootMethod currentMethod = findMethod(currentClass, method.substring(method.indexOf(':')+1, method.length()-1).trim());
-					if(currentMethod != null){
-						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-						conditionCounter++;
-						JNopStmt thenStmt = new JNopStmt();
-						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-						body.getUnits().add(ifStmt);
-						JNopStmt elseStmt = new JNopStmt();
-						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-						body.getUnits().add(elseGoto);
-						
-						body.getUnits().add(thenStmt);
-						buildMethodCall(currentMethod, body, classLocal, generator);
-						
-						createIfStmt(endClassStmt);
-						body.getUnits().add(elseStmt);
+				for(SootMethod currentMethod : plainMethods.values()){
+					if (!currentMethod.isStatic() && classLocal == null) {
+						System.out.println("Skipping method " + currentMethod + " because we have no instance");
+						continue;
 					}
+					
+					JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+					conditionCounter++;
+					JNopStmt thenStmt = new JNopStmt();
+					JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+					body.getUnits().add(ifStmt);
+					JNopStmt elseStmt = new JNopStmt();
+					JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+					body.getUnits().add(elseGoto);
+						
+					body.getUnits().add(thenStmt);
+					buildMethodCall(currentMethod, body, classLocal, generator);
+						
+					createIfStmt(endClassStmt);
+					body.getUnits().add(elseStmt);
 				}
 			}
 			

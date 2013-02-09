@@ -7,13 +7,13 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
 
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.InfoflowResults;
 import soot.jimple.infoflow.util.EasyTaintWrapper;
 
 public abstract class JUnitTests {
@@ -52,9 +52,9 @@ public abstract class JUnitTests {
     
     protected void checkInfoflow(Infoflow infoflow){
 		  if(infoflow.isResultAvailable()){
-				HashMap<String, List<String>> map = infoflow.getResults();
-				assertTrue(map.containsKey(sinkString));
-				assertTrue(map.get(sinkString).contains(sourceString));
+				InfoflowResults map = infoflow.getResults();
+				assertTrue(map.containsSink(sinkString));
+				assertTrue(map.isPathBetween(sinkString, sourceString));
 			}else{
 				fail("result is not available");
 			}
@@ -62,8 +62,8 @@ public abstract class JUnitTests {
     
     protected void negativeCheckInfoflow(Infoflow infoflow){
 		  if(infoflow.isResultAvailable()){
-				HashMap<String, List<String>> map = infoflow.getResults();
-				assertFalse(map.containsKey(sinkString));
+				InfoflowResults map = infoflow.getResults();
+				assertFalse(map.containsSink(sinkString));
 			}else{
 				fail("result is not available");
 			}

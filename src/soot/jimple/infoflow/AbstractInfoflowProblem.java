@@ -1,12 +1,13 @@
 package soot.jimple.infoflow;
 
-import java.util.HashMap;
+import heros.InterproceduralCFG;
+
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import heros.InterproceduralCFG;
+import soot.EquivalentValue;
 import soot.Local;
+import soot.NullType;
 import soot.PatchingChain;
 import soot.SootFieldRef;
 import soot.SootMethod;
@@ -16,19 +17,49 @@ import soot.jimple.AssignStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.data.AbstractionWithPath;
+import soot.jimple.infoflow.heros.InfoflowSolver;
+import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
+import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.internal.JInstanceFieldRef;
+import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 
 public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
 
+	/**
+	 * Supported methods for tracking data flow paths through applications
+	 * @author sarzt
+	 *
+	 */
+	public enum PathTrackingMethod {
+		/**
+		 * Do not track any paths. Just search for connections between sources
+		 * and sinks, but forget about the path between them.
+		 */
+		NoTracking,
+		
+		/**
+		 * Perform a simple forward tracking. Whenever propagating taint
+		 * information, also track the current statement on the path. Consumes
+		 * a lot of memory.
+		 */
+		ForwardTracking
+	}
+	
 	final Set<Unit> initialSeeds = new HashSet<Unit>();
-	final HashMap<String, List<String>> results;
+	final InfoflowResults results;
 	ITaintPropagationWrapper taintWrapper;
+	PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
+	NativeCallHandler ncHandler = new DefaultNativeCallHandler();
+	InfoflowSolver bSolver;
+	boolean forwardbackward = true;
+	Abstraction zeroValue = null;
 	
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
-		results = new HashMap<String, List<String>>();
+		results = new InfoflowResults();
 	}
 	
 	@Override
@@ -38,6 +69,17 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
 		taintWrapper = wrapper;
+	}
+	
+	/**
+	 * Sets whether and how the paths between the sources and sinks shall be
+	 * tracked
+	 * @param method The method for tracking data flow paths through the
+	 * program.
+	 */
+	public void setPathTracking(PathTrackingMethod method) {
+		this.pathTracking = method;
+		this.ncHandler.setPathTracking(method);
 	}
 	
 	/**
@@ -99,4 +141,29 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		return ref.getField().getDeclaringClass().getName() + "."+ref.getFieldRef().name();
 	}
 
+	
+	@Override
+	public Abstraction createZeroValue() {
+		if (zeroValue == null) {
+			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
+				new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null) :
+				new AbstractionWithPath(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
+		}
+
+		return zeroValue;
+	}
+	
+	@Override
+	public Set<Unit> initialSeeds() {
+		return initialSeeds;
+	}
+	
+	@Override
+	public boolean autoAddZero() {
+		return false;
+	}
+	
+	public void setBackwardSolver(InfoflowSolver backwardSolver){
+		bSolver = backwardSolver;
+	}
 }

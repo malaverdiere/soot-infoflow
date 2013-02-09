@@ -14,7 +14,6 @@ public class Abstraction {
 		source = src;
 		correspondingMethod = m;
 		accessPath = new AccessPath(taint);
-		
 	}
 	
 	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m, boolean fieldtainted){
@@ -27,7 +26,6 @@ public class Abstraction {
 		source = src;
 		correspondingMethod = m;
 		accessPath = p;
-		
 	}
 	
 	public EquivalentValue getSource() {
@@ -84,5 +82,5 @@ public class Abstraction {
 	public AccessPath getAccessPath(){
 		return accessPath;
 	}
-
+	
 }

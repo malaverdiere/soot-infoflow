@@ -108,10 +108,10 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 					Value left = assignStmt.getLeftOp();
 
 					// find rightValue (remove casts):
-					right = BaseSelector.selectBase(right, true);
+					right = BaseSelector.selectBase(right, false);
 
 					// find appropriate leftValue:
-					left = BaseSelector.selectBase(left, false);
+					left = BaseSelector.selectBase(left, true);
 
 					final Value leftValue = left;
 					final Value rightValue = right;
@@ -121,6 +121,9 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							if(src.toString().contains("x = ")){
+								System.out.println(src);
+							}
 							boolean addRightValue = false;
 							boolean keepAllFieldTaintStar = true;
 							Set<Abstraction> res = new HashSet<Abstraction>();
@@ -134,7 +137,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							if(rightValue instanceof InstanceFieldRef){
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
 								if(ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())){
-									Abstraction abs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
+									Abstraction abs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit),keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
 									//this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
 									
@@ -160,10 +163,8 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 								if (leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 									Local leftBase = (Local) leftRef.getBase();
-									PointsToSet ptsLeft = pta.reachingObjects(leftBase);
 									Local sourceBase = (Local) source.getAccessPath().getPlainValue();
-									PointsToSet ptsSource = pta.reachingObjects(sourceBase);
-									if (ptsLeft.hasNonEmptyIntersection(ptsSource)) {
+									if (leftBase.equals(sourceBase)) {
 										if (source.getAccessPath().isInstanceFieldRef()) {
 											if (leftRef.getField().getName().equals(source.getAccessPath().getField())) {
 												addRightValue = true;
@@ -173,15 +174,11 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 											keepAllFieldTaintStar = false;
 										}
 									}
-								}
-
-								// indirect taint propagation:
-								// if leftValue is local and source is instancefield of this local:
-								if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
+									// indirect taint propagation:
+									// if leftValue is local and source is instancefield of this local:
+								}else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
 									Local base = (Local) source.getAccessPath().getPlainValue(); // ?
-									PointsToSet ptsSourceBase = pta.reachingObjects(base);
-									PointsToSet ptsLeft = pta.reachingObjects((Local) leftValue);
-									if (ptsSourceBase.hasNonEmptyIntersection(ptsLeft)) {
+									if (leftValue.equals(base)) { 
 										if (rightValue instanceof Local) {
 											res.add(new Abstraction(source.getAccessPath().copyWithNewValue(rightValue), source.getSource(), source.getCorrespondingMethod()));
 										} else {
@@ -189,26 +186,26 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 											res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), source.getCorrespondingMethod(), true));
 										}
 									}
-								}
-
-								if (leftValue instanceof ArrayRef) {
+								} else if (leftValue instanceof ArrayRef) {
 									Local leftBase = (Local) ((ArrayRef) leftValue).getBase();
 									if (leftBase.equals(source.getAccessPath().getPlainValue()) || (source.getAccessPath().isLocal() && pta.reachingObjects(leftBase).hasNonEmptyIntersection(pta.reachingObjects((Local) source.getAccessPath().getPlainValue())))) {
 										addRightValue = true;
 									}
-								}
-
-								// generic case, is true for Locals, ArrayRefs that are equal etc..
-								if (leftValue.equals(source.getAccessPath().getPlainValue())) {
-									addRightValue = true;
+									// generic case, is true for Locals, ArrayRefs that are equal etc..
+								}else if (leftValue.equals(source.getAccessPath().getPlainValue())) {
+									addRightValue = true; 
 								}
 							}
 							// if one of them is true -> add rightValue
-							if (addRightValue) {
+							if (addRightValue) { 
 								res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 								return res;
 							}
-							return Collections.singleton(source);
+							if(!res.isEmpty()){ 
+								return res;
+							}else{
+								return Collections.singleton(source);
+							}
 
 						}
 					};
@@ -238,7 +235,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 //							Value leftOp = defnStmt.getLeftOp();
 							//TODO: how can this work??
 //							if (retLocal.equals(source.getAccessPath().getPlainValue())) {
-//								res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+//								res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit), fieldstainted));
 //							}
 								// this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
 //								Set<Value> aliases = getAliasesinMethod(calleeMethod.getActiveBody().getUnits(), retSite, retLocal, null);
@@ -388,7 +385,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 							// this might be enough because every call must happen with a local variable which is tainted itself:
 							if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
-								res.add(new Abstraction(new EquivalentValue(callee.getActiveBody().getThisLocal()), source.getSource(), callee));
+								res.add(new Abstraction(new EquivalentValue(callee.getActiveBody().getThisLocal()), source.getSource(), callee, source.getAccessPath().isOnlyFieldsTainted()));
 							}
 						}
 

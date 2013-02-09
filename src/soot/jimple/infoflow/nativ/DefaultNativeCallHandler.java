@@ -34,7 +34,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			if(params.get(0).equals(source.getAccessPath().getPlainValue())){
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					set.add(new AbstractionWithPath(new EquivalentValue(params.get(2)),
-							source.getSource(), m, ((AbstractionWithPath) source).getPropagationPath()));
+							source.getSource(), m, ((AbstractionWithPath) source).getPropagationPath(), false));
 				else
 					set.add(new Abstraction(new EquivalentValue(params.get(2)), source.getSource(), m));
 			}
@@ -45,7 +45,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 				if (!(argValue.getType() instanceof PrimType)) {
 					if (pathTracking == PathTrackingMethod.ForwardTracking)
 						set.add(new AbstractionWithPath(new EquivalentValue(argValue), source.getSource(), m,
-								((AbstractionWithPath) source).getPropagationPath()));
+								((AbstractionWithPath) source).getPropagationPath(), false));
 					else
 						set.add(new Abstraction(new EquivalentValue(argValue), source.getSource(), m));
 				}
@@ -56,7 +56,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			DefinitionStmt dStmt = (DefinitionStmt) call;
 			if (pathTracking == PathTrackingMethod.ForwardTracking)
 				set.add(new AbstractionWithPath(new EquivalentValue(dStmt.getLeftOp()),
-						source.getSource(), m, ((AbstractionWithPath) source).getPropagationPath()));
+						source.getSource(), m, ((AbstractionWithPath) source).getPropagationPath(), false));
 			else
 				set.add(new Abstraction(new EquivalentValue(dStmt.getLeftOp()), source.getSource(), m));
 		}

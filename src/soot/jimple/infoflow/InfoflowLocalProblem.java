@@ -397,7 +397,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 		if (zeroValue == null) {
 			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
 					new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null) :
-					new AbstractionWithPath(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
+					new AbstractionWithPath(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null, false);
 		}
 		return zeroValue;
 	}

@@ -42,16 +42,7 @@ public class AccessPath {
 	}
 	
 	public AccessPath(EquivalentValue val, boolean fieldtainted){
-		if(val.getValue() instanceof StaticFieldRef){
-			StaticFieldRef ref = (StaticFieldRef) val.getValue();
-			field = ref.getField().getDeclaringClass().getName() + "."+ref.getFieldRef().name();
-		} else if(val.getValue() instanceof InstanceFieldRef){
-			InstanceFieldRef ref = (InstanceFieldRef) val.getValue();
-			value = new EquivalentValue(ref.getBase());
-			field = ref.getField().getName();
-		}else{
-			value = val;
-		}
+		this(val);
 		unknownfieldtainted = fieldtainted;
 		
 	}

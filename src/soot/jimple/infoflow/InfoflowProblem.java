@@ -14,7 +14,6 @@ import java.util.Set;
 
 import soot.EquivalentValue;
 import soot.Local;
-import soot.NullType;
 import soot.PointsToAnalysis;
 import soot.PointsToSet;
 import soot.PrimType;
@@ -37,14 +36,12 @@ import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
-import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
-import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
@@ -87,7 +84,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 							// shortcuts:
-							// on NormalFlow taint cannot be created:
+							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {
 								return Collections.singleton(source);
 							}
@@ -145,7 +142,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 														source.getSource(),
 														source.getCorrespondingMethod(),
 														((AbstractionWithPath) source).getPropagationPath(),
-														src));
+														src, true));
 											else
 												res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(),
 														source.getCorrespondingMethod(), true));
@@ -174,7 +171,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											source.getSource(),
 											interproceduralCFG().getMethodOf(srcUnit),
 											((AbstractionWithPath) source).getPropagationPath(),
-											src));
+											src,keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 								else
 									res.add(new Abstraction(new EquivalentValue(leftValue),
 											source.getSource(),
@@ -186,8 +183,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 									if(forwardbackward){
 									//call backwards-check:
+										Unit predUnit = getUnitBefore(srcUnit); 
 										Abstraction newAbs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
-										bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, srcUnit, newAbs));
+										bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, predUnit, newAbs));
 									}else{
 										InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
 										SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
@@ -197,10 +195,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												res.add(new AbstractionWithPath(new EquivalentValue(v), source.getSource(),
 													interproceduralCFG().getMethodOf(srcUnit),
 													((AbstractionWithPath) source).getPropagationPath(),
-													src));
+													src, source.getAccessPath().isOnlyFieldsTainted()));
 											else
 												res.add(new Abstraction(new EquivalentValue(v), source.getSource(),
-													interproceduralCFG().getMethodOf(srcUnit)));
+													interproceduralCFG().getMethodOf(srcUnit), source.getAccessPath().isOnlyFieldsTainted()));
 										}
 									}
 								}
@@ -278,10 +276,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
 									res.add(new AbstractionWithPath(new EquivalentValue(dest.getActiveBody().getThisLocal()),
 											source.getSource(), dest, ((AbstractionWithPath) source).getPropagationPath(),
-											stmt));
+											stmt, source.getAccessPath().isOnlyFieldsTainted()));
 								else
 									res.add(new Abstraction(new EquivalentValue(dest.getActiveBody().getThisLocal()),
-											source.getSource(), dest));
+											source.getSource(), dest, source.getAccessPath().isOnlyFieldsTainted()));
 							}
 						}
 
@@ -453,9 +451,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
 												res.add(new AbstractionWithPath(new EquivalentValue(fRef), source.getSource(),
 														calleeMethod, ((AbstractionWithPath) source).getPropagationPath(),
-														exitStmt));
+														exitStmt, source.getAccessPath().isOnlyFieldsTainted()));
 											else
-												res.add(new Abstraction(new EquivalentValue(fRef), source.getSource(), calleeMethod));
+												res.add(new Abstraction(new EquivalentValue(fRef), source.getSource(), calleeMethod, source.getAccessPath().isOnlyFieldsTainted()));
 										}
 									}
 								}
@@ -470,10 +468,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										res.add(new AbstractionWithPath(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())),
 												source.getSource(), interproceduralCFG().getMethodOf(callUnit),
 												((AbstractionWithPath) source).getPropagationPath(),
-												exitStmt));
+												exitStmt, source.getAccessPath().isOnlyFieldsTainted()));
 									else
 										res.add(new Abstraction(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())),
-												source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+												source.getSource(), interproceduralCFG().getMethodOf(callUnit), source.getAccessPath().isOnlyFieldsTainted()));
 								}
 							}
 						}
@@ -529,10 +527,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											res.add(new AbstractionWithPath(new EquivalentValue(val), source.getSource(),
 													source.getCorrespondingMethod(),
 													((AbstractionWithPath) source).getPropagationPath(),
-													iStmt));
+													iStmt, false));
 										else
 											res.add(new Abstraction(new EquivalentValue(val), source.getSource(),
-													source.getCorrespondingMethod()));
+													source.getCorrespondingMethod(), false));
 							}
 							
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
@@ -552,10 +550,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										res.add(new AbstractionWithPath(new EquivalentValue(stmt.getLeftOp()),
 												new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit),
 												((AbstractionWithPath) source).getPropagationPath(),
-												call));
+												call, false));
 									else
 										res.add(new Abstraction(new EquivalentValue(stmt.getLeftOp()),
-												new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
+												new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit), false));
 									res.remove(zeroValue);
 								}
 							}
@@ -628,6 +626,24 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, SourceSinkManager sourceSinkManager) {
 		super(icfg);
 		this.sourceSinkManager = sourceSinkManager;
+	}
+	
+	/**
+	 * returns the unit before the given unit (or the unit itself if it is the first unit)
+	 * @param u
+	 * @return
+	 */
+	private Unit getUnitBefore(Unit u){
+		SootMethod m = interproceduralCFG().getMethodOf(u);
+		Unit preUnit = u;
+		for(Unit currentUnit : m.getActiveBody().getUnits()){
+			if(currentUnit.equals(u)){
+				return preUnit;
+			}
+			preUnit = currentUnit;
+		}
+		return u;
+		
 	}
 
 }

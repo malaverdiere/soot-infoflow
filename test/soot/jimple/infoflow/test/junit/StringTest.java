@@ -14,7 +14,25 @@ import org.junit.Test;
 import soot.jimple.infoflow.Infoflow;
 
 public class StringTest extends JUnitTests {
-
+	
+	
+	@Test
+    public void lowerCaseTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringLowerCase()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+	
+	@Test
+    public void upperCaseTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringUpperCase()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
 
     @Test
     public void concatTest1(){
@@ -108,6 +126,24 @@ public class StringTest extends JUnitTests {
     }
     
     @Test
+    public void stringBufferTest1(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuffer1()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+    
+    @Test
+    public void stringBufferTest2(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuffer2()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+   }
+    
+    @Test
     public void stringBuilderTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -115,7 +151,6 @@ public class StringTest extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow);
 		//assertTrue((errOutputStream.toString().contains("test.<java.lang.String: char[] value> contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()") ||
-		
     }
     
     @Test

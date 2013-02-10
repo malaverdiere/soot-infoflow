@@ -9,6 +9,20 @@ import soot.jimple.infoflow.test.utilclasses.ClassWithField;
 
 public class StringTestCode {
 	
+	public void methodStringLowerCase(){
+		String tainted = TelephonyManager.getDeviceId();
+		String result = tainted.toLowerCase();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(result);
+	}
+	
+	public void methodStringUpperCase(){
+		String tainted = TelephonyManager.getDeviceId();
+		String result = tainted.toUpperCase();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(result);
+	}
+	
 	public void methodStringConcat1(){
 		String pre = "pre";
 		String tainted = TelephonyManager.getDeviceId();
@@ -70,6 +84,22 @@ public class StringTestCode {
 		cm.publish(result2);
 	}
 	
+	public void methodStringBuffer1(){
+		StringBuffer sb = new StringBuffer(TelephonyManager.getDeviceId());
+		sb.append("123");
+		String test = sb.toString();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(test);
+	}
+	
+	public void methodStringBuffer2(){
+		StringBuffer sb = new StringBuffer("12");
+		sb.append(TelephonyManager.getDeviceId());
+		String test = sb.toString();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(test);
+	}
+	
 	public void methodStringBuilder1(){
 		StringBuilder sb = new StringBuilder(TelephonyManager.getDeviceId());
 		//sb.append("123");
@@ -77,16 +107,15 @@ public class StringTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(test);
-		
 	}
+	
 	public void methodStringBuilder2(){
 		StringBuilder sb = new StringBuilder();
 		sb.append(TelephonyManager.getDeviceId());
 		String test = sb.toString();
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(test);
-		
+		cm.publish(test);	
 	}
 	
 	public void methodStringBuilder3(){

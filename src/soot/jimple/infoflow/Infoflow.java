@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,6 +25,7 @@ import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
+import soot.jimple.infoflow.config.IInfoflowSootConfig;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
@@ -47,6 +47,7 @@ public class Infoflow implements IInfoflow {
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
 	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
+	private IInfoflowSootConfig sootConfig;
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
@@ -70,6 +71,10 @@ public class Infoflow implements IInfoflow {
 	
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
 		taintWrapper = wrapper;
+	}
+	
+	public void setSootConfig(IInfoflowSootConfig config){
+		sootConfig = config;
 	}
 	
 	/**
@@ -99,21 +104,6 @@ public class Infoflow implements IInfoflow {
 		// add SceneTransformer which calculates and prints infoflow
 		addSceneTransformer(sourcesSinks);
 
-		// explicitly include packages for shorter runtime:
-		List<String> includeList = new LinkedList<String>();
-		includeList.add("java.lang.");
-		includeList.add("java.util.");
-		includeList.add("java.io.");
-		includeList.add("sun.misc.");
-		includeList.add("android.");
-		includeList.add("org.apache.http.");
-		includeList.add("de.test.");
-		includeList.add("soot.");
-		includeList.add("com.example.");
-		includeList.add("com.jakobkontor.");
-		includeList.add("java.net.");
-		includeList.add("libcore.icu.");
-		Options.v().set_include(includeList);
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
 		if (DEBUG)
@@ -122,7 +112,7 @@ public class Infoflow implements IInfoflow {
 			Options.v().set_output_format(Options.output_format_none);
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
-//		soot.options.Options.v().set_prepend_classpath(true);
+		soot.options.Options.v().set_prepend_classpath(true);
 		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
 		soot.options.Options.v().setPhaseOption("cg.spark", "on");
 		soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
@@ -135,6 +125,11 @@ public class Infoflow implements IInfoflow {
 			else
 				soot.options.Options.v().set_android_jars(this.androidPath);
 		}
+		
+		//at the end of setting: load user settings:
+				if(sootConfig != null){
+					sootConfig.setSootOptions(Options.v());
+				}
 		
 		// load all entryPoint classes with their bodies
 		Scene.v().loadNecessaryClasses();
@@ -149,6 +144,8 @@ public class Infoflow implements IInfoflow {
 			System.out.println("Only phantom classes loaded, skipping analysis...");
 			return;
 		}
+		
+		
 	}
 	
 	@Override

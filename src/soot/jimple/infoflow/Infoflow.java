@@ -280,6 +280,7 @@ public class Infoflow implements IInfoflow {
 					InfoflowSolver backSolver = new InfoflowSolver(backProblem, DEBUG, executor);
 					forwardProblem.setBackwardSolver(backSolver);
 					backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
+					backProblem.setTaintWrapper(taintWrapper);
 				}else{
 					forwardSolver =
 							new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(forwardProblem, DEBUG);

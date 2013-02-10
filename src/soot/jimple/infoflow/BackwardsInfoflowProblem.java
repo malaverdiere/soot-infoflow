@@ -42,6 +42,7 @@ import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
+import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JimpleLocal;
@@ -54,7 +55,11 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 	final SourceSinkManager sourceSinkManager;
 	Abstraction zeroValue;
 	InfoflowSolver fSolver;
+	ITaintPropagationWrapper taintWrapper;
 	
+	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
+		taintWrapper = wrapper;
+	}
 	
 	public BackwardsInfoflowProblem(InterproceduralCFG<Unit,SootMethod> icfg, SourceSinkManager manager) {
 		super(icfg);
@@ -121,9 +126,6 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
-							if(src.toString().contains("x = ")){
-								System.out.println(src);
-							}
 							boolean addRightValue = false;
 							boolean keepAllFieldTaintStar = true;
 							Set<Abstraction> res = new HashSet<Abstraction>();

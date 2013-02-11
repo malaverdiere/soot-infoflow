@@ -104,6 +104,8 @@
 <java.lang.String: java.lang.String valueOf(long)>
 <java.lang.String: java.lang.String valueOf(java.lang.Object)>
 
+<java.lang.String: java.lang.String concat(java.lang.String)>
+
 <java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>
 <java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>
 

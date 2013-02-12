@@ -170,6 +170,12 @@ public class AccessPath {
 			a.unknownfieldtainted = this.unknownfieldtainted;
 			return a;
 		}else{
+			if(val instanceof InstanceFieldRef && field != null){
+				AccessPath a = new AccessPath(val);
+				a.unknownfieldtainted = true;
+				return a;
+			}
+			
 			return new AccessPath(val);
 		}
 	}

@@ -36,4 +36,14 @@ public class ListExampleWrapper implements ITaintPropagationWrapper {
 		return null;
 	}
 
+	@Override
+	public boolean supportsBackwardWrapping() {
+		return false;
+	}
+
+	@Override
+	public List<Value> getBackwardTaintsForMethod(Stmt stmt) {
+		return null;
+	}
+
 }

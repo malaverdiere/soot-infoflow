@@ -9,6 +9,15 @@ import soot.jimple.infoflow.Infoflow;
 
 public class HeapTests extends JUnitTests {
 
+	@Test
+    public void heapTest0(){
+	  Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void methodTest0()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		negativeCheckInfoflow(infoflow);
+    }
+	
 	  @Test
 	    public void heapTest1(){
 		  Infoflow infoflow = initInfoflow();

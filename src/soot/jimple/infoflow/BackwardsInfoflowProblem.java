@@ -17,23 +17,19 @@ import soot.EquivalentValue;
 import soot.Local;
 import soot.NullType;
 import soot.PointsToAnalysis;
-import soot.PointsToSet;
 import soot.PrimType;
 import soot.Scene;
-import soot.SootField;
-import soot.SootFieldRef;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
-import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
-import soot.jimple.Jimple;
 import soot.jimple.NewExpr;
+import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
@@ -43,8 +39,6 @@ import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.infoflow.util.ITaintPropagationWrapper;
-import soot.jimple.internal.JAssignStmt;
-import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
@@ -138,14 +132,16 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							//if we have the tainted value on the right side of the assignment, we have to start a new forward task:
 							if(rightValue instanceof InstanceFieldRef){
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
-								if(ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())){
+								
+								if(!(ref.getField().getType() instanceof PrimType) &&  ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())){
 									Abstraction abs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit),keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
 									//this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
 									
 								}
 							}else{
-								if(rightValue.equals(source.getAccessPath().getPlainValue())){
+								
+								if(!(rightValue.getType() instanceof PrimType) && rightValue.equals(source.getAccessPath().getPlainValue())){
 									Abstraction abs = new Abstraction(source.getAccessPath().copyWithNewValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
 									
@@ -226,26 +222,24 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
 						if (source.equals(zeroValue)) {
-							return Collections.singleton(source);
+							return Collections.emptySet();
 						}
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
-						// if we have a returnStmt we have to look at the returned value:
+						// if the returned value is tainted  - taint values from return statements
 						if (callUnit instanceof DefinitionStmt) {
-//							DefinitionStmt defnStmt = (DefinitionStmt) callUnit;
-//							Value leftOp = defnStmt.getLeftOp();
-							//TODO: how can this work??
-//							if (retLocal.equals(source.getAccessPath().getPlainValue())) {
-//								res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit), fieldstainted));
-//							}
-								// this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
-//								Set<Value> aliases = getAliasesinMethod(calleeMethod.getActiveBody().getUnits(), retSite, retLocal, null);
-//								for (Value v : aliases) {
-//									if (v.equals(source.getAccessPath().getPlainValue())) {
-//										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
-//									}
-//								}
+							DefinitionStmt defnStmt = (DefinitionStmt) callUnit;
+							Value leftOp = defnStmt.getLeftOp();
+							if (leftOp.equals(source.getAccessPath().getPlainValue())) {
+								//look for returnStmts:
+								for(Unit u : method.getActiveBody().getUnits()){
+									if(u instanceof ReturnStmt){
+										ReturnStmt rStmt = (ReturnStmt) u;
+										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+									}
+								}
+							}
 						}
 
 						// easy: static
@@ -253,37 +247,24 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							res.add(source);
 						}
 
-						// checks: this/params/fields
+						// checks: this/fields
 
-						// check one of the call params are tainted (not if simple type)
 						Value sourceBase = source.getAccessPath().getPlainValue();
-						Value originalCallArg = null;
-						for (int i = 0; i < method.getParameterCount(); i++) {
-							if (method.getActiveBody().getParameterLocal(i).equals(sourceBase)) { // or pts?
-								if (callUnit instanceof Stmt) {
-									Stmt iStmt = (Stmt) callUnit;
-									originalCallArg = iStmt.getInvokeExpr().getArg(i);
-									if (!(originalCallArg instanceof Constant) && !(originalCallArg.getType() instanceof PrimType)) {
-										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(originalCallArg), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
-									}
-								}
-							}
-						}
-
+						Stmt iStmt = (Stmt) callUnit;
 						Local thisL = null;
-						PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-						PointsToSet ptsSource = pta.reachingObjects((Local) sourceBase);
 						if (!method.isStatic()) {
 							thisL = method.getActiveBody().getThisLocal();
 						}
+						//TODO: wie NullConstant
 						if (thisL != null) {
-							if (thisL.equals(sourceBase)) {
+							InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
+							if (iIExpr.getBase().equals(sourceBase)) {
 								// there is only one case in which this must be added, too: if the caller-Method has the same thisLocal - check this:
 								
 									boolean param = false;
 									// check if it is not one of the params (then we have already fixed it)
 									for (int i = 0; i < method.getParameterCount(); i++) {
-										if (method.getActiveBody().getParameterLocal(i).equals(sourceBase)) {
+										if (iStmt.getInvokeExpr().getArg(i).equals(sourceBase)) { 
 											param = true;
 										}
 									}
@@ -291,45 +272,12 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 										if (callUnit instanceof Stmt) {
 											Stmt stmt = (Stmt) callUnit;
 											if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
-												InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
-												res.add(new Abstraction(source.getAccessPath().copyWithNewValue(iIExpr.getBase()), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+												
+												res.add(new Abstraction(source.getAccessPath().copyWithNewValue(thisL), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 											}
 										}
 									}
-								
-							}
-							// remember that we only support max(length(accesspath))==1 -> if source is a fieldref, only its base is taken!
-							for (SootField globalField : method.getDeclaringClass().getFields()) {
-								if (!globalField.isStatic()) { // else is checked later
-									PointsToSet ptsGlobal = pta.reachingObjects(method.getActiveBody().getThisLocal(), globalField);
-									if (ptsGlobal.hasNonEmptyIntersection(ptsSource)) {
-										Local callBaseVar = null;
-										if (callUnit instanceof JAssignStmt) {
-											callBaseVar = (Local) ((InstanceInvokeExpr) ((JAssignStmt) callUnit).getInvokeExpr()).getBase();
-										}
-
-										if (callUnit instanceof JInvokeStmt) {
-											JInvokeStmt iStmt = (JInvokeStmt) callUnit;
-											Value v = iStmt.getInvokeExprBox().getValue();
-											InstanceInvokeExpr jvie = (InstanceInvokeExpr) v;
-											callBaseVar = (Local) jvie.getBase();
-										}
-										if (callBaseVar != null) {
-											SootFieldRef ref = globalField.makeRef();
-											InstanceFieldRef fRef = Jimple.v().newInstanceFieldRef(callBaseVar, ref);
-											res.add(new Abstraction(new EquivalentValue(fRef), source.getSource(), method));
-										}
-									}
-								}
-							}
-						}
-
-						for (SootField globalField : method.getDeclaringClass().getFields()) {
-							if (globalField.isStatic()) {
-								PointsToSet ptsGlobal = pta.reachingObjects(globalField);
-								if (ptsSource.hasNonEmptyIntersection(ptsGlobal)) {
-									res.add(new Abstraction(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
-								}
+								//TODO: maybe params?
 							}
 						}
 
@@ -353,15 +301,14 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
-//						if(taintWrapper != null && taintWrapper.supportsTaintWrappingForClass(ie.getMethod().getDeclaringClass())){
-//							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
-//							return Collections.emptySet();
-//						}
+						if(taintWrapper != null && taintWrapper.supportsBackwardWrapping() && taintWrapper.supportsTaintWrappingForClass(ie.getMethod().getDeclaringClass())){
+							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
+							return Collections.emptySet();
+						}
 						if (source.equals(zeroValue)) {
-							return Collections.singleton(source);
+							return Collections.emptySet();
 						}
 
-						PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 						Value base = source.getAccessPath().getPlainValue();
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// if taintedobject is instancefieldRef we have to check if the object is delivered..
@@ -370,24 +317,9 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							// second, they might be changed as param - check this
 
 							// first, instancefieldRefs must be propagated if they come from the same class:
-							if (ie instanceof InstanceInvokeExpr) {
+							if (callee.getActiveBody().getThisLocal().equals(base) && ie instanceof InstanceInvokeExpr) {
 								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
-
-								PointsToSet ptsSource = pta.reachingObjects((Local) base);
-								PointsToSet ptsCall = pta.reachingObjects((Local) vie.getBase());
-								if (ptsCall.hasNonEmptyIntersection(ptsSource)) {
-									res.add(new Abstraction(source.getAccessPath().copyWithNewValue(callee.getActiveBody().getThisLocal()), source.getSource(), callee));
-								}
-							}
-
-						}
-
-						// check if whole object is tainted (happens with strings, for example:)
-						if (!callee.isStatic() && ie instanceof InstanceInvokeExpr && source.getAccessPath().isLocal()) {
-							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
-							// this might be enough because every call must happen with a local variable which is tainted itself:
-							if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
-								res.add(new Abstraction(new EquivalentValue(callee.getActiveBody().getThisLocal()), source.getSource(), callee, source.getAccessPath().isOnlyFieldsTainted()));
+								res.add(new Abstraction(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource(), callee));	
 							}
 						}
 
@@ -403,13 +335,10 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 						if (source.getAccessPath().isStaticFieldRef()) {
 							res.add(source);
 						}
-
+						
 						return res;
 					}
-				};
-				
-				
-				
+				};		
 			}
 
 			@Override
@@ -430,35 +359,17 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							if(!(iStmt instanceof DefinitionStmt) || !((DefinitionStmt)iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								res.add(source);
 							}
-
-//							if(taintWrapper != null && taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass())){
-//								int taintedPos = -1;
-//								for(int i=0; i< callArgs.size(); i++){
-//									if(source.getAccessPath().isLocal() && callArgs.get(i).equals(source.getAccessPath().getPlainValue())){
-//										taintedPos = i;
-//									}
-//								}
-//								Value taintedBase = null;
-//								if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr){
-//									InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-//									if(iiExpr.getBase().equals(source.getAccessPath().getPlainValue())){
-//										if(source.getAccessPath().isLocal()){
-//											taintedBase = iiExpr.getBase();
-//										}else if(source.getAccessPath().isInstanceFieldRef()){
-//											taintedBase = new JInstanceFieldRef(iiExpr.getBase(),iStmt.getInvokeExpr().getMethod().getDeclaringClass().getFieldByName(source.getAccessPath().getField()).makeRef());
-//										}
-//									}
-//									if(source.getAccessPath().isStaticFieldRef()){
-//										//TODO
-//									}
-//								}
-//								
-//								List<Value> vals = taintWrapper.getTaintsForMethod(iStmt, taintedPos, taintedBase);
-//								if(vals != null)
-//									for (Value val : vals)
-//										res.add(new Abstraction(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod()));
-//							}
-							
+							//taintwrapper (might be very conservative/inprecise...)
+							if(taintWrapper != null && taintWrapper.supportsBackwardWrapping() && taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass())){
+								if(iStmt instanceof DefinitionStmt && ((DefinitionStmt)iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())){
+									List<Value> vals = taintWrapper.getBackwardTaintsForMethod(iStmt);
+									if(vals != null){
+										for (Value val : vals){
+											res.add(new Abstraction(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod()));
+										}
+									}
+								}
+							}
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
 								if (callArgs.contains(source.getAccessPath().getPlainValue()) || (iStmt instanceof DefinitionStmt && ((DefinitionStmt)iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue()) )) {
 									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:

@@ -4,6 +4,32 @@ import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
 public class HeapTestCode {
+	
+
+	public void methodTest0(){
+		X x = new X();
+		A a = new A();
+		String str = x.xx(a);
+		a.b = TelephonyManager.getDeviceId();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(str);
+	}
+	
+	
+	
+	class A{
+		public String b;
+	}
+	
+	class X{
+		
+		public String xx(A o){
+			return o.b;
+		}
+	}
+	
+	
+	//########################################################################
 
 	public void methodTest1(){
 		String tainted = TelephonyManager.getDeviceId();

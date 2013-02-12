@@ -14,6 +14,7 @@ import org.junit.BeforeClass;
 
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowResults;
+import soot.jimple.infoflow.config.SootConfigForTest;
 import soot.jimple.infoflow.util.EasyTaintWrapper;
 
 public abstract class JUnitTests {
@@ -26,6 +27,7 @@ public abstract class JUnitTests {
     protected static final String sourceString = "staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()";
     protected static boolean local = false;
     protected static boolean taintWrapper = false;
+    protected static boolean debug = true;
    
     @BeforeClass
     public static void setUp() throws IOException
@@ -72,6 +74,9 @@ public abstract class JUnitTests {
     protected Infoflow initInfoflow(){
     	Infoflow result = new Infoflow();
     	result.setLocalInfoflow(local);
+    	Infoflow.setDebug(debug);
+    	SootConfigForTest testConfig = new SootConfigForTest();
+    	result.setSootConfig(testConfig);
     	if(taintWrapper){
     		EasyTaintWrapper easyWrapper;
 			try {

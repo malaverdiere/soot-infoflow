@@ -86,7 +86,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// shortcuts:
 							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {
-								return Collections.singleton(source);
+								return Collections.emptySet();
 							}
 							// check if static variable is tainted (same name, same class)
 							if (source.getAccessPath().isStaticFieldRef()) {
@@ -317,7 +317,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
 						if (source.equals(zeroValue)) {
-							return Collections.singleton(source);
+							return Collections.emptySet();
 						}
 
 						Set<Abstraction> res = new HashSet<Abstraction>();

@@ -90,5 +90,22 @@ public class InfoflowResults {
 				return true;
 		return false;
 	}
+	
+	/**
+	 * in contrast to isPathBetween-Method, this method does not require a specific source-call but the 
+	 * soot-signature of the source method. 
+	 * @param sink
+	 * @param source
+	 * @return
+	 */
+	public boolean isPathBetweenSourceMethod(String sink, String source) {
+		List<SourceInfo> sources = this.results.get(sink);
+		if (sources == null)
+			return false;
+		for (SourceInfo src : sources)
+			if (src.source.contains("."+source))
+				return true;
+		return false;
+	}
 
 }

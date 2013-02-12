@@ -128,4 +128,32 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		return methodList;
 	}
 
+	@Override
+	public boolean supportsBackwardWrapping() {
+		return true;
+	}
+
+	@Override
+	public List<Value> getBackwardTaintsForMethod(Stmt stmt) {
+		List<Value> taints = new ArrayList<Value>();
+		SootMethod method = stmt.getInvokeExpr().getMethod();
+		List<String> methodList = getMethodsForClass(method.getDeclaringClass());
+	
+		if(methodList.contains(method.getSubSignature())){
+			// If we call a method on an instance, this instance is assumed to be tainted
+			if(stmt.getInvokeExprBox().getValue() instanceof InstanceInvokeExpr) {
+				taints.add(((InstanceInvokeExpr) stmt.getInvokeExprBox().getValue()).getBase());
+			}
+			//for all calls, all params are tainted:
+			for(Value arg : stmt.getInvokeExpr().getArgs()){
+				taints.add(arg);
+			}
+			
+		}
+		
+	
+		return taints;
+	}
+
+
 }

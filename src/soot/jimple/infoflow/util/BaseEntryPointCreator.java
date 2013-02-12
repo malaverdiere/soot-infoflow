@@ -178,7 +178,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 
 	private Type getSimpleTypeFromType(RefType type) {
 		if (type.toString().equals("java.lang.String"))
-			return soot.IntType.v();
+			return RefType.v(type.getSootClass());
 		if (type.toString().equals("void"))
 			return soot.VoidType.v();
 		if (type.toString().equals("char"))

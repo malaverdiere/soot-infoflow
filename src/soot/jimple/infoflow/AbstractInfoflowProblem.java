@@ -54,7 +54,6 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	NativeCallHandler ncHandler = new DefaultNativeCallHandler();
 	InfoflowSolver bSolver;
-	boolean forwardbackward = true;
 	Abstraction zeroValue = null;
 	
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {

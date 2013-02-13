@@ -16,9 +16,7 @@ import java.util.Set;
 import soot.EquivalentValue;
 import soot.Local;
 import soot.NullType;
-import soot.PointsToAnalysis;
 import soot.PrimType;
-import soot.Scene;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -123,7 +121,6 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							boolean addRightValue = false;
 							boolean keepAllFieldTaintStar = true;
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 							// shortcuts:
 							// on NormalFlow taint cannot be created:
 							if (source.equals(zeroValue)) {
@@ -161,7 +158,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 								if (leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 									Local leftBase = (Local) leftRef.getBase();
-									Local sourceBase = (Local) source.getAccessPath().getPlainValue();
+									Local sourceBase = source.getAccessPath().getPlainLocal();
 									if (leftBase.equals(sourceBase)) {
 										if (source.getAccessPath().isInstanceFieldRef()) {
 											if (leftRef.getField().getName().equals(source.getAccessPath().getField())) {
@@ -175,7 +172,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 									// indirect taint propagation:
 									// if leftValue is local and source is instancefield of this local:
 								}else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
-									Local base = (Local) source.getAccessPath().getPlainValue(); // ?
+									Local base = source.getAccessPath().getPlainLocal(); // ?
 									if (leftValue.equals(base)) { 
 										if (rightValue instanceof Local) {
 											res.add(new Abstraction(source.getAccessPath().copyWithNewValue(rightValue), source.getSource(), source.getCorrespondingMethod()));
@@ -186,7 +183,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 									}
 								} else if (leftValue instanceof ArrayRef) {
 									Local leftBase = (Local) ((ArrayRef) leftValue).getBase();
-									if (leftBase.equals(source.getAccessPath().getPlainValue()) || (source.getAccessPath().isLocal() && pta.reachingObjects(leftBase).hasNonEmptyIntersection(pta.reachingObjects((Local) source.getAccessPath().getPlainValue())))) {
+									if (leftBase.equals(source.getAccessPath().getPlainValue())) {
 										addRightValue = true;
 									}
 									// generic case, is true for Locals, ArrayRefs that are equal etc..
@@ -196,6 +193,13 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							}
 							// if one of them is true -> add rightValue
 							if (addRightValue) { 
+								//special case for our $-friends - we only need the last "real" variable because $XX was only a variable used for a call:
+								if(source.getAccessPath().isLocal() && source.getAccessPath().getPlainLocal().getName().startsWith("$")){
+									Abstraction abs = new Abstraction(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
+									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
+									return Collections.emptySet();
+								}
+								
 								res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 								return res;
 							}
@@ -317,7 +321,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							// second, they might be changed as param - check this
 
 							// first, instancefieldRefs must be propagated if they come from the same class:
-							if (callee.getActiveBody().getThisLocal().equals(base) && ie instanceof InstanceInvokeExpr) {
+							if (!callee.isStatic() && callee.getActiveBody().getThisLocal().equals(base) && ie instanceof InstanceInvokeExpr) {
 								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 								res.add(new Abstraction(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource(), callee));	
 							}

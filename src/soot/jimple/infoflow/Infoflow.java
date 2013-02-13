@@ -51,7 +51,6 @@ public class Infoflow implements IInfoflow {
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
 	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
-	private boolean forwardBackward = true;
 	private IInfoflowSootConfig sootConfig;
 
 	/**
@@ -73,24 +72,24 @@ public class Infoflow implements IInfoflow {
 		this.androidPath = androidPath;
 		this.forceAndroidJar = forceAndroidJar;
 	}
-	
-	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
+
+	public void setTaintWrapper(ITaintPropagationWrapper wrapper) {
 		taintWrapper = wrapper;
 	}
-	
-	public void setSootConfig(IInfoflowSootConfig config){
+
+	public void setSootConfig(IInfoflowSootConfig config) {
 		sootConfig = config;
 	}
-	
-	public static void setDebug(boolean debug){
+
+	public static void setDebug(boolean debug) {
 		DEBUG = debug;
 	}
-	
+
 	/**
-	 * Sets whether and how the paths between the sources and sinks shall be
-	 * tracked
-	 * @param method The method for tracking data flow paths through the
-	 * program.
+	 * Sets whether and how the paths between the sources and sinks shall be tracked
+	 * 
+	 * @param method
+	 *            The method for tracking data flow paths through the program.
 	 */
 	public void setPathTracking(PathTrackingMethod method) {
 		this.pathTracking = method;
@@ -105,11 +104,11 @@ public class Infoflow implements IInfoflow {
 	public void computeInfoflow(String path, String entryPoint, List<String> sources, List<String> sinks) {
 		this.computeInfoflow(path, entryPoint, new DefaultSourceSinkManager(sources, sinks));
 	}
-	
+
 	private void initializeSoot(String path, Set<String> classes, SourceSinkManager sourcesSinks) {
 		// reset Soot:
 		soot.G.reset();
-		
+
 		// add SceneTransformer which calculates and prints infoflow
 		addSceneTransformer(sourcesSinks);
 
@@ -134,12 +133,12 @@ public class Infoflow implements IInfoflow {
 			else
 				soot.options.Options.v().set_android_jars(this.androidPath);
 		}
-		
-		//at the end of setting: load user settings:
-				if(sootConfig != null){
-					sootConfig.setSootOptions(Options.v());
-				}
-		
+
+		// at the end of setting: load user settings:
+		if (sootConfig != null) {
+			sootConfig.setSootOptions(Options.v());
+		}
+
 		// load all entryPoint classes with their bodies
 		Scene.v().loadNecessaryClasses();
 		boolean hasClasses = false;
@@ -153,10 +152,9 @@ public class Infoflow implements IInfoflow {
 			System.out.println("Only phantom classes loaded, skipping analysis...");
 			return;
 		}
-		
-		
+
 	}
-	
+
 	@Override
 	public void computeInfoflow(String path, List<String> entryPoints, SourceSinkManager sourcesSinks) {
 		results = null;
@@ -164,7 +162,7 @@ public class Infoflow implements IInfoflow {
 			System.out.println("Error: sources are empty!");
 			return;
 		}
-	
+
 		// convert to internal format:
 		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
 		// parse classNames as String and methodNames as string in soot representation
@@ -174,7 +172,7 @@ public class Infoflow implements IInfoflow {
 
 		if (DEBUG) {
 			for (List<String> methodList : classes.values()) {
-				for(String methodSignature : methodList){
+				for (String methodSignature : methodList) {
 					if (Scene.v().containsMethod(methodSignature)) {
 						SootMethod method = Scene.v().getMethod(methodSignature);
 						System.err.println(method.retrieveActiveBody().toString());
@@ -182,7 +180,7 @@ public class Infoflow implements IInfoflow {
 				}
 			}
 		}
-		
+
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method,
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
 		IEntryPointCreator epCreator = new AndroidEntryPointCreator();
@@ -209,8 +207,8 @@ public class Infoflow implements IInfoflow {
 
 		if (DEBUG) {
 			for (List<String> methodList : classes.values()) {
-				for(String methodSignature : methodList){
-				if (Scene.v().containsMethod(methodSignature)) {
+				for (String methodSignature : methodList) {
+					if (Scene.v().containsMethod(methodSignature)) {
 						SootMethod method = Scene.v().getMethod(methodSignature);
 						System.err.println(method.retrieveActiveBody().toString());
 					}
@@ -218,7 +216,7 @@ public class Infoflow implements IInfoflow {
 			}
 		}
 
-		if (!Scene.v().containsMethod(entryPoint)){
+		if (!Scene.v().containsMethod(entryPoint)) {
 			System.err.println("Entry point not found");
 			return;
 		}
@@ -247,12 +245,12 @@ public class Infoflow implements IInfoflow {
 				forwardProblem.setTaintWrapper(taintWrapper);
 				forwardProblem.setPathTracking(pathTracking);
 
-				//look for sources in whole program, add the unit to initialSeeds
+				// look for sources in whole program, add the unit to initialSeeds
 				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
 				eps.addAll(Scene.v().getEntryPoints());
 				ReachableMethods reachableMethods = new ReachableMethods(Scene.v().getCallGraph(), eps.iterator(), null);
 				reachableMethods.update();
-				for(Iterator<MethodOrMethodContext> iter = reachableMethods.listener(); iter.hasNext(); ) {
+				for (Iterator<MethodOrMethodContext> iter = reachableMethods.listener(); iter.hasNext();) {
 					SootMethod m = iter.next().method();
 					if (m.hasActiveBody()) {
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
@@ -268,24 +266,20 @@ public class Infoflow implements IInfoflow {
 
 				}
 
-				if(forwardProblem.initialSeeds.isEmpty()){
+				if (forwardProblem.initialSeeds.isEmpty()) {
 					System.err.println("No Sources found!");
 					return;
 				}
 				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> forwardSolver;
-				
-				if(forwardBackward){
-					CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-					forwardSolver = new InfoflowSolver(forwardProblem, DEBUG, executor);				
-					BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem(sourcesSinks);
-					InfoflowSolver backSolver = new InfoflowSolver(backProblem, DEBUG, executor);
-					forwardProblem.setBackwardSolver(backSolver);
-					backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
-					backProblem.setTaintWrapper(taintWrapper);
-				}else{
-					forwardSolver =
-							new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(forwardProblem, DEBUG);
-				}
+
+				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+				forwardSolver = new InfoflowSolver(forwardProblem, DEBUG, executor);
+				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem(sourcesSinks);
+				InfoflowSolver backSolver = new InfoflowSolver(backProblem, DEBUG, executor);
+				forwardProblem.setBackwardSolver(backSolver);
+				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
+				backProblem.setTaintWrapper(taintWrapper);
+
 				forwardSolver.solve();
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
@@ -295,7 +289,7 @@ public class Infoflow implements IInfoflow {
 
 					System.err.println("----------------------------------------------");
 					System.err.println("At end of: " + ep.getSignature());
-					System.err.println(forwardSolver.ifdsResultsAt(ret).size() + " Variables (with "+ forwardProblem.results.size() +" source-to-sink connections):");
+					System.err.println(forwardSolver.ifdsResultsAt(ret).size() + " Variables (with " + forwardProblem.results.size() + " source-to-sink connections):");
 					System.err.println("----------------------------------------------");
 
 					for (Abstraction l : forwardSolver.ifdsResultsAt(ret)) {

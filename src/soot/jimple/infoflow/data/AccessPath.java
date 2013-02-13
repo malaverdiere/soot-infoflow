@@ -74,6 +74,13 @@ public class AccessPath {
 		return value.getValue();
 	}
 	
+	public Local getPlainLocal(){
+		if(value == null || !(value.getValue() instanceof Local)){
+			return null;
+		}
+		return (Local)value.getValue();
+	}
+	
 	public void setValue(Value value) {
 		this.value = new EquivalentValue(value);
 	}

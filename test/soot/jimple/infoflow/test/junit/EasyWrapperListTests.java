@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-import soot.jimple.infoflow.util.EasyTaintWrapper;
+import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 
 public class EasyWrapperListTests extends JUnitTests {
 	

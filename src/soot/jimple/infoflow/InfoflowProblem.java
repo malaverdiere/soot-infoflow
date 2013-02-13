@@ -210,9 +210,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					paramLocals.add(dest.getActiveBody().getParameterLocal(i));
 				}
 				
-				if (dest.getName().contains("doLog"))
-					System.out.println("DOLOG: " + dest.getActiveBody());
-				
 				return new FlowFunction<Abstraction>() {
 
 					@Override
@@ -482,41 +479,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.add(source);
 
-							if(taintWrapper != null && taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass())){
-								int taintedPos = -1;
-								for(int i=0; i< callArgs.size(); i++){
-									if(source.getAccessPath().isLocal() && callArgs.get(i).equals(source.getAccessPath().getPlainValue())){
-										taintedPos = i;
-										break;
-									}
-								}
-								Value taintedBase = null;
-								if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr){
-									InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-									if(iiExpr.getBase().equals(source.getAccessPath().getPlainValue())){
-										if(source.getAccessPath().isLocal()){
-											taintedBase = iiExpr.getBase();
-										}else if(source.getAccessPath().isInstanceFieldRef()){
-											taintedBase = new JInstanceFieldRef(iiExpr.getBase(),iStmt.getInvokeExpr().getMethod().getDeclaringClass().getFieldByName(source.getAccessPath().getField()).makeRef());
-										}
-									}
-									if(source.getAccessPath().isStaticFieldRef()){
-										//TODO
-									}
-								}
-								
-								List<Value> vals = taintWrapper.getTaintsForMethod(iStmt, taintedPos, taintedBase);
-								if(vals != null)
-									for (Value val : vals)
-										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											res.add(new AbstractionWithPath(new EquivalentValue(val), source.getSource(),
-													source.getCorrespondingMethod(),
-													((AbstractionWithPath) source).getPropagationPath(),
-													iStmt));
-										else
-											res.add(new Abstraction(new EquivalentValue(val), source.getSource(),
-													source.getCorrespondingMethod()));
-							}
+							computeWrapperTaints(iStmt, callArgs, source, res);
 							
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
 								if (callArgs.contains(source.getAccessPath().getPlainValue())) {
@@ -585,6 +548,48 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 							return res;
+						}
+
+						private void computeWrapperTaints
+								(final Stmt iStmt,
+								final List<Value> callArgs,
+								Abstraction source,
+								Set<Abstraction> res) {
+							if(taintWrapper != null && taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass())){
+								int taintedPos = -1;
+								for(int i=0; i< callArgs.size(); i++){
+									if(source.getAccessPath().isLocal() && callArgs.get(i).equals(source.getAccessPath().getPlainValue())){
+										taintedPos = i;
+										break;
+									}
+								}
+								Value taintedBase = null;
+								if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr){
+									InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
+									if(iiExpr.getBase().equals(source.getAccessPath().getPlainValue())){
+										if(source.getAccessPath().isLocal()){
+											taintedBase = iiExpr.getBase();
+										}else if(source.getAccessPath().isInstanceFieldRef()){
+											taintedBase = new JInstanceFieldRef(iiExpr.getBase(),iStmt.getInvokeExpr().getMethod().getDeclaringClass().getFieldByName(source.getAccessPath().getField()).makeRef());
+										}
+									}
+									if(source.getAccessPath().isStaticFieldRef()){
+										//TODO
+									}
+								}
+								
+								List<Value> vals = taintWrapper.getTaintsForMethod(iStmt, taintedPos, taintedBase);
+								if(vals != null)
+									for (Value val : vals)
+										if (pathTracking == PathTrackingMethod.ForwardTracking)
+											res.add(new AbstractionWithPath(new EquivalentValue(val), source.getSource(),
+													source.getCorrespondingMethod(),
+													((AbstractionWithPath) source).getPropagationPath(),
+													iStmt));
+										else
+											res.add(new Abstraction(new EquivalentValue(val), source.getSource(),
+													source.getCorrespondingMethod()));
+							}
 						}
 					};
 				}

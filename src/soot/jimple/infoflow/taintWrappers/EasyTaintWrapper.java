@@ -56,25 +56,11 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		}
 	}
 	
-	//TODO: only classes from jdk etc
 	@Override
 	public boolean supportsTaintWrappingForClass(SootClass c) {
-		if(classList.containsKey(c.getName())){
-			return true;
-		}
-		if(!c.isInterface()){
-			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
-			for(SootClass sclass : superclasses){
-				if(classList.containsKey(sclass.getName()))
-					return true;
-			}
-		}
-		for(String interfaceString : classList.keySet()){
-			if(c.implementsInterface(interfaceString))
-				return true;
-		}
-		
-		return false;
+		// We can't tell without knowing whether the base object is tainted, so
+		// we accept all objects here and filter later on
+		return true;
 	}
 
 	@Override
@@ -125,7 +111,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			}
 		}
 
-		for(String interfaceString : classList.keySet()){
+		for(String interfaceString : classList.keySet()){		
 			if(c.implementsInterface(interfaceString))
 				methodList.addAll(classList.get(interfaceString));
 		}

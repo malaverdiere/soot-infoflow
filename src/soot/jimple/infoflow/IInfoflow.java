@@ -3,10 +3,16 @@ package soot.jimple.infoflow;
 import java.util.List;
 
 import soot.jimple.infoflow.source.SourceSinkManager;
-import soot.jimple.infoflow.util.ITaintPropagationWrapper;
+import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 
 public interface IInfoflow {
 	
+	/**
+	 * Sets the taint wrapper for deciding on taint propagation through black-box
+	 * methods
+	 * @param wrapper The taint wrapper object that decides on how information is
+	 * propagated through black-box methods
+	 */
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper);
 
 	/**

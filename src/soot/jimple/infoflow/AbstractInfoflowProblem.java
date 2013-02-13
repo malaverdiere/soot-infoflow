@@ -17,7 +17,7 @@ import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
-import soot.jimple.infoflow.util.ITaintPropagationWrapper;
+import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 

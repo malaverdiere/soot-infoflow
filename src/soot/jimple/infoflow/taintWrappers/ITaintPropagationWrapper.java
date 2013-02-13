@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.util;
+package soot.jimple.infoflow.taintWrappers;
 
 import java.util.List;
 

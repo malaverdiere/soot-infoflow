@@ -2,6 +2,9 @@ package soot.jimple.infoflow;
 
 import heros.InterproceduralCFG;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,9 +32,9 @@ import soot.jimple.infoflow.config.IInfoflowSootConfig;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
+import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.AndroidEntryPointCreator;
 import soot.jimple.infoflow.util.IEntryPointCreator;
-import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
@@ -112,7 +115,7 @@ public class Infoflow implements IInfoflow {
 			Options.v().set_output_format(Options.output_format_none);
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
-		soot.options.Options.v().set_prepend_classpath(true);
+//		soot.options.Options.v().set_prepend_classpath(true);
 		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
 		soot.options.Options.v().setPhaseOption("cg.spark", "on");
 		soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
@@ -239,13 +242,20 @@ public class Infoflow implements IInfoflow {
 				problem.setPathTracking(pathTracking);
 
 				//look for sources in whole program, add the unit to initialSeeds
+				System.out.println("Looking for sources...");
 				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
 				eps.addAll(Scene.v().getEntryPoints());
 				ReachableMethods reachableMethods = new ReachableMethods(Scene.v().getCallGraph(), eps.iterator(), null);
 				reachableMethods.update();
+Map<String, String> classes = new HashMap<String, String>(10000);				
 				for(Iterator<MethodOrMethodContext> iter = reachableMethods.listener(); iter.hasNext(); ) {
 					SootMethod m = iter.next().method();
 					if (m.hasActiveBody()) {
+						if (classes.containsKey(m.getDeclaringClass().getName()))
+							classes.put(m.getDeclaringClass().getName(), classes.get(m.getDeclaringClass().getName())
+									+ m.getActiveBody().toString());
+						else
+							classes.put(m.getDeclaringClass().getName(), m.getActiveBody().toString());
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
@@ -256,9 +266,18 @@ public class Infoflow implements IInfoflow {
 							}
 						}
 					}
-
 				}
+for (Entry<String, String> entry : classes.entrySet()) {
+	try {
+		stringToTextFile("JimpleFiles/" + entry.getKey() + ".jimple", entry.getValue());
+	} catch (IOException e) {
+		System.err.println("Could not write jimple file: " + e.getMessage());
+		e.printStackTrace();
+	}
 
+}
+				System.out.println("Source lookup done.");
+				
 				if(problem.initialSeeds.isEmpty()){
 					System.err.println("No Sources found!");
 					return;
@@ -297,6 +316,19 @@ public class Infoflow implements IInfoflow {
 							}
 						}
 					}
+				}
+			}
+
+			private void stringToTextFile(String fileName, String contents) throws IOException {
+				BufferedWriter wr = null;
+				try {
+					wr = new BufferedWriter(new FileWriter(fileName));
+					wr.write(contents);
+					wr.flush();
+				}
+				finally {
+					if (wr != null)
+						wr.close();
 				}
 			}
 		});

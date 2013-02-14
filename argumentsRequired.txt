@@ -1,0 +1,10 @@
+program arguments:
+
+as usual (takes default testcase)
+
+OR:
+
+-class [classname] -methods [methodname1, methodname2,...]
+
+
+

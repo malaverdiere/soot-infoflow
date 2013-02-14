@@ -193,17 +193,13 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							}
 							// if one of them is true -> add rightValue
 							if (addRightValue) { 
-								//special case for our $-friends - we only need the last "real" variable because $XX was only a variable used for a call:
-								if(source.getAccessPath().isLocal() && source.getAccessPath().getPlainLocal().getName().startsWith("$")){
-									Abstraction abs = new Abstraction(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
-									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
-									return Collections.emptySet();
-								}
-								
 								res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
-								return res;
 							}
 							if(!res.isEmpty()){ 
+								//we have to send forward pass, for example for
+								//$r1 = l0.<java.lang.AbstractStringBuilder: char[] value>
+								Abstraction a = res.iterator().next();
+							fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, srcUnit, a));
 								return res;
 							}else{
 								return Collections.singleton(source);
@@ -228,7 +224,6 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
 						// if the returned value is tainted  - taint values from return statements
@@ -312,7 +307,6 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-
 						Value base = source.getAccessPath().getPlainValue();
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// if taintedobject is instancefieldRef we have to check if the object is delivered..
@@ -332,6 +326,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							if (paramLocals.get(i).equals(base)) {
 								Abstraction abs = new Abstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), callee);
 								res.add(abs);
+								//if abs. contains "neutral" -> this is the case :/ @LinkedListNegativeTest
 							}
 						}
 

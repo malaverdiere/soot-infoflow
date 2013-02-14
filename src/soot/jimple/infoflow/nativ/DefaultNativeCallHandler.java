@@ -8,6 +8,7 @@ import soot.EquivalentValue;
 import soot.PrimType;
 import soot.SootMethod;
 import soot.Value;
+import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
@@ -42,7 +43,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			//generic case: add taint to all non-primitive datatypes:
 			for (int i = 0; i < params.size(); i++) {
 				Value argValue = params.get(i);
-				if (!(argValue.getType() instanceof PrimType)) {
+				if (!(argValue.getType() instanceof PrimType) && !(argValue instanceof Constant)) {
 					if (pathTracking == PathTrackingMethod.ForwardTracking)
 						set.add(new AbstractionWithPath(new EquivalentValue(argValue), source.getSource(), m,
 								((AbstractionWithPath) source).getPropagationPath(), false));

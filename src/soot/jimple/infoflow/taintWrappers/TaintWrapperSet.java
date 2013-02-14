@@ -45,4 +45,12 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 		return new ArrayList<Value>(resList);
 	}
 
+	@Override
+	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
+		for (ITaintPropagationWrapper w : this.wrappers)
+			if (w.isExclusive(stmt, taintedparam, taintedBase))
+				return true;
+		return false;
+	}
+
 }

@@ -37,4 +37,9 @@ public class IdentityTaintWrapper implements ITaintPropagationWrapper {
 		return Collections.emptyList();
 	}
 
+	@Override
+	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
+		return (taintedparam >= 0 || taintedBase != null);
+	}
+
 }

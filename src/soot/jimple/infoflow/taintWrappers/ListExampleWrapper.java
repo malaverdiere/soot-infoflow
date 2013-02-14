@@ -39,4 +39,9 @@ public class ListExampleWrapper implements ITaintPropagationWrapper {
 		return null;
 	}
 
+	@Override
+	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
+		return false;
+	}
+
 }

@@ -103,19 +103,32 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		if(classList.containsKey(c.getName())){
 			methodList.addAll(classList.get(c.getName()));
 		}
-		if(!c.isInterface()){
+		
+		if(!c.isInterface()) {
+			// We have to walk up the hierarchy to also include all methods
+			// registered for superclasses
 			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
 			for(SootClass sclass : superclasses){
 				if(classList.containsKey(sclass.getName()))
-					methodList.addAll(classList.get(sclass.getName()));
+					methodList.addAll(getMethodsForClass(sclass));
 			}
 		}
-
-		for(String interfaceString : classList.keySet()){		
-			if(c.implementsInterface(interfaceString))
-				methodList.addAll(classList.get(interfaceString));
-		}
+		
+		// If we implement interfaces, we also need to check whether they in
+		// turn are in our method list
+		for (SootClass ifc : c.getInterfaces())
+			methodList.addAll(getMethodsForClass(ifc));
+		
 		return methodList;
+	}
+
+	@Override
+	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
+		SootMethod method = stmt.getInvokeExpr().getMethod();
+		if (getMethodsForClass(method.getDeclaringClass()).contains(method.getSubSignature()))
+			return true;
+		
+		return false;
 	}
 
 }

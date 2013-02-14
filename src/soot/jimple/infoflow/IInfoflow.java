@@ -47,10 +47,4 @@ public interface IInfoflow {
 	
 	public boolean isResultAvailable();
 	
-	/**
-	 * default: not Local
-	 * TODO: rename (not local...)
-	 * @param local
-	 */
-	public void setLocalInfoflow(boolean local);
 }

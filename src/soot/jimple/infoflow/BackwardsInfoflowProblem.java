@@ -8,15 +8,12 @@ import heros.solver.PathEdge;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import soot.EquivalentValue;
 import soot.Local;
-import soot.NullType;
-import soot.PrimType;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -31,66 +28,34 @@ import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
-import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
+import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.infoflow.util.ITaintPropagationWrapper;
-import soot.jimple.internal.JimpleLocal;
-import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
 
-public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit,SootMethod>>{
-	Set<Unit> initialSeeds = new HashSet<Unit>();
-	final HashMap<String, List<String>> results;
-	final SourceSinkManager sourceSinkManager;
-	Abstraction zeroValue;
+public class BackwardsInfoflowProblem extends AbstractInfoflowProblem{
 	InfoflowSolver fSolver;
-	ITaintPropagationWrapper taintWrapper;
 	
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
 		taintWrapper = wrapper;
 	}
 	
-	public BackwardsInfoflowProblem(InterproceduralCFG<Unit,SootMethod> icfg, SourceSinkManager manager) {
+	public BackwardsInfoflowProblem(InterproceduralCFG<Unit,SootMethod> icfg) {
 		super(icfg);
-		results = new HashMap<String, List<String>>();
-		sourceSinkManager = manager;
 	}
 	
-	public BackwardsInfoflowProblem(SourceSinkManager manager) {
+	public BackwardsInfoflowProblem() {
 		super(new BackwardsInterproceduralCFG());
-		results = new HashMap<String, List<String>>();
-		sourceSinkManager = manager;
 	}
 	
 	public void setForwardSolver(InfoflowSolver forwardSolver){
 		fSolver = forwardSolver;
 	}
 
-	@Override
-	public Set<Unit> initialSeeds() {
-		return initialSeeds;
-	}
-
-	@Override
-	protected Abstraction createZeroValue() {
-		if (zeroValue == null)
-			return new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
-
-		return zeroValue;
-	}
-	
-	@Override
-	public boolean autoAddZero() {
-		return false;
-	}
-	
-	@Override
-	public boolean followReturnsPastSeeds() {
-		return true;
-	}
 
 	@Override
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
@@ -130,7 +95,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							if(rightValue instanceof InstanceFieldRef){
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
 								
-								if(!(ref.getField().getType() instanceof PrimType) &&  ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())){
+								if(!DataTypeHandler.isPrimTypeOrString(ref.getField()) &&  ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())){
 									Abstraction abs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit),keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
 									//this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
@@ -138,7 +103,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 								}
 							}else{
 								
-								if(!(rightValue.getType() instanceof PrimType) && rightValue.equals(source.getAccessPath().getPlainValue())){
+								if(!DataTypeHandler.isPrimTypeOrString(rightValue) && rightValue.equals(source.getAccessPath().getPlainValue())){
 									Abstraction abs = new Abstraction(source.getAccessPath().copyWithNewValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit));
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, srcUnit, abs));
 									
@@ -175,10 +140,16 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 									Local base = source.getAccessPath().getPlainLocal(); // ?
 									if (leftValue.equals(base)) { 
 										if (rightValue instanceof Local) {
-											res.add(new Abstraction(source.getAccessPath().copyWithNewValue(rightValue), source.getSource(), source.getCorrespondingMethod()));
+											if (pathTracking == PathTrackingMethod.ForwardTracking)
+												res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue), source.getSource(), source.getCorrespondingMethod(), ((AbstractionWithPath) source).getPropagationPath()));
+											else
+												res.add(new Abstraction(source.getAccessPath().copyWithNewValue(rightValue), source.getSource(), source.getCorrespondingMethod()));
 										} else {
 											// access path length = 1 - taint entire value if left is field reference
-											res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), source.getCorrespondingMethod(), true));
+											if (pathTracking == PathTrackingMethod.ForwardTracking)
+												res.add(new AbstractionWithPath(new EquivalentValue(rightValue), source.getSource(), source.getCorrespondingMethod(), true));
+											else
+												res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), source.getCorrespondingMethod(), true));
 										}
 									}
 								} else if (leftValue instanceof ArrayRef) {
@@ -193,13 +164,18 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							}
 							// if one of them is true -> add rightValue
 							if (addRightValue) { 
-								res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
+								if (pathTracking == PathTrackingMethod.ForwardTracking)
+									res.add(new AbstractionWithPath(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
+								else
+									res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(srcUnit), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 							}
 							if(!res.isEmpty()){ 
 								//we have to send forward pass, for example for
 								//$r1 = l0.<java.lang.AbstractStringBuilder: char[] value>
 								Abstraction a = res.iterator().next();
-							fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, srcUnit, a));
+								if(!DataTypeHandler.isPrimTypeOrString(a.getAccessPath().getPlainValue())){
+									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, srcUnit, a));
+								}
 								return res;
 							}else{
 								return Collections.singleton(source);
@@ -235,6 +211,9 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 								for(Unit u : method.getActiveBody().getUnits()){
 									if(u instanceof ReturnStmt){
 										ReturnStmt rStmt = (ReturnStmt) u;
+										if (pathTracking == PathTrackingMethod.ForwardTracking)
+											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+										else
 										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
 								}
@@ -243,7 +222,7 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 
 						// easy: static
 						if (source.getAccessPath().isStaticFieldRef()) {
-							res.add(source);
+								res.add(source);
 						}
 
 						// checks: this/fields
@@ -271,8 +250,10 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 										if (callUnit instanceof Stmt) {
 											Stmt stmt = (Stmt) callUnit;
 											if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
-												
-												res.add(new Abstraction(source.getAccessPath().copyWithNewValue(thisL), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+												if (pathTracking == PathTrackingMethod.ForwardTracking)
+													res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+												else
+													res.add(new Abstraction(source.getAccessPath().copyWithNewValue(thisL), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 											}
 										}
 									}
@@ -317,15 +298,20 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 							// first, instancefieldRefs must be propagated if they come from the same class:
 							if (!callee.isStatic() && callee.getActiveBody().getThisLocal().equals(base) && ie instanceof InstanceInvokeExpr) {
 								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
-								res.add(new Abstraction(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource(), callee));	
+								if (pathTracking == PathTrackingMethod.ForwardTracking)
+									res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource(), callee));
+								else
+									res.add(new Abstraction(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource(), callee));	
 							}
 						}
 
 						// check if param is tainted:
 						for (int i = 0; i < callArgs.size(); i++) {
 							if (paramLocals.get(i).equals(base)) {
-								Abstraction abs = new Abstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), callee);
-								res.add(abs);
+								if (pathTracking == PathTrackingMethod.ForwardTracking)
+									res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), callee));
+								else
+									res.add(new Abstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), callee));
 								//if abs. contains "neutral" -> this is the case :/ @LinkedListNegativeTest
 							}
 						}
@@ -364,7 +350,10 @@ public class BackwardsInfoflowProblem extends DefaultJimpleIFDSTabulationProblem
 									List<Value> vals = taintWrapper.getBackwardTaintsForMethod(iStmt);
 									if(vals != null){
 										for (Value val : vals){
-											res.add(new Abstraction(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod()));
+											if (pathTracking == PathTrackingMethod.ForwardTracking)
+												res.add(new AbstractionWithPath(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod(), false));
+											else
+												res.add(new Abstraction(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod()));
 										}
 									}
 								}

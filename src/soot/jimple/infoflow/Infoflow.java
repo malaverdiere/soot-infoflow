@@ -44,7 +44,6 @@ import soot.options.Options;
 public class Infoflow implements IInfoflow {
 
 	private static boolean DEBUG = false;
-	private boolean local = false;
 	public InfoflowResults results;
 
 	private final String androidPath;
@@ -235,13 +234,7 @@ public class Infoflow implements IInfoflow {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
 
-				AbstractInfoflowProblem forwardProblem;
-
-				if (local) {
-					forwardProblem = new InfoflowLocalProblem(sourcesSinks);
-				} else {
-					forwardProblem = new InfoflowProblem(sourcesSinks);
-				}
+				InfoflowProblem forwardProblem  = new InfoflowProblem(sourcesSinks);
 				forwardProblem.setTaintWrapper(taintWrapper);
 				forwardProblem.setPathTracking(pathTracking);
 
@@ -274,11 +267,14 @@ public class Infoflow implements IInfoflow {
 
 				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 				forwardSolver = new InfoflowSolver(forwardProblem, DEBUG, executor);
-				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem(sourcesSinks);
+				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem();
 				InfoflowSolver backSolver = new InfoflowSolver(backProblem, DEBUG, executor);
 				forwardProblem.setBackwardSolver(backSolver);
+				forwardProblem.setDebug(DEBUG);
+				
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);
+				backProblem.setDebug(DEBUG);
 
 				forwardSolver.solve();
 
@@ -322,10 +318,6 @@ public class Infoflow implements IInfoflow {
 		return results;
 	}
 
-	@Override
-	public void setLocalInfoflow(boolean local) {
-		this.local = local;
-	}
 
 	@Override
 	public boolean isResultAvailable() {

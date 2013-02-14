@@ -25,7 +25,6 @@ public abstract class JUnitTests {
     protected static List<String> sinks;
     protected static final String sinkString = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(java.lang.String)>";
     protected static final String sourceString = "staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()";
-    protected static boolean local = false;
     protected static boolean taintWrapper = false;
     protected static boolean debug = true;
    
@@ -73,7 +72,6 @@ public abstract class JUnitTests {
     
     protected Infoflow initInfoflow(){
     	Infoflow result = new Infoflow();
-    	result.setLocalInfoflow(local);
     	Infoflow.setDebug(debug);
     	SootConfigForTest testConfig = new SootConfigForTest();
     	result.setSootConfig(testConfig);

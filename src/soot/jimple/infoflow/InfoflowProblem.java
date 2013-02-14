@@ -14,7 +14,6 @@ import java.util.Set;
 
 import soot.EquivalentValue;
 import soot.Local;
-import soot.PrimType;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -30,17 +29,18 @@ import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
+import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
+import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
-	private final static boolean DEBUG = true;
-
+	InfoflowSolver bSolver;
 	final SourceSinkManager sourceSinkManager;
 
 	@Override
@@ -147,7 +147,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								else
 									res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(src), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 
-								if (!(leftValue.getType() instanceof PrimType) && !(leftValue instanceof Constant)) {
+								if (!DataTypeHandler.isPrimTypeOrString(leftValue) && !(leftValue instanceof Constant)) {
 									// call backwards-check:
 									Unit predUnit = getUnitBefore(src);
 									Abstraction newAbs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(src), (forceFields) ? true : keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
@@ -291,7 +291,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callSite instanceof Stmt) {
 									Stmt iStmt = (Stmt) callSite;
 									originalCallArg = iStmt.getInvokeExpr().getArg(i);
-									if (!(originalCallArg instanceof Constant) && !(originalCallArg.getType() instanceof PrimType)) {
+									if (!(originalCallArg instanceof Constant) && !DataTypeHandler.isPrimTypeOrString(originalCallArg)) {
 										Abstraction abs;
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(originalCallArg), source.getSource(), interproceduralCFG().getMethodOf(callSite), ((AbstractionWithPath) source).getPropagationPath(), exitStmt);
@@ -411,7 +411,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								final JAssignStmt stmt = (JAssignStmt) iStmt;
 
 								if (sourceSinkManager.isSourceMethod(stmt.getInvokeExpr().getMethod())) {
-									if (DEBUG)
+									if (debug)
 										System.out.println("Found source: " + stmt.getInvokeExpr().getMethod());
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										res.add(new AbstractionWithPath(new EquivalentValue(stmt.getLeftOp()), new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit), ((AbstractionWithPath) source).getPropagationPath(), call, false));
@@ -500,6 +500,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		}
 		return u;
 
+	}
+	
+	public void setBackwardSolver(InfoflowSolver backwardSolver){
+		bSolver = backwardSolver;
 	}
 
 }

@@ -680,7 +680,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		this.sourceSinkManager = sourceSinkManager;
 	}
 
-	@Override
+	public InfoflowProblem(SourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds) {
+	    super(new JimpleBasedInterproceduralCFG());
+	    this.sourceSinkManager = mySourceSinkManager;
+	    this.initialSeeds.addAll(analysisSeeds);
+    }
+
+    @Override
 	public Abstraction createZeroValue() {
 		if (zeroValue == null) {
 			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?

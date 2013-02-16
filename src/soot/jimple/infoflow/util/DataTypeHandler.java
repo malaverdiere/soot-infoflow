@@ -1,30 +1,17 @@
 package soot.jimple.infoflow.util;
 
-import soot.PrimType;
-import soot.RefType;
-import soot.SootField;
+import soot.Local;
 import soot.Value;
+import soot.jimple.ArrayRef;
+import soot.jimple.FieldRef;
 
 public class DataTypeHandler {
 	
-	public static boolean isPrimTypeOrString(Value val){
+	public static boolean isFieldRefOrArrayRef(Value val){
 		if(val == null){
 			return false;
 		}
-		if(val.getType() instanceof PrimType){
-			return true;
-		}
-		if(val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
-			return true;
-		}
-		return false;
-	}
-	
-	public static boolean isPrimTypeOrString(SootField val){
-		if(val.getType() instanceof PrimType){
-			return true;
-		}
-		if(val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
+		if(val instanceof FieldRef || (val instanceof Local && ((Local)val).getType() instanceof ArrayRef)){
 			return true;
 		}
 		return false;

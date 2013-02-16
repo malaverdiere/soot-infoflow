@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 
 import soot.EquivalentValue;
-import soot.PrimType;
 import soot.SootMethod;
 import soot.Value;
 import soot.jimple.Constant;
@@ -44,7 +43,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			//generic case: add taint to all non-primitive datatypes:
 			for (int i = 0; i < params.size(); i++) {
 				Value argValue = params.get(i);
-				if (!DataTypeHandler.isPrimTypeOrString(argValue) && !(argValue instanceof Constant)) {
+				if (DataTypeHandler.isFieldRefOrArrayRef(argValue) && !(argValue instanceof Constant)) {
 					if (pathTracking == PathTrackingMethod.ForwardTracking)
 						set.add(new AbstractionWithPath(new EquivalentValue(argValue), source.getSource(), m,
 								((AbstractionWithPath) source).getPropagationPath(), false));
@@ -76,13 +75,13 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
         //Copies an array from the specified source array, beginning at the specified position, to the specified position of the destination array.
 		if(call.getInvokeExpr().getMethod().toString().contains("arraycopy")){
 			if(params.get(2).equals(source.getAccessPath().getPlainValue())){
-				set.add(new Abstraction(new EquivalentValue(params.get(0)), source.getSource(), m));
+				set.add(new Abstraction(new EquivalentValue(params.get(0)), source.getSource(), m, source.getAccessPath().isOnlyFieldsTainted()));
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
 			for (int i = 0; i < params.size(); i++) {
 				Value argValue = params.get(i);
-				if (!DataTypeHandler.isPrimTypeOrString(argValue)) {
+				if (DataTypeHandler.isFieldRefOrArrayRef(argValue)) {
 					set.add(new Abstraction(new EquivalentValue(argValue), source.getSource(), m));
 				}
 			}	

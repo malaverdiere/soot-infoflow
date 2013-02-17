@@ -18,6 +18,7 @@ import soot.PointsToAnalysis;
 import soot.PointsToSet;
 import soot.PrimType;
 import soot.Scene;
+import soot.SootClass;
 import soot.SootField;
 import soot.SootFieldRef;
 import soot.SootMethod;
@@ -27,10 +28,12 @@ import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.IdentityStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
+import soot.jimple.ParameterRef;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -38,7 +41,6 @@ import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
-import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
@@ -52,7 +54,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	
 	final SourceSinkManager sourceSinkManager;
 	Abstraction zeroValue = null;
-
+	
 	/**
 	 * Computes the taints produced by a taint wrapper object
 	 * @param iStmt The call statement the taint wrapper shall check for well-
@@ -82,8 +84,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			if(iiExpr.getBase().equals(source.getAccessPath().getPlainValue())){
 				if(source.getAccessPath().isLocal()){
 					taintedBase = iiExpr.getBase();
-				}else if(source.getAccessPath().isInstanceFieldRef()){
-					taintedBase = new JInstanceFieldRef(iiExpr.getBase(),iStmt.getInvokeExpr().getMethod().getDeclaringClass().getFieldByName(source.getAccessPath().getField()).makeRef());
+				}
+				else if(source.getAccessPath().isInstanceFieldRef()){
+					// The taint refers to the actual type of the field, not the formal type,
+					// so we must check whether we have the tainted field at all
+					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
+					if (callerClass.declaresFieldByName(source.getAccessPath().getField()))
+						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
+								callerClass.getFieldByName(source.getAccessPath().getField()).makeRef());
 				}
 			}
 			if(source.getAccessPath().isStaticFieldRef()){
@@ -135,7 +143,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				if(source.getAccessPath().isLocal()){
 					taintedBase = iiExpr.getBase();
 				}else if(source.getAccessPath().isInstanceFieldRef()){
-					taintedBase = new JInstanceFieldRef(iiExpr.getBase(),iStmt.getInvokeExpr().getMethod().getDeclaringClass().getFieldByName(source.getAccessPath().getField()).makeRef());
+					// The taint refers to the actual type of the field, not the formal type,
+					// so we must check whether we have the tainted field at all
+					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
+					if (callerClass.declaresFieldByName(source.getAccessPath().getField()))
+						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
+								callerClass.getFieldByName(source.getAccessPath().getField()).makeRef());
 				}
 			}
 			if(source.getAccessPath().isStaticFieldRef()){
@@ -146,15 +159,85 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			
 		return taintWrapper.isExclusive(iStmt, taintedPos, taintedBase);
 	}
-
+	
 	@Override
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit, Abstraction, SootMethod>() {
 
+			/**
+			 * Creates a new taint abstraction for the given value
+			 * @param src The source statement from which the taint originated
+			 * @param targetValue The target value that shall now be tainted
+			 * @param source The incoming taint abstraction from the source
+			 * @param taintSet The taint set to which to add all newly produced
+			 * taints
+			 */
+			private void addTaintViaStmt
+					(final Unit src,
+					final Value targetValue,
+					Abstraction source,
+					Set<Abstraction> taintSet) {
+				taintSet.add(source);
+				if (pathTracking == PathTrackingMethod.ForwardTracking)
+					taintSet.add(new AbstractionWithPath(new EquivalentValue(targetValue),
+							source.getSource(),
+							interproceduralCFG().getMethodOf(src),
+							((AbstractionWithPath) source).getPropagationPath(),
+							src));
+				else
+					taintSet.add(new Abstraction(new EquivalentValue(targetValue),
+							source.getSource(),
+							interproceduralCFG().getMethodOf(src)));
+
+				SootMethod m = interproceduralCFG().getMethodOf(src);
+				if (targetValue instanceof InstanceFieldRef) {
+					InstanceFieldRef ifr = (InstanceFieldRef) targetValue;
+
+					Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), src, ifr.getBase(), ifr.getFieldRef());
+					for (Value v : aliases) {
+						if (pathTracking == PathTrackingMethod.ForwardTracking)
+							taintSet.add(new AbstractionWithPath(new EquivalentValue(v), source.getSource(),
+								interproceduralCFG().getMethodOf(src),
+								((AbstractionWithPath) source).getPropagationPath(),
+								src));
+						else
+							taintSet.add(new Abstraction(new EquivalentValue(v), source.getSource(),
+								interproceduralCFG().getMethodOf(src)));
+					}
+				}
+			}
+
 			@Override
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, final Unit dest) {
+				// If we compute flows on parameters, we create the initial
+				// flow fact here
+				if (computeParamFlows && src instanceof IdentityStmt
+						&& isInitialMethod(interproceduralCFG().getMethodOf(src))) {
+					final IdentityStmt is = (IdentityStmt) src;
+					return new FlowFunction<Abstraction>() {
+
+						@Override
+						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (is.getRightOp() instanceof ParameterRef) {
+								if (pathTracking != PathTrackingMethod.NoTracking) {
+									List<Unit> empty = Collections.emptyList();
+									Abstraction abs = new AbstractionWithPath(new EquivalentValue(is.getLeftOp()),
+										new EquivalentValue(is.getRightOp()), interproceduralCFG().getMethodOf(src),
+										empty,
+										is);
+									return Collections.singleton(abs);
+								}
+								else
+									return Collections.singleton
+										(new Abstraction(new EquivalentValue(is.getLeftOp()),
+										new EquivalentValue(is.getRightOp()), interproceduralCFG().getMethodOf(src)));
+							}
+							return Collections.singleton(source);
+						}
+					};
+				}
 				// taint is propagated with assignStmt
-				if (src instanceof AssignStmt) {
+				else if (src instanceof AssignStmt) {
 					AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
 					Value left = assignStmt.getLeftOp();
@@ -167,16 +250,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					final Value leftValue = left;
 					final Value rightValue = right;
-					final Unit srcUnit = src;
 
 					return new FlowFunction<Abstraction>() {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
-							if (dest.toString().contains("publish") || interproceduralCFG().getMethodOf(dest).getName().contains("doSomething"))
-								System.out.println("x");
-
-
 							boolean addLeftValue = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
@@ -260,34 +338,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
-								res.add(source);
-								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(new EquivalentValue(leftValue),
-											source.getSource(),
-											interproceduralCFG().getMethodOf(srcUnit),
-											((AbstractionWithPath) source).getPropagationPath(),
-											src));
-								else
-									res.add(new Abstraction(new EquivalentValue(leftValue),
-											source.getSource(),
-											interproceduralCFG().getMethodOf(srcUnit)));
-
-								SootMethod m = interproceduralCFG().getMethodOf(srcUnit);
-								if (leftValue instanceof InstanceFieldRef) {
-									InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
-
-									Set<Value> aliases = getAliasesinMethod(m.getActiveBody().getUnits(), src, ifr.getBase(), ifr.getFieldRef());
-									for (Value v : aliases) {
-										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											res.add(new AbstractionWithPath(new EquivalentValue(v), source.getSource(),
-												interproceduralCFG().getMethodOf(srcUnit),
-												((AbstractionWithPath) source).getPropagationPath(),
-												src));
-										else
-											res.add(new Abstraction(new EquivalentValue(v), source.getSource(),
-												interproceduralCFG().getMethodOf(srcUnit)));
-									}
-								}
+								addTaintViaStmt(src, leftValue, source, res);
 								return res;
 							}
 							return Collections.singleton(source);
@@ -295,6 +346,31 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 					};
 
+				}
+				else if (returnIsSink &&  dest instanceof ReturnStmt) {
+					// Returning from the main method may also count as a sink
+					final ReturnStmt returnStmt = (ReturnStmt) dest;
+					return new FlowFunction<Abstraction>() {
+
+						@Override
+						public Set<Abstraction> computeTargets(Abstraction source) {
+							boolean isSink = isInitialMethod(interproceduralCFG().getMethodOf(dest))
+									&& source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
+							isSink = isSink || (source.getAccessPath().isStaticFieldRef()
+									&& source.getAccessPath().getField().equals(returnStmt.getOp().toString()));
+							if (isSink) {
+								if (pathTracking != PathTrackingMethod.NoTracking)
+									results.addResult(returnStmt.toString(),
+											source.getSource().getValue().toString(),
+											((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
+											interproceduralCFG().getMethodOf(returnStmt) + ": " + returnStmt.toString());
+								else
+									results.addResult(returnStmt.toString(),
+											source.getSource().getValue().toString());
+							}
+							return Collections.singleton(source);
+						}
+					};
 				}
 				return Identity.v();
 			}
@@ -313,20 +389,18 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
-						if (stmt.toString().contains("doSomething"))
-							System.out.println("x");
-
+						if (source.equals(zeroValue)) {
+							return Collections.singleton(source);
+						}
 						if(isWrapperExclusive(stmt, callArgs, source)) {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-						if (source.equals(zeroValue)) {
-							return Collections.singleton(source);
-						}
+
+						Set<Abstraction> res = new HashSet<Abstraction>();
+						Value base = source.getAccessPath().getPlainValue();
 
 						PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-						Value base = source.getAccessPath().getPlainValue();
-						Set<Abstraction> res = new HashSet<Abstraction>();
 						// if taintedobject is instancefieldRef we have to check if the object is delivered..
 						if (source.getAccessPath().isInstanceFieldRef()) {
 
@@ -388,7 +462,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.getAccessPath().isStaticFieldRef()) {
 							res.add(source);
 						}
-
+						
 						return res;
 					}
 				};
@@ -559,7 +633,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 						}
-
 						return res;
 					}
 
@@ -567,8 +640,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			}
 
 			@Override
-			public FlowFunction<Abstraction> getCallToReturnFlowFunction(final Unit call, Unit returnSite) {
-				final Unit unit = returnSite;
+			public FlowFunction<Abstraction> getCallToReturnFlowFunction(final Unit call, final Unit returnSite) {
 				// special treatment for native methods:
 				if (call instanceof Stmt) {
 					final Stmt iStmt = (Stmt) call;
@@ -586,7 +658,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
 								if (callArgs.contains(source.getAccessPath().getPlainValue())) {
 									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
-									res.addAll(ncHandler.getTaintedValues(iStmt, source, callArgs, interproceduralCFG().getMethodOf(unit)));
+									res.addAll(ncHandler.getTaintedValues(iStmt, source, callArgs, interproceduralCFG().getMethodOf(returnSite)));
 								}
 							}
 
@@ -598,12 +670,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										System.out.println("Found source: " + stmt.getInvokeExpr().getMethod());
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										res.add(new AbstractionWithPath(new EquivalentValue(stmt.getLeftOp()),
-												new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit),
+												new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(returnSite),
 												((AbstractionWithPath) source).getPropagationPath(),
 												call));
 									else
 										res.add(new Abstraction(new EquivalentValue(stmt.getLeftOp()),
-												new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
+												new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(returnSite)));
 									res.remove(zeroValue);
 								}
 							}

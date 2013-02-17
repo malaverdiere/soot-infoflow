@@ -108,4 +108,12 @@ public class InfoflowResults {
 		return false;
 	}
 
+	public void printResults() {
+		for (String sink : this.results.keySet()) {
+			System.out.println("Found a flow to sink" + sink + " from the following sources:");
+			for (SourceInfo source : this.results.get(sink))
+				System.out.println("\t- " + source.getSource());
+		}
+	}
+
 }

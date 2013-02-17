@@ -2,6 +2,7 @@ package soot.jimple.infoflow;
 
 import java.util.List;
 
+import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 
@@ -14,6 +15,30 @@ public interface IInfoflow {
 	 * propagated through black-box methods
 	 */
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper);
+
+	/**
+	 * Sets whether and how the paths between the sources and sinks shall be
+	 * tracked
+	 * @param method The method for tracking data flow paths through the
+	 * program.
+	 */
+	public void setPathTracking(PathTrackingMethod method);
+
+	/**
+	 * Sets whether the parameters of the entry point methods shall be considered
+	 * as sources
+	 * @param computeParamFlows True if entry point parameters are sources,
+	 * otherwise false
+	 */
+	public void setComputeParamFlows(boolean computeParamFlows);
+	
+	/**
+	 * Sets whether the return statements of the entry point methods shall be
+	 * considered as sinks
+	 * @param returnIsSink True if entry point return values are sinks,
+	 * otherwise false
+	 */
+	public void setReturnIsSink(boolean returnIsSink);
 
 	/**
 	 * computes the information flow

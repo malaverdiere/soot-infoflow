@@ -6,7 +6,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -51,6 +50,9 @@ public class Infoflow implements IInfoflow {
 	private ITaintPropagationWrapper taintWrapper;
 	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	private IInfoflowSootConfig sootConfig;
+	
+	private boolean computeParamFlows = false;
+	private boolean returnIsSink = false;
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
@@ -80,14 +82,19 @@ public class Infoflow implements IInfoflow {
 		sootConfig = config;
 	}
 	
-	/**
-	 * Sets whether and how the paths between the sources and sinks shall be
-	 * tracked
-	 * @param method The method for tracking data flow paths through the
-	 * program.
-	 */
+	@Override
 	public void setPathTracking(PathTrackingMethod method) {
 		this.pathTracking = method;
+	}
+	
+	@Override
+	public void setComputeParamFlows(boolean computeParamFlows) {
+		this.computeParamFlows = computeParamFlows;
+	}
+	
+	@Override
+	public void setReturnIsSink(boolean returnIsSink) {
+		this.returnIsSink = returnIsSink;
 	}
 
 	@Override
@@ -100,12 +107,35 @@ public class Infoflow implements IInfoflow {
 		this.computeInfoflow(path, entryPoint, new DefaultSourceSinkManager(sources, sinks));
 	}
 	
+	/**
+	 * Initializes Soot.
+	 * @param path The Soot classpath
+	 * @param classes The set of classes that shall be checked for data flow
+	 * analysis seeds. All sources in these classes are used as seeds.
+	 * @param sourcesSinks The manager object for identifying sources and sinks
+	 */
 	private void initializeSoot(String path, Set<String> classes, SourceSinkManager sourcesSinks) {
+		initializeSoot(path, classes, sourcesSinks, "");
+	}
+	
+	/**
+	 * Initializes Soot.
+	 * @param path The Soot classpath
+	 * @param classes The set of classes that shall be checked for data flow
+	 * analysis seeds. All sources in these classes are used as seeds. If a
+	 * non-empty extra seed is given, this one is used too.
+	 * @param sourcesSinks The manager object for identifying sources and sinks
+	 * @param extraSeed An optional extra seed, can be empty.
+	 */
+	private void initializeSoot(String path, Set<String> classes, SourceSinkManager sourcesSinks, String extraSeed) {
 		// reset Soot:
 		soot.G.reset();
 		
 		// add SceneTransformer which calculates and prints infoflow
-		addSceneTransformer(sourcesSinks);
+		Set<String> seeds = Collections.emptySet();
+		if (extraSeed != null && !extraSeed.isEmpty())
+			seeds = Collections.singleton(extraSeed);
+		addSceneTransformer(sourcesSinks, seeds);
 
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
@@ -116,23 +146,29 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
 //		soot.options.Options.v().set_prepend_classpath(true);
-		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
-		soot.options.Options.v().setPhaseOption("cg.spark", "on");
-		soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
+//		Options.v().set_process_dir(Arrays.asList(classes.toArray()))
+		if (extraSeed == null || extraSeed.isEmpty())
+			Options.v().setPhaseOption("cg.spark", "on");
+		else {
+//			Options.v().setPhaseOption("cg.spark", "on");
+			Options.v().setPhaseOption("cg.spark", "vta:true");
+		}
+		Options.v().setPhaseOption("jb", "use-original-names:true");
 		// do not merge variables (causes problems with PointsToSets)
-		soot.options.Options.v().setPhaseOption("jb.ulp", "off");
+		Options.v().setPhaseOption("jb.ulp", "off");
 		if (!this.androidPath.isEmpty()) {
-			soot.options.Options.v().set_src_prec(Options.src_prec_apk);
+			Options.v().set_src_prec(Options.src_prec_apk);
 			if (this.forceAndroidJar)
 				soot.options.Options.v().set_force_android_jar(this.androidPath);
 			else
 				soot.options.Options.v().set_android_jars(this.androidPath);
 		}
+		else
+			Options.v().set_src_prec(Options.src_prec_java);
 		
 		//at the end of setting: load user settings:
-				if(sootConfig != null){
-					sootConfig.setSootOptions(Options.v());
-				}
+		if (sootConfig != null)
+			sootConfig.setSootOptions(Options.v());
 		
 		// load all entryPoint classes with their bodies
 		Scene.v().loadNecessaryClasses();
@@ -147,8 +183,6 @@ public class Infoflow implements IInfoflow {
 			System.out.println("Only phantom classes loaded, skipping analysis...");
 			return;
 		}
-		
-		
 	}
 	
 	@Override
@@ -199,7 +233,7 @@ public class Infoflow implements IInfoflow {
 		// parse classNames as String and methodNames as string in soot representation
 		HashMap<String, List<String>> classes = parser.parseClassNames(Collections.singletonList(entryPoint), false);
 
-		initializeSoot(path, classes.keySet(), sourcesSinks);
+		initializeSoot(path, classes.keySet(), sourcesSinks, entryPoint);
 
 		if (DEBUG) {
 			for (List<String> methodList : classes.values()) {
@@ -217,20 +251,22 @@ public class Infoflow implements IInfoflow {
 			return;
 		}
 		SootMethod ep = Scene.v().getMethod(entryPoint);
-		if (!ep.isConcrete()) {
+		if (ep.isConcrete())
+			ep.retrieveActiveBody();
+		else {
 			System.err.println("Skipping non-concrete method " + ep);
 			return;
 		}
 		Scene.v().setEntryPoints(Collections.singletonList(ep));
+		Options.v().set_main_class(ep.getDeclaringClass().getName());
 		PackManager.v().runPacks();
 		if (DEBUG)
 			PackManager.v().writeOutput();
 	}
 
-	private void addSceneTransformer(final SourceSinkManager sourcesSinks) {
+	private void addSceneTransformer(final SourceSinkManager sourcesSinks, final Set<String> additionalSeeds) {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
-
 				AbstractInfoflowProblem problem;
 
 				if (local) {
@@ -240,52 +276,75 @@ public class Infoflow implements IInfoflow {
 				}
 				problem.setTaintWrapper(taintWrapper);
 				problem.setPathTracking(pathTracking);
+				problem.setComputeParamFlows(computeParamFlows);
+				problem.setReturnIsSink(returnIsSink);
 
-				//look for sources in whole program, add the unit to initialSeeds
+				// We have to look through the complete program to find sources
+				// which are then taken as seeds.
 				System.out.println("Looking for sources...");
 				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
 				eps.addAll(Scene.v().getEntryPoints());
 				ReachableMethods reachableMethods = new ReachableMethods(Scene.v().getCallGraph(), eps.iterator(), null);
 				reachableMethods.update();
-Map<String, String> classes = new HashMap<String, String>(10000);				
+				Map<String, String> classes = new HashMap<String, String>(10000);				
 				for(Iterator<MethodOrMethodContext> iter = reachableMethods.listener(); iter.hasNext(); ) {
 					SootMethod m = iter.next().method();
 					if (m.hasActiveBody()) {
-						if (classes.containsKey(m.getDeclaringClass().getName()))
-							classes.put(m.getDeclaringClass().getName(), classes.get(m.getDeclaringClass().getName())
-									+ m.getActiveBody().toString());
-						else
-							classes.put(m.getDeclaringClass().getName(), m.getActiveBody().toString());
+						// In Debug mode, we collect the Jimple bodies for
+						// writing them to disk later
+						if (DEBUG)
+							if (classes.containsKey(m.getDeclaringClass().getName()))
+								classes.put(m.getDeclaringClass().getName(), classes.get(m.getDeclaringClass().getName())
+										+ m.getActiveBody().toString());
+							else
+								classes.put(m.getDeclaringClass().getName(), m.getActiveBody().toString());
+						
+						// Look for a source in the method
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
 							if (s.containsInvokeExpr()) {
 								InvokeExpr ie = s.getInvokeExpr();
-								if (sourcesSinks.isSourceMethod(ie.getMethod()))
+								if (sourcesSinks.isSourceMethod(ie.getMethod())) {
 									problem.initialSeeds.add(u);
+									System.out.println("Source found: " + u);
+								}
 							}
 						}
 					}
 				}
-for (Entry<String, String> entry : classes.entrySet()) {
-	try {
-		stringToTextFile("JimpleFiles/" + entry.getKey() + ".jimple", entry.getValue());
-	} catch (IOException e) {
-		System.err.println("Could not write jimple file: " + e.getMessage());
-		e.printStackTrace();
-	}
+				
+				// We optionally also allow additional seeds to be specified
+				if (additionalSeeds != null)
+					for (String meth : additionalSeeds) {
+						SootMethod m = Scene.v().getMethod(meth);
+						if (!m.hasActiveBody()) {
+							System.err.println("Seed method " + m + " has no active body");
+							continue;
+						}
+						problem.initialSeeds.add(m.getActiveBody().getUnits().getFirst());
+					}
 
-}
-				System.out.println("Source lookup done.");
+				// In Debug mode, we write the Jimple files to disk
+				if (DEBUG)
+					for (Entry<String, String> entry : classes.entrySet()) {
+						try {
+							stringToTextFile("JimpleFiles/" + entry.getKey() + ".jimple", entry.getValue());
+						} catch (IOException e) {
+							System.err.println("Could not write jimple file: " + e.getMessage());
+							e.printStackTrace();
+						}
+					
+					}
 				
 				if(problem.initialSeeds.isEmpty()){
 					System.err.println("No Sources found!");
 					return;
 				}
+				System.out.println("Source lookup done, found " + problem.initialSeeds.size() + " sources.");
 
 				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver =
 						new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem, DEBUG);
-
 				solver.solve();
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
@@ -305,6 +364,8 @@ for (Entry<String, String> entry : classes.entrySet()) {
 				}
 
 				results = problem.results;
+				if (results.getResults().isEmpty())
+					System.out.println("No results found.");
 				for (Entry<String, List<SourceInfo>> entry : results.getResults().entrySet()) {
 					System.out.println("The sink " + entry.getKey() + " was called with values from the following sources:");
 					for (SourceInfo source : entry.getValue()) {

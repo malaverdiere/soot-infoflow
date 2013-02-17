@@ -49,6 +49,9 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	NativeCallHandler ncHandler = new DefaultNativeCallHandler();
 	
+	protected boolean computeParamFlows = false;
+	protected boolean returnIsSink = false;
+
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
 		results = new InfoflowResults();
@@ -61,6 +64,26 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
 		taintWrapper = wrapper;
+	}
+	
+	/**
+	 * Sets whether the parameters of the entry point methods shall be considered
+	 * as sources
+	 * @param computeParamFlows True if entry point parameters are sources,
+	 * otherwise false
+	 */
+	public void setComputeParamFlows(boolean computeParamFlows) {
+		this.computeParamFlows = computeParamFlows;
+	}
+	
+	/**
+	 * Sets whether the return statements of the entry point methods shall be
+	 * considered as sinks
+	 * @param returnIsSink True if entry point return values are sinks,
+	 * otherwise false
+	 */
+	public void setReturnIsSink(boolean returnIsSink) {
+		this.returnIsSink = returnIsSink;
 	}
 	
 	/**
@@ -135,6 +158,19 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 	public InfoflowResults getResults(){
 	    return results;
+	}
+
+	/**
+	 * Gets whether the given method is an entry point, i.e. one of the initial
+	 * seeds belongs to the given method
+	 * @param sm The method to check
+	 * @return True if the given method is an entry point, otherwise false
+	 */
+	protected boolean isInitialMethod(SootMethod sm) {
+		for (Unit u : this.initialSeeds)
+			if (interproceduralCFG().getMethodOf(u) == sm)
+				return true;
+		return false;
 	}
 
 }

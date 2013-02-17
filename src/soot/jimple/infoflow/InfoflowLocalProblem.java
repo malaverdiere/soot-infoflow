@@ -23,13 +23,16 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.IdentityStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
+import soot.jimple.ParameterRef;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
@@ -52,8 +55,35 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 		return new FlowFunctions<Unit, Abstraction, SootMethod>() {
 
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, Unit dest) {
+				// If we compute flows on parameters, we create the initial
+				// flow fact here
+				if (computeParamFlows && src instanceof IdentityStmt
+						&& isInitialMethod(interproceduralCFG().getMethodOf(src))) {
+					final IdentityStmt is = (IdentityStmt) src;
+					return new FlowFunction<Abstraction>() {
+
+						@Override
+						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (is.getRightOp() instanceof ParameterRef) {
+								if (pathTracking != PathTrackingMethod.NoTracking) {
+									List<Unit> empty = Collections.emptyList();
+									Abstraction abs = new AbstractionWithPath(new EquivalentValue(is.getLeftOp()),
+										new EquivalentValue(is.getRightOp()), interproceduralCFG().getMethodOf(src),
+										empty,
+										is);
+									return Collections.singleton(abs);
+								}
+								else
+									return Collections.singleton
+										(new Abstraction(new EquivalentValue(is.getLeftOp()),
+										new EquivalentValue(is.getRightOp()), interproceduralCFG().getMethodOf(src)));
+							}
+							return Collections.singleton(source);
+						}
+					};
+				}
 				// taint is propagated with assignStmt
-				if (src instanceof DefinitionStmt) {
+				else if (src instanceof DefinitionStmt) {
 					DefinitionStmt defStmt = (DefinitionStmt) src;
 					Value right = defStmt.getRightOp();
 					Value left = defStmt.getLeftOp();

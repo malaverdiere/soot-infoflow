@@ -38,7 +38,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	
 	/**
 	 *  Soot requires a main method, so we create a dummy method which calls all entry functions. 
-	 *  Androids components are detected and treated according to their lifecycles.  
+	 *  Androids components are detected and treated according to their lifecycles. This also
+	 *  forces the classes in the list to be resolved.
 	 *  
 	 * @param methodSignatureList a list of method signatures in soot syntax ( <class: returntype methodname(arguments)> )
 	 * @return the dummyMethod which was created
@@ -46,6 +47,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	public SootMethod createDummyMain(List<String> methodSignatureList){
 		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
 		HashMap<String, List<String>> classes = parser.parseClassNames(methodSignatureList, false);
+		
+		for (String className : classes.keySet()) {
+			SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
+			c.setApplicationClass();
+		}
+		
 		return createDummyMain(classes);
 	}
 	

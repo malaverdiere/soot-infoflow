@@ -29,6 +29,8 @@ public class SootConfigForTest implements IInfoflowSootConfig{
 		
 		options.set_output_format(Options.output_format_none);
 		
+		soot.options.Options.v().set_prepend_classpath(true);
+		
 	}
 
 }

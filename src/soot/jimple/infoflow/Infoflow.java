@@ -6,6 +6,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -23,6 +24,7 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
+import soot.dexpler.DexResolver;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
@@ -130,6 +132,7 @@ public class Infoflow implements IInfoflow {
 	private void initializeSoot(String path, Set<String> classes, SourceSinkManager sourcesSinks, String extraSeed) {
 		// reset Soot:
 		soot.G.reset();
+		DexResolver.reset();
 		
 		// add SceneTransformer which calculates and prints infoflow
 		Set<String> seeds = Collections.emptySet();
@@ -146,13 +149,9 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
 //		soot.options.Options.v().set_prepend_classpath(true);
-//		Options.v().set_process_dir(Arrays.asList(classes.toArray()))
-		if (extraSeed == null || extraSeed.isEmpty())
-			Options.v().setPhaseOption("cg.spark", "on");
-		else {
-//			Options.v().setPhaseOption("cg.spark", "on");
-			Options.v().setPhaseOption("cg.spark", "vta:true");
-		}
+		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
+//		Options.v().setPhaseOption("cg.spark", "on");
+		Options.v().setPhaseOption("cg.spark", "vta:true");
 		Options.v().setPhaseOption("jb", "use-original-names:true");
 		// do not merge variables (causes problems with PointsToSets)
 		Options.v().setPhaseOption("jb.ulp", "off");

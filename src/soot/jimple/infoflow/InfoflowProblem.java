@@ -94,9 +94,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								callerClass.getFieldByName(source.getAccessPath().getField()).makeRef());
 				}
 			}
+			
+			// For the moment, we don't implement static taints on wrappers
 			if(source.getAccessPath().isStaticFieldRef()){
 				//TODO
-				System.err.println("not implemented");
 			}
 		}
 			

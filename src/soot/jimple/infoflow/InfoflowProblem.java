@@ -548,88 +548,90 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}
 
-						Local thisL = null;
-						PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
-						PointsToSet ptsSource = pta.reachingObjects((Local) sourceBase);
-						if (!calleeMethod.isStatic()) {
-							thisL = calleeMethod.getActiveBody().getThisLocal();
-						}
-						if (thisL != null) {
-							if (thisL.equals(sourceBase)) {
-								// TODO: either remove PTS check here or remove the if-condition above!
-								// there is only one case in which this must be added, too: if the caller-Method has the same thisLocal - check this:
-								// for super-calls we have to use pts
-								PointsToSet ptsThis = pta.reachingObjects(thisL);
-
-								if (ptsSource.hasNonEmptyIntersection(ptsThis) || sourceBase.equals(thisL)) {
-									boolean param = false;
-									// check if it is not one of the params (then we have already fixed it)
-									for (int i = 0; i < calleeMethod.getParameterCount(); i++) {
-										if (calleeMethod.getActiveBody().getParameterLocal(i).equals(sourceBase)) {
-											param = true;
+						if (source.getAccessPath().isInstanceFieldRef()) {
+							Local thisL = null;
+							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
+							PointsToSet ptsSource = pta.reachingObjects((Local) sourceBase);
+							if (!calleeMethod.isStatic()) {
+								thisL = calleeMethod.getActiveBody().getThisLocal();
+							}
+							if (thisL != null) {
+								if (thisL.equals(sourceBase)) {
+									// TODO: either remove PTS check here or remove the if-condition above!
+									// there is only one case in which this must be added, too: if the caller-Method has the same thisLocal - check this:
+									// for super-calls we have to use pts
+									PointsToSet ptsThis = pta.reachingObjects(thisL);
+	
+									if (ptsSource.hasNonEmptyIntersection(ptsThis) || sourceBase.equals(thisL)) {
+										boolean param = false;
+										// check if it is not one of the params (then we have already fixed it)
+										for (int i = 0; i < calleeMethod.getParameterCount(); i++) {
+											if (calleeMethod.getActiveBody().getParameterLocal(i).equals(sourceBase)) {
+												param = true;
+											}
+										}
+										if (!param) {
+											if (callUnit instanceof Stmt) {
+												Stmt stmt = (Stmt) callUnit;
+												if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+													InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
+													if (pathTracking == PathTrackingMethod.ForwardTracking)
+														res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(iIExpr.getBase()),
+																source.getSource(), interproceduralCFG().getMethodOf(callUnit),
+																((AbstractionWithPath) source).getPropagationPath(),
+																exitStmt));
+													else
+														res.add(new Abstraction(source.getAccessPath().copyWithNewValue(iIExpr.getBase()),
+																source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+												}
+											}
 										}
 									}
-									if (!param) {
-										if (callUnit instanceof Stmt) {
-											Stmt stmt = (Stmt) callUnit;
-											if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
-												InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
+								}
+								// remember that we only support max(length(accesspath))==1 -> if source is a fieldref, only its base is taken!
+								for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
+									if (!globalField.isStatic()) { // else is checked later
+										PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);
+										if (ptsGlobal.hasNonEmptyIntersection(ptsSource)) {
+											Local callBaseVar = null;
+											if (callUnit instanceof JAssignStmt) {
+												callBaseVar = (Local) ((InstanceInvokeExpr) ((JAssignStmt) callUnit).getInvokeExpr()).getBase();
+											}
+	
+											if (callUnit instanceof JInvokeStmt) {
+												JInvokeStmt iStmt = (JInvokeStmt) callUnit;
+												Value v = iStmt.getInvokeExprBox().getValue();
+												InstanceInvokeExpr jvie = (InstanceInvokeExpr) v;
+												callBaseVar = (Local) jvie.getBase();
+											}
+											if (callBaseVar != null) {
+												SootFieldRef ref = globalField.makeRef();
+												InstanceFieldRef fRef = Jimple.v().newInstanceFieldRef(callBaseVar, ref);
 												if (pathTracking == PathTrackingMethod.ForwardTracking)
-													res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(iIExpr.getBase()),
-															source.getSource(), interproceduralCFG().getMethodOf(callUnit),
-															((AbstractionWithPath) source).getPropagationPath(),
+													res.add(new AbstractionWithPath(new EquivalentValue(fRef), source.getSource(),
+															calleeMethod, ((AbstractionWithPath) source).getPropagationPath(),
 															exitStmt));
 												else
-													res.add(new Abstraction(source.getAccessPath().copyWithNewValue(iIExpr.getBase()),
-															source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+													res.add(new Abstraction(new EquivalentValue(fRef), source.getSource(), calleeMethod));
 											}
 										}
 									}
 								}
 							}
-							// remember that we only support max(length(accesspath))==1 -> if source is a fieldref, only its base is taken!
+
 							for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
-								if (!globalField.isStatic()) { // else is checked later
-									PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);
-									if (ptsGlobal.hasNonEmptyIntersection(ptsSource)) {
-										Local callBaseVar = null;
-										if (callUnit instanceof JAssignStmt) {
-											callBaseVar = (Local) ((InstanceInvokeExpr) ((JAssignStmt) callUnit).getInvokeExpr()).getBase();
-										}
-
-										if (callUnit instanceof JInvokeStmt) {
-											JInvokeStmt iStmt = (JInvokeStmt) callUnit;
-											Value v = iStmt.getInvokeExprBox().getValue();
-											InstanceInvokeExpr jvie = (InstanceInvokeExpr) v;
-											callBaseVar = (Local) jvie.getBase();
-										}
-										if (callBaseVar != null) {
-											SootFieldRef ref = globalField.makeRef();
-											InstanceFieldRef fRef = Jimple.v().newInstanceFieldRef(callBaseVar, ref);
-											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(new EquivalentValue(fRef), source.getSource(),
-														calleeMethod, ((AbstractionWithPath) source).getPropagationPath(),
-														exitStmt));
-											else
-												res.add(new Abstraction(new EquivalentValue(fRef), source.getSource(), calleeMethod));
-										}
+								if (globalField.isStatic()) {
+									PointsToSet ptsGlobal = pta.reachingObjects(globalField);
+									if (ptsSource.hasNonEmptyIntersection(ptsGlobal)) {
+										if (pathTracking == PathTrackingMethod.ForwardTracking)
+											res.add(new AbstractionWithPath(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())),
+													source.getSource(), interproceduralCFG().getMethodOf(callUnit),
+													((AbstractionWithPath) source).getPropagationPath(),
+													exitStmt));
+										else
+											res.add(new Abstraction(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())),
+													source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 									}
-								}
-							}
-						}
-
-						for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
-							if (globalField.isStatic()) {
-								PointsToSet ptsGlobal = pta.reachingObjects(globalField);
-								if (ptsSource.hasNonEmptyIntersection(ptsGlobal)) {
-									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										res.add(new AbstractionWithPath(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())),
-												source.getSource(), interproceduralCFG().getMethodOf(callUnit),
-												((AbstractionWithPath) source).getPropagationPath(),
-												exitStmt));
-									else
-										res.add(new Abstraction(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())),
-												source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
 								}
 							}
 						}

@@ -550,7 +550,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}
 
-						if (source.getAccessPath().isInstanceFieldRef()) {
+						// Do not try to construct a PTS if we have no base (i.e. we have a static
+						// reference) or if the base is some constant
+						if (sourceBase != null && sourceBase instanceof Local) {
 							Local thisL = null;
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
 							PointsToSet ptsSource = pta.reachingObjects((Local) sourceBase);

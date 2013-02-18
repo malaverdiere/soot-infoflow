@@ -354,10 +354,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
-							boolean isSink = isInitialMethod(interproceduralCFG().getMethodOf(dest))
+							boolean isSink = false;
+							if (source.getAccessPath().isStaticFieldRef())
+								isSink = source.getAccessPath().getField().equals(returnStmt.getOp().toString());
+							else
+								isSink = isInitialMethod(interproceduralCFG().getMethodOf(dest))
 									&& source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
-							isSink = isSink || (source.getAccessPath().isStaticFieldRef()
-									&& source.getAccessPath().getField().equals(returnStmt.getOp().toString()));
 							if (isSink) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.toString(),

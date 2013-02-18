@@ -150,8 +150,10 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_soot_classpath(path);
 //		soot.options.Options.v().set_prepend_classpath(true);
 		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
-//		Options.v().setPhaseOption("cg.spark", "on");
-		Options.v().setPhaseOption("cg.spark", "vta:true");
+		if (extraSeed == null || extraSeed.isEmpty())
+			Options.v().setPhaseOption("cg.spark", "on");
+		else
+			Options.v().setPhaseOption("cg.spark", "vta:true");
 		Options.v().setPhaseOption("jb", "use-original-names:true");
 		// do not merge variables (causes problems with PointsToSets)
 		Options.v().setPhaseOption("jb.ulp", "off");

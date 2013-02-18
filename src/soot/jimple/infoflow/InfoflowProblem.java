@@ -154,7 +154,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			}
 			if(source.getAccessPath().isStaticFieldRef()){
 				//TODO
-				System.err.println("not implemented");
 			}
 		}
 			

@@ -129,6 +129,8 @@
 <java.lang.Integer: java.lang.Integer valueOf(int)>
 <java.lang.Integer: java.lang.Integer valueOf(java.lang.String)>
 <java.lang.Integer: java.lang.Integer valueOf(java.lang.String,int)>
+<java.lang.Integer: java.lang.Integer toString(int)>
+<java.lang.Integer: java.lang.Integer toString(int,int)>
 
 <java.lang.Long: void <init>(long)>
 <java.lang.Long: void <init>(java.lang.String)>
@@ -233,3 +235,5 @@
 
 <java.util.Arrays: java.util.List asList(java.lang.Object[])>
 <java.util.Arrays: java.lang.Object[] copyOf(java.lang.Object[],int)>
+
+<java.util.UUID: void <init>(long,long)> 

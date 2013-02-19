@@ -6,4 +6,9 @@ public class ConnectionManager {
 		System.out.println(str);
 		//publish on internet...
 	}
+
+	public void publish(int i){
+		System.out.println(i + "");
+		//publish on internet...
+	}
 }

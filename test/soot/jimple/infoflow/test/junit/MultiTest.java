@@ -116,4 +116,32 @@ public class MultiTest extends JUnitTests {
 		Assert.assertTrue(infoflow.getResults().getResults().isEmpty());
     }
 
+    @Test
+    public void hashTest1(){
+    	Infoflow infoflow = initInfoflow();
+    	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void hashTestCode1()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+
+		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkStringInt, SOURCE_STRING_PWD));
+		Assert.assertEquals(1, infoflow.getResults().size());
+		Assert.assertEquals(1, infoflow.getResults().getResults().get(sinkStringInt).size());
+		Assert.assertEquals(SOURCE_STRING_PWD, infoflow.getResults().getResults().get(sinkStringInt).get(0).getSource());
+    }
+
+    @Test
+    public void shiftTest1(){
+    	Infoflow infoflow = initInfoflow();
+    	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void shiftTestCode1()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+
+		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkStringInt, SOURCE_STRING_PWD));
+		Assert.assertEquals(1, infoflow.getResults().size());
+		Assert.assertEquals(1, infoflow.getResults().getResults().get(sinkStringInt).size());
+		Assert.assertEquals(SOURCE_STRING_PWD, infoflow.getResults().getResults().get(sinkStringInt).get(0).getSource());
+    }
+
 }

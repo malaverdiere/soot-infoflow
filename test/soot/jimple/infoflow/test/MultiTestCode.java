@@ -101,15 +101,20 @@ public class MultiTestCode {
 			sendPwd(pwd, cnt - 1);
 	}
 
-	public void overwriteTestCode1(){
+	public void hashTestCode1(){
 		AccountManager am = new AccountManager();
-		String pwd = am.getPassword();
-		System.out.println(pwd);
-		
-		pwd = new String("");
-		
+		int foo = am.getPassword().hashCode();
+
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(pwd);
+		cm.publish(foo);
+	}
+
+	public void shiftTestCode1(){
+		AccountManager am = new AccountManager();
+		int foo = am.getPassword().hashCode();
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(foo << 32);
 	}
 
 }

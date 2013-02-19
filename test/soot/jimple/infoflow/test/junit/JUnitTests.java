@@ -24,6 +24,7 @@ public abstract class JUnitTests {
     protected static List<String> sources;
     protected static List<String> sinks;
     protected static final String sinkString = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(java.lang.String)>";
+    protected static final String sinkStringInt = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(int)>";
     protected static final String sourceString = "staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()";
     protected static boolean local = false;
     protected static boolean taintWrapper = false;
@@ -41,7 +42,7 @@ public abstract class JUnitTests {
         sources.add("<soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>");
         sinks = new ArrayList<String>();
         sinks.add("<soot.jimple.infoflow.test.android.ConnectionManager: void publish(java.lang.String)>");
-
+        sinks.add("<soot.jimple.infoflow.test.android.ConnectionManager: void publish(int)>");
     }
     
     @Before

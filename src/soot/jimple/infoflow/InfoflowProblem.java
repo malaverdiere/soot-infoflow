@@ -242,19 +242,17 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					Value right = assignStmt.getRightOp();
 					Value left = assignStmt.getLeftOp();
 
-					// find rightValue (remove casts):
-					right = BaseSelector.selectBase(right, true);
-
-					// find appropriate leftValue:
-					left = BaseSelector.selectBase(left, false);
-
-					final Value leftValue = left;
-					final Value rightValue = right;
+					final Value leftValue = BaseSelector.selectBase(left, false);
+					final Set<Value> rightVals = BaseSelector.selectBaseList(right, true);
 
 					return new FlowFunction<Abstraction>() {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (interproceduralCFG().getMethodOf(src).toString().contains("getChars")
+									&& src.toString().contains("l2"))
+								System.out.println("a");
+							
 							boolean addLeftValue = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
@@ -263,77 +261,80 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue)) {
 								return Collections.singleton(source);
 							}
-							// check if static variable is tainted (same name, same class)
-							if (source.getAccessPath().isStaticFieldRef()) {
-								if (rightValue instanceof StaticFieldRef) {
-									StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-									if (source.getAccessPath().getField().equals(InfoflowProblem.getStaticFieldRefStringRepresentation(rightRef))) {
-										addLeftValue = true;
-									}
-								}
-							} else {
-								// if both are fields, we have to compare their fieldName via equals and their bases via PTS
-								// might happen that source is local because of max(length(accesspath)) == 1
-								if (rightValue instanceof InstanceFieldRef) {
-									InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
-									Local rightBase = (Local) rightRef.getBase();
-									PointsToSet ptsRight = pta.reachingObjects(rightBase);
-									Local sourceBase = (Local) source.getAccessPath().getPlainValue();
-									PointsToSet ptsSource = pta.reachingObjects(sourceBase);
-									if (ptsRight.hasNonEmptyIntersection(ptsSource)) {
-										if (source.getAccessPath().isInstanceFieldRef()) {
-											if (rightRef.getField().getName().equals(source.getAccessPath().getField())) {
-												addLeftValue = true;
-											}
-										} else {
+							
+							for (Value rightValue : rightVals) {
+								// check if static variable is tainted (same name, same class)
+								if (source.getAccessPath().isStaticFieldRef()) {
+									if (rightValue instanceof StaticFieldRef) {
+										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
+										if (source.getAccessPath().getField().equals(InfoflowProblem.getStaticFieldRefStringRepresentation(rightRef))) {
 											addLeftValue = true;
 										}
 									}
-								}
-
-								// indirect taint propagation:
-								// if rightvalue is local and source is instancefield of this local:
-								if (rightValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
-									Local base = (Local) source.getAccessPath().getPlainValue(); // ?
-									PointsToSet ptsSourceBase = pta.reachingObjects(base);
-									PointsToSet ptsRight = pta.reachingObjects((Local) rightValue);
-									if (ptsSourceBase.hasNonEmptyIntersection(ptsRight)) {
-										if (leftValue instanceof Local) {
-											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(leftValue),
-														source.getSource(),
-														source.getCorrespondingMethod(),
-														((AbstractionWithPath) source).getPropagationPath(),
-														src));
-											else
-												res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftValue),
-														source.getSource(),
-														source.getCorrespondingMethod()));												
-										} else {
-											// access path length = 1 - taint entire value if left is field reference
-											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(new EquivalentValue(leftValue),
-														source.getSource(),
-														source.getCorrespondingMethod(),
-														((AbstractionWithPath) source).getPropagationPath(),
-														src));
-											else
-												res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(),
-														source.getCorrespondingMethod()));
+								} else {
+									// if both are fields, we have to compare their fieldName via equals and their bases via PTS
+									// might happen that source is local because of max(length(accesspath)) == 1
+									if (rightValue instanceof InstanceFieldRef) {
+										InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
+										Local rightBase = (Local) rightRef.getBase();
+										PointsToSet ptsRight = pta.reachingObjects(rightBase);
+										Local sourceBase = (Local) source.getAccessPath().getPlainValue();
+										PointsToSet ptsSource = pta.reachingObjects(sourceBase);
+										if (ptsRight.hasNonEmptyIntersection(ptsSource)) {
+											if (source.getAccessPath().isInstanceFieldRef()) {
+												if (rightRef.getField().getName().equals(source.getAccessPath().getField())) {
+													addLeftValue = true;
+												}
+											} else {
+												addLeftValue = true;
+											}
 										}
 									}
-								}
-
-								if (rightValue instanceof ArrayRef) {
-									Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
-									if (rightBase.equals(source.getAccessPath().getPlainValue()) || (source.getAccessPath().isLocal() && pta.reachingObjects(rightBase).hasNonEmptyIntersection(pta.reachingObjects((Local) source.getAccessPath().getPlainValue())))) {
+	
+									// indirect taint propagation:
+									// if rightvalue is local and source is instancefield of this local:
+									if (rightValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
+										Local base = (Local) source.getAccessPath().getPlainValue(); // ?
+										PointsToSet ptsSourceBase = pta.reachingObjects(base);
+										PointsToSet ptsRight = pta.reachingObjects((Local) rightValue);
+										if (ptsSourceBase.hasNonEmptyIntersection(ptsRight)) {
+											if (leftValue instanceof Local) {
+												if (pathTracking == PathTrackingMethod.ForwardTracking)
+													res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(leftValue),
+															source.getSource(),
+															source.getCorrespondingMethod(),
+															((AbstractionWithPath) source).getPropagationPath(),
+															src));
+												else
+													res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftValue),
+															source.getSource(),
+															source.getCorrespondingMethod()));												
+											} else {
+												// access path length = 1 - taint entire value if left is field reference
+												if (pathTracking == PathTrackingMethod.ForwardTracking)
+													res.add(new AbstractionWithPath(new EquivalentValue(leftValue),
+															source.getSource(),
+															source.getCorrespondingMethod(),
+															((AbstractionWithPath) source).getPropagationPath(),
+															src));
+												else
+													res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(),
+															source.getCorrespondingMethod()));
+											}
+										}
+									}
+	
+									if (rightValue instanceof ArrayRef) {
+										Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
+										if (rightBase.equals(source.getAccessPath().getPlainValue()) || (source.getAccessPath().isLocal() && pta.reachingObjects(rightBase).hasNonEmptyIntersection(pta.reachingObjects((Local) source.getAccessPath().getPlainValue())))) {
+											addLeftValue = true;
+										}
+									}
+	
+									// generic case, is true for Locals, ArrayRefs that are equal etc..
+									if (rightValue.equals(source.getAccessPath().getPlainValue())) {
 										addLeftValue = true;
 									}
-								}
-
-								// generic case, is true for Locals, ArrayRefs that are equal etc..
-								if (rightValue.equals(source.getAccessPath().getPlainValue())) {
-									addLeftValue = true;
 								}
 							}
 							// if one of them is true -> add leftValue
@@ -398,6 +399,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
+						if (dest.toString().contains("toString(int)"))
+							System.out.println("x");
 
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						Value base = source.getAccessPath().getPlainValue();
@@ -483,6 +486,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
+						if (calleeMethod.toString().contains("getChars"))
+							System.out.println("ret");
 
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
@@ -656,6 +661,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (call.toString().contains("toString(int)"))
+								System.out.println("z");
+							
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.add(source);
 

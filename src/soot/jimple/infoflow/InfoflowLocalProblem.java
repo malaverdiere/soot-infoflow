@@ -32,7 +32,6 @@ import soot.jimple.ParameterRef;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
@@ -90,11 +89,9 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 
 					// find appropriate leftValue:
 					final Value originalLeft = left;
-					left = LocalBaseSelector.selectBase(left);
-					right = LocalBaseSelector.selectBase(right);
 
-					final Value leftValue = left;
-					final Value rightValue = right;
+					final Value leftValue = LocalBaseSelector.selectBase(left);
+					final Set<Value> rightVals = LocalBaseSelector.selectBaseList(right);
 
 					return new FlowFunction<Abstraction>() {
 
@@ -104,21 +101,23 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue)) {
 								return Collections.singleton(source);
 							}
-							// for efficiency (static field refs are always propagated) we check first if field refs are matching:
-							if (source.getAccessPath().isStaticFieldRef()) {
-								// static variable can be identified by name and declaring class
-								if (rightValue instanceof StaticFieldRef) {
-									StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-									if (source.getAccessPath().getField().equals(InfoflowLocalProblem.getStaticFieldRefStringRepresentation(rightRef))) {
+							for (Value rightValue : rightVals) {
+								// for efficiency (static field refs are always propagated) we check first if field refs are matching:
+								if (source.getAccessPath().isStaticFieldRef()) {
+									// static variable can be identified by name and declaring class
+									if (rightValue instanceof StaticFieldRef) {
+										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
+										if (source.getAccessPath().getField().equals(InfoflowLocalProblem.getStaticFieldRefStringRepresentation(rightRef))) {
+											addLeftValue = true;
+										}
+									}
+								} else {
+	
+									// if objects are equal, taint is necessary
+									if (source.getAccessPath().getPlainValue().equals(rightValue)) {
+										assert source.getAccessPath().getPlainValue() instanceof Local && rightValue instanceof Local;
 										addLeftValue = true;
 									}
-								}
-							} else {
-
-								// if objects are equal, taint is necessary
-								if (source.getAccessPath().getPlainValue().equals(rightValue)) {
-									assert source.getAccessPath().getPlainValue() instanceof Local && rightValue instanceof Local;
-									addLeftValue = true;
 								}
 							}
 							// if one of them is true -> add leftValue

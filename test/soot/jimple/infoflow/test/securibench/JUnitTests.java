@@ -64,8 +64,8 @@ public abstract class JUnitTests {
     {
     	 File f = new File(".");
     	 path = System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar;"+f.getCanonicalPath() + File.separator + "bin;"+f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar";
-        System.out.println(path);
-        sources = Arrays.asList(sourceArray);
+        System.out.println("Using following locations as sources for classes: " + path);
+    	 sources = Arrays.asList(sourceArray);
         sinks = Arrays.asList(sinkArray);
 
     }

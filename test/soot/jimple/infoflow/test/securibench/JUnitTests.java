@@ -15,7 +15,6 @@ import org.junit.BeforeClass;
 
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowResults;
-import soot.jimple.infoflow.config.SootConfigForTest;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 
 public abstract class JUnitTests {
@@ -64,8 +63,8 @@ public abstract class JUnitTests {
     public static void setUp() throws IOException
     {
     	 File f = new File(".");
-    	 path = f.getCanonicalPath() + File.separator + "bin;"+f.getCanonicalPath()+ File.separator+ "servlet-api.jar";
-        
+    	 path = System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar;"+f.getCanonicalPath() + File.separator + "bin;"+f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar";
+        System.out.println(path);
         sources = Arrays.asList(sourceArray);
         sinks = Arrays.asList(sinkArray);
 
@@ -127,7 +126,7 @@ public abstract class JUnitTests {
     protected Infoflow initInfoflow(){
     	Infoflow result = new Infoflow();
     	result.setLocalInfoflow(local);
-    	SootConfigForTest testConfig = new SootConfigForTest();
+    	SootConfigSecuriBench testConfig = new SootConfigSecuriBench();
     	result.setSootConfig(testConfig);
     	if(taintWrapper){
     		EasyTaintWrapper easyWrapper;

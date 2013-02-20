@@ -249,10 +249,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
-							if (interproceduralCFG().getMethodOf(src).toString().contains("getChars")
-									&& src.toString().contains("l2"))
-								System.out.println("a");
-							
 							boolean addLeftValue = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
@@ -399,8 +395,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-						if (dest.toString().contains("toString(int)"))
-							System.out.println("x");
 
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						Value base = source.getAccessPath().getPlainValue();
@@ -486,9 +480,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
-						if (calleeMethod.toString().contains("getChars"))
-							System.out.println("ret");
-
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
 						// if we have a returnStmt we have to look at the returned value:
@@ -661,9 +652,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
-							if (call.toString().contains("toString(int)"))
-								System.out.println("z");
-							
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.add(source);
 

@@ -246,7 +246,19 @@ public class OtherTests extends JUnitTests{
 //		assertFalse(errOutputStream.toString().contains("two contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
    }
     
-    @Test
+   @Test
+   public void stringConcatTestSmall3(){
+	   Infoflow infoflow = initInfoflow();
+   		List<String> epoints = new ArrayList<String>();
+   		epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void stringConcatTestSmall3()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+//		assertTrue(errOutputStream.toString().contains("one contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+//		assertFalse(errOutputStream.toString().contains("two contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
+   }
+
+   @Test
     public void hierarchytaintedTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

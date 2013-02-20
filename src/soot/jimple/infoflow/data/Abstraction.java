@@ -1,24 +1,24 @@
 package soot.jimple.infoflow.data;
 
-import soot.EquivalentValue;
+import soot.Value;
 
 public class Abstraction {
 	private final AccessPath accessPath;
-	private final EquivalentValue source;
+	private final Value source;
 	private int hashCode;
 	
 
-	public Abstraction(EquivalentValue taint, EquivalentValue src){
+	public Abstraction(Value taint, Value src){
 		source = src;
 		accessPath = new AccessPath(taint);
 	}
 	
-	public Abstraction(AccessPath p, EquivalentValue src){
+	public Abstraction(AccessPath p, Value src){
 		source = src;
 		accessPath = p;
 	}
 	
-	public EquivalentValue getSource() {
+	public Value getSource() {
 		return source;
 	}
 	

@@ -5,6 +5,14 @@ import soot.jimple.infoflow.test.android.TelephonyManager;
 
 public class HeapTestCode {
 	
+	public void doubleCallTest(){
+		X a = new X();
+		X b = new X();
+		a.save("neutral");
+		b.save(TelephonyManager.getDeviceId());
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(String.valueOf(a.e));
+	}
 
 	public void methodTest0(){
 		X x = new X();
@@ -22,9 +30,13 @@ public class HeapTestCode {
 	}
 	
 	class X{
-		
+		public char[] e;
 		public String xx(A o){
 			return o.b;
+		}
+		
+		public void save(String f){
+			e = f.toCharArray();
 		}
 	}
 	

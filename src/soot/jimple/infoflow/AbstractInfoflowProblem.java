@@ -7,13 +7,17 @@ import java.util.Set;
 
 import soot.EquivalentValue;
 import soot.NullType;
+import soot.RefType;
 import soot.SootMethod;
 import soot.Unit;
+import soot.Value;
+import soot.jimple.Constant;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
+import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
@@ -86,8 +90,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public Abstraction createZeroValue() {
 		if (zeroValue == null) {
 			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-				new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null) :
-				new AbstractionWithPath(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null, false);
+				new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null) :
+				new AbstractionWithPath(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, false);
 		}
 
 		return zeroValue;
@@ -100,6 +104,32 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 	@Override
 	public boolean autoAddZero() {
+		return false;
+	}
+	
+	public boolean triggerReverseFlow(Value val){
+		if(DataTypeHandler.isFieldRefOrArrayRef(val) && !(val instanceof Constant)){
+			return true;
+		}
+		return false;
+	}
+	
+	public boolean triggerReverseFlow(Value val, Abstraction source){
+		if(val == null){
+			return false;
+		}
+		if(val instanceof Constant)
+			return false;
+		//no string!
+		if(val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
+			return false;
+		}
+		if(DataTypeHandler.isFieldRefOrArrayRef(val)  ||
+				source.getAccessPath().isOnlyFieldsTainted() ||
+				source.getAccessPath().isInstanceFieldRef() ||
+				source.getAccessPath().isStaticFieldRef()){
+			return true;
+		}
 		return false;
 	}
 	

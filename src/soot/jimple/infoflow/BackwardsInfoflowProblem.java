@@ -8,6 +8,7 @@ import heros.solver.PathEdge;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -15,6 +16,8 @@ import java.util.Set;
 
 import soot.EquivalentValue;
 import soot.Local;
+import soot.PrimType;
+import soot.RefType;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -34,7 +37,6 @@ import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.util.BaseSelector;
-import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
 
@@ -82,6 +84,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							
 							boolean addRightValue = false;
 							boolean keepAllFieldTaintStar = true;
 							Set<Abstraction> res = new HashSet<Abstraction>();
@@ -94,21 +97,21 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (rightValue instanceof InstanceFieldRef) {
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
 
-								if ( ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())) { //not required: DataTypeHandler.isPrimTypeOrString(ref.getField()) &&
-									Abstraction abs = new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(src), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
+								if (triggerReverseFlow(rightValue, source) && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())) { //not required: DataTypeHandler.isPrimTypeOrString(ref.getField()) &&
+									Abstraction abs = source.deriveNewAbstraction(new EquivalentValue(leftValue), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
 									// this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
 
 								}
+							}else{
+								if (rightValue.equals(source.getAccessPath().getPlainValue()) && triggerReverseFlow(rightValue, source)) {
+									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue));
+									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
+								}
 							}
 								
 
-							if (DataTypeHandler.isFieldRefOrArrayRef(rightValue) && rightValue.equals(source.getAccessPath().getPlainValue())) {
-								Abstraction abs = new Abstraction(source.getAccessPath().copyWithNewValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(src));
-								fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
-
 							
-							}
 							// termination shortcut:
 							if (leftValue.equals(source.getAccessPath().getPlainValue()) && rightValue instanceof NewExpr) {
 								return Collections.emptySet();
@@ -141,15 +144,15 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (leftValue.equals(base)) {
 										if (rightValue instanceof Local) {
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue), source.getSource(), source.getCorrespondingMethod(), ((AbstractionWithPath) source).getPropagationPath()));
+												res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue), source.getSource(), ((AbstractionWithPath) source).getPropagationPath()));
 											else
-												res.add(new Abstraction(source.getAccessPath().copyWithNewValue(rightValue), source.getSource(), source.getCorrespondingMethod()));
+												res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
 										} else {
 											// access path length = 1 - taint entire value if left is field reference
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(new EquivalentValue(rightValue), source.getSource(), source.getCorrespondingMethod(), true));
+												res.add(new AbstractionWithPath(new EquivalentValue(rightValue), source.getSource(), true));
 											else
-												res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), source.getCorrespondingMethod(), true));
+												res.add(source.deriveNewAbstraction(new EquivalentValue(rightValue), true));
 										}
 									}
 								} else if (leftValue instanceof ArrayRef) {
@@ -164,21 +167,25 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							}
 							// if one of them is true -> add rightValue
 							if (addRightValue) {
+								if(rightValue.getType() instanceof PrimType || (rightValue.getType() instanceof RefType && ((RefType)rightValue.getType()).getClassName().equals("java.lang.String"))){
+									return Collections.emptySet();
+								}
+								
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(src), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
+									res.add(new AbstractionWithPath(new EquivalentValue(rightValue), source.getSource(), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 								else
-									res.add(new Abstraction(new EquivalentValue(rightValue), source.getSource(), interproceduralCFG().getMethodOf(src), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
+									res.add(source.deriveNewAbstraction(new EquivalentValue(rightValue), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 							}
 							if (!res.isEmpty()) {
 								// we have to send forward pass, for example for
 								// $r1 = l0.<java.lang.AbstractStringBuilder: char[] value>
 								Abstraction a = res.iterator().next();
-								if (DataTypeHandler.isFieldRefOrArrayRef(a.getAccessPath().getPlainValue())) {
+								if (triggerReverseFlow(a.getAccessPath().getPlainValue(), a)) {
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, src, a));
 								}
 								return res;
 							} else {
-								return Collections.singleton(source);
+								return Collections.singleton(source); 
 							}
 
 						}
@@ -196,11 +203,15 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
+						
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
+						//we cannot determine the callargs here, so just add unconditional ones:
+						source.addCurrentCallArgs(new HashMap<Integer, Local>());
+						
 						// if the returned value is tainted - taint values from return statements
 						if (src instanceof DefinitionStmt) {
 							DefinitionStmt defnStmt = (DefinitionStmt) src;
@@ -211,9 +222,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (u instanceof ReturnStmt) {
 										ReturnStmt rStmt = (ReturnStmt) u;
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource(), interproceduralCFG().getMethodOf(src)));
+											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource()));
 										else
-											res.add(new Abstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource(), interproceduralCFG().getMethodOf(src)));
+											res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp())));
 									}
 								}
 							}
@@ -249,9 +260,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 									if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource(), interproceduralCFG().getMethodOf(src)));
+											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource()));
 										else
-											res.add(new Abstraction(source.getAccessPath().copyWithNewValue(thisL), source.getSource(), interproceduralCFG().getMethodOf(src)));
+											res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL)));
 									}
 								}
 							}
@@ -288,16 +299,19 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// check if we handle the correct return function by comparing the arguments - otherwise we return the empty set
-						if (source.getAccessPath().getcurrentArgs() != null) {
-							for (Entry<Integer, Local> entry : source.getAccessPath().getcurrentArgs().entrySet()) {
+						if (source.getcurrentArgs() != null) {
+							for (Entry<Integer, Local> entry : source.getcurrentArgs().entrySet()) {
 								if (entry.getKey() >= callArgs.size()) {
+									System.out.println("wrong size for call " + stmt + "( size: "+ callArgs.size() +") this is what I got:" + entry.getKey() + " " + entry.getValue() +  " in "+ source.getcurrentArgs());
 									return Collections.emptySet();
 								}
 								if (!callArgs.get(entry.getKey()).equals(entry.getValue())) {
+									System.out.println("arguments do not match:" + callArgs.get(entry.getKey()) + " " + entry.getValue());
 									return Collections.emptySet();
 								}
 							}
 						}
+						source.popCurrentCallArgs();
 
 						Value base = source.getAccessPath().getPlainValue();
 						Set<Abstraction> res = new HashSet<Abstraction>();
@@ -310,9 +324,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (!callee.isStatic() && callee.getActiveBody().getThisLocal().equals(base) && ie instanceof InstanceInvokeExpr) {
 								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource(), callee));
+									res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource()));
 								else
-									res.add(new Abstraction(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource(), callee));
+									res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(vie.getBase())));
 							}
 						}
 
@@ -320,9 +334,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						for (int i = 0; i < callArgs.size(); i++) {
 							if (paramLocals.get(i).equals(base)) {
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), callee));
+									res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource()));
 								else
-									res.add(new Abstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), callee));
+									res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i))));
 								// if abs. contains "neutral" -> this is the case :/ @LinkedListNegativeTest
 							}
 						}
@@ -330,9 +344,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						// staticfieldRefs must be analyzed even if they are not part of the params:
 						if (source.getAccessPath().isStaticFieldRef()) {
 							res.add(source);
-						}
-						if (callee.toString().equals("<java.util.ArrayList: boolean add(java.lang.Object)>")) {
-							System.out.println(source);
 						}
 						return res;
 					}
@@ -363,9 +374,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (vals != null) {
 										for (Value val : vals) {
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod(), false));
+												res.add(new AbstractionWithPath(new EquivalentValue(val), source.getSource(), false));
 											else
-												res.add(new Abstraction(new EquivalentValue(val), source.getSource(), source.getCorrespondingMethod()));
+												res.add(source.deriveNewAbstraction(new EquivalentValue(val), false));
 										}
 									}
 								}

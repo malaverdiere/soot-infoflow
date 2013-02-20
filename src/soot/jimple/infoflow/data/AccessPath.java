@@ -1,8 +1,5 @@
 package soot.jimple.infoflow.data;
 
-import java.util.HashMap;
-import java.util.Stack;
-
 import soot.EquivalentValue;
 import soot.Local;
 import soot.Value;
@@ -15,8 +12,6 @@ public class AccessPath {
 	private String field;
 	//in contrast to a certain value which is tainted unknownfieldtainted says that any (*) field of the value is tainted
 	private boolean unknownfieldtainted; //also known as star/*
-	//only used for backward-search to find matching call:
-	private Stack<HashMap<Integer, Local>> originalCallArgs;
 	
 	public AccessPath(Value val){
 		assert !(val instanceof EquivalentValue);
@@ -91,24 +86,6 @@ public class AccessPath {
 		this.value = new EquivalentValue(value);
 	}
 	
-	public HashMap<Integer,Local> getcurrentArgs(){
-		return originalCallArgs.peek();
-	}
-	
-	public void popCurrentCallArgs(){
-		originalCallArgs.pop();
-	}
-	
-	public void addArg(Integer i, Local l){
-		HashMap<Integer, Local> call = new HashMap<Integer, Local>();
-		call.put(i, l);
-	}
-	
-	public void addCurrentCallArgs(HashMap<Integer, Local> callArgs){
-		if(originalCallArgs == null)
-			originalCallArgs = new Stack<HashMap<Integer, Local>>();
-		originalCallArgs.push(callArgs);
-	}
 	
 	public void setValue(EquivalentValue value) {
 		this.value = value;

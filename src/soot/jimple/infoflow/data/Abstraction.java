@@ -1,31 +1,45 @@
 package soot.jimple.infoflow.data;
 
+import java.util.HashMap;
+import java.util.Stack;
+
 import soot.EquivalentValue;
-import soot.SootMethod;
+import soot.Local;
 
 public class Abstraction {
 	private final AccessPath accessPath;
 	private final EquivalentValue source;
-	private final SootMethod correspondingMethod;
-	//private final Value param; //only required for backward analysis
+	//only used for backward-search to find matching call:
+	private Stack<HashMap<Integer, Local>> originalCallArgs;
 	
 
-	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m){
+	public Abstraction(EquivalentValue taint, EquivalentValue src){
 		source = src;
-		correspondingMethod = m;
 		accessPath = new AccessPath(taint);
 	}
 	
-	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m, boolean fieldtainted){
+	protected Abstraction(EquivalentValue taint, EquivalentValue src, boolean fieldtainted){
 		source = src;
-		correspondingMethod = m;
 		accessPath = new AccessPath(taint, fieldtainted);	
 	}
 	
-	public Abstraction(AccessPath p, EquivalentValue src, SootMethod m){
+	//TODO: make private and change AwP
+	protected Abstraction(AccessPath p, EquivalentValue src){
 		source = src;
-		correspondingMethod = m;
 		accessPath = p;
+	}
+	
+	
+	public Abstraction deriveNewAbstraction(AccessPath p){
+		Abstraction a = new Abstraction(p, source);
+		a.originalCallArgs = originalCallArgs;
+		return a;
+	}
+	
+	public Abstraction deriveNewAbstraction(EquivalentValue taint, boolean fieldtainted){
+		Abstraction a = new Abstraction(new AccessPath(taint, fieldtainted), source);
+		a.originalCallArgs = originalCallArgs;
+		return a;
 	}
 	
 	public EquivalentValue getSource() {
@@ -33,10 +47,7 @@ public class Abstraction {
 	}
 	
 	
-	public SootMethod getCorrespondingMethod() {
-		return correspondingMethod;
-	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -81,6 +92,30 @@ public class Abstraction {
 	
 	public AccessPath getAccessPath(){
 		return accessPath;
+	}
+	
+	public HashMap<Integer,Local> getcurrentArgs(){
+		if(!originalCallArgs.isEmpty()){
+			return originalCallArgs.peek();
+		}
+		return null;
+	}
+	
+	public void popCurrentCallArgs(){
+		//this is possible since we start at an entryPoint and might go back in control flow
+		if(!originalCallArgs.isEmpty()){
+			originalCallArgs.pop();
+		}
+	}
+	
+	public void addCurrentCallArgs(HashMap<Integer, Local> callArgs){
+		if(callArgs.containsKey(null)){
+			System.out.println("alarm!");
+		}
+		
+		if(originalCallArgs == null)
+			originalCallArgs = new Stack<HashMap<Integer, Local>>();
+		originalCallArgs.push(callArgs);
 	}
 	
 }

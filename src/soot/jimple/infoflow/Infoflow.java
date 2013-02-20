@@ -122,6 +122,10 @@ public class Infoflow implements IInfoflow {
 		soot.options.Options.v().set_prepend_classpath(true);
 		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
 		soot.options.Options.v().setPhaseOption("cg.spark", "on");
+		//for benchmark/comparison:
+		//soot.options.Options.v().setPhaseOption("cg.spark", "vta:true");
+//		soot.options.Options.v().setPhaseOption("cg.spark", "rta:true");
+		
 		soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
 		// do not merge variables (causes problems with PointsToSets)
 		soot.options.Options.v().setPhaseOption("jb.ulp", "off");
@@ -289,7 +293,7 @@ public class Infoflow implements IInfoflow {
 					System.err.println("----------------------------------------------");
 
 					for (Abstraction l : forwardSolver.ifdsResultsAt(ret)) {
-						System.err.println(l.getCorrespondingMethod() + ": " + l.getAccessPath() + " contains value from " + l.getSource());
+						System.err.println(l.getAccessPath() + " contains value from " + l.getSource());
 					}
 					System.err.println("---");
 				}

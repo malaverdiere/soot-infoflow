@@ -20,7 +20,10 @@ public class AbstractionWithPath extends Abstraction {
 	
 	public AbstractionWithPath(EquivalentValue taint, EquivalentValue src, List<Unit> path){
 		super(taint, src);
-		propagationPath = new ArrayList<Unit>(path);
+		if (path == null)
+			propagationPath = new ArrayList<Unit>();
+		else
+			propagationPath = new ArrayList<Unit>(path);
 	}
 
 	public AbstractionWithPath(EquivalentValue taint, EquivalentValue src, List<Unit> path, Unit s){

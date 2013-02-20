@@ -48,7 +48,7 @@ public class Abstraction {
 		if (source == null) {
 			if (other.source != null)
 				return false;
-		} else if (source != other.source)
+		} else if (!source.equals(other.source))
 			return false;
 		return true;
 	}

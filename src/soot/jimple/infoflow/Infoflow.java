@@ -55,6 +55,7 @@ public class Infoflow implements IInfoflow {
 	
 	private boolean computeParamFlows = false;
 	private boolean returnIsSink = false;
+	private boolean stopAfterFirstFlow = false;
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
@@ -99,6 +100,11 @@ public class Infoflow implements IInfoflow {
 		this.returnIsSink = returnIsSink;
 	}
 
+	@Override
+	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {
+		this.stopAfterFirstFlow = stopAfterFirstFlow;
+	}
+	
 	@Override
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
 		this.computeInfoflow(path, entryPoints, new DefaultSourceSinkManager(sources, sinks));
@@ -279,6 +285,7 @@ public class Infoflow implements IInfoflow {
 				problem.setPathTracking(pathTracking);
 				problem.setComputeParamFlows(computeParamFlows);
 				problem.setReturnIsSink(returnIsSink);
+				problem.setStopAfterFirstFlow(stopAfterFirstFlow);
 
 				// We have to look through the complete program to find sources
 				// which are then taken as seeds.

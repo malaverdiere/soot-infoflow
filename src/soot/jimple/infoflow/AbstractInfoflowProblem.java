@@ -51,6 +51,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 	protected boolean computeParamFlows = false;
 	protected boolean returnIsSink = false;
+	protected boolean stopAfterFirstFlow = false;
 
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
@@ -86,6 +87,16 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		this.returnIsSink = returnIsSink;
 	}
 	
+	/**
+	 * Sets whether the information flow analysis shall stop after the first
+	 * flow has been found
+	 * @param stopAfterFirstFlow True if the analysis shall stop after the
+	 * first flow has been found, otherwise false.
+	 */
+	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {
+		this.stopAfterFirstFlow = stopAfterFirstFlow;
+	}
+
 	/**
 	 * Sets whether and how the paths between the sources and sinks shall be
 	 * tracked

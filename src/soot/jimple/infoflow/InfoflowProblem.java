@@ -212,6 +212,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
 							if (is.getRightOp() instanceof ParameterRef) {
 								if (pathTracking != PathTrackingMethod.NoTracking) {
 									List<Unit> empty = Collections.emptyList();
@@ -243,6 +245,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
+
 							boolean addLeftValue = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
@@ -341,6 +346,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
+
 							boolean isSink = false;
 							if (source.getAccessPath().isStaticFieldRef())
 								isSink = source.getAccessPath().getField().equals(returnStmt.getOp().toString());
@@ -378,6 +386,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
+						if (stopAfterFirstFlow && !results.isEmpty())
+							return Collections.emptySet();
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
@@ -465,6 +475,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
+						if (stopAfterFirstFlow && !results.isEmpty())
+							return Collections.emptySet();
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
@@ -640,6 +652,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
+
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.add(source);
 

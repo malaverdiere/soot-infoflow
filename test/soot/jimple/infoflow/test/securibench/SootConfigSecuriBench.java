@@ -22,6 +22,8 @@ public class SootConfigSecuriBench implements IInfoflowSootConfig{
 		includeList.add("soot.");
 		includeList.add("securibench.");
 		includeList.add("javax.servlet.");
+//		includeList.add("java.security.");
+//		includeList.add("javax.crypto.");
 		options.set_include(includeList);
 		options.set_output_format(Options.output_format_none);
 	}

@@ -45,7 +45,8 @@ public abstract class JUnitTests {
     	 "<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
     	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>"};
     
-    protected static final String[] refinedSourceArray = new String[]{"<javax.servlet.http.HttpServletRequest: java.lang.String getParameter(java.lang.String)>",
+    protected static final String[] refinedSourceArray = new String[]{"<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getParameter(java.lang.String)>",
     	"<javax.servlet.http.HttpServletRequest: java.lang.String[] getParameterValues(java.lang.String)>",
     	"<javax.servlet.ServletConfig: java.lang.String getInitParameter(java.lang.String)>",
     	"<javax.servlet.ServletConfig: java.util.Enumeration getInitParameterNames()>",
@@ -63,7 +64,10 @@ public abstract class JUnitTests {
     public static void setUp() throws IOException
     {
     	 File f = new File(".");
-    	 path = System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar;"+f.getCanonicalPath() + File.separator + "bin;"+f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar";
+    	 path = System.getProperty("java.home")+ File.separator + "lib"+File.separator + "jce.jar;" +
+    	 		System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar;"+
+    			 f.getCanonicalPath() + File.separator + "bin;"+
+    			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar";
         System.out.println("Using following locations as sources for classes: " + path);
     	 sources = Arrays.asList(sourceArray);
         sinks = Arrays.asList(sinkArray);

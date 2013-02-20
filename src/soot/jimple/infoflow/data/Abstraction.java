@@ -7,6 +7,7 @@ public class Abstraction {
 	private final AccessPath accessPath;
 	private final EquivalentValue source;
 	private final SootMethod correspondingMethod;
+	private int hashCode;
 	
 
 	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m){
@@ -47,18 +48,21 @@ public class Abstraction {
 		if (source == null) {
 			if (other.source != null)
 				return false;
-		} else if (!source.equals(other.source))
+		} else if (source != other.source)
 			return false;
 		return true;
 	}
 	
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
-		result = prime * result + ((source == null) ? 0 : source.hashCode());
-		return result;
+		if(hashCode == 0){
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
+			result = prime * result + ((source == null) ? 0 : source.hashCode());
+			hashCode = result;
+		}
+		return hashCode;
 	}
 	
 	@Override

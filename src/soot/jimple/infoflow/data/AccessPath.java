@@ -7,7 +7,7 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 
 public class AccessPath {
-	private EquivalentValue value;
+	private Value value;
 	private String field;
 	
 	public AccessPath(Value val){
@@ -17,40 +17,24 @@ public class AccessPath {
 			field = ref.getField().getDeclaringClass().getName() + "." + ref.getFieldRef().name();
 		} else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
-			value = new EquivalentValue(ref.getBase());
-			field = ref.getField().getName();
-		}else{
-			value = new EquivalentValue(val);
-		}
-	}
-	
-	public AccessPath(EquivalentValue val){
-		if(val.getValue() instanceof StaticFieldRef){
-			StaticFieldRef ref = (StaticFieldRef) val.getValue();
-			field = ref.getField().getDeclaringClass().getName() + "."+ref.getFieldRef().name();
-		} else if(val.getValue() instanceof InstanceFieldRef){
-			InstanceFieldRef ref = (InstanceFieldRef) val.getValue();
-			value = new EquivalentValue(ref.getBase());
+			value = ref.getBase();
 			field = ref.getField().getName();
 		}else{
 			value = val;
 		}
-		
 	}
+	
+
 	
 	public AccessPath(String staticfieldref){
 		field = staticfieldref;
 	}
 	
 	public AccessPath(Value base, String field){
-		value = new EquivalentValue(base);
-		this.field = field;
-	}
-	
-	public AccessPath(EquivalentValue base, String field){
 		value = base;
 		this.field = field;
 	}
+
 	
 	/**
 	 * replaces value and returns it if matches with val, otherwise original is returned
@@ -66,25 +50,18 @@ public class AccessPath {
 		} 
 		return this;
 	}
-	
-	public EquivalentValue getValue() {
-		return value;
-	}
-	
+		
 	public Value getPlainValue() {
 		if(value == null){
 			return null;
 		}
-		return value.getValue();
+		return value;
 	}
 	
 	public void setValue(Value value) {
-		this.value = new EquivalentValue(value);
-	}
-	
-	public void setValue(EquivalentValue value) {
 		this.value = value;
 	}
+	
 	
 	public String getField() {
 		return field;
@@ -139,7 +116,7 @@ public class AccessPath {
 	}
 	
 	public boolean isLocal(){
-		if(value != null && value.getValue() instanceof Local && field == null){
+		if(value != null && value instanceof Local && field == null){
 			return true;
 		}
 		return false;
@@ -149,7 +126,7 @@ public class AccessPath {
 	public String toString(){
 		String str = "";
 		if(value != null){
-			str += value.getValue().toString() +"(" + value.getValue().getType() +")" + " ";
+			str += value.toString() +"(" + value.getType() +")" + " ";
 		}
 		if(field != null){
 			str += field;

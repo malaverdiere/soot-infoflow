@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import soot.EquivalentValue;
 import soot.PrimType;
 import soot.Value;
 import soot.jimple.DefinitionStmt;
@@ -32,10 +31,10 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 		if(call.getInvokeExpr().getMethod().toString().contains("arraycopy")){
 			if(params.get(0).equals(source.getAccessPath().getPlainValue())){
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
-					set.add(new AbstractionWithPath(new EquivalentValue(params.get(2)),
+					set.add(new AbstractionWithPath(params.get(2),
 							source.getSource(), ((AbstractionWithPath) source).getPropagationPath()));
 				else
-					set.add(new Abstraction(new EquivalentValue(params.get(2)), source.getSource()));
+					set.add(new Abstraction(params.get(2), source.getSource()));
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
@@ -43,10 +42,10 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 				Value argValue = params.get(i);
 				if (!(argValue.getType() instanceof PrimType)) {
 					if (pathTracking == PathTrackingMethod.ForwardTracking)
-						set.add(new AbstractionWithPath(new EquivalentValue(argValue), source.getSource(),
+						set.add(new AbstractionWithPath(argValue, source.getSource(),
 								((AbstractionWithPath) source).getPropagationPath()));
 					else
-						set.add(new Abstraction(new EquivalentValue(argValue), source.getSource()));
+						set.add(new Abstraction(argValue, source.getSource()));
 				}
 			}	
 		}
@@ -54,10 +53,10 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 		if(call instanceof DefinitionStmt){
 			DefinitionStmt dStmt = (DefinitionStmt) call;
 			if (pathTracking == PathTrackingMethod.ForwardTracking)
-				set.add(new AbstractionWithPath(new EquivalentValue(dStmt.getLeftOp()),
+				set.add(new AbstractionWithPath(dStmt.getLeftOp(),
 						source.getSource(), ((AbstractionWithPath) source).getPropagationPath()));
 			else
-				set.add(new Abstraction(new EquivalentValue(dStmt.getLeftOp()), source.getSource()));
+				set.add(new Abstraction(dStmt.getLeftOp(), source.getSource()));
 		}
 		
 		return set;

@@ -6,7 +6,6 @@ import java.util.Set;
 
 import soot.EquivalentValue;
 import soot.PrimType;
-import soot.SootMethod;
 import soot.Value;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.Stmt;
@@ -22,7 +21,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 		this.pathTracking = method;
 	}
 
-	public Set<Abstraction> getTaintedValues(Stmt call, Abstraction source, List<Value> params, SootMethod m){
+	public Set<Abstraction> getTaintedValues(Stmt call, Abstraction source, List<Value> params){
 		HashSet<Abstraction> set = new HashSet<Abstraction>();
 		
 		//check some evaluated methods:
@@ -34,9 +33,9 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			if(params.get(0).equals(source.getAccessPath().getPlainValue())){
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					set.add(new AbstractionWithPath(new EquivalentValue(params.get(2)),
-							source.getSource(), m, ((AbstractionWithPath) source).getPropagationPath()));
+							source.getSource(), ((AbstractionWithPath) source).getPropagationPath()));
 				else
-					set.add(new Abstraction(new EquivalentValue(params.get(2)), source.getSource(), m));
+					set.add(new Abstraction(new EquivalentValue(params.get(2)), source.getSource()));
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
@@ -44,10 +43,10 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 				Value argValue = params.get(i);
 				if (!(argValue.getType() instanceof PrimType)) {
 					if (pathTracking == PathTrackingMethod.ForwardTracking)
-						set.add(new AbstractionWithPath(new EquivalentValue(argValue), source.getSource(), m,
+						set.add(new AbstractionWithPath(new EquivalentValue(argValue), source.getSource(),
 								((AbstractionWithPath) source).getPropagationPath()));
 					else
-						set.add(new Abstraction(new EquivalentValue(argValue), source.getSource(), m));
+						set.add(new Abstraction(new EquivalentValue(argValue), source.getSource()));
 				}
 			}	
 		}
@@ -56,9 +55,9 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			DefinitionStmt dStmt = (DefinitionStmt) call;
 			if (pathTracking == PathTrackingMethod.ForwardTracking)
 				set.add(new AbstractionWithPath(new EquivalentValue(dStmt.getLeftOp()),
-						source.getSource(), m, ((AbstractionWithPath) source).getPropagationPath()));
+						source.getSource(), ((AbstractionWithPath) source).getPropagationPath()));
 			else
-				set.add(new Abstraction(new EquivalentValue(dStmt.getLeftOp()), source.getSource(), m));
+				set.add(new Abstraction(new EquivalentValue(dStmt.getLeftOp()), source.getSource()));
 		}
 		
 		return set;

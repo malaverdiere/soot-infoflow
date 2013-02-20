@@ -1,24 +1,20 @@
 package soot.jimple.infoflow.data;
 
 import soot.EquivalentValue;
-import soot.SootMethod;
 
 public class Abstraction {
 	private final AccessPath accessPath;
 	private final EquivalentValue source;
-	private final SootMethod correspondingMethod;
 	private int hashCode;
 	
 
-	public Abstraction(EquivalentValue taint, EquivalentValue src, SootMethod m){
+	public Abstraction(EquivalentValue taint, EquivalentValue src){
 		source = src;
-		correspondingMethod = m;
 		accessPath = new AccessPath(taint);
 	}
 	
-	public Abstraction(AccessPath p, EquivalentValue src, SootMethod m){
+	public Abstraction(AccessPath p, EquivalentValue src){
 		source = src;
-		correspondingMethod = m;
 		accessPath = p;
 	}
 	
@@ -26,10 +22,6 @@ public class Abstraction {
 		return source;
 	}
 	
-	
-	public SootMethod getCorrespondingMethod() {
-		return correspondingMethod;
-	}
 	
 	@Override
 	public boolean equals(Object obj) {

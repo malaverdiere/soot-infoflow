@@ -67,7 +67,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 								if (pathTracking != PathTrackingMethod.NoTracking) {
 									List<Unit> empty = Collections.emptyList();
 									Abstraction abs = new AbstractionWithPath(new EquivalentValue(is.getLeftOp()),
-										new EquivalentValue(is.getRightOp()), interproceduralCFG().getMethodOf(src),
+										new EquivalentValue(is.getRightOp()),
 										empty,
 										is);
 									return Collections.singleton(abs);
@@ -75,7 +75,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 								else
 									return Collections.singleton
 										(new Abstraction(new EquivalentValue(is.getLeftOp()),
-										new EquivalentValue(is.getRightOp()), interproceduralCFG().getMethodOf(src)));
+										new EquivalentValue(is.getRightOp())));
 							}
 							return Collections.singleton(source);
 						}
@@ -124,7 +124,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 							if (addLeftValue) {
 								Set<Abstraction> res = new HashSet<Abstraction>();
 								res.add(source);
-								res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource(), interproceduralCFG().getMethodOf(src)));
+								res.add(new Abstraction(new EquivalentValue(leftValue), source.getSource()));
 
 								SootMethod m = interproceduralCFG().getMethodOf(src);
 								if (originalLeft instanceof InstanceFieldRef) {
@@ -135,9 +135,9 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 										// for normal analysis this would be enough but since this is local analysis we have to "truncate" instancefieldrefs
 										// res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(src)));
 										if (v instanceof InstanceFieldRef) {
-											res.add(new Abstraction(new EquivalentValue(((InstanceFieldRef) v).getBase()), source.getSource(), interproceduralCFG().getMethodOf(src)));
+											res.add(new Abstraction(new EquivalentValue(((InstanceFieldRef) v).getBase()), source.getSource()));
 										} else {
-											res.add(new Abstraction(new EquivalentValue(v), source.getSource(), interproceduralCFG().getMethodOf(src)));
+											res.add(new Abstraction(new EquivalentValue(v), source.getSource()));
 										}
 									}
 								}
@@ -175,20 +175,20 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 							// this might be enough because every call must happen with a local variable which is tainted itself:
 							if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
-								res.add(new Abstraction(new EquivalentValue(dest.getActiveBody().getThisLocal()), source.getSource(), dest));
+								res.add(new Abstraction(new EquivalentValue(dest.getActiveBody().getThisLocal()), source.getSource()));
 							}
 						}
 
 						// check if param is tainted:
 						for (int i = 0; i < callArgs.size(); i++) {
 							if (callArgs.get(i).equals(source.getAccessPath().getPlainValue())) {
-								Abstraction abs = new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource(), dest);
+								Abstraction abs = new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource());
 								res.add(abs);
 							}
 							// because params are locals, we compare with the class of staticfieldref, not the field
 							if (source.getAccessPath().isStaticFieldRef()) {
 								if (source.getAccessPath().getField().substring(0, source.getAccessPath().getField().lastIndexOf('.')).equals((callArgs.get(i)).getType().toString())) {
-									Abstraction abs = new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource(), dest);
+									Abstraction abs = new Abstraction(new EquivalentValue(paramLocals.get(i)), source.getSource());
 									res.add(abs);
 								}
 							}
@@ -223,13 +223,13 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 								DefinitionStmt defnStmt = (DefinitionStmt) callUnit;
 								Value leftOp = defnStmt.getLeftOp();
 								if (retLocal.equals(source.getAccessPath().getPlainValue())) {
-									res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(leftOp)), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+									res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(leftOp)), source.getSource()));
 								}
 								//this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
 								Set<Value> aliases = getAliasesinMethod(calleeMethod.getActiveBody().getUnits(), retSite, retLocal, null);
 								for (Value v : aliases) {
 									if(v.equals(source.getAccessPath().getPlainValue())){
-										res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(leftOp)), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+										res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(leftOp)), source.getSource()));
 									}
 								}
 							}
@@ -249,7 +249,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 									iIExpr = (InstanceInvokeExpr) ((JAssignStmt) callUnit).getInvokeExpr();
 								}
 								if (iIExpr != null) {
-									res.add(new Abstraction(new EquivalentValue(iIExpr.getBase()), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+									res.add(new Abstraction(new EquivalentValue(iIExpr.getBase()), source.getSource()));
 								}
 							}
 
@@ -263,7 +263,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 								if (globalField.isStatic()) {
 									PointsToSet ptsGlobal = pta.reachingObjects(globalField);
 									if (ptsSource.hasNonEmptyIntersection(ptsGlobal)) {
-										res.add(new Abstraction(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())), source.getSource(), calleeMethod));
+										res.add(new Abstraction(new EquivalentValue(Jimple.v().newStaticFieldRef(globalField.makeRef())), source.getSource()));
 									}
 								} else {
 									// new approach
@@ -281,7 +281,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 											base = (Local) jvie.getBase();
 										}
 										if (base != null) {
-											res.add(new Abstraction(new EquivalentValue(base), source.getSource(), calleeMethod));
+											res.add(new Abstraction(new EquivalentValue(base), source.getSource()));
 										}
 									}
 									if (!calleeMethod.isStatic()) {
@@ -300,7 +300,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 												base = (Local) jvie.getBase();
 											}
 											if (base != null) {
-												res.add(new Abstraction(new EquivalentValue(base), source.getSource(), calleeMethod));
+												res.add(new Abstraction(new EquivalentValue(base), source.getSource()));
 											}
 										}
 									}
@@ -311,7 +311,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 								if (calleeMethod.getActiveBody().getParameterLocal(i).equals(source.getAccessPath().getPlainValue())) {
 									if (callUnit instanceof Stmt) {
 										Stmt iStmt = (Stmt) callUnit;
-										res.add(new Abstraction(new EquivalentValue(iStmt.getInvokeExpr().getArg(i)), source.getSource(), interproceduralCFG().getMethodOf(callUnit)));
+										res.add(new Abstraction(new EquivalentValue(iStmt.getInvokeExpr().getArg(i)), source.getSource()));
 									}
 								}
 							}
@@ -323,7 +323,6 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 			}
 
 			public FlowFunction<Abstraction> getCallToReturnFlowFunction(final Unit call, Unit returnSite) {
-				final Unit unit = returnSite;
 				if (call instanceof Stmt) {
 					final Stmt iStmt = (Stmt) call;
 
@@ -339,14 +338,14 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 								if (callArgs.contains(source.getAccessPath().getPlainValue())) {
 									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
 									NativeCallHandler ncHandler = new DefaultNativeCallHandler();
-									res.addAll(ncHandler.getTaintedValues(iStmt, source, callArgs, interproceduralCFG().getMethodOf(unit)));
+									res.addAll(ncHandler.getTaintedValues(iStmt, source, callArgs));
 								}
 							}
 							if (iStmt instanceof JAssignStmt) {
 								final JAssignStmt stmt = (JAssignStmt) iStmt;
 
 								if (sourceSinkManager.isSourceMethod(stmt.getInvokeExpr().getMethod())) {
-									res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(stmt.getLeftOp())), new EquivalentValue(stmt.getInvokeExpr()), interproceduralCFG().getMethodOf(unit)));
+									res.add(new Abstraction(new EquivalentValue(LocalBaseSelector.selectBase(stmt.getLeftOp())), new EquivalentValue(stmt.getInvokeExpr())));
 								}
 							}
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
@@ -425,7 +424,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 	public Abstraction createZeroValue() {
 		if (zeroValue == null) {
 			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-					new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null) :
+					new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null) :
 					new AbstractionWithPath(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, null);
 		}
 		return zeroValue;

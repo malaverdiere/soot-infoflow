@@ -50,6 +50,10 @@ public class InfoflowResults {
 		return this.results.size();
 	}
 	
+	public boolean isEmpty() {
+		return this.results.isEmpty();
+	}
+	
 	public boolean containsSink(String sink) {
 		return this.getResults().containsKey(sink);
 	}

@@ -380,7 +380,7 @@ public class Infoflow implements IInfoflow {
 				results = problem.results;
 				if (results.getResults().isEmpty())
 					System.out.println("No results found.");
-				for (Entry<String, List<SourceInfo>> entry : results.getResults().entrySet()) {
+				for (Entry<String, Set<SourceInfo>> entry : results.getResults().entrySet()) {
 					System.out.println("The sink " + entry.getKey() + " was called with values from the following sources:");
 					for (SourceInfo source : entry.getValue()) {
 						System.out.println("- " + source.getSource());

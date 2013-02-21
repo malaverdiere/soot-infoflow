@@ -2,8 +2,10 @@ package soot.jimple.infoflow;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Class for collecting information flow results
@@ -38,9 +40,24 @@ public class InfoflowResults {
 		public List<String> getPath() {
 			return this.path;
 		}
+		
+		@Override
+		public int hashCode() {
+			return 31 * this.source.hashCode();
+		}
+		
+		@Override
+		public boolean equals(Object o) {
+			if (super.equals(o))
+				return true;
+			if (o == null || !(o instanceof SourceInfo))
+				return false;
+			SourceInfo si = (SourceInfo) o;
+			return this.source.equals(si.source);
+		}
 	}
 
-	private final Map<String, List<SourceInfo>> results = new HashMap<String, List<SourceInfo>>();
+	private final Map<String, Set<SourceInfo>> results = new HashMap<String, Set<SourceInfo>>();
 	
 	public InfoflowResults() {
 		
@@ -73,20 +90,27 @@ public class InfoflowResults {
 	}
 
 	public void addResult(String sink, SourceInfo source) {
-		List<SourceInfo> sourceInfo = this.results.get(sink);
+		Set<SourceInfo> sourceInfo = this.results.get(sink);
 		if (sourceInfo == null) {
-			sourceInfo = new ArrayList<SourceInfo>();
+			sourceInfo = new HashSet<SourceInfo>();
 			this.results.put(sink, sourceInfo);
 		}
 		sourceInfo.add(source);
 	}
 
-	public Map<String, List<SourceInfo>> getResults() {
+	public Map<String, Set<SourceInfo>> getResults() {
 		return this.results;
 	}
 	
+	/**
+	 * Checks whether there is a path between the given source and sink.
+	 * @param sink The sink to which there may be a path
+	 * @param source The source from which there may be a path
+	 * @return True if there is a path between the given source and sink, false
+	 * otherwise
+	 */
 	public boolean isPathBetween(String sink, String source) {
-		List<SourceInfo> sources = this.results.get(sink);
+		Set<SourceInfo> sources = this.results.get(sink);
 		if (sources == null)
 			return false;
 		for (SourceInfo src : sources)
@@ -96,14 +120,15 @@ public class InfoflowResults {
 	}
 	
 	/**
-	 * in contrast to isPathBetween-Method, this method does not require a specific source-call but the 
-	 * soot-signature of the source method. 
-	 * @param sink
-	 * @param source
-	 * @return
+	 * in contrast to isPathBetween-Method, this method does not require a
+	 * specific source-call but the soot-signature of the source method. 
+	 * @param sink The sink to which there may be a path
+	 * @param source The source from which there may be a path
+	 * @return True if there is a path between the given source and sink, false
+	 * otherwise
 	 */
 	public boolean isPathBetweenSourceMethod(String sink, String source) {
-		List<SourceInfo> sources = this.results.get(sink);
+		Set<SourceInfo> sources = this.results.get(sink);
 		if (sources == null)
 			return false;
 		for (SourceInfo src : sources)

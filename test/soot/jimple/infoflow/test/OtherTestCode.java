@@ -117,4 +117,27 @@ public class OtherTestCode {
 		
 	}
 	
+	private String deviceId = "";
+	
+	public interface MyInterface {
+		void doSomething();
+	}
+	
+	public void innerClassTest() {
+		this.deviceId = TelephonyManager.getDeviceId();
+		runIt(new MyInterface() {
+			
+			@Override
+			public void doSomething() {
+				ConnectionManager cm = new ConnectionManager();
+				cm.publish(deviceId);
+			}
+			
+		});
+	}
+	
+	private void runIt(MyInterface intf) {
+		intf.doSomething();
+	}
+	
 }

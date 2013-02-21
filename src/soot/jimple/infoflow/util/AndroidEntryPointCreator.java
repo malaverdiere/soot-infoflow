@@ -74,7 +74,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
  		SootMethod mainMethod = createEmptyMainMethod(body);
 		
 		generator = new LocalGenerator(body);
-		HashMap<String, Local> localVarsForClasses = new HashMap<String, Local>();
 				
 		// add entrypoint calls
 		conditionCounter = 0;

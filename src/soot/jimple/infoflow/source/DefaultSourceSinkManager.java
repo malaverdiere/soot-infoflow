@@ -4,7 +4,7 @@ import java.util.List;
 
 import soot.SootMethod;
 
-public class DefaultSourceSinkManager implements SourceSinkManager {
+public class DefaultSourceSinkManager extends MethodBasedSourceSinkManager {
 
 	private List<String> sources;
 	private List<String> sinks;

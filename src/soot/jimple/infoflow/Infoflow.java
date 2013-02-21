@@ -25,7 +25,6 @@ import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
 import soot.dexpler.DexResolver;
-import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
@@ -315,12 +314,11 @@ public class Infoflow implements IInfoflow {
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
 							if (s.containsInvokeExpr()) {
-								InvokeExpr ie = s.getInvokeExpr();
-								if (sourcesSinks.isSourceMethod(ie.getMethod())) {
+								if (sourcesSinks.isSource(s)) {
 									problem.initialSeeds.add(u);
 									System.out.println("Source found: " + u);
 								}
-								if (sourcesSinks.isSinkMethod(ie.getMethod())) {
+								if (sourcesSinks.isSink(s)) {
 									System.out.println("Sink found: " + u);
 									hasSink = true;
 								}

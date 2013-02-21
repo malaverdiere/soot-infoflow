@@ -170,11 +170,14 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				List<String> entryPoints = entry.getValue();
 				
 				// 1. onCreate:
-				JNopStmt onCreateStmt = searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONCREATE, currentClass, entryPoints, classLocal);
+				JNopStmt onCreateStmt = searchAndBuildMethod
+						(AndroidEntryPointConstants.ACTIVITY_ONCREATE, currentClass, entryPoints, classLocal);
 				//2. onStart:
-				JNopStmt onStartStmt = searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSTART, currentClass, entryPoints, classLocal);
+				JNopStmt onStartStmt = searchAndBuildMethod
+						(AndroidEntryPointConstants.ACTIVITY_ONSTART, currentClass, entryPoints, classLocal);
 				//3. onResume:
-				JNopStmt onResumeStmt = searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONRESUME, currentClass, entryPoints, classLocal);
+				JNopStmt onResumeStmt = searchAndBuildMethod
+						(AndroidEntryPointConstants.ACTIVITY_ONRESUME, currentClass, entryPoints, classLocal);
 	
 				
 				//all other entryPoints of this class:

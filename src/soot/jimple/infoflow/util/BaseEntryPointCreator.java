@@ -9,7 +9,6 @@ import soot.BooleanType;
 import soot.ByteType;
 import soot.CharType;
 import soot.G;
-import soot.IntType;
 import soot.Local;
 import soot.RefType;
 import soot.Scene;
@@ -112,7 +111,6 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			body.getUnits().add(aStmt);
 			return varLocal;
 		} else {
-
 			List<SootMethod> methodList =  createdClass.getMethods();
 			Local returnLocal = null;
 			LocalGenerator generator = new LocalGenerator(body);
@@ -122,9 +120,9 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
 			body.getUnits().add(assignStmt);
 			
-			
+			// Find a constructor we can invoke
 			for (SootMethod currentMethod : methodList) {
-				if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
+				if (currentMethod.isPublic() && currentMethod.isConstructor()) {
 					List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
 					List<Object> params = new LinkedList<Object>();
 					for (Type type : typeList) {

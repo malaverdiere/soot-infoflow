@@ -289,7 +289,8 @@ public class Infoflow implements IInfoflow {
 
 				// We have to look through the complete program to find sources
 				// which are then taken as seeds.
-				System.out.println("Looking for sources...");
+				boolean hasSink = false;
+				System.out.println("Looking for sources and sinks...");
 				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
 				eps.addAll(Scene.v().getEntryPoints());
 				ReachableMethods reachableMethods = new ReachableMethods(Scene.v().getCallGraph(), eps.iterator(), null);
@@ -307,7 +308,9 @@ public class Infoflow implements IInfoflow {
 							else
 								classes.put(m.getDeclaringClass().getName(), m.getActiveBody().toString());
 						
-						// Look for a source in the method
+						// Look for a source in the method. Also look for sinks. If we
+						// have no sink in the program, we don't need to perform any
+						// analysis
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
@@ -317,8 +320,13 @@ public class Infoflow implements IInfoflow {
 									problem.initialSeeds.add(u);
 									System.out.println("Source found: " + u);
 								}
+								if (sourcesSinks.isSinkMethod(ie.getMethod())) {
+									System.out.println("Sink found: " + u);
+									hasSink = true;
+								}
 							}
 						}
+						
 					}
 				}
 				
@@ -345,8 +353,8 @@ public class Infoflow implements IInfoflow {
 					
 					}
 				
-				if(problem.initialSeeds.isEmpty()){
-					System.err.println("No Sources found!");
+				if (problem.initialSeeds.isEmpty() || !hasSink){
+					System.err.println("No sources or sinks found, aborting analysis");
 					return;
 				}
 				System.out.println("Source lookup done, found " + problem.initialSeeds.size() + " sources.");

@@ -17,8 +17,8 @@ import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
+import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.DataTypeHandler;
-import soot.jimple.infoflow.util.ITaintPropagationWrapper;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 
@@ -43,6 +43,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		 */
 		ForwardTracking
 	}
+
+	
 	
 	protected final Set<Unit> initialSeeds = new HashSet<Unit>();
 	protected final InfoflowResults results;
@@ -53,6 +55,9 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 
 	Abstraction zeroValue = null;
 	
+	protected boolean computeParamFlows = false;
+	protected boolean returnIsSink = false;
+
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
 		results = new InfoflowResults();
@@ -72,6 +77,26 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 	/**
+	 * Sets whether the parameters of the entry point methods shall be considered
+	 * as sources
+	 * @param computeParamFlows True if entry point parameters are sources,
+	 * otherwise false
+	 */
+	public void setComputeParamFlows(boolean computeParamFlows) {
+		this.computeParamFlows = computeParamFlows;
+	}
+	
+	/**
+	 * Sets whether the return statements of the entry point methods shall be
+	 * considered as sinks
+	 * @param returnIsSink True if entry point return values are sinks,
+	 * otherwise false
+	 */
+	public void setReturnIsSink(boolean returnIsSink) {
+		this.returnIsSink = returnIsSink;
+	}
+	
+	/**
 	 * Sets whether and how the paths between the sources and sinks shall be
 	 * tracked
 	 * @param method The method for tracking data flow paths through the
@@ -81,6 +106,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		this.pathTracking = method;
 		this.ncHandler.setPathTracking(method);
 	}
+	
+
 	
 	protected static String getStaticFieldRefStringRepresentation(StaticFieldRef ref){
 		return ref.getField().getDeclaringClass().getName() + "."+ref.getFieldRef().name();
@@ -93,9 +120,27 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 				new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null) :
 				new AbstractionWithPath(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, false);
 		}
-
 		return zeroValue;
 	}
+	
+	public InfoflowResults getResults(){
+	    return results;
+	}
+
+	/**
+	 * Gets whether the given method is an entry point, i.e. one of the initial
+	 * seeds belongs to the given method
+	 * @param sm The method to check
+	 * @return True if the given method is an entry point, otherwise false
+	 */
+	protected boolean isInitialMethod(SootMethod sm) {
+		for (Unit u : this.initialSeeds)
+			if (interproceduralCFG().getMethodOf(u) == sm)
+				return true;
+		return false;
+	}
+
+	
 	
 	@Override
 	public Set<Unit> initialSeeds() {

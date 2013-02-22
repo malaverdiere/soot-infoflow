@@ -1,6 +1,5 @@
-package soot.jimple.infoflow.util;
-
-import java.io.BufferedReader;
+package soot.jimple.infoflow.taintWrappers;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -16,10 +15,15 @@ import soot.Value;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.internal.JAssignStmt;
+
 /**
- * A list of methods is passed which contains signatures of methods which taint their base objects if they are called with a tainted parameter
+ * A list of methods is passed which contains signatures of instance methods
+ * that taint their base objects if they are called with a tainted parameter.
  * When a base object is tainted, all return values are tainted, too.
+ * For static methods, only the return value is assumed to be be tainted when
+ * the method is called with a tainted parameter value.
  * 
  * @author Christian
  *
@@ -52,25 +56,11 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		}
 	}
 	
-	//TODO: only classes from jdk etc
 	@Override
 	public boolean supportsTaintWrappingForClass(SootClass c) {
-		if(classList.containsKey(c.getName())){
-			return true;
-		}
-		if(!c.isInterface()){
-			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
-			for(SootClass sclass : superclasses){
-				if(classList.containsKey(sclass.getName()))
-					return true;
-			}
-		}
-		for(String interfaceString : classList.keySet()){
-			if(c.implementsInterface(interfaceString))
-				return true;
-		}
-		
-		return false;
+		// We can't tell without knowing whether the base object is tainted, so
+		// we accept all objects here and filter later on
+		return true;
 	}
 
 	@Override
@@ -113,21 +103,34 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		if(classList.containsKey(c.getName())){
 			methodList.addAll(classList.get(c.getName()));
 		}
-		if(!c.isInterface()){
+		
+		if(!c.isInterface()) {
+			// We have to walk up the hierarchy to also include all methods
+			// registered for superclasses
 			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
 			for(SootClass sclass : superclasses){
 				if(classList.containsKey(sclass.getName()))
-					methodList.addAll(classList.get(sclass.getName()));
+					methodList.addAll(getMethodsForClass(sclass));
 			}
 		}
-
-		for(String interfaceString : classList.keySet()){
-			if(c.implementsInterface(interfaceString))
-				methodList.addAll(classList.get(interfaceString));
-		}
+		
+		// If we implement interfaces, we also need to check whether they in
+		// turn are in our method list
+		for (SootClass ifc : c.getInterfaces())
+			methodList.addAll(getMethodsForClass(ifc));
+		
 		return methodList;
 	}
 
+	@Override
+	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
+		SootMethod method = stmt.getInvokeExpr().getMethod();
+		if (getMethodsForClass(method.getDeclaringClass()).contains(method.getSubSignature()))
+			return true;
+		
+		return false;
+	}
+	
 	@Override
 	public boolean supportsBackwardWrapping() {
 		return true;
@@ -154,6 +157,5 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	
 		return taints;
 	}
-
 
 }

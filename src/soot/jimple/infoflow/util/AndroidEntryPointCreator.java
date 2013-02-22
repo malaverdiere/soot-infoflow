@@ -16,6 +16,7 @@ import soot.javaToJimple.LocalGenerator;
 import soot.jimple.IntConstant;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
+import soot.jimple.infoflow.data.SootMethodAndClass;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JEqExpr;
 import soot.jimple.internal.JGotoStmt;
@@ -38,7 +39,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	
 	/**
 	 *  Soot requires a main method, so we create a dummy method which calls all entry functions. 
-	 *  Androids components are detected and treated according to their lifecycles.  
+	 *  Androids components are detected and treated according to their lifecycles. This also
+	 *  forces the classes in the list to be resolved.
 	 *  
 	 * @param methodSignatureList a list of method signatures in soot syntax ( <class: returntype methodname(arguments)> )
 	 * @return the dummyMethod which was created
@@ -46,6 +48,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	public SootMethod createDummyMain(List<String> methodSignatureList){
 		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
 		HashMap<String, List<String>> classes = parser.parseClassNames(methodSignatureList, false);
+		
+		for (String className : classes.keySet()) {
+			SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
+			c.setApplicationClass();
+		}
+		
 		return createDummyMain(classes);
 	}
 	
@@ -88,7 +96,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			
 			//Scene.v().getSootClass("android.app.Activity");
 			List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
-			for(SootClass sc :extendedClasses){
+			for(SootClass sc : extendedClasses){
 				if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS)){
 					activity = true;
 				}
@@ -106,27 +114,48 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			if(!activity && !service && !broadcastReceiver && !contentProvider)
 				plain = true;
 
-			//check if one of the methods is instance:
+			// Check if one of the methods is instance. This tells us whether
+			// we need to create a constructor invocation or not. Furthermore,
+			// we collect references to the corresponding SootMethod objects.
 			boolean instanceNeeded = activity || service || broadcastReceiver || contentProvider;
 			Map<String, SootMethod> plainMethods = new HashMap<String, SootMethod>();
+			SootMethodRepresentationParser methodParser = new SootMethodRepresentationParser();
 			if (!instanceNeeded || plain)
 				for(String method : entry.getValue()){
-					if(Scene.v().containsMethod(method)){
-						SootMethod m = Scene.v().getMethod(method);
-						plainMethods.put(method, m);
-						if(!m.isStatic()){
-							instanceNeeded = true;
-							break;
+					SootMethod sm = null;
+					
+					// Find the method. It may either be implemented directly in the
+					// given class or it may be inherited from one of the superclasses.
+					if(Scene.v().containsMethod(method))
+						sm = Scene.v().getMethod(method);
+					else {
+						SootMethodAndClass methodAndClass = methodParser.parseSootMethodString(method);
+						if (!Scene.v().containsClass(methodAndClass.getClassString())) {
+							System.err.println("Class for entry point " + method + " not found, skipping...");
+							continue;
+						}
+						for (SootClass sc : Scene.v().getActiveHierarchy().getSuperclassesOf
+								(Scene.v().getSootClass(methodAndClass.getClassString()))) {
+							if (sc.declaresMethodByName(methodAndClass.getSootMethod().getName())) {
+								sm = sc.getMethodByName(methodAndClass.getSootMethod().getName());
+								break;
+							}
+						}
+						if (sm == null) {
+							System.err.println("Method for entry point " + method + " not found in class, skipping...");
+							continue;
 						}
 					}
+
+					plainMethods.put(method, sm);
+					if(!sm.isStatic())
+						instanceNeeded = true;
 				}
-						
+			
 			// if we need to call a constructor, we insert the respective Jimple statement here
 			if(instanceNeeded){
 				String className = entry.getKey();
 				SootClass createdClass = Scene.v().getSootClass(className);
-				if (className.contains("AccountManager"))
-					System.out.println("x");
 				if (isConstructorGenerationPossible(createdClass)) {
 					Local localVal = generateClassConstructor(createdClass, body);
 					localVarsForClasses.put(className, localVal);

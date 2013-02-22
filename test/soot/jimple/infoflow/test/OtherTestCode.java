@@ -98,6 +98,23 @@ public class OtherTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(one);
+	
+	}
+	
+	public void stringConcatTestSmall3(){
+		String tainted = TelephonyManager.getDeviceId();
+		String concat1 = tainted.concat("eins");
+		String two = "zwei";
+		String concat2 = two.concat(tainted);
+		
+		ConnectionManager cm = new ConnectionManager();
+		//this way it does not work:
+		cm.publish(concat1.concat(concat2).concat("foo"));
+		//this way, it works:
+//		cm.publish(concat1);
+//		cm.publish(concat2);
+//		cm.publish(concat3);
 		
 	}
+	
 }

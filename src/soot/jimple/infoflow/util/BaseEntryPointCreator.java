@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 import soot.BooleanType;
+import soot.ByteType;
+import soot.CharType;
 import soot.G;
 import soot.IntType;
 import soot.Local;
 import soot.RefType;
 import soot.Scene;
+import soot.ShortType;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Type;
@@ -126,7 +129,12 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 					List<Object> params = new LinkedList<Object>();
 					for (Type type : typeList) {
 						String typeName = type.toString().replaceAll("\\[\\]]", "");
-						if (Scene.v().containsClass(typeName)) {
+						if (isSimpleType(type.toString()))
+						{
+							Local primLoc = createPrimitiveLocal(generator, body, type);
+							params.add(primLoc);
+						}
+						else if (Scene.v().containsClass(typeName)) {
 							SootClass typeClass = Scene.v().getSootClass(typeName);
 							// 2. Type not public:
 							if (!typeClass.isPrivate() && !typeClass.toString().equals(createdClass.toString())) { // avoid loops
@@ -134,23 +142,10 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 							}else{
 								params.add(NullConstant.v());
 							}
-						} else {
-							if(typeName.equals("int")){
-								Local varLocal =  generator.generateLocal(IntType.v());
-								
-								AssignStmt aStmt = Jimple.v().newAssignStmt(varLocal, getSimpleDefaultValue(typeName));
-								body.getUnits().add(aStmt);
-								params.add(varLocal);
-							}else if(typeName.equals("boolean")){
-								Local varLocal =  generator.generateLocal(BooleanType.v());
-								
-								AssignStmt aStmt = Jimple.v().newAssignStmt(varLocal, getSimpleDefaultValue(typeName));
-								body.getUnits().add(aStmt);
-								params.add(varLocal);
-							}else{
-								System.out.println("Warnung - Type not found: "+typeName);
-								params.add(generateClassConstructor(Scene.v().getSootClass("java.lang.Object"), body));
-							}
+						}
+						else {
+							System.out.println("Type not found: " + typeName + ", using java.lang.Object instead");
+							params.add(generateClassConstructor(Scene.v().getSootClass("java.lang.Object"), body));
 						}
 					}
 					VirtualInvokeExpr vInvokeExpr;
@@ -176,9 +171,18 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		}
 	}
 
-	private Type getSimpleTypeFromType(RefType type) {
-		if (type.toString().equals("java.lang.String"))
-			return RefType.v(type.getSootClass());
+	private Local createPrimitiveLocal(LocalGenerator generator, JimpleBody body, Type type) {
+		Local varLocal = generator.generateLocal(getSimpleTypeFromType(type));
+		AssignStmt aStmt = Jimple.v().newAssignStmt(varLocal, getSimpleDefaultValue(type.toString()));
+		body.getUnits().add(aStmt);
+		return varLocal;
+	}
+
+	private Type getSimpleTypeFromType(Type type) {
+		if (type.toString().equals("java.lang.String")) {
+			assert type instanceof RefType;
+			return RefType.v(((RefType) type).getSootClass());
+		}
 		if (type.toString().equals("void"))
 			return soot.VoidType.v();
 		if (type.toString().equals("char"))
@@ -218,23 +222,27 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	}
 
 	protected Value getSimpleDefaultValue(String t) {
-		if (t.equals("boolean")) {
-			return DIntConstant.v(0, BooleanType.v());
-		} else if (t.equals("java.lang.String")) {
+		if (t.equals("java.lang.String"))
 			return StringConstant.v("");
-		} else if (t.equals("int")) {
+		if (t.equals("char"))
+			return DIntConstant.v(0, CharType.v());
+		if (t.equals("byte"))
+			return DIntConstant.v(0, ByteType.v());
+		if (t.equals("short"))
+			return DIntConstant.v(0, ShortType.v());
+		if (t.equals("int"))
 			return IntConstant.v(0);
-		} else if (t.equals("long")){
-			return LongConstant.v(0);
-		} else if (t.equals("double")){
-			return DoubleConstant.v(0);
-		} else if (t.equals("float")){
+		if (t.equals("float"))
 			return FloatConstant.v(0);
-		}
+		if (t.equals("long"))
+			return LongConstant.v(0);
+		if (t.equals("double"))
+			return DoubleConstant.v(0);
+		if (t.equals("boolean"))
+			return DIntConstant.v(0, BooleanType.v());
 
 		//also for arrays etc.
 		return G.v().soot_jimple_NullConstant();
-
 	}
 
 	protected boolean isConstructorGenerationPossible(SootClass sClass) {

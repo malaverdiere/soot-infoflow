@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.util;
+package soot.jimple.infoflow.taintWrappers;
 
 import java.util.List;
 
@@ -11,6 +11,9 @@ import soot.jimple.internal.JAssignStmt;
 
 import com.google.common.collect.Lists;
 
+/**
+ * Internal taint wrapper for the use in some test cases
+ */
 public class ListExampleWrapper implements ITaintPropagationWrapper {
 
 	@Override
@@ -36,6 +39,11 @@ public class ListExampleWrapper implements ITaintPropagationWrapper {
 		return null;
 	}
 
+	@Override
+	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
+		return false;
+	}
+	
 	@Override
 	public boolean supportsBackwardWrapping() {
 		return false;

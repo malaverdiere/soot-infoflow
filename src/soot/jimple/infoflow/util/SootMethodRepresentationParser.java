@@ -81,26 +81,24 @@ public class SootMethodRepresentationParser {
 	//returns classname and unresolved! method names and return types and parameters
 	public HashMap<String, List<String>> parseClassNames(List<String> methods, boolean subSignature){
 		HashMap<String, List<String>> result = new HashMap<String,  List<String>>();
+		Pattern pattern = Pattern.compile("^\\s*<(.*?):\\s*(.*?)>\\s*$");
 		for(String parseString : methods){
 			//parse className:
 			String className = "";
-			Pattern pattern = Pattern.compile("<(.*?):");
 	        Matcher matcher = pattern.matcher(parseString);
 	        if(matcher.find()){
 	        	className = matcher.group(1);
-	        	if(result.containsKey(className)){
-					if(subSignature){
-						result.get(className).add(parseString.substring(parseString.indexOf(':')+2,parseString.length()-1));
-					}else{
-						result.get(className).add(parseString);
-					}
-				} else{
+	        	String params = "";
+				if(subSignature)
+					params = matcher.group(2);
+				else
+					params = parseString;
+				
+				if(result.containsKey(className))
+					result.get(className).add(params);
+				else {
 					List<String> methodList = new ArrayList<String>(); 
-					if(subSignature){
-						methodList.add(parseString.substring(parseString.indexOf(':')+2,parseString.length()-1));
-					}else{
-						methodList.add(parseString);
-					}
+					methodList.add(params);
 					result.put(className, methodList);
 				}
 	        }

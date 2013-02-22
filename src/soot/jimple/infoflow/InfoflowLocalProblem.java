@@ -107,7 +107,7 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 									// static variable can be identified by name and declaring class
 									if (rightValue instanceof StaticFieldRef) {
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-										if (source.getAccessPath().getField().equals(InfoflowLocalProblem.getStaticFieldRefStringRepresentation(rightRef))) {
+										if (source.getAccessPath().getField().equals(rightRef.getField())) {
 											addLeftValue = true;
 										}
 									}
@@ -184,13 +184,6 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 							if (callArgs.get(i).equals(source.getAccessPath().getPlainValue())) {
 								Abstraction abs = new Abstraction(paramLocals.get(i), source.getSource());
 								res.add(abs);
-							}
-							// because params are locals, we compare with the class of staticfieldref, not the field
-							if (source.getAccessPath().isStaticFieldRef()) {
-								if (source.getAccessPath().getField().substring(0, source.getAccessPath().getField().lastIndexOf('.')).equals((callArgs.get(i)).getType().toString())) {
-									Abstraction abs = new Abstraction(paramLocals.get(i), source.getSource());
-									res.add(abs);
-								}
 							}
 						}
 
@@ -355,12 +348,6 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 									if (callArgs.get(i).equals(source.getAccessPath().getPlainValue())) {
 										taintedParam = true;
 										break;
-									}
-									if (source.getAccessPath().isStaticFieldRef()) {
-										if (source.getAccessPath().getField().substring(0, source.getAccessPath().getField().lastIndexOf('.')).equals((callArgs.get(i)).getType().toString())) {
-											taintedParam = true;
-											break;
-										}
 									}
 								}
 

@@ -49,7 +49,7 @@ import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
-	private final static boolean DEBUG = true;
+	private final static boolean DEBUG = false;
 	
 	final SourceSinkManager sourceSinkManager;
 	Abstraction zeroValue = null;
@@ -87,10 +87,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				else if(source.getAccessPath().isInstanceFieldRef()){
 					// The taint refers to the actual type of the field, not the formal type,
 					// so we must check whether we have the tainted field at all
+					//TODO: since we have the field, we can implement a different check here.
+					//Is there something better than iterating and comparing all fields of the callerclass?
 					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.declaresFieldByName(source.getAccessPath().getField()))
+					if (callerClass.declaresFieldByName(source.getAccessPath().getField().getName()))
 						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
-								callerClass.getFieldByName(source.getAccessPath().getField()).makeRef());
+								callerClass.getFieldByName(source.getAccessPath().getField().getName()).makeRef());
 				}
 			}
 			
@@ -143,10 +145,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				}else if(source.getAccessPath().isInstanceFieldRef()){
 					// The taint refers to the actual type of the field, not the formal type,
 					// so we must check whether we have the tainted field at all
+					//TODO different check? see above..
 					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.declaresFieldByName(source.getAccessPath().getField()))
+					if (callerClass.declaresFieldByName(source.getAccessPath().getField().getName()))
 						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
-								callerClass.getFieldByName(source.getAccessPath().getField()).makeRef());
+								callerClass.getFieldByName(source.getAccessPath().getField().getName()).makeRef());
 				}
 			}
 			if(source.getAccessPath().isStaticFieldRef()){
@@ -261,7 +264,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (source.getAccessPath().isStaticFieldRef()) {
 									if (rightValue instanceof StaticFieldRef) {
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-										if (source.getAccessPath().getField().equals(InfoflowProblem.getStaticFieldRefStringRepresentation(rightRef))) {
+										if (source.getAccessPath().getField().equals(rightRef.getField())) {
 											addLeftValue = true;
 										}
 									}
@@ -276,7 +279,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										PointsToSet ptsSource = pta.reachingObjects(sourceBase);
 										if (ptsRight.hasNonEmptyIntersection(ptsSource)) {
 											if (source.getAccessPath().isInstanceFieldRef()) {
-												if (rightRef.getField().getName().equals(source.getAccessPath().getField())) {
+												if (rightRef.getField().equals(source.getAccessPath().getField())) {
 													addLeftValue = true;
 												}
 											} else {
@@ -350,7 +353,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							boolean isSink = false;
 							if (source.getAccessPath().isStaticFieldRef())
-								isSink = source.getAccessPath().getField().equals(returnStmt.getOp().toString());
+								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
 							else
 								isSink = isInitialMethod(interproceduralCFG().getMethodOf(dest))
 									&& source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
@@ -691,12 +694,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (callArgs.get(i).equals(source.getAccessPath().getPlainValue())) {
 										taintedParam = true;
 										break;
-									}
-									if (source.getAccessPath().isStaticFieldRef()) {
-										if (source.getAccessPath().getField().substring(0, source.getAccessPath().getField().lastIndexOf('.')).equals((callArgs.get(i)).getType().toString())) {
-											taintedParam = true;
-											break;
-										}
 									}
 								}
 

@@ -2,23 +2,24 @@ package soot.jimple.infoflow.data;
 
 import soot.EquivalentValue;
 import soot.Local;
+import soot.SootField;
 import soot.Value;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 
 public class AccessPath {
 	private Value value;
-	private String field;
+	private SootField field;
 	
 	public AccessPath(Value val){
 		assert !(val instanceof EquivalentValue);
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
-			field = ref.getField().getDeclaringClass().getName() + "." + ref.getFieldRef().name();
+			field = ref.getField();
 		} else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
 			value = ref.getBase();
-			field = ref.getField().getName();
+			field = ref.getField();
 		}else{
 			value = val;
 		}
@@ -26,11 +27,11 @@ public class AccessPath {
 	
 
 	
-	public AccessPath(String staticfieldref){
-		field = staticfieldref;
+	public AccessPath(SootField staticfield){
+		field = staticfield;
 	}
 	
-	public AccessPath(Value base, String field){
+	public AccessPath(Value base, SootField field){
 		value = base;
 		this.field = field;
 	}
@@ -63,10 +64,10 @@ public class AccessPath {
 	}
 	
 	
-	public String getField() {
+	public SootField getField() {
 		return field;
 	}
-	public void setField(String field) {
+	public void setField(SootField field) {
 		this.field = field;
 	}
 
@@ -129,7 +130,7 @@ public class AccessPath {
 			str += value.toString() +"(" + value.getType() +")" + " ";
 		}
 		if(field != null){
-			str += field;
+			str += field.toString();
 		}
 		
 		return str;

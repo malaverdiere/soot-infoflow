@@ -3,6 +3,7 @@ package soot.jimple.infoflow;
 import heros.InterproceduralCFG;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -340,17 +341,21 @@ public class Infoflow implements IInfoflow {
 					}
 
 				// In Debug mode, we write the Jimple files to disk
-				if (DEBUG)
+				if (DEBUG){
+					File dir = new File("JimpleFiles");
+					if(!dir.exists()){
+						dir.mkdir();
+					}
 					for (Entry<String, String> entry : classes.entrySet()) {
 						try {
-							stringToTextFile("JimpleFiles/" + entry.getKey() + ".jimple", entry.getValue());
+							stringToTextFile(new File(".").getAbsolutePath() + System.getProperty("file.separator") +"JimpleFiles"+ System.getProperty("file.separator") + entry.getKey() + ".jimple", entry.getValue());
 						} catch (IOException e) {
 							System.err.println("Could not write jimple file: " + e.getMessage());
 							e.printStackTrace();
 						}
 					
 					}
-				
+				}
 				if (problem.initialSeeds.isEmpty() || !hasSink){
 					System.err.println("No sources or sinks found, aborting analysis");
 					return;

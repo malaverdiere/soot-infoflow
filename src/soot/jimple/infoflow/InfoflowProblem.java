@@ -49,7 +49,7 @@ import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
-	private final static boolean DEBUG = true;
+	private final static boolean DEBUG = false;
 	
 	final SourceSinkManager sourceSinkManager;
 	Abstraction zeroValue = null;

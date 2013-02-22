@@ -207,17 +207,6 @@ public class Infoflow implements IInfoflow {
 
 		initializeSoot(path, classes.keySet(), sourcesSinks);
 
-		if (DEBUG) {
-			for (List<String> methodList : classes.values()) {
-				for(String methodSignature : methodList){
-				if (Scene.v().containsMethod(methodSignature)) {
-						SootMethod method = Scene.v().getMethod(methodSignature);
-						System.err.println(method.retrieveActiveBody().toString());
-					}
-				}
-			}
-		}
-		
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method,
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
 		IEntryPointCreator epCreator = new AndroidEntryPointCreator();
@@ -241,17 +230,6 @@ public class Infoflow implements IInfoflow {
 		HashMap<String, List<String>> classes = parser.parseClassNames(Collections.singletonList(entryPoint), false);
 
 		initializeSoot(path, classes.keySet(), sourcesSinks, entryPoint);
-
-		if (DEBUG) {
-			for (List<String> methodList : classes.values()) {
-				for(String methodSignature : methodList){
-				if (Scene.v().containsMethod(methodSignature)) {
-						SootMethod method = Scene.v().getMethod(methodSignature);
-						System.err.println(method.retrieveActiveBody().toString());
-					}
-				}
-			}
-		}
 
 		if (!Scene.v().containsMethod(entryPoint)){
 			System.err.println("Entry point not found");
@@ -317,10 +295,12 @@ public class Infoflow implements IInfoflow {
 							if (s.containsInvokeExpr()) {
 								if (sourcesSinks.isSource(s)) {
 									problem.initialSeeds.add(u);
-									System.out.println("Source found: " + u);
+									if (DEBUG)
+										System.out.println("Source found: " + u);
 								}
 								if (sourcesSinks.isSink(s)) {
-									System.out.println("Sink found: " + u);
+									if (DEBUG)
+										System.out.println("Sink found: " + u);
 									hasSink = true;
 								}
 							}
@@ -367,9 +347,7 @@ public class Infoflow implements IInfoflow {
 				solver.solve();
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
-
 					Unit ret = ep.getActiveBody().getUnits().getLast();
-					System.err.println(ep.getActiveBody());
 
 					System.err.println("----------------------------------------------");
 					System.err.println("At end of: " + ep.getSignature());

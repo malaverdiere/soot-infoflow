@@ -87,10 +87,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				else if(source.getAccessPath().isInstanceFieldRef()){
 					// The taint refers to the actual type of the field, not the formal type,
 					// so we must check whether we have the tainted field at all
-					//TODO: since we have the field, we can implement a different check here.
-					//Is there something better than iterating and comparing all fields of the callerclass?
 					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.declaresFieldByName(source.getAccessPath().getField().getName()))
+					if (callerClass.getFields().contains(source.getAccessPath().getField()))
 						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
 								callerClass.getFieldByName(source.getAccessPath().getField().getName()).makeRef());
 				}
@@ -145,9 +143,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				}else if(source.getAccessPath().isInstanceFieldRef()){
 					// The taint refers to the actual type of the field, not the formal type,
 					// so we must check whether we have the tainted field at all
-					//TODO different check? see above..
 					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.declaresFieldByName(source.getAccessPath().getField().getName()))
+					if (callerClass.getFields().contains(source.getAccessPath().getField()))
 						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
 								callerClass.getFieldByName(source.getAccessPath().getField().getName()).makeRef());
 				}

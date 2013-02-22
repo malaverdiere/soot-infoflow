@@ -41,6 +41,7 @@ public class IdentityTaintWrapper implements ITaintPropagationWrapper {
 	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
 		return (taintedparam >= 0 || taintedBase != null);
 	}
+
 	
 	@Override
 	public boolean supportsBackwardWrapping() {
@@ -53,5 +54,6 @@ public class IdentityTaintWrapper implements ITaintPropagationWrapper {
 		//TODO: implement this
 		return null;
 	}
+
 
 }

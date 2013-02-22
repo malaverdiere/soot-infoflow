@@ -111,5 +111,21 @@ public class MultiTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(pwd);
 	}
+	
+	public void hashTestCode1(){
+		AccountManager am = new AccountManager();
+		int foo = am.getPassword().hashCode();
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(foo);
+	}
+
+	public void shiftTestCode1(){
+		AccountManager am = new AccountManager();
+		int foo = am.getPassword().hashCode();
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(foo << 32);
+	}
 
 }

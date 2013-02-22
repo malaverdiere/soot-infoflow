@@ -1,10 +1,10 @@
 package soot.jimple.infoflow.source;
 
-import soot.SootMethod;
+import soot.jimple.Stmt;
 
 public interface SourceSinkManager {
 
-	public abstract boolean isSourceMethod(SootMethod sMethod);
-	public abstract boolean isSinkMethod(SootMethod sMethod);
+	public abstract boolean isSource(Stmt sCallSite);
+	public abstract boolean isSink(Stmt sCallSite);
 
 }

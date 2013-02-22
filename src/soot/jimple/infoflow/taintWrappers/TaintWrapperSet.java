@@ -52,6 +52,7 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 				return true;
 		return false;
 	}
+
 	
 	@Override
 	public boolean supportsBackwardWrapping() {
@@ -71,5 +72,6 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 			resList.addAll(w.getBackwardTaintsForMethod(stmt));
 		return new ArrayList<Value>(resList);
 	}
+
 
 }

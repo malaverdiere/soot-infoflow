@@ -47,6 +47,7 @@ public interface ITaintPropagationWrapper {
 	 * @return True if this taint wrapper is exclusive, otherwise false. 
 	 */
 	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase);
+
 	
 	/**
 	 * determines if the used TaintWrapper-Class supports taintWrapping in backward analysis

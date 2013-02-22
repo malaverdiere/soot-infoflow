@@ -237,5 +237,3 @@
 <java.util.Arrays: java.lang.Object[] copyOf(java.lang.Object[],int)>
 
 <java.util.UUID: void <init>(long,long)> 
-<java.util.Arrays: java.util.List asList(java.lang.Object[])>
-<java.util.Arrays: java.lang.Object[] copyOf(java.lang.Object[],int)>

@@ -280,4 +280,13 @@ public class OtherTests extends JUnitTests{
 //		assertFalse(errOutputStream.toString().contains("taintedOutput contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId("));
     }
     
+    @Test
+    public void innerClassTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void innerClassTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+
 }

@@ -5,14 +5,12 @@ import heros.InterproceduralCFG;
 import java.util.HashSet;
 import java.util.Set;
 
-import soot.EquivalentValue;
 import soot.NullType;
 import soot.RefType;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Constant;
-import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
@@ -57,7 +55,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 	protected boolean computeParamFlows = false;
 	protected boolean returnIsSink = false;
-
+	protected boolean stopAfterFirstFlow = false;
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
 		results = new InfoflowResults();
@@ -96,6 +94,17 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		this.returnIsSink = returnIsSink;
 	}
 	
+		/**
+	 * Sets whether the information flow analysis shall stop after the first
+	 * flow has been found
+	 * @param stopAfterFirstFlow True if the analysis shall stop after the
+	 * first flow has been found, otherwise false.
+	 */
+	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {
+		this.stopAfterFirstFlow = stopAfterFirstFlow;
+	}
+	
+	
 	/**
 	 * Sets whether and how the paths between the sources and sinks shall be
 	 * tracked
@@ -109,16 +118,12 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 
 	
-	protected static String getStaticFieldRefStringRepresentation(StaticFieldRef ref){
-		return ref.getField().getDeclaringClass().getName() + "."+ref.getFieldRef().name();
-	}
-	
 	@Override
 	public Abstraction createZeroValue() {
 		if (zeroValue == null) {
 			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-				new Abstraction(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null) :
-				new AbstractionWithPath(new EquivalentValue(new JimpleLocal("zero", NullType.v())), null, false);
+				new Abstraction(new JimpleLocal("zero", NullType.v()), null, false) :
+				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, false);
 		}
 		return zeroValue;
 	}
@@ -159,6 +164,12 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @param val the value which gets tainted
+	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
+	 * @return true if a reverseFlow should be triggered
+	 */
 	public boolean triggerReverseFlow(Value val, Abstraction source){
 		if(val == null){
 			return false;

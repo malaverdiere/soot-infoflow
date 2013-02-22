@@ -1,13 +1,17 @@
 package soot.jimple.infoflow.test;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 import soot.jimple.infoflow.test.utilclasses.ClassWithField;
 
 public class StringTestCode {
+	
+	public void methodSubstring(){
+		String tainted = TelephonyManager.getDeviceId();
+		String result = tainted.substring(1, 2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(result);
+	}
 	
 	public void methodStringLowerCase(){
 		String tainted = TelephonyManager.getDeviceId();
@@ -143,22 +147,6 @@ public class StringTestCode {
 		ClassWithField cf = new ClassWithField();
 		cf.field = fieldc.field;
 	}
-
-	public void methodStringBuilderURL() throws MalformedURLException{
-		StringBuilder sb = new StringBuilder();
-		sb.append(TelephonyManager.getDeviceId());
-		String test = sb.toString();
-		URL url = new URL(test);
-	
-		ConnectionManager cm = new ConnectionManager();
-		cm.publish(url.toString());
-	}
-	
-	public void testURL() throws MalformedURLException{
-		URL url = new URL(TelephonyManager.getDeviceId());
-		ConnectionManager cm = new ConnectionManager();
-		cm.publish(url.toString());
-		}
 
 	public void getChars(){
 		//like: str.getChars(0, len, value, count);

@@ -5,45 +5,63 @@ import heros.InterproceduralCFG;
 import java.util.ArrayList;
 import java.util.List;
 
-import soot.EquivalentValue;
 import soot.SootMethod;
 import soot.Unit;
+import soot.Value;
 
 public class AbstractionWithPath extends Abstraction {
 	private final List<Unit> propagationPath;
 	
 
-	public AbstractionWithPath(EquivalentValue taint, EquivalentValue src, boolean fieldsTainted){
+	public AbstractionWithPath(Value taint, Value src, boolean fieldsTainted){
 		super(taint, src, fieldsTainted);
 		propagationPath = new ArrayList<Unit>();
 	}
 	
-	public AbstractionWithPath(EquivalentValue taint, EquivalentValue src, List<Unit> path, boolean fieldsTainted){
+	public AbstractionWithPath(Value taint, Value src, List<Unit> path, boolean fieldsTainted){
 		super(taint, src, fieldsTainted);
 		propagationPath = new ArrayList<Unit>(path);
 	}
 
-	public AbstractionWithPath(EquivalentValue taint, EquivalentValue src, List<Unit> path, Unit s, boolean fieldsTainted){
+	public AbstractionWithPath(Value taint, Value src, List<Unit> path, Unit s, boolean fieldsTainted){
 		this(taint, src, path, fieldsTainted);
 		propagationPath.add(s);
 	}
 
-	public AbstractionWithPath(AccessPath p, EquivalentValue src){
+	public AbstractionWithPath(AccessPath p, Value src){
 		super(p, src);
 		propagationPath = new ArrayList<Unit>();		
 	}
 	
-	public AbstractionWithPath(AccessPath p, EquivalentValue src, List<Unit> path){
+	public AbstractionWithPath(AccessPath p, Value src, List<Unit> path){
 		super(p, src);
 		propagationPath = new ArrayList<Unit>(path);
 	}
 
-	public AbstractionWithPath(AccessPath p, EquivalentValue src, List<Unit> path, Unit s){
+	public AbstractionWithPath(AccessPath p, Value src, List<Unit> path, Unit s){
 		this(p, src, path);
 		if (s != null)
 			propagationPath.add(s);
 	}
-	
+
+//	public AbstractionWithPath(Value taint, Value src){
+//		super(taint, src);
+//		propagationPath = new ArrayList<Unit>();
+//	}
+//	
+//	public AbstractionWithPath(Value taint, Value src, List<Unit> path){
+//		super(taint, src);
+//		if (path == null)
+//			propagationPath = new ArrayList<Unit>();
+//		else
+//			propagationPath = new ArrayList<Unit>(path);
+//	}
+//
+//	public AbstractionWithPath(Value taint, Value src, List<Unit> path, Unit s){
+//		this(taint, src, path);
+//		propagationPath.add(s);
+//	}
+
 	
 	public List<Unit> getPropagationPath() {
 		return this.propagationPath;

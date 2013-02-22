@@ -1,6 +1,7 @@
 package soot.jimple.infoflow.util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +10,6 @@ import soot.BooleanType;
 import soot.ByteType;
 import soot.CharType;
 import soot.G;
-import soot.IntType;
 import soot.Local;
 import soot.RefType;
 import soot.Scene;
@@ -36,6 +36,8 @@ import soot.jimple.StringConstant;
 import soot.jimple.VirtualInvokeExpr;
 
 public abstract class BaseEntryPointCreator implements IEntryPointCreator {
+
+	protected Map<String, Local> localVarsForClasses = new HashMap<String, Local>();
 
 	@Override
 	public SootMethod createDummyMain(Map<String, List<String>> classMap) {
@@ -112,9 +114,6 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			body.getUnits().add(aStmt);
 			return varLocal;
 		} else {
-
-			List<SootMethod> methodList =  createdClass.getMethods();
-			Local returnLocal = null;
 			LocalGenerator generator = new LocalGenerator(body);
 			Local tempLocal = generator.generateLocal(RefType.v(createdClass));
 			
@@ -122,8 +121,12 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
 			body.getUnits().add(assignStmt);
 			
+			boolean isInnerClass = createdClass.getName().contains("$");
+			String outerClass = isInnerClass ? createdClass.getName().substring
+					(0, createdClass.getName().lastIndexOf("$")) : "";
 			
-			for (SootMethod currentMethod : methodList) {
+			// Find a constructor we can invoke
+			for (SootMethod currentMethod : createdClass.getMethods()) {
 				if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
 					List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
 					List<Object> params = new LinkedList<Object>();
@@ -134,6 +137,9 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 							Local primLoc = createPrimitiveLocal(generator, body, type);
 							params.add(primLoc);
 						}
+						else if (isInnerClass && typeName.equals(outerClass)
+								&& this.localVarsForClasses.containsKey(typeName))
+							params.add(this.localVarsForClasses.get(typeName));
 						else if (Scene.v().containsClass(typeName)) {
 							SootClass typeClass = Scene.v().getSootClass(typeName);
 							// 2. Type not public:
@@ -157,10 +163,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 					}
 					if (!(currentMethod.getReturnType() instanceof VoidType)) { 
 						Local possibleReturn = generator.generateLocal(currentMethod.getReturnType());
-						if(possibleReturn != null){ //we only need one local that is != null
-							returnLocal = possibleReturn;
-						}
-						AssignStmt assignStmt2 = Jimple.v().newAssignStmt(returnLocal, vInvokeExpr);
+						AssignStmt assignStmt2 = Jimple.v().newAssignStmt(possibleReturn, vInvokeExpr);
 						body.getUnits().add(assignStmt2);
 					} else {
 						body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));

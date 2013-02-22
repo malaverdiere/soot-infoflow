@@ -43,6 +43,7 @@ public class ListExampleWrapper implements ITaintPropagationWrapper {
 	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
 		return false;
 	}
+
 	
 	@Override
 	public boolean supportsBackwardWrapping() {
@@ -53,5 +54,6 @@ public class ListExampleWrapper implements ITaintPropagationWrapper {
 	public List<Value> getBackwardTaintsForMethod(Stmt stmt) {
 		return null;
 	}
+
 
 }

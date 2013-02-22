@@ -15,8 +15,6 @@ import org.junit.BeforeClass;
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowResults;
 import soot.jimple.infoflow.config.SootConfigForTest;
-import soot.jimple.infoflow.InfoflowResults;
-import soot.jimple.infoflow.config.SootConfigForTest;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 
 public abstract class JUnitTests {

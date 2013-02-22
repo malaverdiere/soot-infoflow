@@ -1,30 +1,33 @@
 package soot.jimple.infoflow.data;
 
+
 import java.util.HashMap;
 import java.util.Stack;
 
-import soot.EquivalentValue;
 import soot.Local;
+import soot.Value;
 
 public class Abstraction {
 	private final AccessPath accessPath;
-	private final EquivalentValue source;
+	private final Value source;
 	//only used for backward-search to find matching call:
 	private Stack<HashMap<Integer, Local>> originalCallArgs;
+	private int hashCode;
 	
 
-	public Abstraction(EquivalentValue taint, EquivalentValue src){
+	public Abstraction(Value taint, Value src, boolean fieldtainted){
 		source = src;
-		accessPath = new AccessPath(taint);
+		accessPath = new AccessPath(taint, fieldtainted);
 	}
 	
-	protected Abstraction(EquivalentValue taint, EquivalentValue src, boolean fieldtainted){
-		source = src;
-		accessPath = new AccessPath(taint, fieldtainted);	
-	}
+
+//	protected Abstraction(AccessPath p, Value src, boolean fieldtainted){
+//		source = src;
+//		accessPath = new AccessPath(taint, fieldtainted);	
+//	}
 	
 	//TODO: make private and change AwP
-	protected Abstraction(AccessPath p, EquivalentValue src){
+	protected Abstraction(AccessPath p, Value src){
 		source = src;
 		accessPath = p;
 	}
@@ -36,18 +39,16 @@ public class Abstraction {
 		return a;
 	}
 	
-	public Abstraction deriveNewAbstraction(EquivalentValue taint, boolean fieldtainted){
+	public Abstraction deriveNewAbstraction(Value taint, boolean fieldtainted){
 		Abstraction a = new Abstraction(new AccessPath(taint, fieldtainted), source);
 		a.originalCallArgs = originalCallArgs;
 		return a;
 	}
 	
-	public EquivalentValue getSource() {
+	public Value getSource() {
 		return source;
 	}
 	
-	
-
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -72,11 +73,14 @@ public class Abstraction {
 	
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
-		result = prime * result + ((source == null) ? 0 : source.hashCode());
-		return result;
+		if(hashCode == 0){
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
+			result = prime * result + ((source == null) ? 0 : source.hashCode());
+			hashCode = result;
+		}
+		return hashCode;
 	}
 	
 	@Override

@@ -2,52 +2,49 @@ package soot.jimple.infoflow.data;
 
 import soot.EquivalentValue;
 import soot.Local;
+import soot.SootField;
 import soot.Value;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 
 public class AccessPath {
-	//value should be always a local? 
-	private EquivalentValue value;
-	private String field;
+	private Value value;
+	private SootField field;
 	//in contrast to a certain value which is tainted unknownfieldtainted says that any (*) field of the value is tainted
 	private boolean unknownfieldtainted; //also known as star/*
+
 	
 	public AccessPath(Value val){
 		assert !(val instanceof EquivalentValue);
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
-			field = ref.getField().getDeclaringClass().getName() + "." + ref.getFieldRef().name();
+			field = ref.getField();
 		} else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
-			value = new EquivalentValue(ref.getBase());
-			field = ref.getField().getName();
-		}else{
-			value = new EquivalentValue(val);
-		}
-		unknownfieldtainted = false;
-	}
-	
-	public AccessPath(EquivalentValue val){
-		if(val.getValue() instanceof StaticFieldRef){
-			StaticFieldRef ref = (StaticFieldRef) val.getValue();
-			field = ref.getField().getDeclaringClass().getName() + "."+ref.getFieldRef().name();
-		} else if(val.getValue() instanceof InstanceFieldRef){
-			InstanceFieldRef ref = (InstanceFieldRef) val.getValue();
-			value = new EquivalentValue(ref.getBase());
-			field = ref.getField().getName();
+			value = ref.getBase();
+			field = ref.getField();
 		}else{
 			value = val;
 		}
 		unknownfieldtainted = false;
 	}
 	
-	public AccessPath(EquivalentValue val, boolean fieldtainted){
+	
+	public AccessPath(Value val, boolean fieldtainted){
 		this(val);
 		unknownfieldtainted = fieldtainted;
-		
 	}
 	
+	
+	public AccessPath(SootField staticfield){
+		field = staticfield;
+	}
+	
+	public AccessPath(Value base, SootField field){
+		value = base;
+		this.field = field;
+	}
+
 	
 	/**
 	 * replaces value and returns it if matches with val, otherwise original is returned
@@ -63,38 +60,30 @@ public class AccessPath {
 		} 
 		return this;
 	}
-	
-	public EquivalentValue getValue() {
-		return value;
-	}
-	
+		
 	public Value getPlainValue() {
 		if(value == null){
 			return null;
 		}
-		return value.getValue();
+		return value;
 	}
 	
 	public Local getPlainLocal(){
-		if(value != null && value.getValue() instanceof Local){
-			return (Local)value.getValue();
+		if(value != null && value instanceof Local){
+			return (Local)value;
 		}
 		return null;
 	}
 	
 	public void setValue(Value value) {
-		this.value = new EquivalentValue(value);
-	}
-	
-	
-	public void setValue(EquivalentValue value) {
 		this.value = value;
 	}
 	
-	public String getField() {
+	
+	public SootField getField() {
 		return field;
 	}
-	public void setField(String field) {
+	public void setField(SootField field) {
 		this.field = field;
 	}
 
@@ -152,7 +141,7 @@ public class AccessPath {
 	}
 	
 	public boolean isLocal(){
-		if(value != null && value.getValue() instanceof Local && field == null){
+		if(value != null && value instanceof Local && field == null){
 			return true;
 		}
 		return false;
@@ -162,10 +151,10 @@ public class AccessPath {
 	public String toString(){
 		String str = "";
 		if(value != null){
-			str += value.getValue().toString() +"(" + value.getValue().getType() +")" + " ";
+			str += value.toString() +"(" + value.getType() +")" + " ";
 		}
 		if(field != null){
-			str += field;
+			str += field.toString();
 		}
 		if(unknownfieldtainted)
 			str += ".*";

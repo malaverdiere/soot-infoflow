@@ -40,6 +40,16 @@ public interface IInfoflow {
 	 */
 	public void setReturnIsSink(boolean returnIsSink);
 
+	
+	/**
+	 * Sets whether the information flow analysis shall stop after the first
+	 * flow has been found
+	 * @param stopAfterFirstFlow True if the analysis shall stop after the
+	 * first flow has been found, otherwise false.
+	 */
+	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow);
+
+
 	/**
 	 * computes the information flow
 	 * @param path the path to the main folder of the (unpacked) class files

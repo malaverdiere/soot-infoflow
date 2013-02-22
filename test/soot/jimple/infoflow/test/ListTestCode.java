@@ -96,7 +96,6 @@ public class ListTestCode {
 	public void linkedListConcreteWriteReadTest(){
 		String tainted = TelephonyManager.getDeviceId();
 		LinkedList<String> list = new LinkedList<String>();
-		list.add("neutral");
 		list.add(tainted);
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
 		String taintedElement2 = list.get(0);

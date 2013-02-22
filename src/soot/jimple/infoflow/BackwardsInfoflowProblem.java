@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import soot.EquivalentValue;
 import soot.Local;
 import soot.PrimType;
 import soot.RefType;
@@ -97,8 +96,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (rightValue instanceof InstanceFieldRef) {
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
 
-								if (triggerReverseFlow(rightValue, source) && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().getName().equals(source.getAccessPath().getField())) { //not required: DataTypeHandler.isPrimTypeOrString(ref.getField()) &&
-									Abstraction abs = source.deriveNewAbstraction(new EquivalentValue(leftValue), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
+								if (triggerReverseFlow(rightValue, source) && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().equals(source.getAccessPath().getField())) { //not required: DataTypeHandler.isPrimTypeOrString(ref.getField()) &&
+									Abstraction abs = source.deriveNewAbstraction(leftValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
 									// this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
 
@@ -129,7 +128,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									Local sourceBase = source.getAccessPath().getPlainLocal();
 									if (leftBase.equals(sourceBase)) {
 										if (source.getAccessPath().isInstanceFieldRef()) {
-											if (leftRef.getField().getName().equals(source.getAccessPath().getField())) {
+											if (leftRef.getField().equals(source.getAccessPath().getField())) {
 												addRightValue = true;
 											}
 										} else {
@@ -150,9 +149,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 										} else {
 											// access path length = 1 - taint entire value if left is field reference
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(new EquivalentValue(rightValue), source.getSource(), true));
+												res.add(new AbstractionWithPath(rightValue, source.getSource(), true));
 											else
-												res.add(source.deriveNewAbstraction(new EquivalentValue(rightValue), true));
+												res.add(source.deriveNewAbstraction(rightValue, true));
 										}
 									}
 								} else if (leftValue instanceof ArrayRef) {
@@ -172,9 +171,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								}
 								
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(new EquivalentValue(rightValue), source.getSource(), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
+									res.add(new AbstractionWithPath(rightValue, source.getSource(), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 								else
-									res.add(source.deriveNewAbstraction(new EquivalentValue(rightValue), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
+									res.add(source.deriveNewAbstraction(rightValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 							}
 							if (!res.isEmpty()) {
 								// we have to send forward pass, for example for
@@ -209,6 +208,10 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						}
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
+						if(src.toString().contains("<java.util.LinkedList$Entry: void <init>(java.lang.Object,java.util.LinkedList$Entry,java.util.Linked")){
+							System.out.println( "bw " + source);
+						}
+						
 						//we cannot determine the callargs here, so just add unconditional ones:
 						source.addCurrentCallArgs(new HashMap<Integer, Local>());
 						
@@ -374,9 +377,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (vals != null) {
 										for (Value val : vals) {
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(new EquivalentValue(val), source.getSource(), false));
+												res.add(new AbstractionWithPath(val, source.getSource(), false));
 											else
-												res.add(source.deriveNewAbstraction(new EquivalentValue(val), false));
+												res.add(source.deriveNewAbstraction(val, false));
 										}
 									}
 								}
@@ -386,7 +389,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
 									// taint all params if one param or return value is tainted)
 									NativeCallHandler ncHandler = new DefaultNativeCallHandler();
-									res.addAll(ncHandler.getTaintedValuesForBackwardAnalysis(iStmt, source, callArgs, interproceduralCFG().getMethodOf(returnSite)));
+									res.addAll(ncHandler.getTaintedValuesForBackwardAnalysis(iStmt, source, callArgs));
 								}
 							}
 							return res;

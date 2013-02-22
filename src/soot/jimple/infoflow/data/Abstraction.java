@@ -107,7 +107,7 @@ public class Abstraction {
 	
 	public void popCurrentCallArgs(){
 		//this is possible since we start at an entryPoint and might go back in control flow
-		if(!originalCallArgs.isEmpty()){
+		if(originalCallArgs != null && !originalCallArgs.isEmpty()){
 			originalCallArgs.pop();
 		}
 	}

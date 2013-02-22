@@ -20,7 +20,10 @@ public class AbstractionWithPath extends Abstraction {
 	
 	public AbstractionWithPath(Value taint, Value src, List<Unit> path, boolean fieldsTainted){
 		super(taint, src, fieldsTainted);
-		propagationPath = new ArrayList<Unit>(path);
+		if (path == null)
+			propagationPath = new ArrayList<Unit>();
+		else
+			propagationPath = new ArrayList<Unit>(path);
 	}
 
 	public AbstractionWithPath(Value taint, Value src, List<Unit> path, Unit s, boolean fieldsTainted){
@@ -43,25 +46,6 @@ public class AbstractionWithPath extends Abstraction {
 		if (s != null)
 			propagationPath.add(s);
 	}
-
-//	public AbstractionWithPath(Value taint, Value src){
-//		super(taint, src);
-//		propagationPath = new ArrayList<Unit>();
-//	}
-//	
-//	public AbstractionWithPath(Value taint, Value src, List<Unit> path){
-//		super(taint, src);
-//		if (path == null)
-//			propagationPath = new ArrayList<Unit>();
-//		else
-//			propagationPath = new ArrayList<Unit>(path);
-//	}
-//
-//	public AbstractionWithPath(Value taint, Value src, List<Unit> path, Unit s){
-//		this(taint, src, path);
-//		propagationPath.add(s);
-//	}
-
 	
 	public List<Unit> getPropagationPath() {
 		return this.propagationPath;

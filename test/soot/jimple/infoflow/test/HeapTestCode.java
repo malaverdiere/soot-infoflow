@@ -5,6 +5,36 @@ import soot.jimple.infoflow.test.android.TelephonyManager;
 
 public class HeapTestCode {
 	
+	public void negativeTest(){
+		String taint = TelephonyManager.getDeviceId();
+		
+		MyArrayList notRelevant = new MyArrayList();
+		MyArrayList list = new MyArrayList();
+		notRelevant.add(taint);
+		list.add("test");
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(list.get());
+		
+	}
+	
+	class MyArrayList{
+		
+		String[] elements;
+		
+		public void add(String obj){
+			if(elements == null){
+				elements = new String[3];
+			}
+			elements[0] = obj;
+		}
+		
+		public String get(){
+			return elements[0];
+		}
+		
+	}
+	
 	public void doubleCallTest(){
 		X a = new X();
 		X b = new X();
@@ -15,10 +45,11 @@ public class HeapTestCode {
 	}
 
 	public void methodTest0(){
+		String taint = TelephonyManager.getDeviceId();
 		X x = new X();
 		A a = new A();
 		String str = x.xx(a);
-		a.b = TelephonyManager.getDeviceId();
+		a.b = taint;
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(str);
 	}

@@ -26,6 +26,7 @@ import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
+import soot.jimple.NewArrayExpr;
 import soot.jimple.NewExpr;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
@@ -83,7 +84,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
-							
 							boolean addRightValue = false;
 							boolean keepAllFieldTaintStar = true;
 							Set<Abstraction> res = new HashSet<Abstraction>();
@@ -92,18 +92,19 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue)) {
 								return Collections.emptySet();
 							}
-							// if we have the tainted value on the right side of the assignment, we have to start a new forward task:
+							// if we have the tainted value on the right side of the assignment, we have to start a new forward task
+							// it the left side is not a PrimType or a String!
 							if (rightValue instanceof InstanceFieldRef) {
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
 
-								if (triggerReverseFlow(rightValue, source) && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().equals(source.getAccessPath().getField())) { //not required: DataTypeHandler.isPrimTypeOrString(ref.getField()) &&
+								if (triggerReverseFlow(leftValue, source) && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().equals(source.getAccessPath().getField())) {
 									Abstraction abs = source.deriveNewAbstraction(leftValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
 									// this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
 
 								}
 							}else{
-								if (rightValue.equals(source.getAccessPath().getPlainValue()) && triggerReverseFlow(rightValue, source)) {
+								if (rightValue.equals(source.getAccessPath().getPlainValue()) && triggerReverseFlow(leftValue, source)) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue));
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
 								}
@@ -112,7 +113,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 							
 							// termination shortcut:
-							if (leftValue.equals(source.getAccessPath().getPlainValue()) && rightValue instanceof NewExpr) {
+							if (leftValue.equals(source.getAccessPath().getPlainValue()) && (rightValue instanceof NewExpr || rightValue instanceof NewArrayExpr)) {
 								return Collections.emptySet();
 							}
 
@@ -260,19 +261,24 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 								if (!param) {
-
 									if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+										Abstraction abs;
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource()));
+											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource());
 										else
-											res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL)));
+											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL));
+										HashMap<Integer, Local> callMap = new HashMap<Integer, Local>();
+										callMap.put(-1, thisL);
+										//pop the empty map and add new one:
+										abs.popCurrentCallArgs();
+										abs.addCurrentCallArgs(callMap);
+										res.add(abs);
 									}
 								}
 							}
 							// TODO: maybe params?
 
 						}
-
 						return res;
 					}
 
@@ -308,7 +314,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									System.out.println("wrong size for call " + stmt + "( size: "+ callArgs.size() +") this is what I got:" + entry.getKey() + " " + entry.getValue() +  " in "+ source.getcurrentArgs());
 									return Collections.emptySet();
 								}
-								if (!callArgs.get(entry.getKey()).equals(entry.getValue())) {
+								if(entry.getKey() == -1){
+									if(!(ie instanceof InstanceInvokeExpr) || ((InstanceInvokeExpr)ie).getBase().equals(entry.getValue())){
+										System.out.println("base element does not fit!");
+										return Collections.emptySet();
+									}
+								}else if (!callArgs.get(entry.getKey()).equals(entry.getValue())) {
 									System.out.println("arguments do not match:" + callArgs.get(entry.getKey()) + " " + entry.getValue());
 									return Collections.emptySet();
 								}

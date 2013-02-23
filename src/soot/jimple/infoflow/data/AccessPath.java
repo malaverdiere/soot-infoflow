@@ -92,6 +92,7 @@ public class AccessPath {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((field == null) ? 0 : field.hashCode());
+		result = prime * result + (unknownfieldtainted ? 1231 : 1237);
 		result = prime * result + ((value == null) ? 0 : value.hashCode());
 		return result;
 	}
@@ -110,6 +111,8 @@ public class AccessPath {
 				return false;
 		} else if (!field.equals(other.field))
 			return false;
+		if (unknownfieldtainted != other.unknownfieldtainted)
+			return false;
 		if (value == null) {
 			if (other.value != null)
 				return false;
@@ -120,6 +123,7 @@ public class AccessPath {
 	
 	public boolean isStaticFieldRef(){
 		if(value == null && field != null){
+			assert field.makeRef() instanceof StaticFieldRef;
 			return true;
 		}
 		return false;

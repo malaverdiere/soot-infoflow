@@ -27,10 +27,11 @@ public class SootConfigForTest implements IInfoflowSootConfig{
 		includeList.add("com.jakobkontor.");
 		includeList.add("libcore.icu.");
 		includeList.add("securibench.");
-
+		Options.v().set_no_bodies_for_excluded(true);
+		Options.v().set_allow_phantom_refs(true);
 		options.set_include(includeList);
 		options.set_output_format(Options.output_format_none);
-		
+		Options.v().setPhaseOption("jb", "use-original-names:true");
 		soot.options.Options.v().set_prepend_classpath(true);
 		
 	}

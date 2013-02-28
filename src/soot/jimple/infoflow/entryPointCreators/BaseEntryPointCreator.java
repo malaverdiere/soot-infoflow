@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.util;
+package soot.jimple.infoflow.entryPointCreators;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -117,6 +117,13 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			LocalGenerator generator = new LocalGenerator(body);
 			Local tempLocal = generator.generateLocal(RefType.v(createdClass));
 			
+			//TODO: this is a simple hack for the securiBench-Tests:
+			if(createdClass.toString().equals("javax.servlet.http.HttpServletRequest")){
+				createdClass = Scene.v().forceResolve("soot.jimple.infoflow.entryPointCreators.dummyClasses.DummyHttpRequest", SootClass.BODIES);
+			}else if(createdClass.toString().equals("javax.servlet.http.HttpServletResponse")){
+				createdClass = Scene.v().forceResolve("soot.jimple.infoflow.entryPointCreators.dummyClasses.DummyHttpResponse", SootClass.BODIES);
+			}
+			
 			NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
 			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
 			body.getUnits().add(assignStmt);
@@ -125,6 +132,11 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			String outerClass = isInnerClass ? createdClass.getName().substring
 					(0, createdClass.getName().lastIndexOf("$")) : "";
 			
+			if(createdClass.isInterface() || createdClass.isAbstract()){
+				System.err.println("Warning, cannot create valid constructor for " + createdClass +
+						", because it is "+(createdClass.isInterface()?"an interface":(createdClass.isAbstract()?"abstract":"")));
+			}
+					
 			// Find a constructor we can invoke
 			for (SootMethod currentMethod : createdClass.getMethods()) {
 				if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {

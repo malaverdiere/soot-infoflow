@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.util;
+package soot.jimple.infoflow.entryPointCreators;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +17,7 @@ import soot.jimple.IntConstant;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
 import soot.jimple.infoflow.data.SootMethodAndClass;
+import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JEqExpr;
 import soot.jimple.internal.JGotoStmt;
@@ -415,7 +416,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		
 	
-		
+		System.out.println(body);
 		return mainMethod;
 	}
 	

@@ -64,7 +64,7 @@ public abstract class JUnitTests {
     public static void setUp() throws IOException
     {
     	 File f = new File(".");
-    	 path = System.getProperty("java.home")+ File.separator + "lib"+File.separator + "jce.jar;" +
+    	 path = //System.getProperty("java.home")+ File.separator + "lib"+File.separator + "jce.jar;" +
     	 		System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar;"+
     			 f.getCanonicalPath() + File.separator + "bin;"+
     			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar";

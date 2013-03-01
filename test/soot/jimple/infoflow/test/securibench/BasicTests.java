@@ -9,6 +9,19 @@ import soot.jimple.infoflow.Infoflow;
 
 public class BasicTests extends JUnitTests {
 
+	/**
+	 * custom test to check whether there is an edge to string methods or not on different 
+	 * configurations
+	 */
+	@Test
+	public void basic0() {
+	Infoflow infoflow = initInfoflow();
+	List<String> epoints = new ArrayList<String>();
+	epoints.add("<securibench.micro.basic.Basic0: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
+	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	checkInfoflow(infoflow);
+	}
+	
 	@Test
 	public void basic1() {
 	Infoflow infoflow = initInfoflow();
@@ -17,7 +30,7 @@ public class BasicTests extends JUnitTests {
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
-
+	
 	@Test
 	public void basic2() {
 	Infoflow infoflow = initInfoflow();
@@ -133,6 +146,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic14: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -205,6 +219,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic22: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -214,6 +229,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic23: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -223,6 +239,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic24: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -241,6 +258,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic26: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -286,6 +304,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic31: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -304,6 +323,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic33: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -322,6 +342,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic35: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -331,6 +352,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic36: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -367,6 +389,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic40: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -376,6 +399,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic41: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 	@Test
@@ -385,6 +409,7 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic42: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, epoints, sources, sinks);
 	checkInfoflow(infoflow);
+	//TODO: this test fails at the moment!
 	}
 
 

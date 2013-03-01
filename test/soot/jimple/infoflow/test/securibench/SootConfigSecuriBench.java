@@ -26,6 +26,10 @@ public class SootConfigSecuriBench implements IInfoflowSootConfig{
 //		includeList.add("javax.crypto.");
 		options.set_include(includeList);
 		options.set_output_format(Options.output_format_none);
+		
+		//this options might help:
+		//options.setPhaseOption("cg.spark", "types-for-sites:true");
+		//options.setPhaseOption("cg.spark", "vta:true");
 	}
 
 }

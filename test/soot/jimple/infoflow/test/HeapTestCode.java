@@ -1,9 +1,29 @@
 package soot.jimple.infoflow.test;
 
+import java.util.ArrayList;
+
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
+import soot.jimple.infoflow.test.utilclasses.ClassWithField;
 
 public class HeapTestCode {
+	
+	public void argumentTest(){
+		ClassWithField x = new ClassWithField();
+		run(x);
+		x.listField = new ArrayList<String>();
+		x.listField.add(TelephonyManager.getDeviceId());
+		
+	}
+	
+	public static void run(ClassWithField o){
+		o = new ClassWithField();
+		o.listField = new ArrayList<String>();
+		o.listField.add("empty");
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(o.field);
+		
+	}
 	
 	public void negativeTest(){
 		String taint = TelephonyManager.getDeviceId();

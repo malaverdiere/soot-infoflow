@@ -123,7 +123,7 @@ public class AccessPath {
 	
 	public boolean isStaticFieldRef(){
 		if(value == null && field != null){
-			assert field.makeRef() instanceof StaticFieldRef;
+			assert (field.makeRef() instanceof StaticFieldRef || field.makeRef().isStatic());
 			return true;
 		}
 		return false;

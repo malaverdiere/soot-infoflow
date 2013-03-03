@@ -41,7 +41,9 @@ public class Abstraction {
 	
 	public Abstraction deriveNewAbstraction(Value taint, boolean fieldtainted){
 		Abstraction a = new Abstraction(new AccessPath(taint, fieldtainted), source);
-		a.originalCallArgs = (Stack<HashMap<Integer, Local>>) originalCallArgs.clone();
+		if(originalCallArgs != null){
+			a.originalCallArgs = (Stack<HashMap<Integer, Local>>) originalCallArgs.clone();
+		}
 		return a;
 	}
 	
@@ -105,7 +107,7 @@ public class Abstraction {
 	}
 	
 	public HashMap<Integer,Local> getcurrentArgs(){
-		if(!originalCallArgs.isEmpty()){
+		if(originalCallArgs != null && !originalCallArgs.isEmpty()){
 			return originalCallArgs.peek();
 		}
 		return null;

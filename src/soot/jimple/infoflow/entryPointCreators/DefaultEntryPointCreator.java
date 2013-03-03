@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.util;
+package soot.jimple.infoflow.entryPointCreators;
 
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +49,7 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator implements I
 				Local localVal = generateClassConstructor(createdClass, body);
 				localVarsForClasses.put(className, localVal);
 			}else{
-				System.out.println("Alarm!! "+ createdClass);
+				System.out.println("Cannot generate constructor for class: "+ createdClass);
 			}
 		}
 		

@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.util;
+package soot.jimple.infoflow.entryPointCreators;
 
 import java.util.List;
 import java.util.Map;

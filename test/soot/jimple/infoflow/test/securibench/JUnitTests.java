@@ -64,9 +64,9 @@ public abstract class JUnitTests {
     public static void setUp() throws IOException
     {
     	 File f = new File(".");
-    	 path = //System.getProperty("java.home")+ File.separator + "lib"+File.separator + "jce.jar;" +
-    	 		System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar;"+
-    			 f.getCanonicalPath() + File.separator + "bin;"+
+    	 path = //System.getProperty("java.home")+ File.separator + "lib"+File.separator + "jce.jar" + System.getProperty("path.separator") +
+    	 		System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar"+ System.getProperty("path.separator") +
+    			 f.getCanonicalPath() + File.separator + "bin"+ System.getProperty("path.separator") + 
     			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar";
         System.out.println("Using following locations as sources for classes: " + path);
     	 sources = Arrays.asList(sourceArray);

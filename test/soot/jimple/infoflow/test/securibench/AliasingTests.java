@@ -34,6 +34,7 @@ public class AliasingTests extends JUnitTests {
 		epoints.add("<securibench.micro.aliasing.Aliasing3: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");	
 		infoflow.computeInfoflow(path, epoints, sources, sinks);
 		checkInfoflow(infoflow);
+		//INFO: this test fails but I don't think there is a flow from source to sink.
 	}
 	
 	@Test

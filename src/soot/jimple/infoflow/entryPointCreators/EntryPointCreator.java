@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.util;
+package soot.jimple.infoflow.entryPointCreators;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -26,7 +26,6 @@ import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
 import soot.jimple.LongConstant;
 import soot.jimple.NewExpr;
-import soot.jimple.SpecialInvokeExpr;
 import soot.jimple.StringConstant;
 import soot.jimple.VirtualInvokeExpr;
 
@@ -56,26 +55,7 @@ public class EntryPointCreator {
 				}
 			}
 		} else {
-			// backup: simplified form:
-			LocalGenerator generator = new LocalGenerator(body);
-			Local tempLocal = generator.generateLocal(RefType.v(classEntry.getKey())); //or: createdClass
-			
-			System.out.println("Warning - old code executed:");
-			NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(classEntry.getKey()));
-			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
-			SpecialInvokeExpr sinvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, Scene.v().makeMethodRef(createdClass, "<init>", new ArrayList<Type>(), VoidType.v(), false));
-			body.getUnits().add(assignStmt);
-			body.getUnits().add(Jimple.v().newInvokeStmt(sinvokeExpr));
-
-			generateClassConstructor(Scene.v().getSootClass(classEntry.getKey()), body,classEntry.getValue());
-			
-			// TODO: also call constructor of call params:
-			for (String method : classEntry.getValue()) {
-				SootMethod sMethod = Scene.v().getMethod(method);
-				entryPoints.add(sMethod);
-
-			}
-
+			System.out.println("Could not generator constructor for class: " + createdClass);
 		}
 
 		SootMethod mainMethod = new SootMethod("dummyMainMethod", new ArrayList<Type>(), VoidType.v());
@@ -143,7 +123,6 @@ public class EntryPointCreator {
 	}
 
 	private Value generateClassConstructor(SootClass createdClass, JimpleBody body, List<String> startMethods ) {
-		System.out.println("XXX - " + createdClass.toString());
 		// if sootClass is simpleClass:
 		if (EntryPointCreator.isSimpleType(createdClass.toString())) {
 			LocalGenerator generator = new LocalGenerator(body);

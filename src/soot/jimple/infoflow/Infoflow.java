@@ -232,7 +232,7 @@ public class Infoflow implements IInfoflow {
 		initializeSoot(path, classes.keySet(), sourcesSinks, entryPoint);
 
 		if (!Scene.v().containsMethod(entryPoint)){
-			System.err.println("Entry point not found");
+			System.err.println("Entry point not found: " + entryPoint);
 			return;
 		}
 		SootMethod ep = Scene.v().getMethod(entryPoint);
@@ -293,12 +293,12 @@ public class Infoflow implements IInfoflow {
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
 							if (s.containsInvokeExpr()) {
-								if (sourcesSinks.isSource(s)) {
+								if (sourcesSinks.isSource(s, problem.interproceduralCFG())) {
 									problem.initialSeeds.add(u);
 									if (DEBUG)
 										System.out.println("Source found: " + u);
 								}
-								if (sourcesSinks.isSink(s)) {
+								if (sourcesSinks.isSink(s, problem.interproceduralCFG())) {
 									if (DEBUG)
 										System.out.println("Sink found: " + u);
 									hasSink = true;

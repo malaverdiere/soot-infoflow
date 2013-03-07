@@ -337,12 +337,12 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 							if (iStmt instanceof JAssignStmt) {
 								final JAssignStmt stmt = (JAssignStmt) iStmt;
 
-								if (sourceSinkManager.isSource(stmt)) {
+								if (sourceSinkManager.isSource(stmt, interproceduralCFG())) {
 									res.add(new Abstraction(LocalBaseSelector.selectBase(stmt.getLeftOp()), stmt.getInvokeExpr()));
 								}
 							}
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
-							if (sourceSinkManager.isSink(iStmt)) {
+							if (sourceSinkManager.isSink(iStmt, interproceduralCFG())) {
 								boolean taintedParam = false;
 								for (int i = 0; i < callArgs.size(); i++) {
 									if (callArgs.get(i).equals(source.getAccessPath().getPlainValue())) {

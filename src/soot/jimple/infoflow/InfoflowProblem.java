@@ -8,11 +8,9 @@ import heros.solver.PathEdge;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import soot.Local;
 import soot.NullType;
@@ -247,9 +245,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue)) {
 								return Collections.emptySet();
 							}
-							if(src.toString().contains("a.<soot.jimple.infoflow.test.HeapTestCode$A: java.lang.String b> = tai")){
-								System.out.println("salad");
-							}
 							
 							for (Value rightValue : rightVals) {
 								// check if static variable is tainted (same name, same class)
@@ -379,8 +374,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
-						//push empty arg map (no conditions):
-						source.addCurrentCallArgs(new HashMap<Integer, Local>());
 
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
@@ -406,11 +399,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(dest.getActiveBody().getThisLocal()), source.getSource(), ((AbstractionWithPath) source).getPropagationPath(), stmt);
 								else
 									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(dest.getActiveBody().getThisLocal()));
-								HashMap<Integer, Local> callMap = new HashMap<Integer, Local>();
-								callMap.put(-1, (Local)vie.getBase());
-								//pop the empty map and add new one:
-								abs.popCurrentCallArgs();
-								abs.addCurrentCallArgs(callMap);
 								res.add(abs);
 
 							}
@@ -424,12 +412,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(paramLocals.get(i)), source.getSource(), ((AbstractionWithPath) source).getPropagationPath(), stmt);
 								else
 									abs =source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(paramLocals.get(i)));
-								//add CallParam:
-								HashMap<Integer, Local> callMap = new HashMap<Integer, Local>();
-								callMap.put(i, (Local)callArgs.get(i));
-								//pop the empty map and add new one:
-								abs.popCurrentCallArgs();
-								abs.addCurrentCallArgs(callMap);
 								res.add(abs);
 								
 							}
@@ -457,31 +439,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-				
-						// check arguments here, too. CFG seems to be confused when switching from/to backward:
-						// check if we handle the correct return function by comparing the arguments - otherwise we return the empty set
-						if (source.getcurrentArgs() != null) {
-							Stmt stmt = (Stmt) callSite;
-							InvokeExpr ie = stmt.getInvokeExpr();
-							List<Value> callArgs = ie.getArgs();
-							
-							for (Entry<Integer, Local> entry : source.getcurrentArgs().entrySet()) {
-								if (entry.getKey() >= callArgs.size()) {
-									System.out.println("wrong size for call " + stmt + "( size: "+ callArgs.size() +") this is what I got:" + entry.getKey() + " " + entry.getValue() +  " in "+ source.getcurrentArgs());
-									return Collections.emptySet();
-								}
-								if(entry.getKey() == -1){
-									if(!(ie instanceof InstanceInvokeExpr) || !((InstanceInvokeExpr)ie).getBase().equals(entry.getValue())){
-										System.out.println("base element does not fit!");
-										return Collections.emptySet();
-									}
-								}else if (!callArgs.get(entry.getKey()).equals(entry.getValue())) {
-									System.out.println("arguments do not match:" + callArgs.get(entry.getKey()) + " " + entry.getValue());
-									return Collections.emptySet();
-								} 
-							}
-						}
-						source.popCurrentCallArgs();
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// if we have a returnStmt we have to look at the returned value:

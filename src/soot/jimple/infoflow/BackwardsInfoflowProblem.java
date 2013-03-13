@@ -8,10 +8,8 @@ import heros.solver.PathEdge;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import soot.Local;
@@ -36,8 +34,8 @@ import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
-import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
+import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
 
 public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
@@ -208,14 +206,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 						Set<Abstraction> res = new HashSet<Abstraction>();
-
-						if(src.toString().contains("<java.util.LinkedList$Entry: void <init>(java.lang.Object,java.util.LinkedList$Entry,java.util.Linked")){
-							System.out.println( "bw " + source);
-						}
-						
-						//we cannot determine the callargs here, so just add unconditional ones:
-						source.addCurrentCallArgs(new HashMap<Integer, Local>());
-						
+		
 						// if the returned value is tainted - taint values from return statements
 						if (src instanceof DefinitionStmt) {
 							DefinitionStmt defnStmt = (DefinitionStmt) src;
@@ -267,11 +258,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource());
 										else
 											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL));
-										HashMap<Integer, Local> callMap = new HashMap<Integer, Local>();
-										callMap.put(-1, thisL);
-										//pop the empty map and add new one:
-										abs.popCurrentCallArgs();
-										abs.addCurrentCallArgs(callMap);
 										res.add(abs);
 									}
 								}
@@ -306,26 +292,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-
-						// check if we handle the correct return function by comparing the arguments - otherwise we return the empty set
-						if (source.getcurrentArgs() != null) {
-							for (Entry<Integer, Local> entry : source.getcurrentArgs().entrySet()) {
-								if (entry.getKey() >= callArgs.size()) {
-									System.out.println("wrong size for call " + stmt + "( size: "+ callArgs.size() +") this is what I got:" + entry.getKey() + " " + entry.getValue() +  " in "+ source.getcurrentArgs());
-									return Collections.emptySet();
-								}
-								if(entry.getKey() == -1){
-									if(!(ie instanceof InstanceInvokeExpr) || ((InstanceInvokeExpr)ie).getBase().equals(entry.getValue())){
-										System.out.println("base element does not fit!");
-										return Collections.emptySet();
-									}
-								}else if (!callArgs.get(entry.getKey()).equals(entry.getValue())) {
-									System.out.println("arguments do not match:" + callArgs.get(entry.getKey()) + " " + entry.getValue());
-									return Collections.emptySet();
-								}
-							}
-						}
-						source.popCurrentCallArgs();
 
 						Value base = source.getAccessPath().getPlainValue();
 						Set<Abstraction> res = new HashSet<Abstraction>();

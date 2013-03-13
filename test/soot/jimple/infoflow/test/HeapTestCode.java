@@ -8,6 +8,26 @@ import soot.jimple.infoflow.test.utilclasses.ClassWithField;
 
 public class HeapTestCode {
 	
+	public class Y{
+		String f;
+		
+		public void set(String s){
+			f = s;
+		}
+	}
+	
+	public void simpleTest(){
+		String taint = TelephonyManager.getDeviceId();
+		Y a = new Y();
+		Y b = new Y();
+		
+		a.set(taint);
+		b.set("notaint");
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.f);
+		
+	}
+	
 	public void argumentTest(){
 		ClassWithField x = new ClassWithField();
 		run(x);
@@ -73,7 +93,6 @@ public class HeapTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(str);
 	}
-	
 	
 	
 	class A{

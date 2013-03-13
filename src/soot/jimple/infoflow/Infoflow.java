@@ -181,9 +181,11 @@ public class Infoflow implements IInfoflow {
 		boolean hasClasses = false;
 		for (String className : classes) {
 			SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
-			c.setApplicationClass();
-			if (c != null && !c.isPhantomClass() && !c.isPhantom())
-				hasClasses = true;
+			if (c != null){
+				c.setApplicationClass();
+				if(!c.isPhantomClass() && !c.isPhantom())
+					hasClasses = true;
+			}
 		}
 		if (!hasClasses) {
 			System.out.println("Only phantom classes loaded, skipping analysis...");

@@ -64,7 +64,7 @@ public class MapTestCode {
 		map.put("tainted", tainted);
 		
 		//because whole list is tainted, even untainted elements are tainted if they are fetched from the list
-		String taintedElement2 = map.get(0);
+		String taintedElement2 = map.get("neutral");
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement2);
@@ -75,7 +75,7 @@ public class MapTestCode {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("neutral", "neutral");
 		map.put("tainted", tainted);
-		String taintedElement = map.get(1);
+		String taintedElement = map.get("tainted");
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement);
@@ -122,8 +122,8 @@ public class MapTestCode {
 		HashMap<String, String> list = new HashMap<String, String>();
 		list.put("neutral", "neutral");
 		notRelevantList.put("tainted", tainted);
-		String taintedElement = notRelevantList.get(0);
-		String untaintedElement = list.get(0);
+		String taintedElement = notRelevantList.get("tainted");
+		String untaintedElement = list.get("neutral");
 		taintedElement.toString();
 		
 		ConnectionManager cm = new ConnectionManager();

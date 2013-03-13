@@ -200,9 +200,11 @@ public class Infoflow implements IInfoflow {
 		boolean hasClasses = false;
 		for (String className : classes) {
 			SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
-			c.setApplicationClass();
-			if (c != null && !c.isPhantomClass() && !c.isPhantom())
-				hasClasses = true;
+			if (c != null){
+				c.setApplicationClass();
+				if(!c.isPhantomClass() && !c.isPhantom())
+					hasClasses = true;
+			}
 		}
 		if (!hasClasses) {
 			System.out.println("Only phantom classes loaded, skipping analysis...");
@@ -274,7 +276,7 @@ public class Infoflow implements IInfoflow {
 		}
 
 		if (!Scene.v().containsMethod(entryPoint)){
-			System.err.println("Entry point not found");
+			System.err.println("Entry point not found: " + entryPoint);
 			return;
 		}
 		SootMethod ep = Scene.v().getMethod(entryPoint);
@@ -332,12 +334,13 @@ public class Infoflow implements IInfoflow {
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
 							if (s.containsInvokeExpr()) {
-								if (sourcesSinks.isSource(s)) {
+								if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
 									forwardProblem.initialSeeds.add(u);
+
 									if (DEBUG)
 										System.out.println("Source found: " + u);
 								}
-								if (sourcesSinks.isSink(s)) {
+								if (sourcesSinks.isSink(s, forwardProblem.interproceduralCFG())) {
 									if (DEBUG)
 										System.out.println("Sink found: " + u);
 									hasSink = true;

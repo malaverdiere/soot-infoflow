@@ -41,7 +41,7 @@ public class OtherTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(alsoTainted);
-		}
+	}
 	
 	public static void static2Test(){
 		String tainted = TelephonyManager.getDeviceId();
@@ -72,13 +72,7 @@ public class OtherTestCode {
 		String concat3 = "test " + tainted;
 		
 		ConnectionManager cm = new ConnectionManager();
-		//this way it does not work:
-		cm.publish(concat1.concat(concat2).concat(concat3));
-		//this way, it works:
-//		cm.publish(concat1);
-//		cm.publish(concat2);
-//		cm.publish(concat3);
-		
+		cm.publish(concat1.concat(concat2).concat(concat3));	
 	}
 	
 	public void stringConcatTestSmall(){
@@ -88,7 +82,6 @@ public class OtherTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(one);
-		
 	}
 	
 	public void stringConcatTestSmall2(){
@@ -98,7 +91,6 @@ public class OtherTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(one);
-	
 	}
 	
 	public void stringConcatTestSmall3(){
@@ -108,13 +100,7 @@ public class OtherTestCode {
 		String concat2 = two.concat(tainted);
 		
 		ConnectionManager cm = new ConnectionManager();
-		//this way it does not work:
 		cm.publish(concat1.concat(concat2).concat("foo"));
-		//this way, it works:
-//		cm.publish(concat1);
-//		cm.publish(concat2);
-//		cm.publish(concat3);
-		
 	}
 
 	private String deviceId = "";
@@ -140,4 +126,48 @@ public class OtherTestCode {
 		intf.doSomething();
 	}
 	
+	private class HierarchyTest1 {
+
+		private String foo;
+				
+		public void set() {
+			this.foo = TelephonyManager.getDeviceId();
+		}
+		
+		public String get() {
+			return this.foo;
+		}
+			
+	}
+
+	private class HierarchyTest2 extends HierarchyTest1 {
+		public String foo;
+		
+		public String get() {
+			return this.foo;
+		}
+	}
+
+	private class HierarchyTest3 extends HierarchyTest1 {
+		public String get() {
+			return super.get();
+		}
+	}
+
+	public void classHierarchyTest() {
+		HierarchyTest2 ht = new HierarchyTest2();
+		ht.set();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ht.get());
+	}
+	
+	public void classHierarchyTest2() {
+		HierarchyTest3 ht = new HierarchyTest3();
+		ht.set();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ht.get());
+	}
+
 }

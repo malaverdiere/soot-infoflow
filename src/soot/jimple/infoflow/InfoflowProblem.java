@@ -38,7 +38,7 @@ import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JimpleLocal;
-import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
+import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
@@ -569,8 +569,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							if (iStmt instanceof JAssignStmt) {
 								final JAssignStmt stmt = (JAssignStmt) iStmt;
-
-								if (sourceSinkManager.isSource(stmt)) {
+								if (sourceSinkManager.isSource(stmt, interproceduralCFG())) {
 									if (DEBUG)
 										System.out.println("Found source: " + stmt.getInvokeExpr().getMethod());
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
@@ -586,7 +585,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
-							if (sourceSinkManager.isSink(iStmt)) {
+							if (sourceSinkManager.isSink(iStmt, interproceduralCFG())) {
 								boolean taintedParam = false;
 								for (int i = 0; i < callArgs.size(); i++) {
 									if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal())) {
@@ -632,12 +631,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	}
 
 	public InfoflowProblem(List<String> sourceList, List<String> sinkList) {
-		super(new JimpleBasedInterproceduralCFG());
+		super(new JimpleBasedBiDiICFG());
 		this.sourceSinkManager = new DefaultSourceSinkManager(sourceList, sinkList);
 	}
 
 	public InfoflowProblem(SourceSinkManager sourceSinkManager) {
-		super(new JimpleBasedInterproceduralCFG());
+		super(new JimpleBasedBiDiICFG());
 		this.sourceSinkManager = sourceSinkManager;
 	}
 
@@ -670,7 +669,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	}
 
 	public InfoflowProblem(SourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds) {
-	    super(new JimpleBasedInterproceduralCFG());
+	    super(new JimpleBasedBiDiICFG());
 	    this.sourceSinkManager = mySourceSinkManager;
 	    this.initialSeeds.addAll(analysisSeeds);
     }

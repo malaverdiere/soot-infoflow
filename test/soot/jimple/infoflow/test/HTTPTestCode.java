@@ -12,7 +12,8 @@ import soot.jimple.infoflow.test.android.TelephonyManager;
 public class HTTPTestCode {
 	
 	public void testURL() throws MalformedURLException{
-		URL url = new URL(TelephonyManager.getDeviceId());
+		String urlString = "http://www.google.de/?q="+ TelephonyManager.getDeviceId();
+		URL url = new URL(urlString);
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(url.toString());
 		}

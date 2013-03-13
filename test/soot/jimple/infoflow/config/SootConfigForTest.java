@@ -32,7 +32,6 @@ public class SootConfigForTest implements IInfoflowSootConfig{
 		options.set_include(includeList);
 		options.set_output_format(Options.output_format_none);
 		Options.v().setPhaseOption("jb", "use-original-names:true");
-		soot.options.Options.v().set_prepend_classpath(true);
 		
 	}
 

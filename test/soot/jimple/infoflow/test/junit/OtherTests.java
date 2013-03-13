@@ -289,4 +289,22 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow);
     }
 
+    @Test
+    public void classHierarchyTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void classHierarchyTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		negativeCheckInfoflow(infoflow);
+    }
+    
+    @Test
+    public void classHierarchyTest2(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void classHierarchyTest2()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+    
 }

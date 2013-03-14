@@ -384,7 +384,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
@@ -399,6 +398,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(dest.getActiveBody().getThisLocal()), source.getSource(), ((AbstractionWithPath) source).getPropagationPath(), stmt);
 								else
 									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(dest.getActiveBody().getThisLocal()));
+								//add new callArgs:
+								abs.addToStack(src);
 								res.add(abs);
 
 							}
@@ -412,6 +413,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(paramLocals.get(i)), source.getSource(), ((AbstractionWithPath) source).getPropagationPath(), stmt);
 								else
 									abs =source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(paramLocals.get(i)));
+								abs.addToStack(src);
 								res.add(abs);
 								
 							}
@@ -419,7 +421,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						// staticfieldRefs must be analyzed even if they are not part of the params:
 						if (source.getAccessPath().isStaticFieldRef()) {
-							res.add(source);
+							res.add(source.deriveNewAbstraction(src));
 						}
 						
 						return res;
@@ -440,8 +442,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 						
+						//check if this is the correct method by inspecting the stack:
+						if(!callSite.equals(source.getElementFromStack())){
+							//System.out.println("<f> CallSite is " + callSite + ", but Stack is: "+ source.getElementFromStack());
+							return Collections.emptySet();
+						}
+						
 						Set<Abstraction> res = new HashSet<Abstraction>();
-						// if we have a returnStmt we have to look at the returned value:
+						// if we have a returnStmt we have to look at the returned vaElue:
 						if (exitStmt instanceof ReturnStmt) {
 							ReturnStmt returnStmt = (ReturnStmt) exitStmt;
 							Value retLocal = returnStmt.getOp();
@@ -450,10 +458,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								DefinitionStmt defnStmt = (DefinitionStmt) callSite;
 								Value leftOp = defnStmt.getLeftOp();
 								if (retLocal.equals(source.getAccessPath().getPlainLocal())) {
+									Abstraction abs;
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), ((AbstractionWithPath) source).getPropagationPath(), exitStmt));
+										abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(leftOp), source.getSource(), ((AbstractionWithPath) source).getPropagationPath(), exitStmt);
 									else
-										res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftOp)));
+										abs =source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftOp));
+									abs.removeFromStack();
+									res.add(abs);
 								}
 								
 								// TODO: think about it - is this necessary?
@@ -469,7 +480,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						// easy: static
 						if (source.getAccessPath().isStaticFieldRef()) {
-							res.add(source);
+							Abstraction abs = source.clone();
+							abs.removeFromStack();
+							res.add(abs);
 						}
 
 						// checks: this/params/fields
@@ -490,11 +503,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(originalCallArg), source.getSource(), ((AbstractionWithPath) source).getPropagationPath(), exitStmt);
 										else
 											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(originalCallArg));
-										res.add(abs);
-
+										abs.removeFromStack();
+										res.add(abs.clone());
 										// call backwards-check:
 										Unit predUnit = getUnitBefore(callSite);
 										bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, predUnit, abs));
+										
 									}
 								}
 							}
@@ -523,7 +537,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(iIExpr.getBase()), source.getSource(), ((AbstractionWithPath) source).getPropagationPath(), exitStmt);
 											else
 												abs =  source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(iIExpr.getBase()));
-											res.add(abs);
+											abs.removeFromStack();
+											res.add(abs.clone());
 											//trigger reverseFlow:
 											if (triggerReverseFlow(iIExpr.getBase(), source)) {
 												Unit predUnit = getUnitBefore(callSite);

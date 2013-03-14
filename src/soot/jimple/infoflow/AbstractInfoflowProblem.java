@@ -178,8 +178,18 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 			return false;
 		//no string!
 		if(val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
+			//TODO: do not check val but also source...
 			return false;
 		}
+		if(source.getAccessPath().getPlainValue().getType() instanceof RefType &&
+				((RefType)source.getAccessPath().getPlainValue().getType()).getClassName().equals("java.lang.String")){
+			return false;
+		}
+		if(source.getAccessPath().getField() != null && source.getAccessPath().getField().getType() instanceof RefType &&
+				((RefType)source.getAccessPath().getField().getType()).getClassName().equals("java.lang.String")){
+			return false;
+		}
+		
 		if(DataTypeHandler.isFieldRefOrArrayRef(val)  ||
 				source.getAccessPath().isOnlyFieldsTainted() ||
 				source.getAccessPath().isInstanceFieldRef() ||

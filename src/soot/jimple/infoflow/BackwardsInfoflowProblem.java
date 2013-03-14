@@ -216,10 +216,13 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								for (Unit u : method.getActiveBody().getUnits()) {
 									if (u instanceof ReturnStmt) {
 										ReturnStmt rStmt = (ReturnStmt) u;
+										Abstraction abs;
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource()));
+											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource());
 										else
-											res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp())));
+											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()));
+										abs.addToStack(src);
+										res.add(abs);
 									}
 								}
 							}
@@ -227,7 +230,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 						// easy: static
 						if (source.getAccessPath().isStaticFieldRef()) {
-							res.add(source);
+							Abstraction abs = source.clone();
+							abs.addToStack(src);
+							res.add(abs);
 						}
 
 						// checks: this/fields
@@ -258,6 +263,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource());
 										else
 											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL));
+										abs.addToStack(src);
 										res.add(abs);
 									}
 								}
@@ -293,6 +299,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 
+						//check if this is the correct method by inspecting the stack:
+						if(!stmt.equals(source.getElementFromStack())){
+							//System.out.println("<b> CallSite is " + stmt + ", but Stack is: "+ source.getElementFromStack());
+							return Collections.emptySet();
+						}
+						
 						Value base = source.getAccessPath().getPlainValue();
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// if taintedobject is instancefieldRef we have to check if the object is delivered..
@@ -303,27 +315,35 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							// first, instancefieldRefs must be propagated if they come from the same class:
 							if (!callee.isStatic() && callee.getActiveBody().getThisLocal().equals(base) && ie instanceof InstanceInvokeExpr) {
 								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
+								Abstraction abs;
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource()));
+									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource());
 								else
-									res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(vie.getBase())));
+									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(vie.getBase()));
+								abs.removeFromStack();
+								res.add(abs);
 							}
 						}
 
 						// check if param is tainted:
 						for (int i = 0; i < callArgs.size(); i++) {
 							if (paramLocals.get(i).equals(base)) {
+								Abstraction abs;
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource()));
+									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource());
 								else
-									res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i))));
+									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)));
 								// if abs. contains "neutral" -> this is the case :/ @LinkedListNegativeTest
+								abs.removeFromStack();
+								res.add(abs);
 							}
 						}
 
 						// staticfieldRefs must be analyzed even if they are not part of the params:
 						if (source.getAccessPath().isStaticFieldRef()) {
-							res.add(source);
+							Abstraction abs = source.clone();
+							abs.removeFromStack();
+							res.add(abs);
 						}
 						return res;
 					}

@@ -1,7 +1,5 @@
 package soot.jimple.infoflow.source;
 
-import java.util.List;
-
 import soot.SootMethod;
 
 /**

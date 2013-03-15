@@ -61,6 +61,7 @@ public class StringTestCode {
 	public void methodStringConcatNegative(){
 		String pre = "pre";
 		String tainted = TelephonyManager.getDeviceId();
+		@SuppressWarnings("unused")
 		String post = tainted.concat(pre);
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(pre);
@@ -169,7 +170,7 @@ public class StringTestCode {
 
 
 //	private String imei;
-	private String URL = "http://www.google.de/?q=";
+//	private String URL = "http://www.google.de/?q=";
 	private ClassWithField fieldc = new ClassWithField();
 //	public void originalFromPrototyp(){
 //		imei = TelephonyManager.getDeviceId();

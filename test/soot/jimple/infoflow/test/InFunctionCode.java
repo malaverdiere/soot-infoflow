@@ -6,7 +6,7 @@ public class InFunctionCode {
 		return secret;
 	}
 
-	public String infSourceCode2(String foo) {
+	public String infSourceCode2(@SuppressWarnings("unused") String foo) {
 		String secret = "Hello World";
 		return secret;
 	}

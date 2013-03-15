@@ -58,6 +58,15 @@ public class StringTestCode {
 		cm.publish(post);
 	}
 	
+	public void methodStringConcatNegative(){
+		String pre = "pre";
+		String tainted = TelephonyManager.getDeviceId();
+		String post = tainted.concat(pre);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(pre);
+		
+	}
+	
 	public void methodStringConcatPlus1(){
 		String pre = "pre";
 		String tainted = TelephonyManager.getDeviceId();;

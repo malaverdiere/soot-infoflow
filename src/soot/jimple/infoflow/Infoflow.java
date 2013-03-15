@@ -337,7 +337,7 @@ public class Infoflow implements IInfoflow {
 					
 					}
 				}
-				if (problem.initialSeeds.isEmpty() || !hasSink){
+				if (problem.initialSeeds.isEmpty() || (!hasSink && !returnIsSink)){
 					System.err.println("No sources or sinks found, aborting analysis");
 					return;
 				}

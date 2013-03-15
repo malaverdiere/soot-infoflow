@@ -49,7 +49,10 @@ public interface IInfoflow {
 	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow);
 
 	/**
-	 * computes the information flow
+	 * Computes the information flow on a list of entry point methods. This list
+	 * is used to construct an artificial main method following the Android
+	 * life cycle for all methods that are detected to be part of Android's
+	 * application infrastructure (e.g. android.app.Activity.onCreate)
 	 * @param path the path to the main folder of the (unpacked) class files
 	 * @param entryPoints the entryPoints (string conforms to SootMethod representation)
 	 * @param sources list of source class+method (as string conforms to SootMethod representation)
@@ -58,7 +61,9 @@ public interface IInfoflow {
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks);
 	
 	/**
-	 * computes the information flow
+	 * Computes the information flow on a single method. This method is
+	 * directly taken as the entry point into the program, even if it is an
+	 * instance method.
 	 * @param path the path to the main folder of the (unpacked) class files
 	 * @param entryPoint the main method to analyze
 	 * @param sources list of source class+method (as string conforms to SootMethod representation)
@@ -67,7 +72,10 @@ public interface IInfoflow {
 	public void computeInfoflow(String path, String entryPoint, List<String> sources, List<String> sinks);
 
 	/**
-	 * computes the information flow
+	 * Computes the information flow on a list of entry point methods. This list
+	 * is used to construct an artificial main method following the Android
+	 * life cycle for all methods that are detected to be part of Android's
+	 * application infrastructure (e.g. android.app.Activity.onCreate)
 	 * @param path the path to the main folder of the (unpacked) class files
 	 * @param entryPoints the entryPoints (string conforms to SootMethod representation)
 	 * @param sourcesSinks manager class for identifying sources and sinks in the source code
@@ -75,7 +83,9 @@ public interface IInfoflow {
 	public void computeInfoflow(String path, List<String> entryPoints, SourceSinkManager sourcesSinks);
 	
 	/**
-	 * computes the information flow
+	 * Computes the information flow on a single method. This method is
+	 * directly taken as the entry point into the program, even if it is an
+	 * instance method.
 	 * @param path the path to the main folder of the (unpacked) class files
 	 * @param entryPoint the main method to analyze
 	 * @param sourcesSinks manager class for identifying sources and sinks in the source code

@@ -51,10 +51,10 @@ public abstract class JUnitTests {
     	"<javax.servlet.ServletConfig: java.lang.String getInitParameter(java.lang.String)>",
     	"<javax.servlet.ServletConfig: java.util.Enumeration getInitParameterNames()>",
     	"<javax.servlet.http.HttpServletRequest: java.util.Map getParameterMap()>",	
-   	 "<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>",
-   	 "<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>",
-   	 "<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
-   	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>"};
+   	 	"<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>",
+   	 	"<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>",
+   	 	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
+   		"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>"};
    
     
     protected static boolean local = false;
@@ -87,7 +87,7 @@ public abstract class JUnitTests {
 				boolean containsSink = false;
 				List<String> actualSinkStrings = new LinkedList<String>();
 				for(String sink : sinkArray){
-					if(map.containsSink(sink)){
+					if(map.containsSinkMethod(sink)){
 						containsSink = true;
 						actualSinkStrings.add(sink); 
 					}
@@ -98,7 +98,7 @@ public abstract class JUnitTests {
 				for(String sink : actualSinkStrings){
 					boolean hasPath = false;
 					for(String source : refinedSourceArray){
-						if(map.isPathBetweenSourceMethod(sink, source)){
+						if(map.isPathBetweenMethods(sink, source)){
 							hasPath = true;
 							break;
 						}
@@ -118,7 +118,7 @@ public abstract class JUnitTests {
 		  if(infoflow.isResultAvailable()){
 				InfoflowResults map = infoflow.getResults();
 				for(String sink : sinkArray){
-					if(map.containsSink(sink)){
+					if(map.containsSinkMethod(sink)){
 						fail("sink is reached: " +sink);
 					}
 				}

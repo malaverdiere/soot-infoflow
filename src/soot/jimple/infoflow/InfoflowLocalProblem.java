@@ -353,26 +353,26 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 
 								if (taintedParam) {
 									if (pathTracking != PathTrackingMethod.NoTracking)
-										results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-												source.getSource().toString(),
+										results.addResult(iStmt.getInvokeExpr(),
+												source.getSource(),
 												((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 												call.toString());
 									else
-										results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-												source.getSource().toString());
+										results.addResult(iStmt.getInvokeExpr(),
+												source.getSource());
 								}
 								// only for LocalAnalysis at the moment: if the base object which executes the method is tainted the sink is reached, too.
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 									InstanceInvokeExpr vie = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 									if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
 										if (pathTracking != PathTrackingMethod.NoTracking)
-											results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-													source.getSource().toString(),
+											results.addResult(iStmt.getInvokeExpr(),
+													source.getSource(),
 													((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 													call.toString());
 										else
-											results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-													source.getSource().toString());
+											results.addResult(iStmt.getInvokeExpr(),
+													source.getSource());
 									}
 								}
 							}

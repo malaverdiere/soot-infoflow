@@ -4,7 +4,7 @@ public class ClassWithFinal<E> {
 	 public final E[] a;
 	 final String b;
 	 
-	 public ClassWithFinal(String c, boolean e){
+	 public ClassWithFinal(String c, @SuppressWarnings("unused") boolean e){
 			if (c==null)
 	            throw new NullPointerException();
 			 b = c;

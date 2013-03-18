@@ -9,7 +9,7 @@ import soot.jimple.infoflow.Infoflow;
 public class InFunctionTests extends JUnitTests {
 
 	private static final String SOURCE_STRING_PARAMETER = "@parameter0: java.lang.String";
-	private static final String SINK_STRING_RETURN = "return secret";
+	private static final String SINK_STRING_RETURN = "secret";
 	
 	@Override
 	protected Infoflow initInfoflow() {

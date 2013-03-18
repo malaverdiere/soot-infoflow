@@ -21,28 +21,34 @@ public abstract class JUnitTests {
 
 
     protected static String path;
-    protected static List<String> sources;
+    
     protected static List<String> sinks;
-    protected static final String sinkString = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(java.lang.String)>";
-    protected static final String sinkStringInt = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(int)>";
-    protected static final String sourceString = "staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()";
+    protected static final String sink = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(java.lang.String)>";
+    protected static final String sinkInt = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(int)>";
+
+    protected static List<String> sources;
+    protected static final String sourceDeviceId = "<soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>";
+    protected static final String sourcePwd = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>";
+    protected static final String sourceUserData = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String[] getUserData(java.lang.String)>";
+   	
     protected static boolean local = false;
     protected static boolean taintWrapper = false;
    
     @BeforeClass
     public static void setUp() throws IOException
     {
-    	 File f = new File(".");
-    	 path = System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar"+ System.getProperty("path.separator") +
-    			 f.getCanonicalPath() + File.separator + "bin";
+    	File f = new File(".");
+    	path = System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar"+ System.getProperty("path.separator") +
+    			f.getCanonicalPath() + File.separator + "bin";
+    	
         sources = new ArrayList<String>();
-
-        sources.add("<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>");
-        sources.add("<soot.jimple.infoflow.test.android.AccountManager: java.lang.String[] getUserData(java.lang.String)>");
-        sources.add("<soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>");
+        sources.add(sourcePwd);
+        sources.add(sourceUserData);
+        sources.add(sourceDeviceId);
+        
         sinks = new ArrayList<String>();
-        sinks.add("<soot.jimple.infoflow.test.android.ConnectionManager: void publish(java.lang.String)>");
-        sinks.add("<soot.jimple.infoflow.test.android.ConnectionManager: void publish(int)>");
+        sinks.add(sink);
+        sinks.add(sinkInt);
     }
     
     @Before
@@ -55,8 +61,9 @@ public abstract class JUnitTests {
     protected void checkInfoflow(Infoflow infoflow){
 		  if(infoflow.isResultAvailable()){
 				InfoflowResults map = infoflow.getResults();
-				assertTrue(map.containsSink(sinkString));
-				assertTrue(map.isPathBetween(sinkString, sourceString));
+				assertTrue(map.containsSinkMethod(sink) || map.containsSinkMethod(sinkInt));
+				assertTrue(map.isPathBetweenMethods(sink, sourceDeviceId)
+						|| map.isPathBetweenMethods(sinkInt, sourceDeviceId));
 			}else{
 				fail("result is not available");
 			}
@@ -65,7 +72,8 @@ public abstract class JUnitTests {
     protected void negativeCheckInfoflow(Infoflow infoflow){
 		  if(infoflow.isResultAvailable()){
 				InfoflowResults map = infoflow.getResults();
-				assertFalse(map.containsSink(sinkString));
+				assertFalse(map.containsSinkMethod(sink));
+				assertFalse(map.containsSinkMethod(sinkInt));
 			}else{
 				fail("result is not available");
 			}

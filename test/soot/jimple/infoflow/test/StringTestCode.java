@@ -1,5 +1,6 @@
 package soot.jimple.infoflow.test;
 
+import soot.jimple.infoflow.test.android.AccountManager;
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 import soot.jimple.infoflow.test.utilclasses.ClassWithField;
@@ -166,6 +167,15 @@ public class StringTestCode {
 	
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(String.valueOf(x));
+	}
+	
+	public void methodStringConcat() {
+		String deviceID = TelephonyManager.getDeviceId();
+		AccountManager am = new AccountManager();
+		String pwd = am.getPassword();
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(deviceID + pwd);
 	}
 
 

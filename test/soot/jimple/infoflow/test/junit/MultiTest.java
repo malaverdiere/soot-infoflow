@@ -11,7 +11,7 @@ import soot.jimple.infoflow.Infoflow;
 
 public class MultiTest extends JUnitTests {
 
-	private static final String SOURCE_STRING_PWD = "virtualinvoke am.<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>()";
+	private static final String SOURCE_STRING_PWD = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>";
 
     @Test
     public void multiTest1(){
@@ -21,7 +21,7 @@ public class MultiTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void multiSourceCode()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow);
-		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkString, SOURCE_STRING_PWD));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
     }
 
     @Test
@@ -32,7 +32,7 @@ public class MultiTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void multiSourceCode2()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow);
-		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkString, SOURCE_STRING_PWD));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
     }
 
     @Test
@@ -43,10 +43,8 @@ public class MultiTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void ifPathTestCode1()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 
-		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkString, SOURCE_STRING_PWD));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
-		Assert.assertEquals(1, infoflow.getResults().getResults().get(sinkString).size());
-		Assert.assertEquals(SOURCE_STRING_PWD, infoflow.getResults().getResults().get(sinkString).iterator().next().getSource());
     }
 
     @Test
@@ -57,10 +55,8 @@ public class MultiTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void ifPathTestCode2()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 
-		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkString, SOURCE_STRING_PWD));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
-		Assert.assertEquals(1, infoflow.getResults().getResults().get(sinkString).size());
-		Assert.assertEquals(SOURCE_STRING_PWD, infoflow.getResults().getResults().get(sinkString).iterator().next().getSource());
     }
 
     @Test
@@ -71,10 +67,8 @@ public class MultiTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void ifPathTestCode3()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 
-		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkString, SOURCE_STRING_PWD));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
-		Assert.assertEquals(1, infoflow.getResults().getResults().get(sinkString).size());
-		Assert.assertEquals(SOURCE_STRING_PWD, infoflow.getResults().getResults().get(sinkString).iterator().next().getSource());
     }
 
     @Test
@@ -85,10 +79,8 @@ public class MultiTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void ifPathTestCode4()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 
-		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkString, SOURCE_STRING_PWD));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
-		Assert.assertEquals(1, infoflow.getResults().getResults().get(sinkString).size());
-		Assert.assertEquals(SOURCE_STRING_PWD, infoflow.getResults().getResults().get(sinkString).iterator().next().getSource());
     }
 
     @Test
@@ -99,10 +91,8 @@ public class MultiTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void loopPathTestCode1()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 
-		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkString, SOURCE_STRING_PWD));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
-		Assert.assertEquals(1, infoflow.getResults().getResults().get(sinkString).size());
-		Assert.assertEquals(SOURCE_STRING_PWD, infoflow.getResults().getResults().get(sinkString).iterator().next().getSource());
     }
 
     @Test
@@ -113,10 +103,8 @@ public class MultiTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void hashTestCode1()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 
-		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkStringInt, SOURCE_STRING_PWD));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
-		Assert.assertEquals(1, infoflow.getResults().getResults().get(sinkStringInt).size());
-		Assert.assertEquals(SOURCE_STRING_PWD, infoflow.getResults().getResults().get(sinkStringInt).iterator().next().getSource());
     }
 
     @Test
@@ -127,10 +115,8 @@ public class MultiTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void shiftTestCode1()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 
-		Assert.assertTrue(infoflow.getResults().isPathBetween(sinkStringInt, SOURCE_STRING_PWD));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
-		Assert.assertEquals(1, infoflow.getResults().getResults().get(sinkStringInt).size());
-		Assert.assertEquals(SOURCE_STRING_PWD, infoflow.getResults().getResults().get(sinkStringInt).iterator().next().getSource());
     }
 
 }

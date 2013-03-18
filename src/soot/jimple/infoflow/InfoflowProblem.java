@@ -356,13 +356,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									&& source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
 							if (isSink) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
-									results.addResult(returnStmt.toString(),
-											source.getSource().toString(),
+									results.addResult(returnStmt.getOp(),
+											source.getSource(),
 											((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 											interproceduralCFG().getMethodOf(returnStmt) + ": " + returnStmt.toString());
 								else
-									results.addResult(returnStmt.toString(),
-											source.getSource().toString());
+									results.addResult(returnStmt.getOp(),
+											source.getSource());
 							}
 							return Collections.singleton(source);
 						}
@@ -696,26 +696,26 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 								if (taintedParam) {
 									if (pathTracking != PathTrackingMethod.NoTracking)
-										results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-												source.getSource().toString(),
+										results.addResult(iStmt.getInvokeExpr(),
+												source.getSource(),
 												((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 												interproceduralCFG().getMethodOf(call) + ": " + call.toString());
 									else
-										results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-												source.getSource().toString());
+										results.addResult(iStmt.getInvokeExpr(),
+												source.getSource());
 								}
 								//if the base object which executes the method is tainted the sink is reached, too.
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 									InstanceInvokeExpr vie = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 									if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
 										if (pathTracking != PathTrackingMethod.NoTracking)
-											results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-													source.getSource().toString(),
+											results.addResult(iStmt.getInvokeExpr(),
+													source.getSource(),
 													((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 													interproceduralCFG().getMethodOf(call) + ": " + call.toString());
 										else
-											results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-													source.getSource().toString());
+											results.addResult(iStmt.getInvokeExpr(),
+													source.getSource());
 									}
 								}
 							}

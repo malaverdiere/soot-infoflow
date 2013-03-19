@@ -12,6 +12,17 @@ import soot.jimple.infoflow.Infoflow;
 
 public class StringTest extends JUnitTests {
 	
+	
+	@Test
+    public void multipleSourcesTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void multipleSources()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
+	
+	
 	@Test
     public void substringTest(){
     	Infoflow infoflow = initInfoflow();

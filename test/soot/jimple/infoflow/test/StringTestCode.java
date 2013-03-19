@@ -7,6 +7,17 @@ import soot.jimple.infoflow.test.utilclasses.ClassWithField;
 
 public class StringTestCode {
 	
+	public void multipleSources(){
+		String tainted1 = TelephonyManager.getDeviceId();
+		AccountManager mgr = new AccountManager();
+		String tainted2 = mgr.getPassword();
+		
+		String result = tainted1 + tainted2;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(result);	
+	}
+	
 	public void methodSubstring(){
 		String tainted = TelephonyManager.getDeviceId();
 		String result = tainted.substring(1, 2);

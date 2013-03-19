@@ -229,7 +229,7 @@ public class StringTest extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringConcat()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow);
-		assertTrue(infoflow.getResults().isPathBetween(sink, sourcePwd));
+		assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourcePwd));
     }
 
     @Test

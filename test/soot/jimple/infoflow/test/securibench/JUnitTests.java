@@ -69,9 +69,8 @@ public abstract class JUnitTests {
     			 f.getCanonicalPath() + File.separator + "bin"+ System.getProperty("path.separator") + 
     			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar";
         System.out.println("Using following locations as sources for classes: " + path);
-    	 sources = Arrays.asList(sourceArray);
+    	sources = Arrays.asList(sourceArray);
         sinks = Arrays.asList(sinkArray);
-
     }
     
     @Before

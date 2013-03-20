@@ -49,6 +49,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 				line = reader.readLine();
 			}
 			classList = parser.parseClassNames(methodList, true);
+			System.out.println("Loaded wrapper entries for " + classList.size() + " classes.");
 		}
 		finally {
 			if (reader != null)

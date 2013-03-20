@@ -254,6 +254,7 @@ public class Infoflow implements IInfoflow {
 	private void addSceneTransformer(final SourceSinkManager sourcesSinks, final Set<String> additionalSeeds) {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
+				System.out.println("Callgraph has " + Scene.v().getCallGraph().size() + " edges");
 				AbstractInfoflowProblem problem;
 
 				if (local) {
@@ -269,7 +270,7 @@ public class Infoflow implements IInfoflow {
 
 				// We have to look through the complete program to find sources
 				// which are then taken as seeds.
-				boolean hasSink = false;
+				int sinkCount = 0;
 				System.out.println("Looking for sources and sinks...");
 				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
 				eps.addAll(Scene.v().getEntryPoints());
@@ -303,7 +304,7 @@ public class Infoflow implements IInfoflow {
 								if (sourcesSinks.isSink(s, problem.interproceduralCFG())) {
 									if (DEBUG)
 										System.out.println("Sink found: " + u);
-									hasSink = true;
+									sinkCount++;
 								}
 							}
 						}
@@ -338,11 +339,12 @@ public class Infoflow implements IInfoflow {
 					
 					}
 				}
-				if (problem.initialSeeds.isEmpty() || (!hasSink && !returnIsSink)){
+				if (problem.initialSeeds.isEmpty() || (sinkCount == 0 && !returnIsSink)){
 					System.err.println("No sources or sinks found, aborting analysis");
 					return;
 				}
-				System.out.println("Source lookup done, found " + problem.initialSeeds.size() + " sources.");
+				System.out.println("Source lookup done, found " + problem.initialSeeds.size()
+						+ " sources and " + sinkCount + " sinks.");
 
 				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver =
 						new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem, DEBUG);

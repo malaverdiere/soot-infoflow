@@ -32,7 +32,6 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
-import soot.jimple.ParameterRef;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -204,8 +203,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, final Unit dest) {
 				// If we compute flows on parameters, we create the initial
 				// flow fact here
-				if (computeParamFlows && src instanceof IdentityStmt
-						&& isInitialMethod(interproceduralCFG().getMethodOf(src))) {
+				if (src instanceof IdentityStmt) {
 					final IdentityStmt is = (IdentityStmt) src;
 					return new FlowFunction<Abstraction>() {
 
@@ -213,7 +211,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
-							if (is.getRightOp() instanceof ParameterRef) {
+							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking) {
 									List<Unit> empty = Collections.emptyList();
 									Abstraction abs = new AbstractionWithPath(is.getLeftOp(),
@@ -230,6 +228,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.singleton(source);
 						}
 					};
+					
 				}
 				// taint is propagated with assignStmt
 				else if (src instanceof AssignStmt) {
@@ -338,8 +337,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					};
 
 				}
-				else if (returnIsSink &&  dest instanceof ReturnStmt) {
-					// Returning from the main method may also count as a sink
+				else if (dest instanceof ReturnStmt) {
 					final ReturnStmt returnStmt = (ReturnStmt) dest;
 					return new FlowFunction<Abstraction>() {
 
@@ -352,9 +350,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (source.getAccessPath().isStaticFieldRef())
 								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
 							else
-								isSink = isInitialMethod(interproceduralCFG().getMethodOf(dest))
-									&& source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
-							if (isSink) {
+								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
+							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.getOp(),
 											source.getSource(),

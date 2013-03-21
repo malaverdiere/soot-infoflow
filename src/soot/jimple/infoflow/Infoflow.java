@@ -54,8 +54,6 @@ public class Infoflow implements IInfoflow {
 	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	private IInfoflowSootConfig sootConfig;
 	
-	private boolean computeParamFlows = false;
-	private boolean returnIsSink = false;
 	private boolean stopAfterFirstFlow = false;
 
 	/**
@@ -91,16 +89,6 @@ public class Infoflow implements IInfoflow {
 		this.pathTracking = method;
 	}
 	
-	@Override
-	public void setComputeParamFlows(boolean computeParamFlows) {
-		this.computeParamFlows = computeParamFlows;
-	}
-	
-	@Override
-	public void setReturnIsSink(boolean returnIsSink) {
-		this.returnIsSink = returnIsSink;
-	}
-
 	@Override
 	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {
 		this.stopAfterFirstFlow = stopAfterFirstFlow;
@@ -264,8 +252,6 @@ public class Infoflow implements IInfoflow {
 				}
 				problem.setTaintWrapper(taintWrapper);
 				problem.setPathTracking(pathTracking);
-				problem.setComputeParamFlows(computeParamFlows);
-				problem.setReturnIsSink(returnIsSink);
 				problem.setStopAfterFirstFlow(stopAfterFirstFlow);
 
 				// We have to look through the complete program to find sources
@@ -295,17 +281,15 @@ public class Infoflow implements IInfoflow {
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
-							if (s.containsInvokeExpr()) {
-								if (sourcesSinks.isSource(s, problem.interproceduralCFG())) {
-									problem.initialSeeds.add(u);
-									if (DEBUG)
-										System.out.println("Source found: " + u);
-								}
-								if (sourcesSinks.isSink(s, problem.interproceduralCFG())) {
-									if (DEBUG)
-										System.out.println("Sink found: " + u);
-									sinkCount++;
-								}
+							if (sourcesSinks.isSource(s, problem.interproceduralCFG())) {
+								problem.initialSeeds.add(u);
+								if (DEBUG)
+									System.out.println("Source found: " + u);
+							}
+							if (sourcesSinks.isSink(s, problem.interproceduralCFG())) {
+								if (DEBUG)
+									System.out.println("Sink found: " + u);
+								sinkCount++;
 							}
 						}
 						
@@ -339,7 +323,7 @@ public class Infoflow implements IInfoflow {
 					
 					}
 				}
-				if (problem.initialSeeds.isEmpty() || (sinkCount == 0 && !returnIsSink)){
+				if (problem.initialSeeds.isEmpty() || sinkCount == 0){
 					System.err.println("No sources or sinks found, aborting analysis");
 					return;
 				}

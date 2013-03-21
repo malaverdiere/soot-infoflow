@@ -1,8 +1,14 @@
 package soot.jimple.infoflow.source;
 
+import heros.InterproceduralCFG;
+
 import java.util.List;
 
 import soot.SootMethod;
+import soot.Unit;
+import soot.jimple.IdentityStmt;
+import soot.jimple.ReturnStmt;
+import soot.jimple.Stmt;
 
 /**
  * A {@link SourceSinkManager} working on lists of source and sink methods
@@ -14,14 +20,39 @@ public class DefaultSourceSinkManager extends MethodBasedSourceSinkManager {
 	private List<String> sources;
 	private List<String> sinks;
 	
+	private List<String> parameterTaintMethods;
+	private List<String> returnTaintMethods;
+	
 	/**
 	 * Creates a new instance of the {@link DefaultSourceSinkManager} class
 	 * @param sources The list of methods to be treated as sources
 	 * @param sinks The list of methods to be treated as sins
 	 */
-	public DefaultSourceSinkManager(List<String> sources, List<String> sinks){
+	public DefaultSourceSinkManager(List<String> sources, List<String> sinks) {
 		this.sources = sources;
 		this.sinks = sinks;
+		this.parameterTaintMethods = null;
+		this.returnTaintMethods = null;
+	}
+
+	/**
+	 * Creates a new instance of the {@link DefaultSourceSinkManager} class
+	 * @param sources The list of methods to be treated as sources
+	 * @param sinks The list of methods to be treated as sins
+	 * @param parameterTaintMethods The list of methods whose parameters shall
+	 * be regarded as sources
+	 * @param returnTaintMethods The list of methods whose return values shall
+	 * be regarded as sinks
+	 */
+	public DefaultSourceSinkManager
+			(List<String> sources,
+			List<String> sinks,
+			List<String> parameterTaintMethods,
+			List<String> returnTaintMethods) {
+		this.sources = sources;
+		this.sinks = sinks;
+		this.parameterTaintMethods = parameterTaintMethods;
+		this.returnTaintMethods = returnTaintMethods;
 	}
 
 	/**
@@ -48,6 +79,52 @@ public class DefaultSourceSinkManager extends MethodBasedSourceSinkManager {
 	@Override
 	public boolean isSinkMethod(SootMethod sMethod) {
 		return sinks.contains(sMethod.toString());
+	}
+	
+	@Override
+	public boolean isSource(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg) {
+		if (super.isSource(sCallSite, cfg))
+			return true;
+		
+		if (sCallSite instanceof IdentityStmt)
+			if (this.parameterTaintMethods != null && this.parameterTaintMethods.contains
+					(cfg.getMethodOf(sCallSite).getSignature()))
+				return true;
+		
+		return false;
+	}
+
+	@Override
+	public boolean isSink(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg) {
+		if (super.isSink(sCallSite, cfg))
+			return true;
+
+		if (sCallSite instanceof ReturnStmt)
+			if (this.returnTaintMethods != null && this.returnTaintMethods.contains
+					(cfg.getMethodOf(sCallSite).getSignature()))
+				return true;
+	
+		return false;
+	}
+
+	/**
+	 * Sets the list of methods whose parameters shall be regarded as taint
+	 * sources
+	 * @param parameterTaintMethods The list of methods whose parameters shall
+	 * be regarded as taint sources
+	 */
+	public void setParameterTaintMethods(List<String> parameterTaintMethods) {
+		this.parameterTaintMethods = parameterTaintMethods;
+	}
+	
+	/**
+	 * Sets the list of methods whose return values shall be regarded as taint
+	 * sinks
+	 * @param parameterTaintMethods The list of methods whose return values
+	 * shall be regarded as taint sinks
+	 */
+	public void setReturnTaintMethods(List<String> returnTaintMethods) {
+		this.returnTaintMethods = returnTaintMethods;
 	}
 
 }

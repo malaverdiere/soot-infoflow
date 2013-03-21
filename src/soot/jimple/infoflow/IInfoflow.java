@@ -23,22 +23,6 @@ public interface IInfoflow {
 	 * program.
 	 */
 	public void setPathTracking(PathTrackingMethod method);
-
-	/**
-	 * Sets whether the parameters of the entry point methods shall be considered
-	 * as sources
-	 * @param computeParamFlows True if entry point parameters are sources,
-	 * otherwise false
-	 */
-	public void setComputeParamFlows(boolean computeParamFlows);
-	
-	/**
-	 * Sets whether the return statements of the entry point methods shall be
-	 * considered as sinks
-	 * @param returnIsSink True if entry point return values are sinks,
-	 * otherwise false
-	 */
-	public void setReturnIsSink(boolean returnIsSink);
 	
 	/**
 	 * Sets whether the information flow analysis shall stop after the first

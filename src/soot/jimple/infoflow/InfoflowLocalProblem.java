@@ -11,7 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-
 import soot.Local;
 import soot.NullType;
 import soot.PointsToAnalysis;
@@ -28,7 +27,6 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
-import soot.jimple.ParameterRef;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -56,14 +54,15 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, Unit dest) {
 				// If we compute flows on parameters, we create the initial
 				// flow fact here
-				if (computeParamFlows && src instanceof IdentityStmt
-						&& isInitialMethod(interproceduralCFG().getMethodOf(src))) {
+				if (src instanceof IdentityStmt) {
 					final IdentityStmt is = (IdentityStmt) src;
 					return new FlowFunction<Abstraction>() {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
-							if (is.getRightOp() instanceof ParameterRef) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
+							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking) {
 									List<Unit> empty = Collections.emptyList();
 									Abstraction abs = new AbstractionWithPath(is.getLeftOp(),
@@ -148,6 +147,34 @@ public class InfoflowLocalProblem extends AbstractInfoflowProblem {
 						}
 					};
 
+				}
+				else if (dest instanceof ReturnStmt) {
+					final ReturnStmt returnStmt = (ReturnStmt) dest;
+					return new FlowFunction<Abstraction>() {
+
+						@Override
+						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
+							
+							boolean isSink = false;
+							if (source.getAccessPath().isStaticFieldRef())
+								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
+							else
+								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
+							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
+								if (pathTracking != PathTrackingMethod.NoTracking)
+									results.addResult(returnStmt.getOp(),
+											source.getSource(),
+											((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
+											interproceduralCFG().getMethodOf(returnStmt) + ": " + returnStmt.toString());
+								else
+									results.addResult(returnStmt.getOp(),
+											source.getSource());
+							}
+							return Collections.singleton(source);
+						}
+					};
 				}
 
 				return Identity.v();

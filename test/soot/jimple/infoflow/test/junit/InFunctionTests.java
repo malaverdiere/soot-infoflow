@@ -1,9 +1,12 @@
 package soot.jimple.infoflow.test.junit;
 
+import java.util.Collections;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
+import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.Infoflow;
 
 public class InFunctionTests extends JUnitTests {
@@ -14,8 +17,6 @@ public class InFunctionTests extends JUnitTests {
 	@Override
 	protected Infoflow initInfoflow() {
 		Infoflow infoflow = super.initInfoflow();
-    	infoflow.setComputeParamFlows(true);
-    	infoflow.setReturnIsSink(true);
     	return infoflow;
 	}
 
@@ -24,7 +25,12 @@ public class InFunctionTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode1(java.lang.String)>";
-		infoflow.computeInfoflow(path, epoint, sources, sinks);
+
+    	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
+    	ssm.setParameterTaintMethods(Collections.singletonList(epoint));
+    	ssm.setReturnTaintMethods(Collections.singletonList(epoint));
+		
+    	infoflow.computeInfoflow(path, epoint, ssm);
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER));
     }
 
@@ -33,7 +39,12 @@ public class InFunctionTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode2(java.lang.String)>";
-		infoflow.computeInfoflow(path, epoint, sources, sinks);
+
+    	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
+    	ssm.setParameterTaintMethods(Collections.singletonList(epoint));
+    	ssm.setReturnTaintMethods(Collections.singletonList(epoint));
+		
+    	infoflow.computeInfoflow(path, epoint, ssm);
 		Assert.assertTrue(infoflow.getResults().getResults().isEmpty());
     }
 
@@ -42,7 +53,12 @@ public class InFunctionTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode3(java.lang.String)>";
-		infoflow.computeInfoflow(path, epoint, sources, sinks);
+
+    	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
+    	ssm.setParameterTaintMethods(Collections.singletonList(epoint));
+    	ssm.setReturnTaintMethods(Collections.singletonList(epoint));
+		
+    	infoflow.computeInfoflow(path, epoint, ssm);
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER));
     }
 

@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.entryPointCreators.dummyClasses;
+package soot.jimple.infoflow.test.securibench.supportClasses;
 
 import java.io.BufferedReader;
 import java.io.IOException;

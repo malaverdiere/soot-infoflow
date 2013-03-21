@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -48,6 +49,9 @@ public class Infoflow implements IInfoflow {
 	public boolean local = false;
 	public InfoflowResults results;
 
+	private boolean substituteCallParams = false;
+	private List<String> substitutionClasses = new LinkedList<String>();
+	
 	private final String androidPath;
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
@@ -83,6 +87,15 @@ public class Infoflow implements IInfoflow {
 	public void setSootConfig(IInfoflowSootConfig config){
 		sootConfig = config;
 	}
+	
+	public void setSubstituteCallParams(boolean b){
+		substituteCallParams = b;
+	}
+	
+	public void addSubstitutionClasses(List<String> classes){
+		substitutionClasses.addAll(classes);
+	}
+	
 	
 	@Override
 	public void setPathTracking(PathTrackingMethod method) {
@@ -176,6 +189,17 @@ public class Infoflow implements IInfoflow {
 					hasClasses = true;
 			}
 		}
+		//if substitutionclasses available (must be included in regular path) && option set:
+		if(substituteCallParams){
+			for (String className : substitutionClasses) {
+				SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
+				if (c != null){
+					c.setApplicationClass();
+				}
+			}
+		}
+		
+		
 		if (!hasClasses) {
 			System.out.println("Only phantom classes loaded, skipping analysis...");
 			return;
@@ -200,6 +224,8 @@ public class Infoflow implements IInfoflow {
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method,
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
 		IEntryPointCreator epCreator = new AndroidEntryPointCreator();
+		epCreator.setSubstituteCallParams(substituteCallParams);
+		epCreator.setSubstituteClasses(substitutionClasses);
 		Scene.v().setEntryPoints(Collections.singletonList(epCreator.createDummyMain(classes)));
 		PackManager.v().runPacks();
 		if (DEBUG)

@@ -59,6 +59,7 @@ public abstract class JUnitTests {
     
     protected static boolean local = false;
     protected static boolean taintWrapper = false;
+    protected static boolean substituteCallParams = true;
    
     @BeforeClass
     public static void setUp() throws IOException
@@ -129,6 +130,11 @@ public abstract class JUnitTests {
     protected Infoflow initInfoflow(){
     	Infoflow result = new Infoflow();
     	result.setLocalInfoflow(local);
+    	result.setSubstituteCallParams(substituteCallParams);
+    	List<String> substClasses = new LinkedList<String>();
+    	substClasses.add("soot.jimple.infoflow.test.securibench.supportClasses.DummyHttpRequest");
+    	substClasses.add("soot.jimple.infoflow.test.securibench.supportClasses.DummyHttpResponse");
+    	result.addSubstitutionClasses(substClasses);
     	SootConfigSecuriBench testConfig = new SootConfigSecuriBench();
     	result.setSootConfig(testConfig);
     	if(taintWrapper){

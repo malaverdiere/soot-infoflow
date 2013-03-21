@@ -24,6 +24,7 @@ public class DummyHttpRequest implements HttpServletRequest {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public Enumeration getAttributeNames() {
 		
 		return new StringTokenizer("one two");
@@ -59,6 +60,7 @@ public class DummyHttpRequest implements HttpServletRequest {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public Enumeration getLocales() {
 		// TODO Auto-generated method stub
 		return null;
@@ -71,12 +73,14 @@ public class DummyHttpRequest implements HttpServletRequest {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public Map getParameterMap() {
 		// TODO Auto-generated method stub
 		return new HashMap<String, String>();
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public Enumeration getParameterNames() {
 		// TODO Auto-generated method stub
 		return new StringTokenizer("parameter names");
@@ -197,12 +201,14 @@ public class DummyHttpRequest implements HttpServletRequest {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public Enumeration getHeaderNames() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public Enumeration getHeaders(String arg0) {
 		// TODO Auto-generated method stub
 		return null;

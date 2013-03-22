@@ -13,7 +13,7 @@ public class BasicTests extends JUnitTests {
 	 * custom test to check whether there is an edge to string methods or not on different 
 	 * configurations
 	 */
-	@Test
+	@Test(timeout=300000)
 	public void basic0() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -22,7 +22,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 	
-	@Test
+	@Test(timeout=300000)
 	public void basic1() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -31,7 +31,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 	
-	@Test
+	@Test(timeout=300000)
 	public void basic2() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -40,7 +40,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic3() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -49,7 +49,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic4() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -58,7 +58,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic5() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -67,7 +67,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic6() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -76,7 +76,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic7() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -85,7 +85,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic8() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -94,7 +94,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic9() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -103,7 +103,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic10() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -112,7 +112,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic11() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -121,7 +121,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic12() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -130,7 +130,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic13() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -139,7 +139,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic14() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -149,7 +149,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic15() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -158,7 +158,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic16() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -167,7 +167,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic17() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -176,7 +176,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic18() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -185,7 +185,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic19() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -194,7 +194,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic20() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -203,7 +203,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic21() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -212,7 +212,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic22() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -222,7 +222,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic23() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -232,7 +232,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic24() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -242,7 +242,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic25() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -251,7 +251,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic26() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -261,7 +261,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic27() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -270,7 +270,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic28() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -279,7 +279,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic29() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -288,7 +288,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic30() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -297,7 +297,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic31() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -307,7 +307,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic32() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -316,7 +316,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic33() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -326,7 +326,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic34() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -335,7 +335,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic35() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -345,7 +345,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic36() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -355,7 +355,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic37() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -364,7 +364,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic38() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -373,7 +373,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic39() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -382,7 +382,7 @@ public class BasicTests extends JUnitTests {
 	checkInfoflow(infoflow);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic40() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -392,7 +392,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic41() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -402,7 +402,7 @@ public class BasicTests extends JUnitTests {
 	//TODO: this test fails at the moment!
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void basic42() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();

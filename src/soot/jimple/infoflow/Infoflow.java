@@ -47,7 +47,7 @@ public class Infoflow implements IInfoflow {
 	public static boolean DEBUG = false;
 	public boolean local = false;
 	public InfoflowResults results;
-
+	
 	private final String androidPath;
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
@@ -83,7 +83,7 @@ public class Infoflow implements IInfoflow {
 	public void setSootConfig(IInfoflowSootConfig config){
 		sootConfig = config;
 	}
-	
+		
 	@Override
 	public void setPathTracking(PathTrackingMethod method) {
 		this.pathTracking = method;
@@ -95,7 +95,15 @@ public class Infoflow implements IInfoflow {
 	}
 	
 	@Override
-	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
+	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
+			List<String> entryPoints, List<String> sources, List<String> sinks) {
+		this.computeInfoflow(path, entryPointCreator, entryPoints,
+				new DefaultSourceSinkManager(sources, sinks));
+	}
+
+	@Override
+	public void computeInfoflow(String path, List<String> entryPoints,
+			List<String> sources, List<String> sinks) {
 		this.computeInfoflow(path, new DefaultEntryPointCreator(), entryPoints,
 				new DefaultSourceSinkManager(sources, sinks));
 	}
@@ -177,6 +185,7 @@ public class Infoflow implements IInfoflow {
 					hasClasses = true;
 			}
 		}
+
 		if (!hasClasses) {
 			System.out.println("Only phantom classes loaded, skipping analysis...");
 			return;
@@ -279,13 +288,13 @@ public class Infoflow implements IInfoflow {
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
 							if (sourcesSinks.isSource(s, problem.interproceduralCFG())) {
-								problem.initialSeeds.add(u);
+								problem.initialSeeds.add(s);
 								if (DEBUG)
-									System.out.println("Source found: " + u);
+									System.out.println("Source found: " + s);
 							}
 							if (sourcesSinks.isSink(s, problem.interproceduralCFG())) {
 								if (DEBUG)
-									System.out.println("Sink found: " + u);
+									System.out.println("Sink found: " + s);
 								sinkCount++;
 							}
 						}

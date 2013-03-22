@@ -15,10 +15,11 @@ import org.junit.BeforeClass;
 
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowResults;
+import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
+import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 
 public abstract class JUnitTests {
-
 
     protected static String path;
     protected static List<String> sources;
@@ -59,6 +60,9 @@ public abstract class JUnitTests {
     
     protected static boolean local = false;
     protected static boolean taintWrapper = false;
+    protected static boolean substituteCallParams = true;
+    
+    protected IEntryPointCreator entryPointCreator = null;
    
     @BeforeClass
     public static void setUp() throws IOException
@@ -127,6 +131,15 @@ public abstract class JUnitTests {
 	  }
     
     protected Infoflow initInfoflow(){
+    	List<String> substClasses = new LinkedList<String>();
+    	substClasses.add("soot.jimple.infoflow.test.securibench.supportClasses.DummyHttpRequest");
+    	substClasses.add("soot.jimple.infoflow.test.securibench.supportClasses.DummyHttpResponse");
+
+    	DefaultEntryPointCreator entryPointCreator = new DefaultEntryPointCreator();
+    	entryPointCreator.setSubstituteCallParams(substituteCallParams);
+    	entryPointCreator.setSubstituteClasses(substClasses);
+    	this.entryPointCreator = entryPointCreator;
+
     	Infoflow result = new Infoflow();
     	result.setLocalInfoflow(local);
     	SootConfigSecuriBench testConfig = new SootConfigSecuriBench();

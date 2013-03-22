@@ -94,7 +94,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * @return the dummyMethod which was created
 	 */
 	@Override
-	public SootMethod createDummyMain(List<String> methods){
+	public SootMethod createDummyMainInternal(List<String> methods){
 		Map<String, List<String>> classMap =
 				SootMethodRepresentationParser.v().parseClassNames(methods, false);
 		for (String androidClass : this.androidClasses)
@@ -117,6 +117,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		for(Entry<String, List<String>> entry : classMap.entrySet()){
 			SootClass currentClass = Scene.v().forceResolve(entry.getKey(), SootClass.BODIES);
+			currentClass.setApplicationClass();
 			JNopStmt endClassStmt = new JNopStmt();
 
 			boolean activity = false;

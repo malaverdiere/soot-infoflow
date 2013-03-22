@@ -14,7 +14,7 @@ public class FactoryTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.factories.Factories1: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
 
@@ -23,7 +23,7 @@ public class FactoryTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.factories.Factories2: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
 
@@ -32,7 +32,7 @@ public class FactoryTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.factories.Factories3: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
 

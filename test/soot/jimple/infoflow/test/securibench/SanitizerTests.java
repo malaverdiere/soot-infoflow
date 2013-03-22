@@ -16,7 +16,7 @@ public class SanitizerTests {
 //	Infoflow infoflow = initInfoflow();
 //	List<String> epoints = new ArrayList<String>();
 //	epoints.add("<securibench.micro.sanitizers.Sanitizers1: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-//	infoflow.computeInfoflow(path, epoints, sources, sinks);
+//	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 //	checkInfoflow(infoflow);
 //	}
 //
@@ -25,7 +25,7 @@ public class SanitizerTests {
 //	Infoflow infoflow = initInfoflow();
 //	List<String> epoints = new ArrayList<String>();
 //	epoints.add("<securibench.micro.sanitizers.Sanitizers2: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-//	infoflow.computeInfoflow(path, epoints, sources, sinks);
+//	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 //	checkInfoflow(infoflow);
 //	}
 //
@@ -34,7 +34,7 @@ public class SanitizerTests {
 //	Infoflow infoflow = initInfoflow();
 //	List<String> epoints = new ArrayList<String>();
 //	epoints.add("<securibench.micro.sanitizers.Sanitizers3: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-//	infoflow.computeInfoflow(path, epoints, sources, sinks);
+//	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 //	checkInfoflow(infoflow);
 //	}
 //
@@ -43,7 +43,7 @@ public class SanitizerTests {
 //	Infoflow infoflow = initInfoflow();
 //	List<String> epoints = new ArrayList<String>();
 //	epoints.add("<securibench.micro.sanitizers.Sanitizers4: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-//	infoflow.computeInfoflow(path, epoints, sources, sinks);
+//	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 //	checkInfoflow(infoflow);
 //	}
 //
@@ -52,7 +52,7 @@ public class SanitizerTests {
 //	Infoflow infoflow = initInfoflow();
 //	List<String> epoints = new ArrayList<String>();
 //	epoints.add("<securibench.micro.sanitizers.Sanitizers5: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-//	infoflow.computeInfoflow(path, epoints, sources, sinks);
+//	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 //	checkInfoflow(infoflow);
 //	}
 //
@@ -61,7 +61,7 @@ public class SanitizerTests {
 //	Infoflow infoflow = initInfoflow();
 //	List<String> epoints = new ArrayList<String>();
 //	epoints.add("<securibench.micro.sanitizers.Sanitizers6: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-//	infoflow.computeInfoflow(path, epoints, sources, sinks);
+//	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 //	checkInfoflow(infoflow);
 //	}
 

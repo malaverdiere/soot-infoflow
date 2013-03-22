@@ -33,7 +33,7 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 	 * @return list of entryPoints
 	 */
 	@Override
-	public SootMethod createDummyMain(List<String> methods) {
+	public SootMethod createDummyMainInternal(List<String> methods) {
 		Map<String, List<String>> classMap =
 				SootMethodRepresentationParser.v().parseClassNames(methods, false);
 		
@@ -46,7 +46,9 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 		
 		// create constructors:
 		for(String className : classMap.keySet()){
-			SootClass createdClass = Scene.v().getSootClass(className);
+			SootClass createdClass = Scene.v().forceResolve(className, SootClass.BODIES);
+			createdClass.setApplicationClass();
+			
 			if (isConstructorGenerationPossible(createdClass)) {
 				Local localVal = generateClassConstructor(createdClass, body);
 				localVarsForClasses.put(className, localVal);

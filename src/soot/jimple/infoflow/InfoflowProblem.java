@@ -243,6 +243,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (interproceduralCFG().getMethodOf(src).getName().contains("access$"))
+								System.out.println("x");
+							
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 
@@ -369,7 +372,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			}
 
 			@Override
-			public FlowFunction<Abstraction> getCallFlowFunction(Unit src, final SootMethod dest) {
+			public FlowFunction<Abstraction> getCallFlowFunction(final Unit src, final SootMethod dest) {
 				final Stmt stmt = (Stmt) src;
 				final InvokeExpr ie = stmt.getInvokeExpr();
 				final List<Value> callArgs = ie.getArgs();
@@ -382,6 +385,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
+						SootMethod meth = interproceduralCFG().getMethodOf(src);
+						if (stmt.toString().contains("onResume"))
+							System.out.println("x");
+
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
 						if (source.equals(zeroValue)) {
@@ -471,6 +478,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
+						if (interproceduralCFG().getMethodOf(exitStmt).getName().contains("access$"))
+							System.out.println("x");
+						
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
 						if (source.equals(zeroValue)) {

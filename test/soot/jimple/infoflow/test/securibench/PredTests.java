@@ -13,7 +13,7 @@ public class PredTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.pred.Pred1: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	negativeCheckInfoflow(infoflow);
 	}
 
@@ -22,7 +22,7 @@ public class PredTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.pred.Pred2: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
 
@@ -31,7 +31,7 @@ public class PredTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.pred.Pred3: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	negativeCheckInfoflow(infoflow);
 	}
 
@@ -40,7 +40,7 @@ public class PredTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.pred.Pred4: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
 
@@ -49,7 +49,7 @@ public class PredTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.pred.Pred5: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
 
@@ -58,7 +58,7 @@ public class PredTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.pred.Pred6: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	negativeCheckInfoflow(infoflow);
 	}
 
@@ -67,7 +67,7 @@ public class PredTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.pred.Pred7: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	negativeCheckInfoflow(infoflow);
 	}
 
@@ -76,7 +76,7 @@ public class PredTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.pred.Pred8: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
 
@@ -85,7 +85,7 @@ public class PredTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.pred.Pred9: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
 

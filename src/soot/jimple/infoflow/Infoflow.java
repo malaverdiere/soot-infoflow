@@ -32,7 +32,7 @@ import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
 import soot.jimple.infoflow.config.IInfoflowSootConfig;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.entryPointCreators.AndroidEntryPointCreator;
+import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
@@ -96,7 +96,8 @@ public class Infoflow implements IInfoflow {
 	
 	@Override
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, entryPoints, new DefaultSourceSinkManager(sources, sinks));
+		this.computeInfoflow(path, new DefaultEntryPointCreator(), entryPoints,
+				new DefaultSourceSinkManager(sources, sinks));
 	}
 
 	@Override
@@ -183,24 +184,21 @@ public class Infoflow implements IInfoflow {
 	}
 	
 	@Override
-	public void computeInfoflow(String path, List<String> entryPoints, SourceSinkManager sourcesSinks) {
+	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
+			List<String> entryPoints, SourceSinkManager sourcesSinks) {
 		results = null;
 		if (sourcesSinks == null) {
 			System.out.println("Error: sources are empty!");
 			return;
 		}
 	
-		// convert to internal format:
-		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
-		// parse classNames as String and methodNames as string in soot representation
-		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints, false);
-
-		initializeSoot(path, classes.keySet(), sourcesSinks);
+		initializeSoot(path,
+				SootMethodRepresentationParser.v().parseClassNames(entryPoints, false).keySet(),
+				sourcesSinks);
 
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method,
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
-		IEntryPointCreator epCreator = new AndroidEntryPointCreator();
-		Scene.v().setEntryPoints(Collections.singletonList(epCreator.createDummyMain(classes)));
+		Scene.v().setEntryPoints(Collections.singletonList(entryPointCreator.createDummyMain(entryPoints)));
 		PackManager.v().runPacks();
 		if (DEBUG)
 			PackManager.v().writeOutput();
@@ -214,10 +212,9 @@ public class Infoflow implements IInfoflow {
 			return;
 		}
 
-		// convert to internal format:
-		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
 		// parse classNames as String and methodNames as string in soot representation
-		HashMap<String, List<String>> classes = parser.parseClassNames(Collections.singletonList(entryPoint), false);
+		HashMap<String, List<String>> classes = SootMethodRepresentationParser.v().parseClassNames
+				(Collections.singletonList(entryPoint), false);
 
 		initializeSoot(path, classes.keySet(), sourcesSinks, entryPoint);
 

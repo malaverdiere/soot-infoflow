@@ -3,6 +3,7 @@ package soot.jimple.infoflow;
 import java.util.List;
 
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
+import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 
@@ -61,11 +62,14 @@ public interface IInfoflow {
 	 * life cycle for all methods that are detected to be part of Android's
 	 * application infrastructure (e.g. android.app.Activity.onCreate)
 	 * @param path the path to the main folder of the (unpacked) class files
+	 * @param entryPointCreator the entry point creator to use for generating the dummy
+	 * main method
 	 * @param entryPoints the entryPoints (string conforms to SootMethod representation)
 	 * @param sourcesSinks manager class for identifying sources and sinks in the source code
 	 */
-	public void computeInfoflow(String path, List<String> entryPoints, SourceSinkManager sourcesSinks);
-	
+	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
+			List<String> entryPoints, SourceSinkManager sourcesSinks);
+
 	/**
 	 * Computes the information flow on a single method. This method is
 	 * directly taken as the entry point into the program, even if it is an

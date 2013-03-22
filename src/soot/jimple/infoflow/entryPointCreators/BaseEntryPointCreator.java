@@ -39,12 +39,6 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 
 	protected Map<String, Local> localVarsForClasses = new HashMap<String, Local>();
 
-	@Override
-	public SootMethod createDummyMain(Map<String, List<String>> classMap) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
 	public SootMethod createEmptyMainMethod(JimpleBody body){
 		SootMethod mainMethod = new SootMethod("dummyMainMethod", new ArrayList<Type>(), VoidType.v());
 		body.setMethod(mainMethod);
@@ -58,7 +52,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		return mainMethod;
 	}
 	
-	public void buildMethodCall(SootMethod currentMethod, JimpleBody body, Local classLocal, LocalGenerator gen){
+	protected Stmt buildMethodCall(SootMethod currentMethod, JimpleBody body, Local classLocal, LocalGenerator gen){
 		assert currentMethod != null : "Current method was null";
 		assert body != null : "Body was null";
 		assert gen != null : "Local generator was null";
@@ -102,6 +96,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			stmt = Jimple.v().newInvokeStmt(invokeExpr);
 		}
 		body.getUnits().add(stmt);
+		return stmt;
 	}
 	
 	protected Local generateClassConstructor(SootClass createdClass, JimpleBody body) {

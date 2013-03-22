@@ -283,6 +283,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(elseStmt);
 			}
 		}
+		addCallbackMethods(currentClass);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		createIfStmt(onCreateStmt);
@@ -328,6 +329,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(elseStmt);
 			}
 		}
+		addCallbackMethods(currentClass);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		createIfStmt(onReceiveStmt);
@@ -380,6 +382,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(elseStmt);
 			}
 		}
+		addCallbackMethods(currentClass);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		
@@ -412,6 +415,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(elseStmt);
 			}
 		}
+		addCallbackMethods(currentClass);
 		body.getUnits().add(endWhile2Stmt);
 		createIfStmt(startWhile2Stmt);
 		
@@ -479,8 +483,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 
 				body.getUnits().add(elseStmt);
 			}
-		}
-		
+		}		
 		addCallbackMethods(currentClass);
 		
 		body.getUnits().add(endWhileStmt);

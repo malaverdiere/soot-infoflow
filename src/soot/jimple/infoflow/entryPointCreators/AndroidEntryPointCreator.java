@@ -283,7 +283,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(elseStmt);
 			}
 		}
-		addCallbackMethods(currentClass);
+		addCallbackMethods(currentClass, classLocal);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		createIfStmt(onCreateStmt);
@@ -329,7 +329,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(elseStmt);
 			}
 		}
-		addCallbackMethods(currentClass);
+		addCallbackMethods(currentClass, classLocal);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		createIfStmt(onReceiveStmt);
@@ -382,7 +382,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(elseStmt);
 			}
 		}
-		addCallbackMethods(currentClass);
+		addCallbackMethods(currentClass, classLocal);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		
@@ -415,7 +415,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(elseStmt);
 			}
 		}
-		addCallbackMethods(currentClass);
+		addCallbackMethods(currentClass, classLocal);
 		body.getUnits().add(endWhile2Stmt);
 		createIfStmt(startWhile2Stmt);
 		
@@ -484,7 +484,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(elseStmt);
 			}
 		}		
-		addCallbackMethods(currentClass);
+		addCallbackMethods(currentClass, classLocal);
 		
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
@@ -523,7 +523,15 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		createIfStmt(endClassStmt);
 	}
 	
-	private void addCallbackMethods(SootClass currentClass) {
+	/**
+	 * Generateds invocation statements for all callback methods which need to
+	 * be invoked during the given class' run cycle.
+	 * @param currentClass The class for which we currently build the lifecycle
+	 * @param parentClassLocal The local containing a reference to the class
+	 * for which we are currently building the lifecycle.
+	 */
+	private void addCallbackMethods(SootClass currentClass,
+			Local parentClassLocal) {
 		// Get all classes in which callback methods are declared
 		Map<SootClass, Set<SootMethod>> callbackClasses = new HashMap<SootClass, Set<SootMethod>>();
 		for (String methodSig : this.callbackFunctions) {
@@ -547,18 +555,18 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		for (SootClass callbackClass : callbackClasses.keySet()) {
 			Local classLocal;
 			if (callbackClass.getName().equals(currentClass.getName()))
-				classLocal = body.getThisLocal();
+				classLocal = parentClassLocal;
 			else {
 				// Create a new instance of this class
 				// if we need to call a constructor, we insert the respective Jimple statement here
 				if (!isConstructorGenerationPossible(callbackClass)) {
 					System.out.println("Constructor cannot be generated for callback class "
-							+ currentClass.getName());
+							+ callbackClass.getName());
 					continue;
 				}
 				classLocal = generateClassConstructor(callbackClass, body);
 			}
-				
+			
 			// Build the calls to all callback methods in this class
 			for (SootMethod callbackMethod : callbackClasses.get(callbackClass)) {
 				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));

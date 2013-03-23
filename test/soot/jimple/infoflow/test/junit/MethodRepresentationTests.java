@@ -13,12 +13,12 @@ public class MethodRepresentationTests {
 	public void testParser(){
 		String s = "<soot.jimple.infoflow.test.TestNoMain: java.lang.String function1()>";
 		
-		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
+		SootMethodRepresentationParser parser = SootMethodRepresentationParser.v();
 		SootMethodAndClass result = parser.parseSootMethodString(s);
 		
-		assertEquals("soot.jimple.infoflow.test.TestNoMain", result.getClassString());
-		assertEquals("function1", result.getSootMethod().getName());
-		assertEquals("java.lang.String", result.getSootMethod().getReturnType().toString());
+		assertEquals("soot.jimple.infoflow.test.TestNoMain", result.getClassName());
+		assertEquals("function1", result.getMethodName());
+		assertEquals("java.lang.String", result.getReturnType());
 	}
 	
 }

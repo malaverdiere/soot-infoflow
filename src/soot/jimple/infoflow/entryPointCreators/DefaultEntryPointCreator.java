@@ -15,12 +15,13 @@ import soot.javaToJimple.LocalGenerator;
 import soot.jimple.IntConstant;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
+import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.internal.JEqExpr;
 import soot.jimple.internal.JGotoStmt;
 import soot.jimple.internal.JIfStmt;
 import soot.jimple.internal.JNopStmt;
 
-public class DefaultEntryPointCreator extends BaseEntryPointCreator implements IEntryPointCreator{
+public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 
 	/**
 	 * Soot requires a main method, so we create a dummy method which calls all entry functions.
@@ -31,9 +32,10 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator implements I
 	 *            the class which contains the methods
 	 * @return list of entryPoints
 	 */
-	public SootMethod createDummyMain(Map<String, List<String>> classMap) {
-
-		
+	@Override
+	public SootMethod createDummyMainInternal(List<String> methods) {
+		Map<String, List<String>> classMap =
+				SootMethodRepresentationParser.v().parseClassNames(methods, false);
 		
 		// create new class:
  		JimpleBody body = Jimple.v().newBody();
@@ -44,7 +46,9 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		// create constructors:
 		for(String className : classMap.keySet()){
-			SootClass createdClass = Scene.v().getSootClass(className);
+			SootClass createdClass = Scene.v().forceResolve(className, SootClass.BODIES);
+			createdClass.setApplicationClass();
+			
 			if (isConstructorGenerationPossible(createdClass)) {
 				Local localVal = generateClassConstructor(createdClass, body);
 				localVarsForClasses.put(className, localVal);

@@ -15,9 +15,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.Set;
 
 import soot.MethodOrMethodContext;
 import soot.PackManager;
@@ -28,15 +28,16 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
+import soot.Value;
 import soot.dexpler.DexResolver;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
 import soot.jimple.infoflow.config.IInfoflowSootConfig;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.heros.InfoflowSolver;
-import soot.jimple.infoflow.entryPointCreators.AndroidEntryPointCreator;
+import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
+import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
@@ -55,8 +56,6 @@ public class Infoflow implements IInfoflow {
 	private ITaintPropagationWrapper taintWrapper;
 	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	private IInfoflowSootConfig sootConfig;
-	private boolean computeParamFlows = false;
-	private boolean returnIsSink = false;
 	private boolean stopAfterFirstFlow = false;
 
 	/**
@@ -103,26 +102,21 @@ public class Infoflow implements IInfoflow {
 		sootConfig = config;
 	}
 	
-	
-	
-	@Override
-	public void setComputeParamFlows(boolean computeParamFlows) {
-		this.computeParamFlows = computeParamFlows;
-	}
-	
-	@Override
-	public void setReturnIsSink(boolean returnIsSink) {
-		this.returnIsSink = returnIsSink;
-	}
-	
 	@Override
 	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {
 		this.stopAfterFirstFlow = stopAfterFirstFlow;
 	}
 	
 	@Override
+	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
+			List<String> entryPoints, List<String> sources, List<String> sinks) {
+		this.computeInfoflow(path, entryPointCreator, entryPoints,
+				new DefaultSourceSinkManager(sources, sinks));
+	}
+	
+	@Override
 	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, entryPoints, new DefaultSourceSinkManager(sources, sinks));
+		this.computeInfoflow(path, new DefaultEntryPointCreator(), entryPoints, new DefaultSourceSinkManager(sources, sinks));
 	}
 
 	@Override
@@ -214,35 +208,21 @@ public class Infoflow implements IInfoflow {
 	}
 
 	@Override
-	public void computeInfoflow(String path, List<String> entryPoints, SourceSinkManager sourcesSinks) {
+	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
+			List<String> entryPoints, SourceSinkManager sourcesSinks) {
 		results = null;
 		if (sourcesSinks == null) {
 			System.out.println("Error: sources are empty!");
 			return;
 		}
-
-		// convert to internal format:
-		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
-		// parse classNames as String and methodNames as string in soot representation
-		HashMap<String, List<String>> classes = parser.parseClassNames(entryPoints, false);
-
-		initializeSoot(path, classes.keySet(), sourcesSinks);
-
-		if (DEBUG) {
-			for (List<String> methodList : classes.values()) {
-				for (String methodSignature : methodList) {
-					if (Scene.v().containsMethod(methodSignature)) {
-						SootMethod method = Scene.v().getMethod(methodSignature);
-						System.err.println(method.retrieveActiveBody().toString());
-					}
-				}
-			}
-		}
+	
+		initializeSoot(path,
+				SootMethodRepresentationParser.v().parseClassNames(entryPoints, false).keySet(),
+				sourcesSinks);
 
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method,
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
-		IEntryPointCreator epCreator = new AndroidEntryPointCreator();
-		Scene.v().setEntryPoints(Collections.singletonList(epCreator.createDummyMain(classes)));
+		Scene.v().setEntryPoints(Collections.singletonList(entryPointCreator.createDummyMain(entryPoints)));
 		PackManager.v().runPacks();
 		if (DEBUG)
 			PackManager.v().writeOutput();
@@ -257,10 +237,9 @@ public class Infoflow implements IInfoflow {
 			return;
 		}
 
-		// convert to internal format:
-		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
 		// parse classNames as String and methodNames as string in soot representation
-		HashMap<String, List<String>> classes = parser.parseClassNames(Collections.singletonList(entryPoint), false);
+		HashMap<String, List<String>> classes = SootMethodRepresentationParser.v().parseClassNames
+						(Collections.singletonList(entryPoint), false);
 
 		initializeSoot(path, classes.keySet(), sourcesSinks, entryPoint);
 		
@@ -296,18 +275,16 @@ public class Infoflow implements IInfoflow {
 	private void addSceneTransformer(final SourceSinkManager sourcesSinks, final Set<String> additionalSeeds) {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
-
+				System.out.println("Callgraph has " + Scene.v().getCallGraph().size() + " edges");
 				InfoflowProblem forwardProblem  = new InfoflowProblem(sourcesSinks);
 				forwardProblem.setTaintWrapper(taintWrapper);
 				forwardProblem.setPathTracking(pathTracking);
-				forwardProblem.setComputeParamFlows(computeParamFlows);
-				forwardProblem.setReturnIsSink(returnIsSink);
 				forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
 
 
 				// We have to look through the complete program to find sources
 				// which are then taken as seeds.
-				boolean hasSink = false;
+				int sinkCount = 0;
 				System.out.println("Looking for sources and sinks...");
 
 				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
@@ -333,18 +310,16 @@ public class Infoflow implements IInfoflow {
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
-							if (s.containsInvokeExpr()) {
-								if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
-									forwardProblem.initialSeeds.add(u);
+							if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
+								forwardProblem.initialSeeds.add(u);
 
-									if (DEBUG)
-										System.out.println("Source found: " + u);
-								}
-								if (sourcesSinks.isSink(s, forwardProblem.interproceduralCFG())) {
-									if (DEBUG)
-										System.out.println("Sink found: " + u);
-									hasSink = true;
-								}
+								if (DEBUG)
+									System.out.println("Source found: " + u);
+							}
+							if (sourcesSinks.isSink(s, forwardProblem.interproceduralCFG())) {
+								if (DEBUG)
+									System.out.println("Sink found: " + u);
+								sinkCount++;
 							}
 						}
 						
@@ -379,7 +354,7 @@ public class Infoflow implements IInfoflow {
 					}
 				}
 
-				if (forwardProblem.initialSeeds.isEmpty() || !hasSink){
+				if (forwardProblem.initialSeeds.isEmpty() || sinkCount == 0){
 					System.err.println("No sources or sinks found, aborting analysis");
 					return;
 				}
@@ -418,7 +393,7 @@ public class Infoflow implements IInfoflow {
 				results = forwardProblem.results;
 				if (results.getResults().isEmpty())
 					System.out.println("No results found.");
-				for (Entry<String, Set<InfoflowResults.SourceInfo>> entry : results.getResults().entrySet()) {
+				for (Entry<Value, Set<SourceInfo>> entry : results.getResults().entrySet()) {
 					System.out.println("The sink " + entry.getKey() + " was called with values from the following sources:");
 					for (SourceInfo source : entry.getValue()) {
 						System.out.println("- " + source.getSource());

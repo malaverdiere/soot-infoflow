@@ -1,9 +1,12 @@
 package soot.jimple.infoflow.entryPointCreators;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import soot.IntType;
 import soot.Local;
@@ -16,6 +19,7 @@ import soot.javaToJimple.LocalGenerator;
 import soot.jimple.IntConstant;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
+import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.SootMethodAndClass;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.internal.JAssignStmt;
@@ -29,8 +33,9 @@ import soot.jimple.internal.JNopStmt;
  * and http://developer.android.com/reference/android/app/Service.html
  * and http://developer.android.com/reference/android/content/BroadcastReceiver.html#ReceiverLifecycle
  * and http://developer.android.com/reference/android/content/BroadcastReceiver.html
- * @author Christian
- *
+ * 
+ * @author Christian, Steven Arzt
+ * 
  */
 public class AndroidEntryPointCreator extends BaseEntryPointCreator implements IEntryPointCreator{
 	private JimpleBody body;
@@ -38,44 +43,71 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	private int conditionCounter;
 	private Value intCounter;
 	
+	private List<String> androidClasses;
+	private List<String> callbackFunctions;
+	
 	/**
-	 *  Soot requires a main method, so we create a dummy method which calls all entry functions. 
-	 *  Androids components are detected and treated according to their lifecycles. This also
-	 *  forces the classes in the list to be resolved.
-	 *  
-	 * @param methodSignatureList a list of method signatures in soot syntax ( <class: returntype methodname(arguments)> )
-	 * @return the dummyMethod which was created
+	 * Creates a new instance of the {@link AndroidEntryPointCreator} class.
 	 */
-	public SootMethod createDummyMain(List<String> methodSignatureList){
-		SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
-		HashMap<String, List<String>> classes = parser.parseClassNames(methodSignatureList, false);
-		
-		for (String className : classes.keySet()) {
-			SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
-			c.setApplicationClass();
-		}
-		
-		return createDummyMain(classes);
+	public AndroidEntryPointCreator() {
+		this.androidClasses = new ArrayList<String>();
+		this.callbackFunctions = new ArrayList<String>();
 	}
 	
 	/**
-	 * Soot requires a main method, so we create a dummy method which calls all entry functions.
-	 * 
-	 * @param classMap
-	 *            the methods to call (signature as String)
-	 * @param createdClass
-	 *            the class which contains the methods
-	 * @return list of entryPoints
+	 * Creates a new instance of the {@link AndroidEntryPointCreator} class
+	 * and registers a list of classes to be automatically scanned for Android
+	 * lifecycle methods
+	 * @param androidClasses The list of classes to be automatically scanned for
+	 * Android lifecycle methods
 	 */
-	public SootMethod createDummyMain(Map<String, List<String>> classMap) {
+	public AndroidEntryPointCreator(List<String> androidClasses) {
+		this.androidClasses = androidClasses;
+		this.callbackFunctions = new ArrayList<String>();
+	}
+	
+	/**
+	 * Sets the list of callback functions to be integrated into the Android
+	 * lifecycle
+	 * @param callbackFunctions The list of callback functions to be integrated
+	 * into the Android lifecycle
+	 */
+	public void setCallbackFunctions(List<String> callbackFunctions) {
+		this.callbackFunctions = callbackFunctions;
+	}
+	
+	/**
+	 * Creates a new dummy main method based only on the Android classes and
+	 * the automatic detection of the Android lifecycle methods
+	 * @return The generated dummy main method
+	 */
+	public SootMethod createDummyMain() {
+		return createDummyMain(new ArrayList<String>());
+	}
 
+	/**
+	 *  Soot requires a main method, so we create a dummy method which calls all entry functions. 
+	 *  Android's components are detected and treated according to their lifecycles. This
+	 *  method automatically resolves the classes containing the given methods.
+	 *  
+	 * @param methods The list of methods to be called inside the generated dummy main method.
+	 * @return the dummyMethod which was created
+	 */
+	@Override
+	public SootMethod createDummyMainInternal(List<String> methods){
+		Map<String, List<String>> classMap =
+				SootMethodRepresentationParser.v().parseClassNames(methods, false);
+		for (String androidClass : this.androidClasses)
+			if (!classMap.containsKey(androidClass))
+				classMap.put(androidClass, new ArrayList<String>());
+		
 		// create new class:
  		body = Jimple.v().newBody();
  		
  		SootMethod mainMethod = createEmptyMainMethod(body);
 		
 		generator = new LocalGenerator(body);
-				
+		
 		// add entrypoint calls
 		conditionCounter = 0;
 		intCounter = generator.generateLocal(IntType.v());
@@ -83,9 +115,9 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		JAssignStmt assignStmt = new JAssignStmt(intCounter, IntConstant.v(conditionCounter));
 		body.getUnits().add(assignStmt);
 		
-		
 		for(Entry<String, List<String>> entry : classMap.entrySet()){
-			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
+			SootClass currentClass = Scene.v().forceResolve(entry.getKey(), SootClass.BODIES);
+			currentClass.setApplicationClass();
 			JNopStmt endClassStmt = new JNopStmt();
 
 			boolean activity = false;
@@ -93,23 +125,26 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			boolean broadcastReceiver = false;
 			boolean contentProvider = false;
 			boolean plain = false;
-			
-			//Scene.v().getSootClass("android.app.Activity");
+
+			// Check the type of this class
 			List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
 			for(SootClass sc : extendedClasses){
 				if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS)){
 					activity = true;
+					break;
 				}
 				if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS)){
 					service = true;
+					break;
 				}
 				if(sc.getName().equals(AndroidEntryPointConstants.BROADCASTRECEIVERCLASS)){
 					broadcastReceiver = true;
+					break;
 				}
 				if(sc.getName().equals(AndroidEntryPointConstants.CONTENTPROVIDERCLASS)){
 					contentProvider = true;
+					break;
 				}
-				
 			}
 			if(!activity && !service && !broadcastReceiver && !contentProvider)
 				plain = true;
@@ -119,7 +154,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			// we collect references to the corresponding SootMethod objects.
 			boolean instanceNeeded = activity || service || broadcastReceiver || contentProvider;
 			Map<String, SootMethod> plainMethods = new HashMap<String, SootMethod>();
-			SootMethodRepresentationParser methodParser = new SootMethodRepresentationParser();
 			if (!instanceNeeded || plain)
 				for(String method : entry.getValue()){
 					SootMethod sm = null;
@@ -129,18 +163,13 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					if(Scene.v().containsMethod(method))
 						sm = Scene.v().getMethod(method);
 					else {
-						SootMethodAndClass methodAndClass = methodParser.parseSootMethodString(method);
-						if (!Scene.v().containsClass(methodAndClass.getClassString())) {
+						SootMethodAndClass methodAndClass = SootMethodRepresentationParser.v().parseSootMethodString(method);
+						if (!Scene.v().containsClass(methodAndClass.getClassName())) {
 							System.err.println("Class for entry point " + method + " not found, skipping...");
 							continue;
 						}
-						for (SootClass sc : Scene.v().getActiveHierarchy().getSuperclassesOf
-								(Scene.v().getSootClass(methodAndClass.getClassString()))) {
-							if (sc.declaresMethodByName(methodAndClass.getSootMethod().getName())) {
-								sm = sc.getMethodByName(methodAndClass.getSootMethod().getName());
-								break;
-							}
-						}
+						sm = findMethod(Scene.v().getSootClass(methodAndClass.getClassName()),
+								methodAndClass.getSubSignature());
 						if (sm == null) {
 							System.err.println("Method for entry point " + method + " not found in class, skipping...");
 							continue;
@@ -154,239 +183,31 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			
 			// if we need to call a constructor, we insert the respective Jimple statement here
 			if(instanceNeeded){
-				String className = entry.getKey();
-				SootClass createdClass = Scene.v().getSootClass(className);
-				if (isConstructorGenerationPossible(createdClass)) {
-					Local localVal = generateClassConstructor(createdClass, body);
-					localVarsForClasses.put(className, localVal);
+				if (isConstructorGenerationPossible(currentClass)) {
+					Local localVal = generateClassConstructor(currentClass, body);
+					localVarsForClasses.put(currentClass.getName(), localVal);
 				}else{
-					System.out.println("Constructor cannot be generated for "+ createdClass);
+					System.out.println("Constructor cannot be generated for " + currentClass.getName());
 				}
 			}
 			Local classLocal = localVarsForClasses.get(entry.getKey());
 
-			if(activity){
-				//analyse entryPoints:
-				List<String> entryPoints = entry.getValue();
-				
-				// 1. onCreate:
-				JNopStmt onCreateStmt = searchAndBuildMethod
-						(AndroidEntryPointConstants.ACTIVITY_ONCREATE, currentClass, entryPoints, classLocal);
-				//2. onStart:
-				JNopStmt onStartStmt = searchAndBuildMethod
-						(AndroidEntryPointConstants.ACTIVITY_ONSTART, currentClass, entryPoints, classLocal);
-				//3. onResume:
-				JNopStmt onResumeStmt = searchAndBuildMethod
-						(AndroidEntryPointConstants.ACTIVITY_ONRESUME, currentClass, entryPoints, classLocal);
-	
-				
-				//all other entryPoints of this class:
-				JNopStmt startWhileStmt = new JNopStmt();
-				JNopStmt endWhileStmt = new JNopStmt();
-				body.getUnits().add(startWhileStmt);
-				
-				for(SootMethod currentMethod : currentClass.getMethods()){
-					if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getActivityLifecycleMethods().contains(currentMethod.getSubSignature())){
-						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-						conditionCounter++;
-						JNopStmt thenStmt = new JNopStmt();
-						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-						body.getUnits().add(ifStmt);
-						JNopStmt elseStmt = new JNopStmt();
-						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-						body.getUnits().add(elseGoto);
-						
-						body.getUnits().add(thenStmt);
-						buildMethodCall(currentMethod, body, classLocal, generator);
-
-						body.getUnits().add(elseStmt);
-					}
-				}
-				body.getUnits().add(endWhileStmt);
-				createIfStmt(startWhileStmt);
-				
-				//4. onPause:
-				searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONPAUSE, currentClass, entryPoints, classLocal);
-				//goTo Stop, Resume or Create:
-				JNopStmt pauseToStopStmt = new JNopStmt();
-				createIfStmt(pauseToStopStmt);
-				createIfStmt(onResumeStmt);
-				createIfStmt(onCreateStmt);
-				
-				body.getUnits().add(pauseToStopStmt);
-				//5. onStop:
-				searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSTOP, currentClass, entryPoints, classLocal);
-				//goTo onDestroy, onRestart or onCreate:
-				conditionCounter++;
-				JNopStmt stopToDestroyStmt = new JNopStmt();
-				JNopStmt stopToRestartStmt = new JNopStmt();
-				createIfStmt(stopToDestroyStmt);
-				createIfStmt(stopToRestartStmt);
-				createIfStmt(onCreateStmt);
-				
-				//6. onRestart:
-				body.getUnits().add(stopToRestartStmt);
-				searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONRESTART, currentClass, entryPoints, classLocal);
-				if(onStartStmt != null){
-					JGotoStmt startGoto = new JGotoStmt(onStartStmt);
-					body.getUnits().add(startGoto);
-				}
-				
-				//7. onDestroy
-				body.getUnits().add(stopToDestroyStmt);
-				searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONDESTROY, currentClass, entryPoints, classLocal);
-
-				createIfStmt(endClassStmt);
-				
-			}
-			if(service){
-				//analyse entryPoints:
-				List<String> entryPoints = entry.getValue();
-				
-				// 1. onCreate:
-				JNopStmt onCreateStmt = searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONCREATE, currentClass, entryPoints, classLocal);
-				
-				//service has two different lifecycles:
-				//lifecycle1:
-				//2. onStart:
-				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONSTART1, currentClass, entryPoints, classLocal);
-				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONSTART2, currentClass, entryPoints, classLocal);
-				//methods: 
-				//all other entryPoints of this class:
-				JNopStmt startWhileStmt = new JNopStmt();
-				JNopStmt endWhileStmt = new JNopStmt();
-				body.getUnits().add(startWhileStmt);
-				for(SootMethod currentMethod : currentClass.getMethods()){
-					if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getServiceLifecycleMethods().contains(currentMethod.getSubSignature())){
-						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-						conditionCounter++;
-						JNopStmt thenStmt = new JNopStmt();
-						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-						body.getUnits().add(ifStmt);
-						JNopStmt elseStmt = new JNopStmt();
-						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-						body.getUnits().add(elseGoto);
-						
-						body.getUnits().add(thenStmt);
-						buildMethodCall(currentMethod, body, classLocal, generator);
-
-						body.getUnits().add(elseStmt);
-					}
-				}
-				body.getUnits().add(endWhileStmt);
-				createIfStmt(startWhileStmt);
-				
-				//lifecycle1 end
-				
-				//lifecycle2 start
-				//onBind:
-				JNopStmt onBindStmt = searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONBIND, currentClass, entryPoints, classLocal);
-				
-				JNopStmt beforemethodsStmt = new JNopStmt();
-				body.getUnits().add(beforemethodsStmt);
-				//methods
-				JNopStmt startWhile2Stmt = new JNopStmt();
-				JNopStmt endWhile2Stmt = new JNopStmt();
-				body.getUnits().add(startWhile2Stmt);
-				for(SootMethod currentMethod : currentClass.getMethods()){
-					if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getServiceLifecycleMethods().contains(currentMethod.getSubSignature())){
-						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-						conditionCounter++;
-						JNopStmt thenStmt = new JNopStmt();
-						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-						body.getUnits().add(ifStmt);
-						JNopStmt elseStmt = new JNopStmt();
-						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-						body.getUnits().add(elseGoto);
-						
-						body.getUnits().add(thenStmt);
-						buildMethodCall(currentMethod, body, classLocal, generator);
-
-						body.getUnits().add(elseStmt);
-					}
-				}
-				body.getUnits().add(endWhile2Stmt);
-				createIfStmt(startWhile2Stmt);
-				
-				//onRebind:
-				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONREBIND, currentClass, entryPoints, classLocal);
-				createIfStmt(beforemethodsStmt);
-				//onUnbind:
-				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONUNBIND, currentClass, entryPoints, classLocal);
-				createIfStmt(onBindStmt);
-				//lifecycle2 end
-				
-				//onDestroy:
-				searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONDESTROY, currentClass, entryPoints, classLocal);
-				
-				//either begin or end or next class:
-				createIfStmt(onCreateStmt);
-				createIfStmt(endClassStmt);
-				
-			}
-			if(broadcastReceiver){
-				List<String> entryPoints = entry.getValue();
-				JNopStmt onReceiveStmt = searchAndBuildMethod(AndroidEntryPointConstants.BROADCAST_ONRECEIVE, currentClass, entryPoints, classLocal);
-				//methods
-				JNopStmt startWhileStmt = new JNopStmt();
-				JNopStmt endWhileStmt = new JNopStmt();
-				body.getUnits().add(startWhileStmt);
-				for(SootMethod currentMethod : currentClass.getMethods()){
-					if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getBroadcastLifecycleMethods().contains(currentMethod.getSubSignature())){
-						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-						conditionCounter++;
-						JNopStmt thenStmt = new JNopStmt();
-						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-						body.getUnits().add(ifStmt);
-						JNopStmt elseStmt = new JNopStmt();
-						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-						body.getUnits().add(elseGoto);
-						
-						body.getUnits().add(thenStmt);
-						buildMethodCall(currentMethod, body, classLocal, generator);
-
-						body.getUnits().add(elseStmt);
-					}
-				}
-				body.getUnits().add(endWhileStmt);
-				createIfStmt(startWhileStmt);
-				
-				createIfStmt(onReceiveStmt);
-				
-			}
-			if(contentProvider){
-				List<String> entryPoints = entry.getValue();
-				JNopStmt onCreateStmt = searchAndBuildMethod(AndroidEntryPointConstants.CONTENTPROVIDER_ONCREATE, currentClass, entryPoints, classLocal);
-				//TODO: which methods?
-				// see: http://developer.android.com/reference/android/content/ContentProvider.html
-				//methods
-				JNopStmt startWhileStmt = new JNopStmt();
-				JNopStmt endWhileStmt = new JNopStmt();
-				body.getUnits().add(startWhileStmt);
-				for(SootMethod currentMethod : currentClass.getMethods()){
-					if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getContentproviderLifecycleMethods().contains(currentMethod.getSubSignature())){
-						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-						conditionCounter++;
-						JNopStmt thenStmt = new JNopStmt();
-						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-						body.getUnits().add(ifStmt);
-						JNopStmt elseStmt = new JNopStmt();
-						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-						body.getUnits().add(elseGoto);
-						
-						body.getUnits().add(thenStmt);
-						buildMethodCall(currentMethod, body, classLocal, generator);
-
-						body.getUnits().add(elseStmt);
-					}
-				}
-				body.getUnits().add(endWhileStmt);
-				createIfStmt(startWhileStmt);
-				
-				createIfStmt(onCreateStmt);
-				
-			}
+			// Generate the lifecycles for the different kinds of Android classes
+			if(activity)
+				generateActivityLifecycle(entry.getValue(), currentClass, endClassStmt,
+						classLocal);
+			if(service)
+				generateServiceLifecycle(entry.getValue(), currentClass, endClassStmt,
+						classLocal);
+			if(broadcastReceiver)
+				generateBroadcastReceiverLifecycle(entry.getValue(), currentClass, endClassStmt,
+						classLocal);
+			if(contentProvider)
+				generateContentProviderLifecycle(entry.getValue(), currentClass, endClassStmt,
+						classLocal);
 			if(plain){
+				JNopStmt beforeClassStmt = new JNopStmt();
+				body.getUnits().add(beforeClassStmt);
 				for(SootMethod currentMethod : plainMethods.values()){
 					if (!currentMethod.isStatic() && classLocal == null) {
 						System.out.println("Skipping method " + currentMethod + " because we have no instance");
@@ -404,51 +225,370 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 						
 					body.getUnits().add(thenStmt);
 					buildMethodCall(currentMethod, body, classLocal, generator);
-						
+					
 					createIfStmt(endClassStmt);
 					body.getUnits().add(elseStmt);
+					
+					// Because we don't know the order of the custom statements,
+					// we assume that you can loop arbitrarily
+					createIfStmt(beforeClassStmt);
 				}
 			}
-			
-			
 			body.getUnits().add(endClassStmt);
 		}
 		
-		
-	
-		System.out.println(body);
+		System.out.println("Generated main method:\n" + body);
 		return mainMethod;
 	}
-	
-	private JNopStmt searchAndBuildMethod(String subsignature, SootClass currentClass, List<String> entryPoints, Local classLocal){
-		if(currentClass.declaresMethod(subsignature)){
-			entryPoints.remove("<"+ currentClass.toString()+ ": "+subsignature+">");
-			return getMethodStmt(subsignature, currentClass, classLocal);
-		}else{
-			//look in history (at least the framework method itself will implement class:
-			List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
-			for(SootClass sclass : extendedClasses){
-				if(sclass.declaresMethod(subsignature)){
-					entryPoints.remove("<"+ currentClass.toString()+ ": "+subsignature+">");
-					return getMethodStmt(subsignature, sclass, classLocal);
-				}
-			}		
+
+	/**
+	 * Generates the lifecycle for an Android content provider class
+	 * @param entryPoints The list of methods to consider in this class
+	 * @param currentClass The class for which to build the content provider
+	 * lifecycle
+	 * @param endClassStmt The statement to which to jump after completing
+	 * the lifecycle
+	 * @param classLocal The local referencing an instance of the current class
+	 */
+	private void generateContentProviderLifecycle
+			(List<String> entryPoints,
+			SootClass currentClass,
+			JNopStmt endClassStmt,
+			Local classLocal) {
+		// As we don't know the order in which the different Android lifecycles
+		// run, we allow for each single one of them to be skipped
+		createIfStmt(endClassStmt);
+
+		Stmt onCreateStmt = searchAndBuildMethod(AndroidEntryPointConstants.CONTENTPROVIDER_ONCREATE, currentClass, entryPoints, classLocal);
+		//TODO: which methods?
+		// see: http://developer.android.com/reference/android/content/ContentProvider.html
+		//methods
+		JNopStmt startWhileStmt = new JNopStmt();
+		JNopStmt endWhileStmt = new JNopStmt();
+		body.getUnits().add(startWhileStmt);
+		for(SootMethod currentMethod : currentClass.getMethods()){
+			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getContentproviderLifecycleMethods().contains(currentMethod.getSubSignature())){
+				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+				conditionCounter++;
+				JNopStmt thenStmt = new JNopStmt();
+				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+				body.getUnits().add(ifStmt);
+				JNopStmt elseStmt = new JNopStmt();
+				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+				body.getUnits().add(elseGoto);
+				
+				body.getUnits().add(thenStmt);
+				buildMethodCall(currentMethod, body, classLocal, generator);
+
+				body.getUnits().add(elseStmt);
+			}
 		}
-		//should not happen because customActivities extends the framework Activity
-		return null;
+		addCallbackMethods(currentClass);
+		body.getUnits().add(endWhileStmt);
+		createIfStmt(startWhileStmt);
+		createIfStmt(onCreateStmt);
+	}
+
+	/**
+	 * Generates the lifecycle for an Android broadcast receiver class
+	 * @param entryPoints The list of methods to consider in this class
+	 * @param currentClass The class for which to build the broadcast receiver
+	 * lifecycle
+	 * @param endClassStmt The statement to which to jump after completing
+	 * the lifecycle
+	 * @param classLocal The local referencing an instance of the current class
+	 */
+	private void generateBroadcastReceiverLifecycle
+			(List<String> entryPoints,
+			SootClass currentClass,
+			JNopStmt endClassStmt,
+			Local classLocal) {
+		// As we don't know the order in which the different Android lifecycles
+		// run, we allow for each single one of them to be skipped
+		createIfStmt(endClassStmt);
+
+		Stmt onReceiveStmt = searchAndBuildMethod(AndroidEntryPointConstants.BROADCAST_ONRECEIVE, currentClass, entryPoints, classLocal);
+		//methods
+		JNopStmt startWhileStmt = new JNopStmt();
+		JNopStmt endWhileStmt = new JNopStmt();
+		body.getUnits().add(startWhileStmt);
+		for(SootMethod currentMethod : currentClass.getMethods()){
+			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getBroadcastLifecycleMethods().contains(currentMethod.getSubSignature())){
+				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+				conditionCounter++;
+				JNopStmt thenStmt = new JNopStmt();
+				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+				body.getUnits().add(ifStmt);
+				JNopStmt elseStmt = new JNopStmt();
+				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+				body.getUnits().add(elseGoto);
+				
+				body.getUnits().add(thenStmt);
+				buildMethodCall(currentMethod, body, classLocal, generator);
+
+				body.getUnits().add(elseStmt);
+			}
+		}
+		addCallbackMethods(currentClass);
+		body.getUnits().add(endWhileStmt);
+		createIfStmt(startWhileStmt);
+		createIfStmt(onReceiveStmt);
+	}
+
+	/**
+	 * Generates the lifecycle for an Android service class
+	 * @param entryPoints The list of methods to consider in this class
+	 * @param currentClass The class for which to build the service lifecycle
+	 * @param endClassStmt The statement to which to jump after completing
+	 * the lifecycle
+	 * @param classLocal The local referencing an instance of the current class
+	 */
+	private void generateServiceLifecycle
+			(List<String> entryPoints,
+			SootClass currentClass,
+			JNopStmt endClassStmt,
+			Local classLocal) {
+		// As we don't know the order in which the different Android lifecycles
+		// run, we allow for each single one of them to be skipped
+		createIfStmt(endClassStmt);
+
+		// 1. onCreate:
+		Stmt onCreateStmt = searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONCREATE, currentClass, entryPoints, classLocal);
+		
+		//service has two different lifecycles:
+		//lifecycle1:
+		//2. onStart:
+		searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONSTART1, currentClass, entryPoints, classLocal);
+		searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONSTART2, currentClass, entryPoints, classLocal);
+		//methods: 
+		//all other entryPoints of this class:
+		JNopStmt startWhileStmt = new JNopStmt();
+		JNopStmt endWhileStmt = new JNopStmt();
+		body.getUnits().add(startWhileStmt);
+		for(SootMethod currentMethod : currentClass.getMethods()){
+			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getServiceLifecycleMethods().contains(currentMethod.getSubSignature())){
+				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+				conditionCounter++;
+				JNopStmt thenStmt = new JNopStmt();
+				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+				body.getUnits().add(ifStmt);
+				JNopStmt elseStmt = new JNopStmt();
+				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+				body.getUnits().add(elseGoto);
+				
+				body.getUnits().add(thenStmt);
+				buildMethodCall(currentMethod, body, classLocal, generator);
+
+				body.getUnits().add(elseStmt);
+			}
+		}
+		addCallbackMethods(currentClass);
+		body.getUnits().add(endWhileStmt);
+		createIfStmt(startWhileStmt);
+		
+		//lifecycle1 end
+		
+		//lifecycle2 start
+		//onBind:
+		Stmt onBindStmt = searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONBIND, currentClass, entryPoints, classLocal);
+		
+		JNopStmt beforemethodsStmt = new JNopStmt();
+		body.getUnits().add(beforemethodsStmt);
+		//methods
+		JNopStmt startWhile2Stmt = new JNopStmt();
+		JNopStmt endWhile2Stmt = new JNopStmt();
+		body.getUnits().add(startWhile2Stmt);
+		for(SootMethod currentMethod : currentClass.getMethods()){
+			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getServiceLifecycleMethods().contains(currentMethod.getSubSignature())){
+				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+				conditionCounter++;
+				JNopStmt thenStmt = new JNopStmt();
+				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+				body.getUnits().add(ifStmt);
+				JNopStmt elseStmt = new JNopStmt();
+				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+				body.getUnits().add(elseGoto);
+				
+				body.getUnits().add(thenStmt);
+				buildMethodCall(currentMethod, body, classLocal, generator);
+
+				body.getUnits().add(elseStmt);
+			}
+		}
+		addCallbackMethods(currentClass);
+		body.getUnits().add(endWhile2Stmt);
+		createIfStmt(startWhile2Stmt);
+		
+		//onRebind:
+		searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONREBIND, currentClass, entryPoints, classLocal);
+		createIfStmt(beforemethodsStmt);
+		//onUnbind:
+		searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONUNBIND, currentClass, entryPoints, classLocal);
+		createIfStmt(onBindStmt);
+		//lifecycle2 end
+		
+		//onDestroy:
+		searchAndBuildMethod(AndroidEntryPointConstants.SERVICE_ONDESTROY, currentClass, entryPoints, classLocal);
+		
+		//either begin or end or next class:
+		createIfStmt(onCreateStmt);
+		createIfStmt(endClassStmt);
+	}
+
+	/**
+	 * Generates the lifecycle for an Android activity
+	 * @param entryPoints The list of methods to consider in this class
+	 * @param currentClass The class for which to build the activity lifecycle
+	 * @param endClassStmt The statement to which to jump after completing
+	 * the lifecycle
+	 * @param classLocal The local referencing an instance of the current class
+	 */
+	private void generateActivityLifecycle
+			(List<String> entryPoints,
+			SootClass currentClass,
+			JNopStmt endClassStmt,
+			Local classLocal) {
+		// As we don't know the order in which the different Android lifecycles
+		// run, we allow for each single one of them to be skipped
+		createIfStmt(endClassStmt);
+		
+		// 1. onCreate:
+		Stmt onCreateStmt = searchAndBuildMethod
+				(AndroidEntryPointConstants.ACTIVITY_ONCREATE, currentClass, entryPoints, classLocal);
+		//2. onStart:
+		Stmt onStartStmt = searchAndBuildMethod
+				(AndroidEntryPointConstants.ACTIVITY_ONSTART, currentClass, entryPoints, classLocal);
+		//3. onResume:
+		Stmt onResumeStmt = searchAndBuildMethod
+				(AndroidEntryPointConstants.ACTIVITY_ONRESUME, currentClass, entryPoints, classLocal);
+		
+		//all other entryPoints of this class:
+		JNopStmt startWhileStmt = new JNopStmt();
+		JNopStmt endWhileStmt = new JNopStmt();
+		body.getUnits().add(startWhileStmt);
+		
+		for(SootMethod currentMethod : currentClass.getMethods()){
+			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getActivityLifecycleMethods().contains(currentMethod.getSubSignature())){
+				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+				conditionCounter++;
+				JNopStmt thenStmt = new JNopStmt();
+				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+				body.getUnits().add(ifStmt);
+				JNopStmt elseStmt = new JNopStmt();
+				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+				body.getUnits().add(elseGoto);
+				
+				body.getUnits().add(thenStmt);
+				buildMethodCall(currentMethod, body, classLocal, generator);
+
+				body.getUnits().add(elseStmt);
+			}
+		}		
+		addCallbackMethods(currentClass);
+		
+		body.getUnits().add(endWhileStmt);
+		createIfStmt(startWhileStmt);
+		
+		//4. onPause:
+		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONPAUSE, currentClass, entryPoints, classLocal);
+		//goTo Stop, Resume or Create:
+		JNopStmt pauseToStopStmt = new JNopStmt();
+		createIfStmt(pauseToStopStmt);
+		createIfStmt(onResumeStmt);
+		createIfStmt(onCreateStmt);
+		
+		body.getUnits().add(pauseToStopStmt);
+		//5. onStop:
+		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSTOP, currentClass, entryPoints, classLocal);
+		//goTo onDestroy, onRestart or onCreate:
+		conditionCounter++;
+		JNopStmt stopToDestroyStmt = new JNopStmt();
+		JNopStmt stopToRestartStmt = new JNopStmt();
+		createIfStmt(stopToDestroyStmt);
+		createIfStmt(stopToRestartStmt);
+		createIfStmt(onCreateStmt);
+		
+		//6. onRestart:
+		body.getUnits().add(stopToRestartStmt);
+		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONRESTART, currentClass, entryPoints, classLocal);
+		if(onStartStmt != null){
+			JGotoStmt startGoto = new JGotoStmt(onStartStmt);
+			body.getUnits().add(startGoto);
+		}
+		
+		//7. onDestroy
+		body.getUnits().add(stopToDestroyStmt);
+		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONDESTROY, currentClass, entryPoints, classLocal);
+
+		createIfStmt(endClassStmt);
 	}
 	
-	private JNopStmt getMethodStmt(String signature, SootClass sclass, Local classLocal){
-		SootMethod onMethod = sclass.getMethod(signature);
-		assert onMethod.isStatic() || classLocal != null : "Class local was null for non-static method "
-			+ signature + " in class " + sclass;
-		
-		JNopStmt onMethodStmt = new JNopStmt();
-		body.getUnits().add(onMethodStmt);
+	private void addCallbackMethods(SootClass currentClass) {
+		// Get all classes in which callback methods are declared
+		Map<SootClass, Set<SootMethod>> callbackClasses = new HashMap<SootClass, Set<SootMethod>>();
+		for (String methodSig : this.callbackFunctions) {
+			SootMethodAndClass methodAndClass = SootMethodRepresentationParser.v().parseSootMethodString(methodSig);
+			SootClass theClass = Scene.v().getSootClass(methodAndClass.getClassName());
+			SootMethod theMethod = findMethod(theClass, methodAndClass.getSubSignature());
+			if (theMethod == null) {
+				System.err.println("Could not find callback method " + methodAndClass.getSignature());
+				continue;
+			}
 			
+			if (callbackClasses.containsKey(theClass))
+				callbackClasses.get(theClass).add(theMethod);
+			else {
+				Set<SootMethod> methods = new HashSet<SootMethod>();
+				methods.add(theMethod);
+				callbackClasses.put(theClass, methods);				
+			}
+		}
+
+		for (SootClass callbackClass : callbackClasses.keySet()) {
+			Local classLocal;
+			if (callbackClass.getName().equals(currentClass.getName()))
+				classLocal = body.getThisLocal();
+			else {
+				// Create a new instance of this class
+				// if we need to call a constructor, we insert the respective Jimple statement here
+				if (!isConstructorGenerationPossible(callbackClass)) {
+					System.out.println("Constructor cannot be generated for callback class "
+							+ currentClass.getName());
+					continue;
+				}
+				classLocal = generateClassConstructor(callbackClass, body);
+			}
+				
+			// Build the calls to all callback methods in this class
+			for (SootMethod callbackMethod : callbackClasses.get(callbackClass)) {
+				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+				conditionCounter++;
+				JNopStmt thenStmt = new JNopStmt();
+				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+				body.getUnits().add(ifStmt);
+				JNopStmt elseStmt = new JNopStmt();
+				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+				body.getUnits().add(elseGoto);
+				
+				body.getUnits().add(thenStmt);
+				buildMethodCall(callbackMethod, body, classLocal, generator);
+	
+				body.getUnits().add(elseStmt);
+			}
+		}
+	}
+
+	private Stmt searchAndBuildMethod(String subsignature, SootClass currentClass, List<String> entryPoints, Local classLocal){
+		SootMethod method = findMethod(currentClass, subsignature);
+		if (method == null)
+			return null;
+		entryPoints.remove(method.getSignature());
+
+		assert method.isStatic() || classLocal != null : "Class local was null for non-static method "
+				+ method.getSignature();
+		
 		//write Method
-		buildMethodCall(onMethod, body, classLocal, generator);
-		return onMethodStmt;
+		return buildMethodCall(method, body, classLocal, generator);
 	}
 	
 	private void createIfStmt(Unit target){
@@ -461,6 +601,14 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		body.getUnits().add(ifStmt);
 	}
 	
+	/**
+	 * Finds a method with the given signature in the given class or one of its
+	 * super classes
+	 * @param currentClass The current class in which to start the search
+	 * @param subsignature The subsignature of the method to find
+	 * @return The method with the given signature if it has been found,
+	 * otherwise null
+	 */
 	protected SootMethod findMethod(SootClass currentClass, String subsignature){
 		if(currentClass.declaresMethod(subsignature)){
 			return currentClass.getMethod(subsignature);

@@ -14,7 +14,7 @@ public class AliasingTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<securibench.micro.aliasing.Aliasing1: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");	
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 		checkInfoflow(infoflow);
 	}
 
@@ -23,7 +23,7 @@ public class AliasingTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<securibench.micro.aliasing.Aliasing2: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");	
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 	
@@ -32,7 +32,7 @@ public class AliasingTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<securibench.micro.aliasing.Aliasing3: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");	
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 		checkInfoflow(infoflow);
 		//INFO: this test fails but I don't think there is a flow from source to sink.
 	}
@@ -42,7 +42,7 @@ public class AliasingTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<securibench.micro.aliasing.Aliasing4: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");	
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 		checkInfoflow(infoflow);
 	}
 	
@@ -51,7 +51,7 @@ public class AliasingTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<securibench.micro.aliasing.Aliasing5: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");	
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 		checkInfoflow(infoflow);
 	}
 	
@@ -60,7 +60,7 @@ public class AliasingTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<securibench.micro.aliasing.Aliasing6: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");	
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 		checkInfoflow(infoflow);
 	}
 

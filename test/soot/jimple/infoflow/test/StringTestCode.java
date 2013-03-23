@@ -1,10 +1,22 @@
 package soot.jimple.infoflow.test;
 
+import soot.jimple.infoflow.test.android.AccountManager;
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 import soot.jimple.infoflow.test.utilclasses.ClassWithField;
 
 public class StringTestCode {
+	
+	public void multipleSources(){
+		String tainted1 = TelephonyManager.getDeviceId();
+		AccountManager mgr = new AccountManager();
+		String tainted2 = mgr.getPassword();
+		
+		String result = tainted1 + tainted2;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(result);	
+	}
 	
 	public void methodSubstring(){
 		String tainted = TelephonyManager.getDeviceId();
@@ -61,6 +73,7 @@ public class StringTestCode {
 	public void methodStringConcatNegative(){
 		String pre = "pre";
 		String tainted = TelephonyManager.getDeviceId();
+		@SuppressWarnings("unused")
 		String post = tainted.concat(pre);
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(pre);
@@ -166,10 +179,19 @@ public class StringTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(String.valueOf(x));
 	}
+	
+	public void methodStringConcat() {
+		String deviceID = TelephonyManager.getDeviceId();
+		AccountManager am = new AccountManager();
+		String pwd = am.getPassword();
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(deviceID + pwd);
+	}
 
 
 //	private String imei;
-	private String URL = "http://www.google.de/?q=";
+//	private String URL = "http://www.google.de/?q=";
 	private ClassWithField fieldc = new ClassWithField();
 //	public void originalFromPrototyp(){
 //		imei = TelephonyManager.getDeviceId();

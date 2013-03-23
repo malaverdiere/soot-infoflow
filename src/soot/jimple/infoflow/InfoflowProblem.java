@@ -25,7 +25,6 @@ import soot.jimple.IdentityStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
-import soot.jimple.ParameterRef;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -193,8 +192,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, final Unit dest) {
 				// If we compute flows on parameters, we create the initial
 				// flow fact here
-				if (computeParamFlows && src instanceof IdentityStmt
-						&& isInitialMethod(interproceduralCFG().getMethodOf(src))) {
+				if (src instanceof IdentityStmt) {
 					final IdentityStmt is = (IdentityStmt) src;
 					return new FlowFunction<Abstraction>() {
 
@@ -202,7 +200,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
-							if (is.getRightOp() instanceof ParameterRef) {
+							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking) {
 									List<Unit> empty = Collections.emptyList();
 									Abstraction abs = new AbstractionWithPath(is.getLeftOp(),
@@ -219,7 +217,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.singleton(source);
 						}
 					};
+
 				}
+
 				// taint is propagated with assignStmt
 				else if (src instanceof AssignStmt) {
 					AssignStmt assignStmt = (AssignStmt) src;
@@ -327,8 +327,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					};
 
 				}
-				else if (returnIsSink &&  dest instanceof ReturnStmt) {
-					// Returning from the main method may also count as a sink
+				else if (dest instanceof ReturnStmt) {
 					final ReturnStmt returnStmt = (ReturnStmt) dest;
 					return new FlowFunction<Abstraction>() {
 
@@ -341,17 +340,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (source.getAccessPath().isStaticFieldRef())
 								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
 							else
-								isSink = isInitialMethod(interproceduralCFG().getMethodOf(dest))
-									&& source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
-							if (isSink) {
+								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
+							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
-									results.addResult(returnStmt.toString(),
-											source.getSource().toString(),
+									results.addResult(returnStmt.getOp(),
+											source.getSource(),
 											((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 											interproceduralCFG().getMethodOf(returnStmt) + ": " + returnStmt.toString());
 								else
-									results.addResult(returnStmt.toString(),
-											source.getSource().toString());
+									results.addResult(returnStmt.getOp(),
+											source.getSource());
 							}
 							return Collections.singleton(source);
 						}
@@ -611,26 +609,28 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 								if (taintedParam) {
 									if (pathTracking != PathTrackingMethod.NoTracking)
-										results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-												source.getSource().toString(),
+										results.addResult(iStmt.getInvokeExpr(),
+												source.getSource(),
 												((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 												interproceduralCFG().getMethodOf(call) + ": " + call.toString());
 									else
-										results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-												source.getSource().toString());
+										results.addResult(iStmt.getInvokeExpr(),
+												source.getSource());
+
 								}
 								// if the base object which executes the method is tainted the sink is reached, too.
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 									InstanceInvokeExpr vie = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 									if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
 										if (pathTracking != PathTrackingMethod.NoTracking)
-											results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-													source.getSource().toString(),
+											results.addResult(iStmt.getInvokeExpr(),
+													source.getSource(),
 													((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 													interproceduralCFG().getMethodOf(call) + ": " + call.toString());
 										else
-											results.addResult(iStmt.getInvokeExpr().getMethod().toString(),
-													source.getSource().toString());
+											results.addResult(iStmt.getInvokeExpr(),
+													source.getSource());
+
 									}
 								}
 							}

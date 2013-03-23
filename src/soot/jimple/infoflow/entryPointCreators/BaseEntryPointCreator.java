@@ -35,15 +35,41 @@ import soot.jimple.Stmt;
 import soot.jimple.StringConstant;
 import soot.jimple.VirtualInvokeExpr;
 
+/**
+ * Common base class for all entry point creators. Implementors must override the
+ * createDummyMainInternal method to provide their entry point implementation.
+ */
 public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 
 	protected Map<String, Local> localVarsForClasses = new HashMap<String, Local>();
+	private boolean substituteCallParams = false;
+	private List<String> substituteClasses;
+	
+	public void setSubstituteCallParams(boolean b){
+		substituteCallParams = b;
+	}
+	
+	public void setSubstituteClasses(List<String> l){
+		substituteClasses = l;
+	}
 
 	@Override
-	public SootMethod createDummyMain(Map<String, List<String>> classMap) {
-		// TODO Auto-generated method stub
-		return null;
+	public SootMethod createDummyMain(List<String> methods) {
+		// Load the substitution classes
+		if (substituteCallParams)
+			for (String className : substituteClasses)
+				Scene.v().forceResolve(className, SootClass.BODIES).setApplicationClass();
+		
+		return this.createDummyMainInternal(methods);
 	}
+
+	/**
+	 * Implementors need to overwrite this method for providing the actual dummy
+	 * main method
+	 * @param methods The methods to be called inside the dummy main method
+	 * @return The generated dummy main method
+	 */
+	protected abstract SootMethod createDummyMainInternal(List<String> methods);
 	
 	public SootMethod createEmptyMainMethod(JimpleBody body){
 		SootMethod mainMethod = new SootMethod("dummyMainMethod", new ArrayList<Type>(), VoidType.v());
@@ -58,7 +84,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		return mainMethod;
 	}
 	
-	public void buildMethodCall(SootMethod currentMethod, JimpleBody body, Local classLocal, LocalGenerator gen){
+	protected Stmt buildMethodCall(SootMethod currentMethod, JimpleBody body, Local classLocal, LocalGenerator gen){
 		assert currentMethod != null : "Current method was null";
 		assert body != null : "Body was null";
 		assert gen != null : "Local generator was null";
@@ -102,6 +128,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			stmt = Jimple.v().newInvokeStmt(invokeExpr);
 		}
 		body.getUnits().add(stmt);
+		return stmt;
 	}
 	
 	protected Local generateClassConstructor(SootClass createdClass, JimpleBody body) {
@@ -117,24 +144,46 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			LocalGenerator generator = new LocalGenerator(body);
 			Local tempLocal = generator.generateLocal(RefType.v(createdClass));
 			
-			//TODO: this is a simple hack for the securiBench-Tests:
-//			if(createdClass.toString().equals("javax.servlet.http.HttpServletRequest")){
-//				createdClass = Scene.v().forceResolve("soot.jimple.infoflow.entryPointCreators.dummyClasses.DummyHttpRequest", SootClass.BODIES);
-//			}else if(createdClass.toString().equals("javax.servlet.http.HttpServletResponse")){
-//				createdClass = Scene.v().forceResolve("soot.jimple.infoflow.entryPointCreators.dummyClasses.DummyHttpResponse", SootClass.BODIES);
-//			}
-			
-			NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
-			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
-			body.getUnits().add(assignStmt);
-			
 			boolean isInnerClass = createdClass.getName().contains("$");
 			String outerClass = isInnerClass ? createdClass.getName().substring
 					(0, createdClass.getName().lastIndexOf("$")) : "";
 			
 			if(createdClass.isInterface() || createdClass.isAbstract()){
-				System.err.println("Warning, cannot create valid constructor for " + createdClass +
+				if(substituteCallParams){
+					List<SootClass> classes;
+					if(createdClass.isInterface()){
+						classes = Scene.v().getActiveHierarchy().getImplementersOf(createdClass);
+					}else{
+						classes = Scene.v().getActiveHierarchy().getSubclassesOf(createdClass);
+					}
+					boolean foundOne = false;
+					for(SootClass sClass : classes){
+						if(substituteClasses.contains(sClass.toString())){
+							AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, generateClassConstructor(sClass, body));
+							body.getUnits().add(assignStmt);
+							foundOne = true;
+						}
+					}
+					if(!foundOne){
+						System.err.println("Warning, cannot create valid constructor for " + createdClass +
+								", because it is "+(createdClass.isInterface()?"an interface":(createdClass.isAbstract()?"abstract":""))+ " and cannot substitute with subclass");
+					}else{
+						//no further constructor generation attempts required, so return now:
+						return tempLocal;
+					}
+				}else{
+					System.err.println("Warning, cannot create valid constructor for " + createdClass +
 						", because it is "+(createdClass.isInterface()?"an interface":(createdClass.isAbstract()?"abstract":"")));
+					//build the expression anyway:
+					NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
+					AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
+					body.getUnits().add(assignStmt);
+				}
+			}else{
+				NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
+				AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
+				body.getUnits().add(assignStmt);
+				
 			}
 					
 			// Find a constructor we can invoke

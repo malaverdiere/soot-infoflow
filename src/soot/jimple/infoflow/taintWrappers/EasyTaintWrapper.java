@@ -41,14 +41,14 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			FileReader freader = new FileReader(f);
 			reader = new BufferedReader(freader);
 			String line = reader.readLine();
-			SootMethodRepresentationParser parser = new SootMethodRepresentationParser();
 			List<String> methodList = new LinkedList<String>();
 			while(line != null){
 				if (!line.isEmpty() && !line.startsWith("%"))
 					methodList.add(line);
 				line = reader.readLine();
 			}
-			classList = parser.parseClassNames(methodList, true);
+			classList = SootMethodRepresentationParser.v().parseClassNames(methodList, true);
+			System.out.println("Loaded wrapper entries for " + classList.size() + " classes.");
 		}
 		finally {
 			if (reader != null)

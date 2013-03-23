@@ -15,10 +15,11 @@ import org.junit.BeforeClass;
 
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowResults;
+import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
+import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 
 public abstract class JUnitTests {
-
 
     protected static String path;
     protected static List<String> sources;
@@ -51,14 +52,17 @@ public abstract class JUnitTests {
     	"<javax.servlet.ServletConfig: java.lang.String getInitParameter(java.lang.String)>",
     	"<javax.servlet.ServletConfig: java.util.Enumeration getInitParameterNames()>",
     	"<javax.servlet.http.HttpServletRequest: java.util.Map getParameterMap()>",	
-   	 "<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>",
-   	 "<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>",
-   	 "<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
-   	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>"};
+   	 	"<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>",
+   	 	"<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>",
+   	 	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
+   		"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>"};
    
     
     protected static boolean local = false;
     protected static boolean taintWrapper = false;
+    protected static boolean substituteCallParams = true;
+    
+    protected IEntryPointCreator entryPointCreator = null;
    
     @BeforeClass
     public static void setUp() throws IOException
@@ -69,9 +73,8 @@ public abstract class JUnitTests {
     			 f.getCanonicalPath() + File.separator + "bin"+ System.getProperty("path.separator") + 
     			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar";
         System.out.println("Using following locations as sources for classes: " + path);
-    	 sources = Arrays.asList(sourceArray);
+    	sources = Arrays.asList(sourceArray);
         sinks = Arrays.asList(sinkArray);
-
     }
     
     @Before
@@ -87,7 +90,7 @@ public abstract class JUnitTests {
 				boolean containsSink = false;
 				List<String> actualSinkStrings = new LinkedList<String>();
 				for(String sink : sinkArray){
-					if(map.containsSink(sink)){
+					if(map.containsSinkMethod(sink)){
 						containsSink = true;
 						actualSinkStrings.add(sink); 
 					}
@@ -98,7 +101,7 @@ public abstract class JUnitTests {
 				for(String sink : actualSinkStrings){
 					boolean hasPath = false;
 					for(String source : refinedSourceArray){
-						if(map.isPathBetweenSourceMethod(sink, source)){
+						if(map.isPathBetweenMethods(sink, source)){
 							hasPath = true;
 							break;
 						}
@@ -118,7 +121,7 @@ public abstract class JUnitTests {
 		  if(infoflow.isResultAvailable()){
 				InfoflowResults map = infoflow.getResults();
 				for(String sink : sinkArray){
-					if(map.containsSink(sink)){
+					if(map.containsSinkMethod(sink)){
 						fail("sink is reached: " +sink);
 					}
 				}
@@ -128,7 +131,18 @@ public abstract class JUnitTests {
 	  }
     
     protected Infoflow initInfoflow(){
+
+    	List<String> substClasses = new LinkedList<String>();
+    	substClasses.add("soot.jimple.infoflow.test.securibench.supportClasses.DummyHttpRequest");
+    	substClasses.add("soot.jimple.infoflow.test.securibench.supportClasses.DummyHttpResponse");
+
+    	DefaultEntryPointCreator entryPointCreator = new DefaultEntryPointCreator();
+    	entryPointCreator.setSubstituteCallParams(substituteCallParams);
+    	entryPointCreator.setSubstituteClasses(substClasses);
+    	this.entryPointCreator = entryPointCreator;
+
     	Infoflow result = new Infoflow();
+
     	SootConfigSecuriBench testConfig = new SootConfigSecuriBench();
     	result.setSootConfig(testConfig);
     	if(taintWrapper){

@@ -1,5 +1,7 @@
 package soot.jimple.infoflow.test.junit;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +11,15 @@ import org.junit.Test;
 import soot.jimple.infoflow.Infoflow;
 
 public class StringTest extends JUnitTests {
+	
+	@Test
+    public void multipleSourcesTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void multipleSources()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
 	
 	@Test
     public void substringTest(){
@@ -210,6 +221,16 @@ public class StringTest extends JUnitTests {
 		checkInfoflow(infoflow);
     }
     
+    @Test
+    public void testStringConcat(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringConcat()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+		assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourcePwd));
+    }
+
     @Test
     public void testPrototyp() throws FileNotFoundException{
     	Infoflow infoflow = initInfoflow();

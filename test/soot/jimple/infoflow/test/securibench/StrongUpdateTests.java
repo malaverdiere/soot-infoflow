@@ -14,7 +14,7 @@ public class StrongUpdateTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.strong_updates.StrongUpdates1: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	negativeCheckInfoflow(infoflow);
 	}
 
@@ -23,7 +23,7 @@ public class StrongUpdateTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.strong_updates.StrongUpdates2: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	negativeCheckInfoflow(infoflow);
 	}
 
@@ -32,7 +32,7 @@ public class StrongUpdateTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.strong_updates.StrongUpdates3: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	negativeCheckInfoflow(infoflow);
 	}
 
@@ -41,7 +41,7 @@ public class StrongUpdateTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.strong_updates.StrongUpdates4: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
 	}
 
@@ -50,7 +50,7 @@ public class StrongUpdateTests extends JUnitTests {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.strong_updates.StrongUpdates5: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
-	infoflow.computeInfoflow(path, epoints, sources, sinks);
+	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	negativeCheckInfoflow(infoflow);
 	}
 

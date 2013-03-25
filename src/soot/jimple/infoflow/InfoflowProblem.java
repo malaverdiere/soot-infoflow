@@ -16,11 +16,13 @@ import soot.NullType;
 import soot.PointsToAnalysis;
 import soot.PointsToSet;
 import soot.PrimType;
+import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootField;
 import soot.SootFieldRef;
 import soot.SootMethod;
+import soot.Type;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
@@ -420,7 +422,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			public FlowFunction<Abstraction> getReturnFlowFunction(Unit callSite, SootMethod callee, final Unit exitStmt, final Unit retSite) {
 				final SootMethod calleeMethod = callee;
 				final Unit callUnit = callSite;
-				final Unit exitUnit = exitStmt;
 
 				return new FlowFunction<Abstraction>() {
 
@@ -434,8 +435,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
 						// if we have a returnStmt we have to look at the returned value:
-						if (exitUnit instanceof ReturnStmt) {
-							ReturnStmt returnStmt = (ReturnStmt) exitUnit;
+						if (exitStmt instanceof ReturnStmt) {
+							ReturnStmt returnStmt = (ReturnStmt) exitStmt;
 							Value retLocal = returnStmt.getOp();
 
 							if (callUnit instanceof DefinitionStmt) {
@@ -497,7 +498,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callUnit instanceof Stmt) {
 									Stmt iStmt = (Stmt) callUnit;
 									originalCallArg = iStmt.getInvokeExpr().getArg(i);
-									if (!(originalCallArg instanceof Constant) && !(originalCallArg.getType() instanceof PrimType)) {
+									if (!(originalCallArg instanceof Constant) && !(originalCallArg.getType() instanceof PrimType)
+											&& !isStringType(originalCallArg.getType())) {
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(originalCallArg),
 													(AbstractionWithPath) source).addPathElement(exitStmt));
@@ -594,6 +596,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}
 						return res;
+					}
+
+					private boolean isStringType(Type type) {
+						if (!(type instanceof RefType))
+							return false;
+						RefType rt = (RefType) type;
+						return rt.getSootClass().getName().equals("java.lang.String");
 					}
 
 				};

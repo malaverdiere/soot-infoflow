@@ -25,10 +25,10 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
-import soot.Value;
 import soot.dexpler.DexResolver;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
+import soot.jimple.infoflow.InfoflowResults.SinkInfo;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
 import soot.jimple.infoflow.config.IInfoflowSootConfig;
 import soot.jimple.infoflow.data.Abstraction;
@@ -357,7 +357,7 @@ public class Infoflow implements IInfoflow {
 				results = problem.results;
 				if (results.getResults().isEmpty())
 					System.out.println("No results found.");
-				for (Entry<Value, Set<SourceInfo>> entry : results.getResults().entrySet()) {
+				for (Entry<SinkInfo, Set<SourceInfo>> entry : results.getResults().entrySet()) {
 					System.out.println("The sink " + entry.getKey() + " was called with values from the following sources:");
 					for (SourceInfo source : entry.getValue()) {
 						System.out.println("- " + source.getSource());

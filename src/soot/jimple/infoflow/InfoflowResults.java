@@ -9,6 +9,7 @@ import java.util.Set;
 
 import soot.Value;
 import soot.jimple.InvokeExpr;
+import soot.jimple.Stmt;
 
 /**
  * Class for collecting information flow results
@@ -19,8 +20,7 @@ public class InfoflowResults {
 	
 	/**
 	 * Class for modeling information flowing out of a specific source
-	 * @author sarzt
-	 *
+	 * @author Steven Arzt
 	 */
 	public class SourceInfo {
 		private final Value source;
@@ -59,8 +59,35 @@ public class InfoflowResults {
 			return this.source.equals(si.source);
 		}
 	}
-
-	private final Map<Value, Set<SourceInfo>> results = new HashMap<Value, Set<SourceInfo>>();
+	
+	/**
+	 * Class for modeling information flowing into a specific source
+	 * @author Steven Arzt
+	 */
+	public class SinkInfo {
+		private final Value sink;
+		private final Stmt context;
+		
+		public SinkInfo(Value sink, Stmt context) {
+			this.sink = sink;
+			this.context = context;
+		}
+		
+		public Value getSink() {
+			return this.sink;
+		}
+		
+		public Stmt getContext() {
+			return this.context;
+		}
+		
+		@Override
+		public String toString() {
+			return this.context.toString();
+		}
+	}
+	
+	private final Map<SinkInfo, Set<SourceInfo>> results = new HashMap<SinkInfo, Set<SourceInfo>>();
 	
 	public InfoflowResults() {
 		
@@ -91,7 +118,10 @@ public class InfoflowResults {
 	 * false.
 	 */
 	public boolean containsSink(Value sink) {
-		return this.getResults().containsKey(sink);
+		for (SinkInfo si : this.results.keySet())
+			if (si.getSink().equals(sink))
+				return true;
+		return false;
 	}
 	
 	/**
@@ -105,21 +135,22 @@ public class InfoflowResults {
 		return !findSinkByMethodSignature(sinkSignature).isEmpty();
 	}
 
-	public void addResult(Value sink, Value source) {
-		this.addResult(sink, new SourceInfo(source));
+	public void addResult(Value sink, Stmt sinkStmt, Value source) {
+		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source));
 	}
 	
-	public void addResult(Value sink, Value source, List<String> propagationPath) {
-		this.addResult(sink, new SourceInfo(source, propagationPath));
+	public void addResult(Value sink, Stmt sinkStmt, Value source, List<String> propagationPath) {
+		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source, propagationPath));
 	}
 
-	public void addResult(Value sink, Value source, List<String> propagationPath, String stmt) {
+	public void addResult(Value sink, Stmt sinkContext, Value source, List<String> propagationPath, String stmt) {
 		List<String> newPropPath = new ArrayList<String>(propagationPath);
 		newPropPath.add(stmt);
-		this.addResult(sink, new SourceInfo(source, newPropPath));
+		this.addResult(new SinkInfo(sink, sinkContext),
+				new SourceInfo(source, newPropPath));
 	}
 
-	public void addResult(Value sink, SourceInfo source) {
+	public void addResult(SinkInfo sink, SourceInfo source) {
 		Set<SourceInfo> sourceInfo = this.results.get(sink);
 		if (sourceInfo == null) {
 			sourceInfo = new HashSet<SourceInfo>();
@@ -132,7 +163,7 @@ public class InfoflowResults {
 	 * Gets all results in this object as a hash map.
 	 * @return All results in this object as a hash map.
 	 */
-	public Map<Value, Set<SourceInfo>> getResults() {
+	public Map<SinkInfo, Set<SourceInfo>> getResults() {
 		return this.results;
 	}
 	
@@ -161,9 +192,9 @@ public class InfoflowResults {
 	 * otherwise
 	 */
 	public boolean isPathBetween(String sink, String source) {
-		for (Value val : this.results.keySet())
-			if (val.toString().equals(sink)) {
-				Set<SourceInfo> sources = this.results.get(val);
+		for (SinkInfo si : this.results.keySet())
+			if (si.getSink().toString().equals(sink)) {
+				Set<SourceInfo> sources = this.results.get(si);
 				for (SourceInfo src : sources)
 					if (src.source.toString().equals(source))
 						return true;
@@ -180,9 +211,9 @@ public class InfoflowResults {
 	 * otherwise
 	 */
 	public boolean isPathBetweenMethods(String sinkSignature, String sourceSignature) {
-		List<Value> sinkVals = findSinkByMethodSignature(sinkSignature);
-		for (Value sinkVal : sinkVals) {
-			Set<SourceInfo> sources = this.results.get(sinkVal);
+		List<SinkInfo> sinkVals = findSinkByMethodSignature(sinkSignature);
+		for (SinkInfo si : sinkVals) {
+			Set<SourceInfo> sources = this.results.get(si);
 			if (sources == null)
 				return false;
 			for (SourceInfo src : sources)
@@ -201,13 +232,13 @@ public class InfoflowResults {
 	 * @return The key of the entry with the given method signature if such an
 	 * entry has been found, otherwise null.
 	 */
-	private List<Value> findSinkByMethodSignature(String sinkSignature) {
-		List<Value> sinkVals = new ArrayList<Value>();
-		for (Value val : this.results.keySet())
-			if (val instanceof InvokeExpr) {
-				InvokeExpr expr = (InvokeExpr) val;
+	private List<SinkInfo> findSinkByMethodSignature(String sinkSignature) {
+		List<SinkInfo> sinkVals = new ArrayList<SinkInfo>();
+		for (SinkInfo si : this.results.keySet())
+			if (si.getSink() instanceof InvokeExpr) {
+				InvokeExpr expr = (InvokeExpr) si.getSink();
 				if (expr.getMethod().getSignature().equals(sinkSignature))
-					sinkVals.add(val);
+					sinkVals.add(si);
 			}
 		return sinkVals;
 	}
@@ -216,7 +247,7 @@ public class InfoflowResults {
 	 * Prints all results stored in this object to the standard output
 	 */
 	public void printResults() {
-		for (Value sink : this.results.keySet()) {
+		for (SinkInfo sink : this.results.keySet()) {
 			System.out.println("Found a flow to sink" + sink + " from the following sources:");
 			for (SourceInfo source : this.results.get(sink))
 				System.out.println("\t- " + source.getSource());

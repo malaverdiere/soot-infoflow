@@ -353,12 +353,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
 							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
-									results.addResult(returnStmt.getOp(),
+									results.addResult(returnStmt.getOp(), returnStmt,
 											source.getSource(),
 											((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 											interproceduralCFG().getMethodOf(returnStmt) + ": " + returnStmt.toString());
 								else
-									results.addResult(returnStmt.getOp(),
+									results.addResult(returnStmt.getOp(), returnStmt,
 											source.getSource());
 							}
 							return Collections.singleton(source);
@@ -693,12 +693,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 								if (taintedParam) {
 									if (pathTracking != PathTrackingMethod.NoTracking)
-										results.addResult(iStmt.getInvokeExpr(),
+										results.addResult(iStmt.getInvokeExpr(), iStmt,
 												source.getSource(),
 												((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 												interproceduralCFG().getMethodOf(call) + ": " + call.toString());
 									else
-										results.addResult(iStmt.getInvokeExpr(),
+										results.addResult(iStmt.getInvokeExpr(), iStmt,
 												source.getSource());
 								}
 								//if the base object which executes the method is tainted the sink is reached, too.
@@ -706,12 +706,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									InstanceInvokeExpr vie = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 									if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
 										if (pathTracking != PathTrackingMethod.NoTracking)
-											results.addResult(iStmt.getInvokeExpr(),
+											results.addResult(iStmt.getInvokeExpr(), iStmt,
 													source.getSource(),
 													((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
 													interproceduralCFG().getMethodOf(call) + ": " + call.toString());
 										else
-											results.addResult(iStmt.getInvokeExpr(),
+											results.addResult(iStmt.getInvokeExpr(), iStmt,
 													source.getSource());
 									}
 								}

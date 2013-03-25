@@ -1,21 +1,26 @@
 package soot.jimple.infoflow.test.junit;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
-import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
+import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 
 public class InFunctionTests extends JUnitTests {
 
 	private static final String SOURCE_STRING_PARAMETER = "@parameter0: java.lang.String";
+	private static final String SOURCE_STRING_PARAMETER2 = "@parameter1: java.lang.String";
 	private static final String SINK_STRING_RETURN = "secret";
 	
 	@Override
 	protected Infoflow initInfoflow() {
+		taintWrapper = true;
 		Infoflow infoflow = super.initInfoflow();
     	return infoflow;
 	}
@@ -60,6 +65,23 @@ public class InFunctionTests extends JUnitTests {
 		
     	infoflow.computeInfoflow(path, epoint, ssm);
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER));
+    }
+
+    @Test
+    public void inFunctionTest4(){
+    	Infoflow infoflow = initInfoflow();
+    	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
+    	List<String> epoint = new ArrayList<String>();
+    	epoint.add("<soot.jimple.infoflow.test.InFunctionCode: void setTmp(java.lang.String)>");
+    	epoint.add("<soot.jimple.infoflow.test.InFunctionCode: java.lang.String foo(java.lang.String,java.lang.String)>");
+
+    	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
+    	ssm.setParameterTaintMethods(epoint);
+    	ssm.setReturnTaintMethods(epoint);
+		
+    	infoflow.computeInfoflow(path, new DefaultEntryPointCreator(), epoint, ssm);
+		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER));
+		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER2));
     }
 
 }

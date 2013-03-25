@@ -8,45 +8,43 @@ import java.util.List;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
+import soot.jimple.Stmt;
 
 public class AbstractionWithPath extends Abstraction {
 	private final List<Unit> propagationPath;
 	
 
-	public AbstractionWithPath(Value taint, Value src){
-		super(taint, src);
+	public AbstractionWithPath(Value taint, Value src, Stmt srcContext){
+		super(taint, src, srcContext);
 		propagationPath = new ArrayList<Unit>();
 	}
 	
-	public AbstractionWithPath(Value taint, Value src, List<Unit> path){
+	public AbstractionWithPath(Value taint, AbstractionWithPath src){
 		super(taint, src);
-		if (path == null)
+		if (src == null)
 			propagationPath = new ArrayList<Unit>();
 		else
-			propagationPath = new ArrayList<Unit>(path);
+			propagationPath = new ArrayList<Unit>(src.propagationPath);
 	}
 
-	public AbstractionWithPath(Value taint, Value src, List<Unit> path, Unit s){
-		this(taint, src, path);
-		propagationPath.add(s);
-	}
-
-	public AbstractionWithPath(AccessPath p, Value src){
+	public AbstractionWithPath(AccessPath p, AbstractionWithPath src){
 		super(p, src);
+		if (src == null)
+			propagationPath = new ArrayList<Unit>();
+		else
+			propagationPath = new ArrayList<Unit>(src.getPropagationPath());		
+	}
+
+	public AbstractionWithPath(AccessPath p, Value src, Stmt srcContext){
+		super(p, src, srcContext);
 		propagationPath = new ArrayList<Unit>();		
 	}
 	
-	public AbstractionWithPath(AccessPath p, Value src, List<Unit> path){
-		super(p, src);
+	public AbstractionWithPath(AccessPath p, Value src, Stmt srcContext, List<Unit> path){
+		super(p, src, srcContext);
 		propagationPath = new ArrayList<Unit>(path);
 	}
 
-	public AbstractionWithPath(AccessPath p, Value src, List<Unit> path, Unit s){
-		this(p, src, path);
-		if (s != null)
-			propagationPath.add(s);
-	}
-	
 	public List<Unit> getPropagationPath() {
 		return this.propagationPath;
 	}
@@ -56,6 +54,17 @@ public class AbstractionWithPath extends Abstraction {
 		for (Unit u : this.propagationPath)
 			res.add(cfg.getMethodOf(u) + ": " + u.toString());
 		return res;
+	}
+	
+	/**
+	 * Adds an element to the propagation path and return this very object for
+	 * convenience 
+	 * @param element The element to add to the propagation path
+	 * @return This object
+	 */
+	public AbstractionWithPath addPathElement(Unit element) {
+		this.propagationPath.add(element);
+		return this;
 	}
 
 }

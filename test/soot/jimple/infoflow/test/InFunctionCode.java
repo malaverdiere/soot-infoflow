@@ -21,4 +21,16 @@ public class InFunctionCode {
 		return bar;
 	}
 	
+	public String tmp = "";
+	
+	public void setTmp(String t ){
+		tmp = t;
+	}
+	
+	public String foo(String p1, String p2){
+		String t = p2;
+		p2 = p1;
+		return tmp + p1 + t;
+	}
+	
 }

@@ -24,20 +24,27 @@ public class InfoflowResults {
 	 */
 	public class SourceInfo {
 		private final Value source;
+		private final Stmt context;
 		private final List<String> path;
 		
-		public SourceInfo(Value source) {
+		public SourceInfo(Value source, Stmt context) {
 			this.source = source;
+			this.context = context;
 			this.path = null;
 		}
 		
-		public SourceInfo(Value source, List<String> path) {
+		public SourceInfo(Value source, Stmt context, List<String> path) {
 			this.source = source;
+			this.context = context;
 			this.path = path;
 		}
 
 		public Value getSource() {
 			return this.source;
+		}
+		
+		public Stmt getContext() {
+			return this.context;
 		}
 		
 		public List<String> getPath() {
@@ -46,7 +53,8 @@ public class InfoflowResults {
 		
 		@Override
 		public int hashCode() {
-			return 31 * this.source.hashCode();
+			return 31 * this.source.hashCode()
+					+ 7 * this.context.hashCode();
 		}
 		
 		@Override
@@ -56,7 +64,8 @@ public class InfoflowResults {
 			if (o == null || !(o instanceof SourceInfo))
 				return false;
 			SourceInfo si = (SourceInfo) o;
-			return this.source.equals(si.source);
+			return this.source.equals(si.source)
+					&& this.context.equals(si.context);
 		}
 	}
 	
@@ -84,6 +93,23 @@ public class InfoflowResults {
 		@Override
 		public String toString() {
 			return this.context.toString();
+		}
+
+		@Override
+		public int hashCode() {
+			return 31 * this.sink.hashCode()
+					+ 7 * this.context.hashCode();
+		}
+		
+		@Override
+		public boolean equals(Object o) {
+			if (super.equals(o))
+				return true;
+			if (o == null || !(o instanceof SinkInfo))
+				return false;
+			SinkInfo si = (SinkInfo) o;
+			return this.sink.equals(si.sink)
+					&& this.context.equals(si.context);
 		}
 	}
 	
@@ -135,19 +161,21 @@ public class InfoflowResults {
 		return !findSinkByMethodSignature(sinkSignature).isEmpty();
 	}
 
-	public void addResult(Value sink, Stmt sinkStmt, Value source) {
-		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source));
+	public void addResult(Value sink, Stmt sinkStmt, Value source, Stmt sourceStmt) {
+		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source, sourceStmt));
 	}
 	
-	public void addResult(Value sink, Stmt sinkStmt, Value source, List<String> propagationPath) {
-		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source, propagationPath));
+	public void addResult(Value sink, Stmt sinkStmt, Value source,
+			Stmt sourceStmt, List<String> propagationPath) {
+		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source, sourceStmt, propagationPath));
 	}
 
-	public void addResult(Value sink, Stmt sinkContext, Value source, List<String> propagationPath, String stmt) {
+	public void addResult(Value sink, Stmt sinkContext, Value source,
+			Stmt sourceStmt, List<String> propagationPath, String stmt) {
 		List<String> newPropPath = new ArrayList<String>(propagationPath);
 		newPropPath.add(stmt);
 		this.addResult(new SinkInfo(sink, sinkContext),
-				new SourceInfo(source, newPropPath));
+				new SourceInfo(source, sourceStmt, newPropPath));
 	}
 
 	public void addResult(SinkInfo sink, SourceInfo source) {

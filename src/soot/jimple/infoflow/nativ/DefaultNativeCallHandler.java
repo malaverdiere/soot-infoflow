@@ -32,9 +32,9 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			if(params.get(0).equals(source.getAccessPath().getPlainValue())){
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					set.add(new AbstractionWithPath(params.get(2),
-							source.getSource(), ((AbstractionWithPath) source).getPropagationPath()));
+							(AbstractionWithPath) source));
 				else
-					set.add(new Abstraction(params.get(2), source.getSource()));
+					set.add(new Abstraction(params.get(2), source));
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
@@ -42,10 +42,10 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 				Value argValue = params.get(i);
 				if (!(argValue.getType() instanceof PrimType)) {
 					if (pathTracking == PathTrackingMethod.ForwardTracking)
-						set.add(new AbstractionWithPath(argValue, source.getSource(),
-								((AbstractionWithPath) source).getPropagationPath()));
+						set.add(new AbstractionWithPath(argValue,
+								(AbstractionWithPath) source));
 					else
-						set.add(new Abstraction(argValue, source.getSource()));
+						set.add(new Abstraction(argValue, source));
 				}
 			}	
 		}
@@ -54,9 +54,9 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			DefinitionStmt dStmt = (DefinitionStmt) call;
 			if (pathTracking == PathTrackingMethod.ForwardTracking)
 				set.add(new AbstractionWithPath(dStmt.getLeftOp(),
-						source.getSource(), ((AbstractionWithPath) source).getPropagationPath()));
+						(AbstractionWithPath) source));
 			else
-				set.add(new Abstraction(dStmt.getLeftOp(), source.getSource()));
+				set.add(new Abstraction(dStmt.getLeftOp(), source));
 		}
 		
 		return set;

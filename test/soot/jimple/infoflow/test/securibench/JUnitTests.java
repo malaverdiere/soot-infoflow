@@ -31,7 +31,8 @@ public abstract class JUnitTests {
     	"<java.sql.Statement: int executeUpdate(java.lang.String)>",
     	"<java.sql.Statement: int executeUpdate(java.lang.String,int)>",
     	"<java.sql.Statement: int executeUpdate(java.lang.String,java.lang.String[])>",
-    	"<java.sql.Statement: java.sql.ResultSet executeQuery(java.lang.String)>"};
+    	"<java.sql.Statement: java.sql.ResultSet executeQuery(java.lang.String)>",
+    	"<javax.servlet.http.HttpServletResponse: void sendRedirect(java.lang.String)>"};
     
     
     protected static final String[] sourceArray = new String[]{"<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>",

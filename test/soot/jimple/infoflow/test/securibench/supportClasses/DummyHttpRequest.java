@@ -184,8 +184,7 @@ public class DummyHttpRequest implements HttpServletRequest {
 
 	@Override
 	public Cookie[] getCookies() {
-		// TODO Auto-generated method stub
-		return null;
+		return new Cookie[1];
 	}
 
 	@Override

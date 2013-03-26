@@ -37,6 +37,7 @@ public abstract class JUnitTests {
     
     protected static final String[] sourceArray = new String[]{"<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>",
     	 "<javax.servlet.ServletRequest: java.lang.String[] getParameterValues(java.lang.String)>",
+    	 "<javax.servlet.ServletRequest: java.util.Map getParameterMap()>",
     	 "<javax.servlet.ServletConfig: java.lang.String getInitParameter(java.lang.String)>",
     	 "<javax.servlet.ServletConfig: java.util.Enumeration getInitParameterNames()>",
     	 "<javax.servlet.http.HttpServletRequest: java.lang.String getParameter(java.lang.String)>",

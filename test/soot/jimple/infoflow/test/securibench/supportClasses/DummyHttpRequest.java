@@ -75,8 +75,9 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	@SuppressWarnings("rawtypes")
 	public Map getParameterMap() {
-		// TODO Auto-generated method stub
-		return new HashMap<String, String>();
+		HashMap<String, String> map = new HashMap<String, String>();
+		map.put("dummy", "dummy");
+		return map;
 	}
 
 	@Override
@@ -184,7 +185,8 @@ public class DummyHttpRequest implements HttpServletRequest {
 
 	@Override
 	public Cookie[] getCookies() {
-		return new Cookie[1];
+		Cookie c = new Cookie("", "");
+		return new Cookie[]{c};
 	}
 
 	@Override

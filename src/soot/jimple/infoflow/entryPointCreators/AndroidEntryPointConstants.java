@@ -19,8 +19,8 @@ public class AndroidEntryPointConstants {
 	public static final String ACTIVITY_ONDESTROY = "void onDestroy()";
 	
 	public static final String SERVICE_ONCREATE = "void onCreate()";
-	public static final String SERVICE_ONSTART1 = "void onStart(android.content.Intent, int)";
-	public static final String SERVICE_ONSTART2 = "int onStartCommand(android.content.Intent, int, int)";
+	public static final String SERVICE_ONSTART1 = "void onStart(android.content.Intent,int)";
+	public static final String SERVICE_ONSTART2 = "int onStartCommand(android.content.Intent,int,int)";
 	public static final String SERVICE_ONBIND = "android.os.IBinder onBind(android.content.Intent)";
 	public static final String SERVICE_ONREBIND = "void onRebind(android.content.Intent)";
 	public static final String SERVICE_ONUNBIND = "boolean onUnbind(android.content.Intent)";

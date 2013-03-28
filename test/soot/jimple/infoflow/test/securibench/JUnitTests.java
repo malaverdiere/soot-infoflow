@@ -32,7 +32,10 @@ public abstract class JUnitTests {
     	"<java.sql.Statement: int executeUpdate(java.lang.String,int)>",
     	"<java.sql.Statement: int executeUpdate(java.lang.String,java.lang.String[])>",
     	"<java.sql.Statement: java.sql.ResultSet executeQuery(java.lang.String)>",
-    	"<javax.servlet.http.HttpServletResponse: void sendRedirect(java.lang.String)>"};
+    	"<javax.servlet.http.HttpServletResponse: void sendRedirect(java.lang.String)>",
+    	"<java.io.File: void <init>(java.lang.String)>",
+    	"<java.io.FileWriter: void <init>(java.lang.String)>",
+    	"<java.io.FileInputStream: void <init>(java.lang.String)>"};
     
     
     protected static final String[] sourceArray = new String[]{"<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>",
@@ -46,7 +49,13 @@ public abstract class JUnitTests {
     	 "<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>",
     	 "<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>",
     	 "<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
-    	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>"};
+    	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getProtocol()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getScheme()>", 
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getAuthType()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getQueryString()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getRemoteUser()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.StringBuffer getRequestURL()>"};
     
     protected static final String[] refinedSourceArray = new String[]{"<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>",
     	"<javax.servlet.http.HttpServletRequest: java.lang.String getParameter(java.lang.String)>",
@@ -57,7 +66,12 @@ public abstract class JUnitTests {
    	 	"<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>",
    	 	"<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>",
    	 	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
-   		"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>"};
+   		"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getScheme()>", 
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getAuthType()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getQueryString()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getRemoteUser()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.StringBuffer getRequestURL()>"};
    
     
     protected static boolean local = false;

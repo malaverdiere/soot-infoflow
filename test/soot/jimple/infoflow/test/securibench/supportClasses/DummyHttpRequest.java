@@ -132,7 +132,7 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	public String getScheme() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
@@ -174,13 +174,13 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	public String getAuthType() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
 	public String getContextPath() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
@@ -204,15 +204,13 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	@SuppressWarnings("rawtypes")
 	public Enumeration getHeaderNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return new StringTokenizer("secret1 secret2 secret3");
 	}
 
 	@Override
 	@SuppressWarnings("rawtypes")
 	public Enumeration getHeaders(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
+		return new StringTokenizer("secret1 secret2 secret3");
 	}
 
 	@Override
@@ -242,25 +240,25 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	public String getQueryString() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
 	public String getRemoteUser() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
 	public String getRequestURI() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
 	public StringBuffer getRequestURL() {
 		// TODO Auto-generated method stub
-		return null;
+		return new StringBuffer("http://");
 	}
 
 	@Override

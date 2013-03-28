@@ -26,7 +26,7 @@ public class AndroidEntryPointConstants {
 	public static final String SERVICE_ONUNBIND = "boolean onUnbind(android.content.Intent)";
 	public static final String SERVICE_ONDESTROY = "void onDestroy()";
 	
-	public static final String BROADCAST_ONRECEIVE = "";
+	public static final String BROADCAST_ONRECEIVE = "onReceive(android.content.Context,android.content.Intent)";
 	
 	public static final String CONTENTPROVIDER_ONCREATE = "boolean onCreate()";
 	

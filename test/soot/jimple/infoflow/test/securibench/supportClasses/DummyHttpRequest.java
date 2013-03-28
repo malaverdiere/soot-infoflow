@@ -277,14 +277,13 @@ public class DummyHttpRequest implements HttpServletRequest {
 
 	@Override
 	public HttpSession getSession() {
-		// TODO Auto-generated method stub
-		return null;
+		return new DummyHttpSession();
 	}
 
 	@Override
 	public HttpSession getSession(boolean arg0) {
 		// TODO Auto-generated method stub
-		return null;
+		return new DummyHttpSession();
 	}
 
 	@Override

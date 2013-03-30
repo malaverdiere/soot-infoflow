@@ -320,6 +320,43 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								addTaintViaStmt(src, leftValue, source, res);
 								return res;
 							}
+							//if leftvalue contains the tainted value -> it is overwritten - remove taint:
+							if(source.getAccessPath().isInstanceFieldRef()){
+								if(leftValue instanceof InstanceFieldRef && ((InstanceFieldRef)leftValue).getField().equals(source.getAccessPath().getField()) && ((InstanceFieldRef)leftValue).getBase().equals(source.getAccessPath().getPlainValue())){
+									return Collections.emptySet();
+								}
+								//we have to check for PTS as well:
+								if (leftValue instanceof InstanceFieldRef) {
+									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
+									PointsToSet ptsLeft = pta.reachingObjects((Local)leftRef.getBase());
+									Local sourceBase = (Local) source.getAccessPath().getPlainValue();
+									PointsToSet ptsSource = pta.reachingObjects(sourceBase);
+									if (ptsLeft.hasNonEmptyIntersection(ptsSource)) {
+										if (leftRef.getField().equals(source.getAccessPath().getField())) {
+											return Collections.emptySet();
+										}
+										
+									}
+									//leftValue might be the base object as well:
+								}else if (leftValue instanceof Local){
+									PointsToSet ptsLeft = pta.reachingObjects((Local) leftValue);
+									Local sourceBase = (Local) source.getAccessPath().getPlainValue();
+									PointsToSet ptsSource = pta.reachingObjects(sourceBase);
+									if (ptsLeft.hasNonEmptyIntersection(ptsSource)) {
+										return Collections.emptySet();
+									}
+								}	
+							}else if(source.getAccessPath().isStaticFieldRef()){
+								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(source.getAccessPath().getField())){
+									return Collections.emptySet();
+								}
+								
+							}
+							//no ELSE - when the fields of an object are tainted, but the base object is overwritten then the fields should not be tainted any more
+							if(leftValue.equals(source.getAccessPath().getPlainValue())){
+								return Collections.emptySet(); //TODO: fix this for *-Operator
+							}
+							
 							return Collections.singleton(source);
 
 						}

@@ -15,9 +15,7 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void concreteWriteReadSamePosTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
-//			assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>"));
-//			assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke"));			
+			checkInfoflow(infoflow);	
 	    }
 	  
 	  @Test
@@ -64,8 +62,6 @@ public class ArrayTests extends JUnitTests {
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void copyTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			checkInfoflow(infoflow);
-			//assertTrue(errOutputStream.toString().contains("copyTainted contains value from staticinvoke"));
-			
 	    }
 	    
 	    @Test
@@ -75,7 +71,6 @@ public class ArrayTests extends JUnitTests {
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void arrayAsFieldOfClass()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			checkInfoflow(infoflow);
-			//assertTrue(errOutputStream.toString().contains("y contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 	    }
 	    
 	    @Test
@@ -85,9 +80,6 @@ public class ArrayTests extends JUnitTests {
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void arrayAsListTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			checkInfoflow(infoflow);
-			
-			//assertTrue(errOutputStream.toString().contains("list contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-			//assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke"));
 	    }
 	    
 	    @Test
@@ -97,9 +89,6 @@ public class ArrayTests extends JUnitTests {
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void concreteWriteReadNegativeTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			negativeCheckInfoflow(infoflow);
-			//assertFalse(errOutputStream.toString().contains("untaintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-			//assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));
-
 	    }
 	    
 }

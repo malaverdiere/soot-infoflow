@@ -71,7 +71,8 @@ public abstract class JUnitTests {
     	"<javax.servlet.http.HttpServletRequest: java.lang.String getAuthType()>",
     	"<javax.servlet.http.HttpServletRequest: java.lang.String getQueryString()>",
     	"<javax.servlet.http.HttpServletRequest: java.lang.String getRemoteUser()>",
-    	"<javax.servlet.http.HttpServletRequest: java.lang.StringBuffer getRequestURL()>"};
+    	"<javax.servlet.http.HttpServletRequest: java.lang.StringBuffer getRequestURL()>",
+    	"<javax.servlet.ServletRequest: java.lang.String[] getParameterValues(java.lang.String)>"};
    
     
     protected static boolean local = false;

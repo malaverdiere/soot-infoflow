@@ -50,7 +50,7 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	public ServletInputStream getInputStream() throws IOException {
 		// TODO Auto-generated method stub
-		return null;
+		return new DummyServletInputStream();
 	}
 
 	@Override

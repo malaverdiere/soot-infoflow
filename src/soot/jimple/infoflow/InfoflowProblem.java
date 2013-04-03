@@ -321,6 +321,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return res;
 							}
 							//if leftvalue contains the tainted value -> it is overwritten - remove taint:
+							//but not for arrayRefs:
+							if(((AssignStmt)src).getLeftOp() instanceof ArrayRef){
+								return Collections.singleton(source);
+							}
 							if(source.getAccessPath().isInstanceFieldRef()){
 								if(leftValue instanceof InstanceFieldRef && ((InstanceFieldRef)leftValue).getField().equals(source.getAccessPath().getField()) && ((InstanceFieldRef)leftValue).getBase().equals(source.getAccessPath().getPlainValue())){
 									return Collections.emptySet();
@@ -589,8 +593,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 								// remember that we only support max(length(accesspath))==1 -> if source is a fieldref, only its base is taken!
+								//bugfix: we have to check if source is Local or fields have the same name:
 								for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
-									if (!globalField.isStatic()) { // else is checked later
+									if((source.getAccessPath().isLocal() || (source.getAccessPath().getField() != null && globalField.getName().equals(source.getAccessPath().getField().getName())))  && !globalField.isStatic()) { // else is checked later
 										PointsToSet ptsGlobal = pta.reachingObjects(calleeMethod.getActiveBody().getThisLocal(), globalField);
 										if (ptsGlobal.hasNonEmptyIntersection(ptsSource)) {
 											Local callBaseVar = null;
@@ -619,7 +624,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 
 							for (SootField globalField : calleeMethod.getDeclaringClass().getFields()) {
-								if (globalField.isStatic()) {
+								if ((source.getAccessPath().isLocal() || (source.getAccessPath().getField() != null && globalField.getName().equals(source.getAccessPath().getField().getName())))  && globalField.isStatic()) {
 									PointsToSet ptsGlobal = pta.reachingObjects(globalField);
 									if (ptsSource.hasNonEmptyIntersection(ptsGlobal)) {
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
@@ -632,6 +637,20 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 						}
+						//look for aliases in caller:
+						Set<Abstraction> aliasSet = new HashSet<Abstraction>();
+						for (Abstraction abs : res) {
+							if (abs.getAccessPath().isInstanceFieldRef()) { //TODO: or  || abs.getAccessPath().isStaticFieldRef()? -> can't take plainValue then
+								Set<Value> aliases = getAliasesinMethod(interproceduralCFG().getMethodOf(retSite).getActiveBody().getUnits(), retSite, abs.getAccessPath().getPlainValue(), null);
+								for (Value v : aliases) {
+										if (pathTracking == PathTrackingMethod.ForwardTracking)
+											aliasSet.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(v), (AbstractionWithPath) source).addPathElement(exitStmt));
+										else
+											aliasSet.add(new Abstraction(source.getAccessPath().copyWithNewValue(v), source));
+								}
+							}
+						}
+						res.addAll(aliasSet);
 						return res;
 					}
 

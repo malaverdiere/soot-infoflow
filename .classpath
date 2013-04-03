@@ -8,6 +8,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/soot"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/heros"/>
 	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
-	<classpathentry kind="lib" path="lib/cos-09May2002.jar"/>
+	<classpathentry kind="lib" path="lib/servlets.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

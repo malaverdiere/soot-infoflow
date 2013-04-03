@@ -320,4 +320,28 @@ public class DummyHttpRequest implements HttpServletRequest {
 		return false;
 	}
 
+	@Override
+	public String getLocalAddr() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getLocalName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getLocalPort() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getRemotePort() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }

@@ -79,9 +79,9 @@ public abstract class JUnitTests {
     	 path = //System.getProperty("java.home")+ File.separator + "lib"+File.separator + "jce.jar" + System.getProperty("path.separator") +
     	 		System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar"+ System.getProperty("path.separator") +
     			 f.getCanonicalPath() + File.separator + "bin"+ System.getProperty("path.separator") + 
-    			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar" +
+    			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "j2ee.jar" +
     			 System.getProperty("path.separator") + 
-    			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "cos-09May2002.jar";
+    			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "cos.jar";
         System.out.println("Using following locations as sources for classes: " + path);
     	sources = Arrays.asList(sourceArray);
         sinks = Arrays.asList(sinkArray);

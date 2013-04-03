@@ -7,7 +7,7 @@
 	<classpathentry kind="src" path="securiBench"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/soot"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/heros"/>
-	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
-	<classpathentry kind="lib" path="lib/servlets.jar"/>
+	<classpathentry kind="lib" path="lib/cos.jar"/>
+	<classpathentry kind="lib" path="lib/j2ee.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

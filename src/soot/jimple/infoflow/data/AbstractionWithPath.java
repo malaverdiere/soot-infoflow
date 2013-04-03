@@ -22,19 +22,12 @@ public class AbstractionWithPath extends Abstraction {
 	
 
 	public AbstractionWithPath(Value taint, AbstractionWithPath src, boolean fieldsTainted){
-		super(taint, src);
+		super(taint, src, fieldsTainted);
 		if (src == null)
 			propagationPath = new ArrayList<Unit>();
 		else
 			propagationPath = new ArrayList<Unit>(src.propagationPath);
 	}
-
-
-	public AbstractionWithPath(Value taint, Value src, List<Unit> path, Unit s, boolean fieldsTainted){
-		this(taint, src, fieldsTainted, (Stmt)s); //TODO probably wrong?
-		propagationPath.add(s);
-	}
-
 
 	public AbstractionWithPath(AccessPath p, AbstractionWithPath src){
 		super(p, src);

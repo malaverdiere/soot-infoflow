@@ -375,11 +375,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-						
 						Set<Abstraction> res = new HashSet<Abstraction>();
-
+						System.out.println(source.hashCode() + " " + dest + "    " + source );
 						// check if whole object is tainted (happens with strings, for example:)
-						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr && source.getAccessPath().isLocal()) {
+						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
 							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 							// this might be enough because every call must happen with a local variable which is tainted itself:
 							if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
@@ -413,7 +412,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						// staticfieldRefs must be analyzed even if they are not part of the params:
 						if (source.getAccessPath().isStaticFieldRef()) {
-							res.add(source.deriveNewAbstraction(src));
+							Abstraction abs;
+							abs = source.clone();
+							abs.addToStack(src);
+							res.add(abs);
 						}
 						
 						return res;
@@ -469,8 +471,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								// source.getAccessPath().isOnlyFieldsTainted());
 								// bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, predUnit, newAbs));
 								// }
-										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(leftOp),
-												source));
 								}
 								// this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
 							

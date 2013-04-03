@@ -36,12 +36,6 @@ public class Abstraction implements Cloneable {
 		callStack = new Stack<Unit>();
 	}
 	
-	public Abstraction deriveNewAbstraction(Unit u){
-		Abstraction a = new Abstraction(accessPath, source, sourceContext);
-		a.callStack = (Stack<Unit>) this.callStack.clone();
-		a.addToStack(u);
-		return a;
-	}
 	
 	public Abstraction deriveNewAbstraction(AccessPath p){
 		Abstraction a = new Abstraction(p, source, sourceContext);
@@ -64,6 +58,10 @@ public class Abstraction implements Cloneable {
 	public Abstraction(Value p, Abstraction original){
 		this(new AccessPath(p), original);
 	}
+	
+	public Abstraction(Value p, Abstraction original, boolean fieldTainted){
+		this(new AccessPath(p,fieldTainted), original);
+	}
 
 	/**
 	 * Creates an abstraction as a copy of an existing abstraction,
@@ -75,10 +73,12 @@ public class Abstraction implements Cloneable {
 		if (original == null) {
 			source = null;
 			sourceContext = null;
+			callStack = new Stack<Unit>();
 		}
 		else {
 			source = original.source;
 			sourceContext = original.sourceContext;
+			callStack = (Stack<Unit>) original.callStack.clone();
 		}
 		accessPath = p;
 	}
@@ -155,7 +155,7 @@ public class Abstraction implements Cloneable {
 	@Override
 	public String toString(){
 		if(accessPath != null && source != null){
-			return accessPath.toString() + " /source: "+ source.toString();
+			return accessPath.toString() + " /source: "+ source.toString() + " " + callStack.hashCode();
 		}
 		if(accessPath != null){
 			return accessPath.toString();

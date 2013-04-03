@@ -146,7 +146,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic14: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -219,7 +218,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic22: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -229,7 +227,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic23: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -239,7 +236,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic24: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -258,7 +254,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic26: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -304,7 +299,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic31: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -323,7 +317,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic33: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -342,7 +335,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic35: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -352,7 +344,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic36: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -399,7 +390,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic41: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 	@Test(timeout=300000)
@@ -409,7 +399,6 @@ public class BasicTests extends JUnitTests {
 	epoints.add("<securibench.micro.basic.Basic42: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
 	checkInfoflow(infoflow);
-	//TODO: this test fails at the moment!
 	}
 
 

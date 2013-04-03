@@ -9,6 +9,14 @@ import soot.jimple.infoflow.Infoflow;
 
 public class OtherTests extends JUnitTests{
 	
+	@Test
+    public void inheritanceTestSpecial(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.InheritanceTestCode: void testInheritance2()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+    }
 
 	@Test
     public void fieldTest(){

@@ -31,34 +31,41 @@ public abstract class JUnitTests {
     	"<java.sql.Statement: int executeUpdate(java.lang.String)>",
     	"<java.sql.Statement: int executeUpdate(java.lang.String,int)>",
     	"<java.sql.Statement: int executeUpdate(java.lang.String,java.lang.String[])>",
-    	"<java.sql.Statement: java.sql.ResultSet executeQuery(java.lang.String)>"};
+    	"<java.sql.Statement: java.sql.ResultSet executeQuery(java.lang.String)>",
+    	"<javax.servlet.http.HttpServletResponse: void sendRedirect(java.lang.String)>",
+    	"<java.io.File: void <init>(java.lang.String)>",
+    	"<java.io.FileWriter: void <init>(java.lang.String)>",
+    	"<java.io.FileInputStream: void <init>(java.lang.String)>"};
     
     
-    protected static final String[] sourceArray = new String[]{"<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>",
-    	 "<javax.servlet.ServletRequest: java.lang.String[] getParameterValues(java.lang.String)>",
-    	 "<javax.servlet.ServletConfig: java.lang.String getInitParameter(java.lang.String)>",
-    	 "<javax.servlet.ServletConfig: java.util.Enumeration getInitParameterNames()>",
-    	 "<javax.servlet.http.HttpServletRequest: java.lang.String getParameter(java.lang.String)>",
-    	 "<javax.servlet.http.HttpServletRequest: java.lang.String[] getParameterValues(java.lang.String)>",
-    	 "<javax.servlet.http.HttpServletRequest: java.util.Map getParameterMap()>",	
-    	 "<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>",
-    	 "<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>",
-    	 "<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
-    	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>"};
-    
-    protected static final String[] refinedSourceArray = new String[]{"<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>",
+    protected static final String[] sourceArray = new String[]{
+    	"<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getParameter(java.lang.String)>",
+    	"<javax.servlet.ServletRequest: java.lang.String[] getParameterValues(java.lang.String)>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String[] getParameterValues(java.lang.String)>",
+    	"<javax.servlet.ServletRequest: java.util.Map getParameterMap()>",
+    	"<javax.servlet.http.HttpServletRequest: java.util.Map getParameterMap()>",	
+    	"<javax.servlet.ServletConfig: java.lang.String getInitParameter(java.lang.String)>",
+    	"<soot.jimple.infoflow.test.securibench.supportClasses.DummyServletConfig: java.lang.String getInitParameter(java.lang.String)>",
+    	"<javax.servlet.ServletConfig: java.util.Enumeration getInitParameterNames()>",
+    	"<javax.servlet.ServletContext: java.lang.String getInitParameter(java.lang.String)>",
     	"<javax.servlet.http.HttpServletRequest: java.lang.String getParameter(java.lang.String)>",
     	"<javax.servlet.http.HttpServletRequest: java.lang.String[] getParameterValues(java.lang.String)>",
-    	"<javax.servlet.ServletConfig: java.lang.String getInitParameter(java.lang.String)>",
-    	"<javax.servlet.ServletConfig: java.util.Enumeration getInitParameterNames()>",
     	"<javax.servlet.http.HttpServletRequest: java.util.Map getParameterMap()>",	
-   	 	"<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>",
-   	 	"<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>",
-   	 	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
-   		"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>"};
-   
+    	"<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>",
+    	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>",
+    	"<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getProtocol()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getScheme()>", 
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getAuthType()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getQueryString()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.String getRemoteUser()>",
+    	"<javax.servlet.http.HttpServletRequest: java.lang.StringBuffer getRequestURL()>",
+    	"<javax.servlet.http.HttpServletRequest: javax.servlet.ServletInputStream getInputStream()>",
+    	"<javax.servlet.ServletRequest: javax.servlet.ServletInputStream getInputStream()>",
+    	"<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter(java.lang.String)>"};
     
-    protected static boolean local = false;
     protected static boolean taintWrapper = false;
     protected static boolean substituteCallParams = true;
     
@@ -71,7 +78,9 @@ public abstract class JUnitTests {
     	 path = //System.getProperty("java.home")+ File.separator + "lib"+File.separator + "jce.jar" + System.getProperty("path.separator") +
     	 		System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar"+ System.getProperty("path.separator") +
     			 f.getCanonicalPath() + File.separator + "bin"+ System.getProperty("path.separator") + 
-    			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "servlet-api.jar";
+    			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "j2ee.jar" +
+    			 System.getProperty("path.separator") + 
+    			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "cos.jar";
         System.out.println("Using following locations as sources for classes: " + path);
     	sources = Arrays.asList(sourceArray);
         sinks = Arrays.asList(sinkArray);
@@ -100,7 +109,7 @@ public abstract class JUnitTests {
 				boolean onePathFound = false;
 				for(String sink : actualSinkStrings){
 					boolean hasPath = false;
-					for(String source : refinedSourceArray){
+					for(String source : sourceArray){
 						if(map.isPathBetweenMethods(sink, source)){
 							hasPath = true;
 							break;

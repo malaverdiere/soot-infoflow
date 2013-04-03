@@ -5,10 +5,13 @@ package securibench.micro;
 
 import java.io.IOException;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import soot.jimple.infoflow.test.securibench.supportClasses.DummyServletConfig;
 
 public abstract class BasicTestCase extends HttpServlet {
     protected void doTrace(HttpServletRequest req, HttpServletResponse resp)
@@ -34,4 +37,14 @@ public abstract class BasicTestCase extends HttpServlet {
     protected void doPut(HttpServletRequest arg0, HttpServletResponse arg1) throws ServletException, IOException {
         // do nothing        
     }
+    
+    //added method for testing:
+    
+    @Override
+	public ServletConfig getServletConfig(){
+		return new DummyServletConfig();
+    	
+    }
+    
+    
 }

@@ -100,5 +100,5 @@ public interface IInfoflow {
 	public InfoflowResults getResults();
 	
 	public boolean isResultAvailable();
-	
+
 }

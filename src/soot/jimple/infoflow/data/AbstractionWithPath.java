@@ -8,41 +8,54 @@ import java.util.List;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
+import soot.jimple.Stmt;
 
 public class AbstractionWithPath extends Abstraction {
 	private final List<Unit> propagationPath;
 	
 
-	public AbstractionWithPath(Value taint, Value src, boolean fieldsTainted){
-		super(taint, src, fieldsTainted);
+
+	public AbstractionWithPath(Value taint, Value src, boolean fieldsTainted, Stmt srcContext){
+		super(taint, src, fieldsTainted, srcContext);
 		propagationPath = new ArrayList<Unit>();
 	}
 	
-	public AbstractionWithPath(Value taint, Value src, List<Unit> path, boolean fieldsTainted){
-		super(taint, src, fieldsTainted);
-		if (path == null)
+
+	public AbstractionWithPath(Value taint, AbstractionWithPath src, boolean fieldsTainted){
+		super(taint, src);
+		if (src == null)
 			propagationPath = new ArrayList<Unit>();
 		else
-			propagationPath = new ArrayList<Unit>(path);
+			propagationPath = new ArrayList<Unit>(src.propagationPath);
 	}
 
+
 	public AbstractionWithPath(Value taint, Value src, List<Unit> path, Unit s, boolean fieldsTainted){
-		this(taint, src, path, fieldsTainted);
+		this(taint, src, fieldsTainted, (Stmt)s); //TODO probably wrong?
 		propagationPath.add(s);
 	}
 
-	public AbstractionWithPath(AccessPath p, Value src){
+
+	public AbstractionWithPath(AccessPath p, AbstractionWithPath src){
 		super(p, src);
+		if (src == null)
+			propagationPath = new ArrayList<Unit>();
+		else
+			propagationPath = new ArrayList<Unit>(src.getPropagationPath());		
+	}
+
+	public AbstractionWithPath(AccessPath p, Value src, Stmt srcContext){
+		super(p, src, srcContext);
 		propagationPath = new ArrayList<Unit>();		
 	}
 	
-	public AbstractionWithPath(AccessPath p, Value src, List<Unit> path){
-		super(p, src);
+	public AbstractionWithPath(AccessPath p, Value src, Stmt srcContext, List<Unit> path){
+		super(p, src, srcContext);
 		propagationPath = new ArrayList<Unit>(path);
 	}
 
 	public AbstractionWithPath(AccessPath p, Value src, List<Unit> path, Unit s){
-		this(p, src, path);
+		this(p, src,(Stmt)s, path);
 		if (s != null)
 			propagationPath.add(s);
 	}
@@ -56,6 +69,17 @@ public class AbstractionWithPath extends Abstraction {
 		for (Unit u : this.propagationPath)
 			res.add(cfg.getMethodOf(u) + ": " + u.toString());
 		return res;
+	}
+	
+	/**
+	 * Adds an element to the propagation path and return this very object for
+	 * convenience 
+	 * @param element The element to add to the propagation path
+	 * @return This object
+	 */
+	public AbstractionWithPath addPathElement(Unit element) {
+		this.propagationPath.add(element);
+		return this;
 	}
 
 }

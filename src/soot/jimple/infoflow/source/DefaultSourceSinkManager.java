@@ -7,6 +7,7 @@ import java.util.List;
 import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.IdentityStmt;
+import soot.jimple.ParameterRef;
 import soot.jimple.ReturnStmt;
 import soot.jimple.Stmt;
 
@@ -86,10 +87,13 @@ public class DefaultSourceSinkManager extends MethodBasedSourceSinkManager {
 		if (super.isSource(sCallSite, cfg))
 			return true;
 		
-		if (sCallSite instanceof IdentityStmt)
-			if (this.parameterTaintMethods != null && this.parameterTaintMethods.contains
-					(cfg.getMethodOf(sCallSite).getSignature()))
-				return true;
+		if (sCallSite instanceof IdentityStmt) {
+			IdentityStmt is = (IdentityStmt) sCallSite;
+			if (is.getRightOp() instanceof ParameterRef)
+				if (this.parameterTaintMethods != null && this.parameterTaintMethods.contains
+						(cfg.getMethodOf(sCallSite).getSignature()))
+					return true;
+		}
 		
 		return false;
 	}

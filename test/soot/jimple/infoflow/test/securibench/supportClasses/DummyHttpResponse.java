@@ -1,3 +1,4 @@
+
 package soot.jimple.infoflow.test.securibench.supportClasses;
 
 import java.io.IOException;
@@ -186,6 +187,18 @@ public class DummyHttpResponse implements HttpServletResponse {
 
 	@Override
 	public void setStatus(int arg0, String arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String getContentType() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setCharacterEncoding(String arg0) {
 		// TODO Auto-generated method stub
 		
 	}

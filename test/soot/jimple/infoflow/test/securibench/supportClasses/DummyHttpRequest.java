@@ -50,7 +50,7 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	public ServletInputStream getInputStream() throws IOException {
 		// TODO Auto-generated method stub
-		return null;
+		return new DummyServletInputStream();
 	}
 
 	@Override
@@ -75,8 +75,9 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	@SuppressWarnings("rawtypes")
 	public Map getParameterMap() {
-		// TODO Auto-generated method stub
-		return new HashMap<String, String>();
+		HashMap<String, String> map = new HashMap<String, String>();
+		map.put("dummy", "dummy");
+		return map;
 	}
 
 	@Override
@@ -131,7 +132,7 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	public String getScheme() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
@@ -173,19 +174,19 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	public String getAuthType() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
 	public String getContextPath() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
 	public Cookie[] getCookies() {
-		// TODO Auto-generated method stub
-		return null;
+		Cookie c = new Cookie("", "");
+		return new Cookie[]{c};
 	}
 
 	@Override
@@ -203,15 +204,13 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	@SuppressWarnings("rawtypes")
 	public Enumeration getHeaderNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return new StringTokenizer("secret1 secret2 secret3");
 	}
 
 	@Override
 	@SuppressWarnings("rawtypes")
 	public Enumeration getHeaders(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
+		return new StringTokenizer("secret1 secret2 secret3");
 	}
 
 	@Override
@@ -241,25 +240,25 @@ public class DummyHttpRequest implements HttpServletRequest {
 	@Override
 	public String getQueryString() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
 	public String getRemoteUser() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
 	public String getRequestURI() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
 	public StringBuffer getRequestURL() {
 		// TODO Auto-generated method stub
-		return null;
+		return new StringBuffer("http://");
 	}
 
 	@Override
@@ -276,14 +275,13 @@ public class DummyHttpRequest implements HttpServletRequest {
 
 	@Override
 	public HttpSession getSession() {
-		// TODO Auto-generated method stub
-		return null;
+		return new DummyHttpSession();
 	}
 
 	@Override
 	public HttpSession getSession(boolean arg0) {
 		// TODO Auto-generated method stub
-		return null;
+		return new DummyHttpSession();
 	}
 
 	@Override
@@ -322,4 +320,29 @@ public class DummyHttpRequest implements HttpServletRequest {
 		return false;
 	}
 
+	@Override
+	public String getLocalAddr() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getLocalName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getLocalPort() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getRemotePort() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }
+

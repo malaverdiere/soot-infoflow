@@ -142,13 +142,13 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (leftValue.equals(base)) {
 										if (rightValue instanceof Local) {
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue), source.getSource(), ((AbstractionWithPath) source).getPropagationPath()));
+												res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue),(AbstractionWithPath) source));
 											else
 												res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
 										} else {
 											// access path length = 1 - taint entire value if left is field reference
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(rightValue, source.getSource(), true));
+												res.add(new AbstractionWithPath(rightValue, source.getSource(), true, source.getSourceContext()));
 											else
 												res.add(source.deriveNewAbstraction(rightValue, true));
 										}
@@ -170,7 +170,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								}
 								
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(rightValue, source.getSource(), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
+									res.add(new AbstractionWithPath(rightValue, source.getSource(), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted(), source.getSourceContext()));
 								else
 									res.add(source.deriveNewAbstraction(rightValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 							}
@@ -218,7 +218,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 										ReturnStmt rStmt = (ReturnStmt) u;
 										Abstraction abs;
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource());
+											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource(), source.getSourceContext());
 										else
 											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()));
 										abs.addToStack(src);
@@ -260,7 +260,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 										Abstraction abs;
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource());
+											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource(), source.getSourceContext());
 										else
 											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL));
 										abs.addToStack(src);
@@ -317,7 +317,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 								Abstraction abs;
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource());
+									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource(), source.getSourceContext());
 								else
 									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(vie.getBase()));
 								abs.removeFromStack();
@@ -330,7 +330,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (paramLocals.get(i).equals(base)) {
 								Abstraction abs;
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource());
+									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), source.getSourceContext());
 								else
 									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)));
 								// if abs. contains "neutral" -> this is the case :/ @LinkedListNegativeTest
@@ -374,7 +374,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (vals != null) {
 										for (Value val : vals) {
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(val, source.getSource(), false));
+												res.add(new AbstractionWithPath(val, source.getSource(), false, source.getSourceContext()));
 											else
 												res.add(source.deriveNewAbstraction(val, false));
 										}

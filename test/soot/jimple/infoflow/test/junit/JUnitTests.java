@@ -31,7 +31,6 @@ public abstract class JUnitTests {
     protected static final String sourcePwd = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>";
     protected static final String sourceUserData = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String[] getUserData(java.lang.String)>";
    	
-    protected static boolean local = false;
     protected static boolean taintWrapper = false;
    
     @BeforeClass
@@ -81,7 +80,6 @@ public abstract class JUnitTests {
     
     protected Infoflow initInfoflow(){
     	Infoflow result = new Infoflow();
-    	result.setLocalInfoflow(local);
     	SootConfigForTest testConfig = new SootConfigForTest();
     	result.setSootConfig(testConfig);
     	if(taintWrapper){

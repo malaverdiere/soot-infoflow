@@ -45,7 +45,6 @@ import soot.options.Options;
 public class Infoflow implements IInfoflow {
 
 	public static boolean DEBUG = false;
-	public boolean local = false;
 	public InfoflowResults results;
 	
 	private final String androidPath;
@@ -251,11 +250,8 @@ public class Infoflow implements IInfoflow {
 				System.out.println("Callgraph has " + Scene.v().getCallGraph().size() + " edges");
 				AbstractInfoflowProblem problem;
 
-				if (local) {
-					problem = new InfoflowLocalProblem(sourcesSinks);
-				} else {
-					problem = new InfoflowProblem(sourcesSinks);
-				}
+				
+				problem = new InfoflowProblem(sourcesSinks);
 				problem.setTaintWrapper(taintWrapper);
 				problem.setPathTracking(pathTracking);
 				problem.setStopAfterFirstFlow(stopAfterFirstFlow);
@@ -391,11 +387,6 @@ public class Infoflow implements IInfoflow {
 	@Override
 	public InfoflowResults getResults() {
 		return results;
-	}
-
-	@Override
-	public void setLocalInfoflow(boolean local) {
-		this.local = local;
 	}
 
 	@Override

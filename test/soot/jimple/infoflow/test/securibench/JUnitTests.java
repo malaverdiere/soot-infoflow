@@ -66,7 +66,6 @@ public abstract class JUnitTests {
     	"<javax.servlet.ServletRequest: javax.servlet.ServletInputStream getInputStream()>",
     	"<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter(java.lang.String)>"};
     
-    protected static boolean local = false;
     protected static boolean taintWrapper = false;
     protected static boolean substituteCallParams = true;
     
@@ -151,7 +150,6 @@ public abstract class JUnitTests {
     	this.entryPointCreator = entryPointCreator;
 
     	Infoflow result = new Infoflow();
-    	result.setLocalInfoflow(local);
     	SootConfigSecuriBench testConfig = new SootConfigSecuriBench();
     	result.setSootConfig(testConfig);
     	if(taintWrapper){

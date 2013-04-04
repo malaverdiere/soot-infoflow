@@ -435,8 +435,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 						
-						//check if this is the correct method by inspecting the stack:
-						if(!callSite.equals(source.getElementFromStack())){
+						//check if this is the correct method by inspecting the stack - if the stack is empty, we are fine, too (unbalanced problems!)
+						if(!source.isStackEmpty() && !callSite.equals(source.getElementFromStack())){
 							//System.out.println("<f> CallSite is " + callSite + ", but Stack is: "+ source.getElementFromStack());
 							return Collections.emptySet();
 						}
@@ -470,7 +470,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								// source.getAccessPath().isOnlyFieldsTainted());
 								// bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, predUnit, newAbs));
 								// }
-								}
+							}
 								// this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
 							
 

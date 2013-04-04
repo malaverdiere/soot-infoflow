@@ -146,6 +146,10 @@ public class Abstraction implements Cloneable {
 			callStack.pop();
 	}
 	
+	public boolean isStackEmpty(){
+		return callStack.isEmpty();
+	}
+	
 	public Unit getElementFromStack(){
 		if(!callStack.isEmpty())
 			return callStack.peek();

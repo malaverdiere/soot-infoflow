@@ -300,7 +300,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						//check if this is the correct method by inspecting the stack:
-						if(!stmt.equals(source.getElementFromStack())){
+						if(!source.isStackEmpty() && !stmt.equals(source.getElementFromStack())){
 							//System.out.println("<b> CallSite is " + stmt + ", but Stack is: "+ source.getElementFromStack());
 							return Collections.emptySet();
 						}

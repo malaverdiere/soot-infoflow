@@ -376,7 +376,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 						Set<Abstraction> res = new HashSet<Abstraction>();
-						System.out.println(source.hashCode() + " " + dest + "    " + source );
 						// check if whole object is tainted (happens with strings, for example:)
 						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
 							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;

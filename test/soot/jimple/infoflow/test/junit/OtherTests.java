@@ -10,6 +10,15 @@ import soot.jimple.infoflow.Infoflow;
 public class OtherTests extends JUnitTests{
 	
 	@Test
+	public void thirdCallBackTest(){
+		Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void tryNext2()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+	}
+
+	@Test
 	public void secondCallBackTest(){
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

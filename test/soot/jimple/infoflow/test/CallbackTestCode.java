@@ -11,7 +11,6 @@ public class CallbackTestCode {
 		
 		locationListener.onLocationChanged();
 		con.publish();
-		
 	}
 	
 	private class MyLocationListener {  
@@ -75,4 +74,39 @@ public class CallbackTestCode {
 		
 	}
 	
+	//---------- 3rd try:
+	
+	public void tryNext2(){
+		Activity2 a = new Activity2();
+		a.onCreate();
+		a.send();
+	}
+	
+	private class Activity2{
+		String field;
+		public void onCreate(){
+			LocListener2 l = new LocListener2(this);
+			l.set();
+		}
+		
+		public void send(){
+			ConnectionManager cm = new ConnectionManager();
+			cm.publish(field);
+		}
+		
+		
+	}
+	
+	private class LocListener2{
+		private Activity2 parent;
+		public LocListener2(Activity2 a){
+			parent = a;
+		}
+		
+		public void set(){
+			parent.field = TelephonyManager.getDeviceId();
+		}
+		
+	}
+
 }

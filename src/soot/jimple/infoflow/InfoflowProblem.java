@@ -14,6 +14,7 @@ import java.util.Set;
 
 import soot.Local;
 import soot.NullType;
+import soot.RefType;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Unit;
@@ -526,6 +527,20 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										Unit predUnit = getUnitBefore(callSite);
 										bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, predUnit, abs));
 										
+									}else{
+										//we have to return the tainted value if backward analysis is triggered, 
+										//but also for complex objects with tainted strings (which require no backwards analysis, but forwards propagation):
+										if(source.getAccessPath().getField() != null && source.getAccessPath().getField().getType() instanceof RefType &&
+												((RefType)source.getAccessPath().getField().getType()).getClassName().equals("java.lang.String")){
+											Abstraction abs;
+											if (pathTracking == PathTrackingMethod.ForwardTracking)
+												abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(originalCallArg),
+														(AbstractionWithPath) source).addPathElement(exitStmt);
+											else
+												abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(originalCallArg));
+											abs.removeFromStack();
+											res.add(abs.clone());
+										}
 									}
 								}
 							}

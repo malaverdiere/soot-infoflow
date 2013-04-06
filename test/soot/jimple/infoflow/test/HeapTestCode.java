@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 import soot.jimple.infoflow.test.utilclasses.ClassWithField;
+import soot.jimple.infoflow.test.utilclasses.ClassWithStatic;
 
 public class HeapTestCode {
 	
@@ -155,5 +156,22 @@ public class HeapTestCode {
 		public void run(){
 			wo.call();
 		}
+	}
+	
+	
+	//next test:
+	
+	public void testForWrapper(){
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish("");
+		ClassWithStatic cws = new ClassWithStatic();
+		int i = 4+3;
+		while(true){
+			cws.getTitle();
+			if(i ==8){
+				break;
+			}
+		}
+		ClassWithStatic.staticString = TelephonyManager.getDeviceId();
 	}
 }

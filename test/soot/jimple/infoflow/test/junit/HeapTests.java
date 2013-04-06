@@ -6,8 +6,19 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.test.utilclasses.TestWrapper;
 
 public class HeapTests extends JUnitTests {
+	
+	@Test
+	public void testForWrapper(){
+		Infoflow infoflow = initInfoflow();
+		infoflow.setTaintWrapper(new TestWrapper());
+	    List<String> epoints = new ArrayList<String>();
+	    epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testForWrapper()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		negativeCheckInfoflow(infoflow);
+	}
 	
 	@Test
     public void simpleTest(){

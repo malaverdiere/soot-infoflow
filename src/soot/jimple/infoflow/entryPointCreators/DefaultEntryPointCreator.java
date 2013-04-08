@@ -63,28 +63,29 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 		JNopStmt endStmt = new JNopStmt();
 		Value intCounter = generator.generateLocal(IntType.v());
 		body.getUnits().add(startStmt);
-		for(Entry<String, List<String>> entry : classMap.entrySet()){
-			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
+		for (Entry<String, List<String>> entry : classMap.entrySet()){
 			Local classLocal = localVarsForClasses.get(entry.getKey());
-			for(SootMethod currentMethod : currentClass.getMethods()){
-				if(entry.getValue().contains(currentMethod.toString())){
-					JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-					conditionCounter++;
-					JNopStmt thenStmt = new JNopStmt();
-					JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-					body.getUnits().add(ifStmt);
-					JNopStmt elseStmt = new JNopStmt();
-					JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-					body.getUnits().add(elseGoto);
-					
-					body.getUnits().add(thenStmt);
-					buildMethodCall(currentMethod, body, classLocal, generator);
-					
-					body.getUnits().add(new JGotoStmt(endStmt));
-					body.getUnits().add(elseStmt);
+			for (String method : entry.getValue()){
+				if (!Scene.v().containsMethod(method)) {
+					System.err.println("Entry point not found: " + method);
+					continue;
 				}
+				SootMethod currentMethod = Scene.v().getMethod(method);
+				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+				conditionCounter++;
+				JNopStmt thenStmt = new JNopStmt();
+				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+				body.getUnits().add(ifStmt);
+				JNopStmt elseStmt = new JNopStmt();
+				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+				body.getUnits().add(elseGoto);
+					
+				body.getUnits().add(thenStmt);
+				buildMethodCall(currentMethod, body, classLocal, generator);
+					
+				body.getUnits().add(new JGotoStmt(endStmt));
+				body.getUnits().add(elseStmt);
 			}
-			
 		}
 		JGotoStmt gotoStmt = new JGotoStmt(endStmt);
 		body.getUnits().add(gotoStmt);

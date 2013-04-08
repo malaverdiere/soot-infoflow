@@ -225,7 +225,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				}
 				// taint is propagated with assignStmt
 				else if (src instanceof AssignStmt) {
-					AssignStmt assignStmt = (AssignStmt) src;
+					final AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
 					Value left = assignStmt.getLeftOp();
 
@@ -317,6 +317,17 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
+								if (sourceSinkManager.isSink(assignStmt, interproceduralCFG())) {
+									if (pathTracking != PathTrackingMethod.NoTracking)
+										results.addResult(leftValue, assignStmt,
+												source.getSource(),
+												source.getSourceContext(),
+												((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
+												assignStmt.toString());
+									else
+										results.addResult(leftValue, assignStmt,
+												source.getSource(), source.getSourceContext());
+								}
 								addTaintViaStmt(src, leftValue, source, res);
 								return res;
 							}

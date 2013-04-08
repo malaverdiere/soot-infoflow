@@ -16,7 +16,12 @@ public class InFunctionTests extends JUnitTests {
 
 	private static final String SOURCE_STRING_PARAMETER = "@parameter0: java.lang.String";
 	private static final String SOURCE_STRING_PARAMETER2 = "@parameter1: java.lang.String";
+	
+	private static final String SOURCE_INT_PARAMETER = "@parameter0: int";
+	private static final String SOURCE_INT_PARAMETER2 = "@parameter1: int";
+	
 	private static final String SINK_STRING_RETURN = "secret";
+	private static final String SINK_STRING_RETURN_R5 = "$r5";
 	
 	@Override
 	protected Infoflow initInfoflow() {
@@ -80,8 +85,27 @@ public class InFunctionTests extends JUnitTests {
     	ssm.setReturnTaintMethods(epoint);
 		
     	infoflow.computeInfoflow(path, new DefaultEntryPointCreator(), epoint, ssm);
-		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER));
-		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER2));
+		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN_R5, SOURCE_STRING_PARAMETER));
+		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN_R5, SOURCE_STRING_PARAMETER2));
+    }
+
+    @Test
+    public void parameterFlowTest(){
+    	Infoflow infoflow = initInfoflow();
+    	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
+    	List<String> epoint = new ArrayList<String>();
+    	epoint.add("<soot.jimple.infoflow.test.InFunctionCode: int paraToParaFlow(int,int,"
+    			+ "soot.jimple.infoflow.test.InFunctionCode$DataClass,"
+    			+ "soot.jimple.infoflow.test.InFunctionCode$DataClass)>");
+
+    	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
+    	ssm.setParameterTaintMethods(epoint);
+    	ssm.setReturnTaintMethods(epoint);
+    	
+    	infoflow.computeInfoflow(path, new DefaultEntryPointCreator(), epoint, ssm);
+    	Assert.assertNotNull(infoflow.getResults());
+		Assert.assertTrue(infoflow.getResults().isPathBetween("b", SOURCE_INT_PARAMETER2));
+		Assert.assertFalse(infoflow.getResults().isPathBetween("b", SOURCE_INT_PARAMETER));
     }
 
 }

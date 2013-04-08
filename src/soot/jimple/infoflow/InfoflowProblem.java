@@ -373,10 +373,42 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							
 							return Collections.singleton(source);
-
 						}
 					};
+				}
+				// for unbalanced problems, return statements correspond to
+				// normal flows, not return flows, because there is no return
+				// site we could jump to
+				else if (src instanceof ReturnStmt) {
+					final ReturnStmt returnStmt = (ReturnStmt) src;
+					return new FlowFunction<Abstraction>() {
 
+						@Override
+						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
+							
+							// Check whether this return is treated as a sink
+							boolean isSink = false;
+							if (source.getAccessPath().isStaticFieldRef())
+								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
+							else
+								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
+							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
+								if (pathTracking != PathTrackingMethod.NoTracking)
+									results.addResult(returnStmt.getOp(), returnStmt,
+											source.getSource(),
+											source.getSourceContext(),
+											((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
+											interproceduralCFG().getMethodOf(returnStmt) + ": " + returnStmt.toString());
+								else
+									results.addResult(returnStmt.getOp(), returnStmt,
+											source.getSource(), source.getSourceContext());
+							}
+
+							return Collections.singleton(source);
+						}
+					};
 				}
 				return Identity.v();
 			}

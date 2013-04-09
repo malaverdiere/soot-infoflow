@@ -479,16 +479,18 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											source));
 							}
 						}
-
-						// check if param is tainted:
-						for (int i = 0; i < callArgs.size(); i++) {
-							if (callArgs.get(i).equals(base)) {
-								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(paramLocals.get(i)),
-											(AbstractionWithPath) source).addPathElement(stmt));
-								else
-									res.add(new Abstraction(source.getAccessPath().copyWithNewValue(paramLocals.get(i)),
-											source));
+						// special treatment for clinit methods - no param mapping possible
+						if(!dest.getName().equals("<clinit>")){
+							// check if param is tainted:
+							for (int i = 0; i < callArgs.size(); i++) {
+								if (callArgs.get(i).equals(base)) {
+									if (pathTracking == PathTrackingMethod.ForwardTracking)
+										res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(paramLocals.get(i)),
+												(AbstractionWithPath) source).addPathElement(stmt));
+									else
+										res.add(new Abstraction(source.getAccessPath().copyWithNewValue(paramLocals.get(i)),
+												source));
+								}
 							}
 						}
 

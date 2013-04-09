@@ -169,5 +169,4 @@ public class OtherTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(ht.get());
 	}
-
 }

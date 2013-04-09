@@ -1,5 +1,6 @@
 package soot.jimple.infoflow.test;
 
+
 public class InFunctionCode {
 	
 	public String infSourceCode1(String secret) {
@@ -33,4 +34,15 @@ public class InFunctionCode {
 		return tmp + p1 + t;
 	}
 	
+	public class DataClass {
+		public int i;
+		public int j;
+	}
+
+	public int paraToParaFlow(int a, int b, DataClass data, DataClass data2) {
+		int c = a;
+		data.i = c;
+		return b;
+	}
+
 }

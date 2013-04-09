@@ -100,7 +100,6 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow);
 //		assertTrue(errOutputStream.toString().contains("alsoTainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 //		assertTrue(errOutputStream.toString().contains("<soot.jimple.infoflow.test.utilclasses.ClassWithStatic: java.lang.String staticTitle> contains value from staticinvoke"));
-
     }
     
     @Test
@@ -341,5 +340,5 @@ public class OtherTests extends JUnitTests{
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow);
     }
-    
+
 }

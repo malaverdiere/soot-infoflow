@@ -48,7 +48,7 @@ import soot.options.Options;
 
 public class Infoflow implements IInfoflow {
 
-	private static boolean DEBUG = false;
+	private static boolean DEBUG = true;
 	public InfoflowResults results;
 
 	private final String androidPath;

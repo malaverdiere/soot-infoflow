@@ -214,7 +214,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 				// taint is propagated with assignStmt
 				else if (src instanceof AssignStmt) {
-					AssignStmt assignStmt = (AssignStmt) src;
+					final AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
 					Value left = assignStmt.getLeftOp();
 
@@ -304,8 +304,19 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
+								if (sourceSinkManager.isSink(assignStmt, interproceduralCFG())) {
+									if (pathTracking != PathTrackingMethod.NoTracking)
+										results.addResult(leftValue, assignStmt,
+												source.getSource(),
+												source.getSourceContext(),
+												((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
+												assignStmt.toString());
+									else
+										results.addResult(leftValue, assignStmt,
+												source.getSource(), source.getSourceContext());
+								}
 								addTaintViaStmt(src, leftValue, source, res, keepAllFieldTaintStar, forceFields);
-								return res; 
+								return res;
 							}
 							//if leftvalue contains the tainted value -> it is overwritten - remove taint:
 							//but not for arrayRefs:
@@ -343,10 +354,42 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							
 							return Collections.singleton(source);
-
 						}
 					};
+				}
+				// for unbalanced problems, return statements correspond to
+				// normal flows, not return flows, because there is no return
+				// site we could jump to
+				else if (src instanceof ReturnStmt) {
+					final ReturnStmt returnStmt = (ReturnStmt) src;
+					return new FlowFunction<Abstraction>() {
 
+						@Override
+						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
+							
+							// Check whether this return is treated as a sink
+							boolean isSink = false;
+							if (source.getAccessPath().isStaticFieldRef())
+								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
+							else
+								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
+							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
+								if (pathTracking != PathTrackingMethod.NoTracking)
+									results.addResult(returnStmt.getOp(), returnStmt,
+											source.getSource(),
+											source.getSourceContext(),
+											((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
+											interproceduralCFG().getMethodOf(returnStmt) + ": " + returnStmt.toString());
+								else
+									results.addResult(returnStmt.getOp(), returnStmt,
+											source.getSource(), source.getSourceContext());
+							}
+
+							return Collections.singleton(source);
+						}
+					};
 				}
 				return Identity.v();
 			}

@@ -437,6 +437,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}
 
+						//special treatment for clinit methods - no param mapping possible
+						if(!dest.getName().equals("<clinit>")){
 						// check if param is tainted:
 						for (int i = 0; i < callArgs.size(); i++) {
 							if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal())) {
@@ -449,6 +451,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								abs.addToStack(src);
 								res.add(abs);
 
+								}
 							}
 						}
 

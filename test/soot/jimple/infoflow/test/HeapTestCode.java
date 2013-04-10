@@ -188,6 +188,18 @@ public class HeapTestCode {
 		
 	}
 	
+	public void testForEarlyTermination(){
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ClassWithStatic.staticString);
+		
+		ClassWithStatic c1 = new ClassWithStatic();
+		
+		WrapperClass w1 = new WrapperClass();
+		
+		w1.callIt();
+		
+	}
+	
 	class WrapperClass{
 		
 		public void callIt(){

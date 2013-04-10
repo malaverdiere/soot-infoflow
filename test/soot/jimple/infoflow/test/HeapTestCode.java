@@ -174,4 +174,30 @@ public class HeapTestCode {
 		}
 		ClassWithStatic.staticString = TelephonyManager.getDeviceId();
 	}
+	
+	
+	public void testForLoop(){
+		while(true){
+			WrapperClass f = new WrapperClass();
+			f.sink();
+			
+			WrapperClass w = new WrapperClass();
+			w.callIt();
+			
+		}
+		
+	}
+	
+	class WrapperClass{
+		
+		public void callIt(){
+			ClassWithStatic.staticString = TelephonyManager.getDeviceId();
+		}
+		
+		public void sink(){
+			ConnectionManager cm = new ConnectionManager();
+			cm.publish(ClassWithStatic.staticString);
+		}
+		
+	}
 }

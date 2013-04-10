@@ -11,6 +11,17 @@ import soot.jimple.infoflow.test.utilclasses.TestWrapper;
 public class HeapTests extends JUnitTests {
 	
 	@Test
+	public void testForLoop(){
+		Infoflow infoflow = initInfoflow();
+		infoflow.setTaintWrapper(new TestWrapper());
+	    List<String> epoints = new ArrayList<String>();
+	    epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testForLoop()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+	}
+	
+	
+	@Test
 	public void testForWrapper(){
 		Infoflow infoflow = initInfoflow();
 		infoflow.setTaintWrapper(new TestWrapper());

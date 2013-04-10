@@ -22,7 +22,6 @@ public abstract class MethodBasedSourceSinkManager implements SourceSinkManager 
 	public boolean isSource(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg) {
 		return sCallSite.containsInvokeExpr()
 				&& isSourceMethod(sCallSite.getInvokeExpr().getMethod());
-				 
 	}
 
 	@Override

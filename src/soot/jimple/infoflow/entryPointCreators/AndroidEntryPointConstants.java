@@ -3,6 +3,9 @@ package soot.jimple.infoflow.entryPointCreators;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Class containing constants for the well-known Android lifecycle methods
+ */
 public class AndroidEntryPointConstants {
 	
 	public static final String ACTIVITYCLASS = "android.app.Activity";
@@ -12,7 +15,12 @@ public class AndroidEntryPointConstants {
 	
 	public static final String ACTIVITY_ONCREATE = "void onCreate(android.os.Bundle)";
 	public static final String ACTIVITY_ONSTART = "void onStart()";
+	public static final String ACTIVITY_ONRESTOREINSTANCESTATE = "void onRestoreInstanceState(android.os.Bundle)";
+	public static final String ACTIVITY_ONPOSTCREATE = "void onPostCreate(android.os.Bundle)";
 	public static final String ACTIVITY_ONRESUME = "void onResume()";
+	public static final String ACTIVITY_ONPOSTRESUME = "void onPostResume()";
+	public static final String ACTIVITY_ONCREATEDESCRIPTION = "java.lang.CharSequence onCreateDescription()";
+	public static final String ACTIVITY_ONSAVEINSTANCESTATE = "void onSaveInstanceState(android.os.Bundle)";
 	public static final String ACTIVITY_ONPAUSE = "void onPause()";
 	public static final String ACTIVITY_ONSTOP = "void onStop()";
 	public static final String ACTIVITY_ONRESTART = "void onRestart()";
@@ -30,8 +38,12 @@ public class AndroidEntryPointConstants {
 	
 	public static final String CONTENTPROVIDER_ONCREATE = "boolean onCreate()";
 	
-	private static final String[] activityMethods = {ACTIVITY_ONCREATE, ACTIVITY_ONDESTROY, ACTIVITY_ONPAUSE, ACTIVITY_ONRESTART, ACTIVITY_ONRESUME, ACTIVITY_ONSTART, ACTIVITY_ONSTOP};
-	private static final String[] serviceMethods = {SERVICE_ONCREATE, SERVICE_ONDESTROY, SERVICE_ONSTART1, SERVICE_ONSTART2, SERVICE_ONBIND, SERVICE_ONREBIND, SERVICE_ONUNBIND};
+	private static final String[] activityMethods = {ACTIVITY_ONCREATE, ACTIVITY_ONDESTROY, ACTIVITY_ONPAUSE,
+		ACTIVITY_ONRESTART, ACTIVITY_ONRESUME, ACTIVITY_ONSTART, ACTIVITY_ONSTOP,
+		ACTIVITY_ONSAVEINSTANCESTATE, ACTIVITY_ONRESTOREINSTANCESTATE,
+		ACTIVITY_ONCREATEDESCRIPTION, ACTIVITY_ONPOSTCREATE, ACTIVITY_ONPOSTRESUME};
+	private static final String[] serviceMethods = {SERVICE_ONCREATE, SERVICE_ONDESTROY, SERVICE_ONSTART1,
+		SERVICE_ONSTART2, SERVICE_ONBIND, SERVICE_ONREBIND, SERVICE_ONUNBIND};
 	private static final String[] broadcastMethods = {BROADCAST_ONRECEIVE};
 	private static final String[] contentproviderMethods = {CONTENTPROVIDER_ONCREATE};
 	

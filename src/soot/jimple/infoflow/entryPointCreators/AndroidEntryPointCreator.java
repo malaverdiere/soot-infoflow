@@ -458,9 +458,15 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		//2. onStart:
 		Stmt onStartStmt = searchAndBuildMethod
 				(AndroidEntryPointConstants.ACTIVITY_ONSTART, currentClass, entryPoints, classLocal);
+		searchAndBuildMethod
+				(AndroidEntryPointConstants.ACTIVITY_ONRESTOREINSTANCESTATE, currentClass, entryPoints, classLocal);
+		searchAndBuildMethod
+				(AndroidEntryPointConstants.ACTIVITY_ONPOSTCREATE, currentClass, entryPoints, classLocal);
 		//3. onResume:
 		Stmt onResumeStmt = searchAndBuildMethod
 				(AndroidEntryPointConstants.ACTIVITY_ONRESUME, currentClass, entryPoints, classLocal);
+		searchAndBuildMethod
+				(AndroidEntryPointConstants.ACTIVITY_ONPOSTRESUME, currentClass, entryPoints, classLocal);
 		
 		//all other entryPoints of this class:
 		JNopStmt startWhileStmt = new JNopStmt();
@@ -491,6 +497,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		//4. onPause:
 		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONPAUSE, currentClass, entryPoints, classLocal);
+		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONCREATEDESCRIPTION, currentClass, entryPoints, classLocal);
+		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSAVEINSTANCESTATE, currentClass, entryPoints, classLocal);
 		//goTo Stop, Resume or Create:
 		JNopStmt pauseToStopStmt = new JNopStmt();
 		createIfStmt(pauseToStopStmt);
@@ -588,8 +596,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 
 	private Stmt searchAndBuildMethod(String subsignature, SootClass currentClass, List<String> entryPoints, Local classLocal){
 		SootMethod method = findMethod(currentClass, subsignature);
-		if (method == null)
+		if (method == null) {
+			System.err.println("Could not find Android entry point method: " + subsignature);
 			return null;
+		}
 		entryPoints.remove(method.getSignature());
 
 		assert method.isStatic() || classLocal != null : "Class local was null for non-static method "
@@ -626,6 +636,5 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		}
 		return null;
 	}
-	
 
 }

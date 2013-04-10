@@ -44,7 +44,7 @@ public class Abstraction implements Cloneable {
 	}
 	
 	public Abstraction deriveNewAbstraction(Value taint, boolean fieldtainted){
-		Abstraction a = new Abstraction(new AccessPath(taint, fieldtainted), source, sourceContext);
+		Abstraction a = new Abstraction(new AccessPath(taint, fieldtainted, accessPath.getFields()), source, sourceContext);
 		a.callStack = (Stack<Unit>) this.callStack.clone();
 		return a;
 	}

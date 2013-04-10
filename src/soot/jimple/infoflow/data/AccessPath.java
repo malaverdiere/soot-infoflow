@@ -10,24 +10,23 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 
 public class AccessPath {
-	private LinkedList<Value> values = new LinkedList<Value>();
-	private SootField field;
+	private Value value;
+	private LinkedList<SootField> fields = new LinkedList<SootField>();
 	//in contrast to a certain value which is tainted unknownfieldtainted says that any (*) field of the value is tainted
 	private boolean unknownfieldtainted; //also known as star/*
 
 	
 	public AccessPath(Value val){
-		values.clear();
 		assert !(val instanceof EquivalentValue);
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
-			field = ref.getField();
+			fields.add(ref.getField());
 		} else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
-			values.add(ref.getBase());
-			field = ref.getField();
+			value = ref.getBase();
+			fields.add(ref.getField());
 		}else{
-			values.add(val);
+			value = val;
 		}
 		unknownfieldtainted = false;
 	}
@@ -38,15 +37,19 @@ public class AccessPath {
 		unknownfieldtainted = fieldtainted;
 	}
 	
+	public AccessPath(Value val, boolean fieldtainted, LinkedList<SootField> appendingFields){
+		this(val, false);
+		fields.addAll(appendingFields);
+	}
+	
 	
 	public AccessPath(SootField staticfield){
-		field = staticfield;
+		fields.add(staticfield);
 	}
 	
 	public AccessPath(Value base, SootField field){
-		values.clear();
-		values.add(base);
-		this.field = field;
+		value = base;
+		this.fields.add(field);
 	}
 
 	
@@ -58,7 +61,7 @@ public class AccessPath {
 	 */
 	public AccessPath replace(Value val, Value replacement){
 		if(val instanceof Local){
-			if(val.equals(values)){
+			if(val.equals(value)){
 				return new AccessPath(replacement);
 			}
 		} 
@@ -66,38 +69,43 @@ public class AccessPath {
 	}
 		
 	public Value getPlainValue() {
-		if(values.isEmpty()){
+		if(value == null){
 			return null;
 		}
-		return values.getLast();
+		return value;
 	}
 	
 	public Local getPlainLocal(){
-		if(!values.isEmpty() && values.getLast() instanceof Local){
-			return (Local)values.getLast();
+		if(value != null && value instanceof Local){
+			return (Local)value;
 		}
 		return null;
 	}
 	
-	public void addValue(Value value) {
-		this.values.add(value);
+	public void setValue(Value value) {
+		this.value = value;
 	}
 	
 	
-	public SootField getField() {
-		return field;
+	public SootField getLastField() {
+		return fields.getLast();
 	}
-	public void setField(SootField field) {
-		this.field = field;
+	
+	public LinkedList<SootField> getFields(){
+		return fields;
+	}
+	
+	public void addField(SootField field) {
+		this.fields.add(field);
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((field == null) ? 0 : field.hashCode());
+		result = prime * result + ((fields == null) ? 0 : fields.hashCode());
 		result = prime * result + (unknownfieldtainted ? 1231 : 1237);
-		result = prime * result + ((values == null) ? 0 : values.hashCode());
+		result = prime * result + ((value == null) ? 0 : value.hashCode());
 		return result;
 	}
 
@@ -110,31 +118,31 @@ public class AccessPath {
 		if (getClass() != obj.getClass())
 			return false;
 		AccessPath other = (AccessPath) obj;
-		if (field == null) {
-			if (other.field != null)
+		if (fields == null) {
+			if (other.fields != null)
 				return false;
-		} else if (!field.equals(other.field))
+		} else if (!fields.equals(other.fields))
 			return false;
 		if (unknownfieldtainted != other.unknownfieldtainted)
 			return false;
-		if (values == null) {
-			if (other.values != null)
+		if (value == null) {
+			if (other.value != null)
 				return false;
-		} else if (!values.equals(other.values))
+		} else if (!value.equals(other.value))
 			return false;
 		return true;
 	}
 	
 	public boolean isStaticFieldRef(){
-		if(values.isEmpty() && field != null){
-			assert (field.makeRef() instanceof StaticFieldRef || field.makeRef().isStatic());
+		if(value == null && !fields.isEmpty()){
+			assert (fields.getFirst().makeRef() instanceof StaticFieldRef || fields.getFirst().makeRef().isStatic());
 			return true;
 		}
 		return false;
 	}
 	
 	public boolean isInstanceFieldRef(){
-		if(!values.isEmpty() && field != null){
+		if(value != null && !fields.isEmpty()){
 			return true;
 		}
 		return false;
@@ -149,7 +157,7 @@ public class AccessPath {
 	}
 	
 	public boolean isLocal(){
-		if(!values.isEmpty() && values.getLast() instanceof Local && field == null){
+		if(value != null && value instanceof Local && fields.isEmpty()){
 			return true;
 		}
 		return false;
@@ -158,11 +166,11 @@ public class AccessPath {
 	@Override
 	public String toString(){
 		String str = "";
-		if(!values.isEmpty()){
-			str += values.toString() +"(" + values.getLast().getType() +")" + " ";
+		if(value != null){
+			str += value.toString() +"(" + value.getType() +")" + " ";
 		}
-		if(field != null){
-			str += field.toString();
+		if(fields.isEmpty()){
+			str += fields.toString();
 		}
 		if(unknownfieldtainted)
 			str += ".*";
@@ -172,11 +180,11 @@ public class AccessPath {
 	public AccessPath copyWithNewValue(Value val){
 		if(val instanceof Local){
 			AccessPath a = new AccessPath(val);
-			a.field = this.field;
+			a.fields = this.fields;
 			a.unknownfieldtainted = this.unknownfieldtainted;
 			return a;
 		}else{
-			if(val instanceof InstanceFieldRef && field != null){
+			if(val instanceof InstanceFieldRef && fields != null){
 				AccessPath a = new AccessPath(val);
 				a.unknownfieldtainted = true;
 				return a;

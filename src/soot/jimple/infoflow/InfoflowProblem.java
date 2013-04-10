@@ -80,9 +80,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					// The taint refers to the actual type of the field, not the formal type,
 					// so we must check whether we have the tainted field at all
 					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.getFields().contains(source.getAccessPath().getField()))
+					if (callerClass.getFields().contains(source.getAccessPath().getLastField()))
 						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
-								callerClass.getFieldByName(source.getAccessPath().getField().getName()).makeRef());
+								callerClass.getFieldByName(source.getAccessPath().getLastField().getName()).makeRef());
 				}
 			}
 			
@@ -135,9 +135,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					// The taint refers to the actual type of the field, not the formal type,
 					// so we must check whether we have the tainted field at all
 					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.getFields().contains(source.getAccessPath().getField()))
+					if (callerClass.getFields().contains(source.getAccessPath().getLastField()))
 						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
-								callerClass.getFieldByName(source.getAccessPath().getField().getName()).makeRef());
+								callerClass.getFieldByName(source.getAccessPath().getLastField().getName()).makeRef());
 				}
 			}
 			if(source.getAccessPath().isStaticFieldRef()){
@@ -242,7 +242,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (source.getAccessPath().isStaticFieldRef()) {
 									if (rightValue instanceof StaticFieldRef) {
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-										if (source.getAccessPath().getField().equals(rightRef.getField())) {
+										if (source.getAccessPath().getLastField().equals(rightRef.getField())) {
 											addLeftValue = true;
 //											keepAllFieldTaintStar = false;
 										}
@@ -256,7 +256,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										Local sourceBase =  source.getAccessPath().getPlainLocal();
 										if (rightBase.equals(sourceBase)) {
 											if (source.getAccessPath().isInstanceFieldRef()) {
-												if (rightRef.getField().equals(source.getAccessPath().getField())) {
+												if (rightRef.getField().equals(source.getAccessPath().getLastField())) {
 													addLeftValue = true;
 												}
 											} else {
@@ -324,14 +324,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.singleton(source);
 							}
 							if(source.getAccessPath().isInstanceFieldRef()){
-								if(leftValue instanceof InstanceFieldRef && ((InstanceFieldRef)leftValue).getField().equals(source.getAccessPath().getField()) && ((InstanceFieldRef)leftValue).getBase().equals(source.getAccessPath().getPlainValue())){
+								if(leftValue instanceof InstanceFieldRef && ((InstanceFieldRef)leftValue).getField().equals(source.getAccessPath().getLastField()) && ((InstanceFieldRef)leftValue).getBase().equals(source.getAccessPath().getPlainValue())){
 									return Collections.emptySet();
 								}
 								//we have to check for PTS as well:
 								if (leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 									if (leftRef.getBase().equals(source.getAccessPath().getPlainValue())) {
-										if (leftRef.getField().equals(source.getAccessPath().getField())) {
+										if (leftRef.getField().equals(source.getAccessPath().getLastField())) {
 											return Collections.emptySet();
 										}
 										
@@ -343,7 +343,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}	
 							}else if(source.getAccessPath().isStaticFieldRef()){
-								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(source.getAccessPath().getField())){
+								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(source.getAccessPath().getLastField())){
 									return Collections.emptySet();
 								}
 								
@@ -372,7 +372,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// Check whether this return is treated as a sink
 							boolean isSink = false;
 							if (source.getAccessPath().isStaticFieldRef())
-								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
+								isSink = source.getAccessPath().getLastField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
 							else
 								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
 							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
@@ -523,7 +523,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// Check whether this return is treated as a sink
 							boolean isSink = false;
 							if (source.getAccessPath().isStaticFieldRef())
-								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
+								isSink = source.getAccessPath().getLastField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
 							else
 								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
 							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {

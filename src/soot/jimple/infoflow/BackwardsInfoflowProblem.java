@@ -95,7 +95,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (rightValue instanceof InstanceFieldRef) {
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
 
-								if (triggerReverseFlow(leftValue, source) && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().equals(source.getAccessPath().getField())) {
+								if (triggerReverseFlow(leftValue, source) && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().equals(source.getAccessPath().getLastField())) {
 									Abstraction abs = source.deriveNewAbstraction(leftValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
 									// this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
@@ -127,7 +127,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									Local sourceBase = source.getAccessPath().getPlainLocal();
 									if (leftBase.equals(sourceBase)) {
 										if (source.getAccessPath().isInstanceFieldRef()) {
-											if (leftRef.getField().equals(source.getAccessPath().getField())) {
+											if (leftRef.getField().equals(source.getAccessPath().getLastField())) {
 												addRightValue = true;
 											}
 										} else {

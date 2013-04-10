@@ -39,7 +39,9 @@ public class AccessPath {
 	
 	public AccessPath(Value val, boolean fieldtainted, LinkedList<SootField> appendingFields){
 		this(val, false);
-		fields.addAll(appendingFields);
+		if(fieldtainted){
+			fields.addAll(appendingFields);
+		}
 	}
 	
 	
@@ -169,7 +171,7 @@ public class AccessPath {
 		if(value != null){
 			str += value.toString() +"(" + value.getType() +")" + " ";
 		}
-		if(fields.isEmpty()){
+		if(!fields.isEmpty()){
 			str += fields.toString();
 		}
 		if(unknownfieldtainted)

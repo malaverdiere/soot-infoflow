@@ -115,7 +115,18 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		JAssignStmt assignStmt = new JAssignStmt(intCounter, IntConstant.v(conditionCounter));
 		body.getUnits().add(assignStmt);
 		
+		//prepare outer loop:
+		JNopStmt outerStartStmt = new JNopStmt();
+		body.getUnits().add(outerStartStmt);
+		
 		for(Entry<String, List<String>> entry : classMap.entrySet()){
+			//no execution order given for all apps:
+			JNopStmt entryExitStmt = new JNopStmt();
+			JEqExpr entryCond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+			conditionCounter++;
+			JIfStmt entryIfStmt = new JIfStmt(entryCond, entryExitStmt);
+			body.getUnits().add(entryIfStmt);
+			
 			SootClass currentClass = Scene.v().forceResolve(entry.getKey(), SootClass.BODIES);
 			currentClass.setApplicationClass();
 			JNopStmt endClassStmt = new JNopStmt();
@@ -235,7 +246,14 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				}
 			}
 			body.getUnits().add(endClassStmt);
+			//if-target for entryIf
+			body.getUnits().add(entryExitStmt);
 		}
+		
+		JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+		conditionCounter++;
+		JIfStmt outerIfStmt = new JIfStmt(cond, outerStartStmt);
+		body.getUnits().add(outerIfStmt);
 		
 		System.out.println("Generated main method:\n" + body);
 		return mainMethod;

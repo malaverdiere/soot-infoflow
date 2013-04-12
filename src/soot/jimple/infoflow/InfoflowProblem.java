@@ -482,7 +482,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						
 						//check if this is the correct method by inspecting the stack - if the stack is empty, we are fine, too (unbalanced problems!)
 						if(!source.isStackEmpty() && !callSite.equals(source.getElementFromStack())){
-							//System.out.println("<f> CallSite is " + callSite + ", but Stack is: "+ source.getElementFromStack());
 							return Collections.emptySet();
 						}
 						

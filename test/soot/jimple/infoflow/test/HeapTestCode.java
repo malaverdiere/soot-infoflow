@@ -212,4 +212,27 @@ public class HeapTestCode {
 		}
 		
 	}
+	
+	
+	// ----------------- backward flow on return:
+	
+	public void methodReturn(){
+		B b = new B();
+		B b2 = b;
+		b.attr = m();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b2.attr.b);
+	}
+	
+	public class B{
+		public A attr;
+	}
+	
+	public A m(){
+		A a = new A();
+		a.b = TelephonyManager.getDeviceId();
+		return a;
+		
+	}
+	
 }

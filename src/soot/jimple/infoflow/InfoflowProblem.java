@@ -239,17 +239,19 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							
 							for (Value rightValue : rightVals) {
 								// check if static variable is tainted (same name, same class)
+								//y = X.f && X.f tainted --> y, X.f tainted
 								if (source.getAccessPath().isStaticFieldRef()) {
 									if (rightValue instanceof StaticFieldRef) {
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
 										if (source.getAccessPath().getField().equals(rightRef.getField())) {
 											addLeftValue = true;
-//											keepAllFieldTaintStar = false;
 										}
 									}
 								} else {
-									// if both are fields, we have to compare their fieldName via equals and their bases via PTS
+									// if both are fields, we have to compare their fieldName via equals and their bases
 									// might happen that source is local because of max(length(accesspath)) == 1
+									//y = x.f && x tainted --> y, x tainted
+									//y = x.f && x.f tainted --> y, x tainted
 									if (rightValue instanceof InstanceFieldRef) {
 										InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
 										Local rightBase = (Local) rightRef.getBase();
@@ -267,6 +269,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 									// indirect taint propagation:
 									// if rightvalue is local and source is instancefield of this local:
+									// y = x && x.f tainted --> y.f, x.f tainted
+									// y.g = x && x.f tainted --> y.g, x.f tainted //TODO: fix with accesspaths 
 									if (rightValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
 										Local base = source.getAccessPath().getPlainLocal();
 										if (rightValue.equals(base)) {
@@ -290,6 +294,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 	
 									if (rightValue instanceof ArrayRef) {
+										//y = x[i] && x tainted -> x, y tainted
 										Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
 										if (rightBase.equals(source.getAccessPath().getPlainValue())) {
 											addLeftValue = true;
@@ -297,6 +302,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 	
 									// generic case, is true for Locals, ArrayRefs that are equal etc..
+									//y = x && x tainted --> y, x tainted
 									if (rightValue.equals(source.getAccessPath().getPlainValue())) {
 										addLeftValue = true;
 									}
@@ -320,14 +326,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							//if leftvalue contains the tainted value -> it is overwritten - remove taint:
 							//but not for arrayRefs:
+							// x[i] = y --> taint is preserved since we do not distinguish between elements of collections 
 							if(((AssignStmt)src).getLeftOp() instanceof ArrayRef){
 								return Collections.singleton(source);
 							}
 							if(source.getAccessPath().isInstanceFieldRef()){
-								if(leftValue instanceof InstanceFieldRef && ((InstanceFieldRef)leftValue).getField().equals(source.getAccessPath().getField()) && ((InstanceFieldRef)leftValue).getBase().equals(source.getAccessPath().getPlainValue())){
-									return Collections.emptySet();
-								}
-								//we have to check for PTS as well:
+								//x.f = y && x.f tainted --> no taint propagated
 								if (leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 									if (leftRef.getBase().equals(source.getAccessPath().getPlainValue())) {
@@ -336,23 +340,25 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										}
 										
 									}
-									//leftValue might be the base object as well:
+									//x = y && x.f tainted -> no taint propagated
 								}else if (leftValue instanceof Local){
 									if (leftValue.equals(source.getAccessPath().getPlainValue())) {
 										return Collections.emptySet();
 									}
 								}	
 							}else if(source.getAccessPath().isStaticFieldRef()){
+								// X.f = y && X.f tainted -> no taint propagated
 								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(source.getAccessPath().getField())){
 									return Collections.emptySet();
 								}
 								
 							}
-							//no ELSE - when the fields of an object are tainted, but the base object is overwritten then the fields should not be tainted any more
-							if(leftValue.equals(source.getAccessPath().getPlainValue())){
-								return Collections.emptySet(); //TODO: fix this for *-Operator
+							//when the fields of an object are tainted, but the base object is overwritten then the fields should not be tainted any more
+							//x.. = y && x tainted -> no taint propagated
+							if(source.getAccessPath().isLocal() && leftValue.equals(source.getAccessPath().getPlainValue())){
+								return Collections.emptySet();
 							}
-							
+							//nothing applies: z = y && x tainted -> taint is preserved
 							return Collections.singleton(source);
 						}
 					};
@@ -368,14 +374,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
-							
-							// Check whether this return is treated as a sink
-							boolean isSink = false;
-							if (source.getAccessPath().isStaticFieldRef())
-								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
-							else
-								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
-							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
+							if (source.getAccessPath().getPlainValue().equals(returnStmt.getOp()) && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.getOp(), returnStmt,
 											source.getSource(),
@@ -521,12 +520,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							
 
 							// Check whether this return is treated as a sink
-							boolean isSink = false;
-							if (source.getAccessPath().isStaticFieldRef())
-								isSink = source.getAccessPath().getField().equals(returnStmt.getOp()); //TODO: getOp is always Local? check
-							else
-								isSink = source.getAccessPath().getPlainValue().equals(returnStmt.getOp());
-							if (isSink && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
+							if (source.getAccessPath().getPlainValue().equals(returnStmt.getOp()) && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.getOp(), returnStmt,
 											source.getSource(),

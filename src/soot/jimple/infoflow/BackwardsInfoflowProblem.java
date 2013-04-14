@@ -110,8 +110,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								
 
 							
-							// termination shortcut:
-							if (leftValue.equals(source.getAccessPath().getPlainValue()) && (rightValue instanceof NewExpr || rightValue instanceof NewArrayExpr)) {
+							// termination shortcut - if taint is not a static field
+							if (!source.getAccessPath().isStaticFieldRef() && leftValue.equals(source.getAccessPath().getPlainValue()) && (rightValue instanceof NewExpr || rightValue instanceof NewArrayExpr)) {
 								return Collections.emptySet();
 							}
 

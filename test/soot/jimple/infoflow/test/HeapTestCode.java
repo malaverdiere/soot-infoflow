@@ -174,4 +174,65 @@ public class HeapTestCode {
 		}
 		ClassWithStatic.staticString = TelephonyManager.getDeviceId();
 	}
+	
+	
+	public void testForLoop(){
+		while(true){
+			WrapperClass f = new WrapperClass();
+			f.sink();
+			
+			WrapperClass w = new WrapperClass();
+			w.callIt();
+			
+		}
+		
+	}
+	
+	public void testForEarlyTermination(){
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ClassWithStatic.staticString);
+		
+		ClassWithStatic c1 = new ClassWithStatic();
+		
+		WrapperClass w1 = new WrapperClass();
+		
+		w1.callIt();
+		
+	}
+	
+	class WrapperClass{
+		
+		public void callIt(){
+			ClassWithStatic.staticString = TelephonyManager.getDeviceId();
+		}
+		
+		public void sink(){
+			ConnectionManager cm = new ConnectionManager();
+			cm.publish(ClassWithStatic.staticString);
+		}
+		
+	}
+	
+	
+	// ----------------- backward flow on return:
+	
+	public void methodReturn(){
+		B b = new B();
+		B b2 = b;
+		b.attr = m();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b2.attr.b);
+	}
+	
+	public class B{
+		public A attr;
+	}
+	
+	public A m(){
+		A a = new A();
+		a.b = TelephonyManager.getDeviceId();
+		return a;
+		
+	}
+	
 }

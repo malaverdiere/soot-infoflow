@@ -53,4 +53,25 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 		return false;
 	}
 
+	
+	@Override
+	public boolean supportsBackwardWrapping() {
+		for (ITaintPropagationWrapper w : this.wrappers){
+			if(!w.supportsBackwardWrapping()){
+				return false;
+			}
+		}
+		return true;
+		
+	}
+
+	@Override
+	public List<Value> getBackwardTaintsForMethod(Stmt stmt) {
+		Set<Value> resList = new HashSet<Value>();
+		for (ITaintPropagationWrapper w : this.wrappers)
+			resList.addAll(w.getBackwardTaintsForMethod(stmt));
+		return new ArrayList<Value>(resList);
+	}
+
+
 }

@@ -10,6 +10,9 @@ import soot.jimple.StaticFieldRef;
 public class AccessPath {
 	private Value value;
 	private SootField field;
+	//in contrast to a certain value which is tainted unknownfieldtainted says that any (*) field of the value is tainted
+	private boolean unknownfieldtainted; //also known as star/*
+
 	
 	public AccessPath(Value val){
 		assert !(val instanceof EquivalentValue);
@@ -23,9 +26,15 @@ public class AccessPath {
 		}else{
 			value = val;
 		}
+		unknownfieldtainted = false;
 	}
 	
-
+	
+	public AccessPath(Value val, boolean fieldtainted){
+		this(val);
+		unknownfieldtainted = fieldtainted;
+	}
+	
 	
 	public AccessPath(SootField staticfield){
 		field = staticfield;
@@ -59,6 +68,13 @@ public class AccessPath {
 		return value;
 	}
 	
+	public Local getPlainLocal(){
+		if(value != null && value instanceof Local){
+			return (Local)value;
+		}
+		return null;
+	}
+	
 	public void setValue(Value value) {
 		this.value = value;
 	}
@@ -76,6 +92,7 @@ public class AccessPath {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((field == null) ? 0 : field.hashCode());
+		result = prime * result + (unknownfieldtainted ? 1231 : 1237);
 		result = prime * result + ((value == null) ? 0 : value.hashCode());
 		return result;
 	}
@@ -94,6 +111,8 @@ public class AccessPath {
 				return false;
 		} else if (!field.equals(other.field))
 			return false;
+		if (unknownfieldtainted != other.unknownfieldtainted)
+			return false;
 		if (value == null) {
 			if (other.value != null)
 				return false;
@@ -104,6 +123,7 @@ public class AccessPath {
 	
 	public boolean isStaticFieldRef(){
 		if(value == null && field != null){
+			assert (field.makeRef() instanceof StaticFieldRef || field.makeRef().isStatic());
 			return true;
 		}
 		return false;
@@ -114,6 +134,14 @@ public class AccessPath {
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * only fields (*) are tainted, not the object itself 
+	 * @return
+	 */
+	public boolean isOnlyFieldsTainted(){
+		return unknownfieldtainted;
 	}
 	
 	public boolean isLocal(){
@@ -132,7 +160,8 @@ public class AccessPath {
 		if(field != null){
 			str += field.toString();
 		}
-		
+		if(unknownfieldtainted)
+			str += ".*";
 		return str;
 	}
 	
@@ -140,8 +169,15 @@ public class AccessPath {
 		if(val instanceof Local){
 			AccessPath a = new AccessPath(val);
 			a.field = this.field;
+			a.unknownfieldtainted = this.unknownfieldtainted;
 			return a;
 		}else{
+			if(val instanceof InstanceFieldRef && field != null){
+				AccessPath a = new AccessPath(val);
+				a.unknownfieldtainted = true;
+				return a;
+			}
+			
 			return new AccessPath(val);
 		}
 	}

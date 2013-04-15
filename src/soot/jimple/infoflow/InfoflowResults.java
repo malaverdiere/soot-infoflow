@@ -203,7 +203,13 @@ public class InfoflowResults {
 	 * otherwise
 	 */
 	public boolean isPathBetween(Value sink, Value source) {
-		Set<SourceInfo> sources = this.results.get(sink);
+		Set<SourceInfo> sources = null;
+		for(SinkInfo sI : this.results.keySet()){
+			if(sI.getSink().equals(sink)){
+				sources = this.results.get(sI);
+				break;
+			}
+		}
 		if (sources == null)
 			return false;
 		for (SourceInfo src : sources)

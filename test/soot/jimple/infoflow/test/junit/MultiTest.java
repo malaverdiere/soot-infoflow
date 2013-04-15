@@ -6,8 +6,8 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 
 public class MultiTest extends JUnitTests {
 
@@ -117,6 +117,8 @@ public class MultiTest extends JUnitTests {
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
+
+
     }
 
 }

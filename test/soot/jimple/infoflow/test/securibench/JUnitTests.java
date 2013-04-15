@@ -140,6 +140,7 @@ public abstract class JUnitTests {
 	  }
     
     protected Infoflow initInfoflow(){
+
     	List<String> substClasses = new LinkedList<String>();
     	substClasses.add("soot.jimple.infoflow.test.securibench.supportClasses.DummyHttpRequest");
     	substClasses.add("soot.jimple.infoflow.test.securibench.supportClasses.DummyHttpResponse");
@@ -150,6 +151,7 @@ public abstract class JUnitTests {
     	this.entryPointCreator = entryPointCreator;
 
     	Infoflow result = new Infoflow();
+
     	SootConfigSecuriBench testConfig = new SootConfigSecuriBench();
     	result.setSootConfig(testConfig);
     	if(taintWrapper){

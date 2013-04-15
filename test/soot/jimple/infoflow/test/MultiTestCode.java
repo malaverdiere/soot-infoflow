@@ -101,6 +101,17 @@ public class MultiTestCode {
 			sendPwd(pwd, cnt - 1);
 	}
 
+	public void overwriteTestCode1(){
+		AccountManager am = new AccountManager();
+		String pwd = am.getPassword();
+		System.out.println(pwd);
+		
+		pwd = new String("");
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(pwd);
+	}
+	
 	public void hashTestCode1(){
 		AccountManager am = new AccountManager();
 		int foo = am.getPassword().hashCode();

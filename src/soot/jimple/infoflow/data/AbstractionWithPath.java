@@ -14,13 +14,15 @@ public class AbstractionWithPath extends Abstraction {
 	private final List<Unit> propagationPath;
 	
 
-	public AbstractionWithPath(Value taint, Value src, Stmt srcContext){
-		super(taint, src, srcContext);
+
+	public AbstractionWithPath(Value taint, Value src, boolean fieldsTainted, Stmt srcContext){
+		super(taint, src, fieldsTainted, srcContext);
 		propagationPath = new ArrayList<Unit>();
 	}
 	
-	public AbstractionWithPath(Value taint, AbstractionWithPath src){
-		super(taint, src);
+
+	public AbstractionWithPath(Value taint, AbstractionWithPath src, boolean fieldsTainted){
+		super(taint, src, fieldsTainted);
 		if (src == null)
 			propagationPath = new ArrayList<Unit>();
 		else
@@ -45,6 +47,12 @@ public class AbstractionWithPath extends Abstraction {
 		propagationPath = new ArrayList<Unit>(path);
 	}
 
+	public AbstractionWithPath(AccessPath p, Value src, List<Unit> path, Unit s){
+		this(p, src,(Stmt)s, path);
+		if (s != null)
+			propagationPath.add(s);
+	}
+	
 	public List<Unit> getPropagationPath() {
 		return this.propagationPath;
 	}

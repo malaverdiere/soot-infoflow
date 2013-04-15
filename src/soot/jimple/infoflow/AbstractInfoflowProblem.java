@@ -6,19 +6,25 @@ import java.util.HashSet;
 import java.util.Set;
 
 import soot.Local;
+import soot.NullType;
 import soot.PatchingChain;
+import soot.RefType;
 import soot.SootFieldRef;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.AssignStmt;
+import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
+import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.internal.JInstanceFieldRef;
+import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 
 public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
@@ -42,15 +48,19 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		 */
 		ForwardTracking
 	}
+
 	
-	final Set<Unit> initialSeeds = new HashSet<Unit>();
-	final InfoflowResults results;
-	ITaintPropagationWrapper taintWrapper;
-	PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
-	NativeCallHandler ncHandler = new DefaultNativeCallHandler();
+	
+	protected final Set<Unit> initialSeeds = new HashSet<Unit>();
+	protected final InfoflowResults results;
+	protected ITaintPropagationWrapper taintWrapper;
+	protected PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
+	protected NativeCallHandler ncHandler = new DefaultNativeCallHandler();
+	protected boolean debug = false;
+
+	Abstraction zeroValue = null;
 	
 	protected boolean stopAfterFirstFlow = false;
-
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
 		results = new InfoflowResults();
@@ -65,7 +75,12 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		taintWrapper = wrapper;
 	}
 	
-	/**
+	public void setDebug(boolean debug){
+		this.debug = debug;
+	}
+	
+		/**
+
 	 * Sets whether the information flow analysis shall stop after the first
 	 * flow has been found
 	 * @param stopAfterFirstFlow True if the analysis shall stop after the
@@ -74,7 +89,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {
 		this.stopAfterFirstFlow = stopAfterFirstFlow;
 	}
-
+	
+	
 	/**
 	 * Sets whether and how the paths between the sources and sinks shall be
 	 * tracked
@@ -84,6 +100,18 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public void setPathTracking(PathTrackingMethod method) {
 		this.pathTracking = method;
 		this.ncHandler.setPathTracking(method);
+	}
+	
+
+	
+	@Override
+	public Abstraction createZeroValue() {
+		if (zeroValue == null) {
+			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
+				new Abstraction(new JimpleLocal("zero", NullType.v()), null, false, null) :
+				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, false);
+		}
+		return zeroValue;
 	}
 	
 	/**
@@ -144,5 +172,69 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public InfoflowResults getResults(){
 	    return results;
 	}
+
+	/**
+	 * Gets whether the given method is an entry point, i.e. one of the initial
+	 * seeds belongs to the given method
+	 * @param sm The method to check
+	 * @return True if the given method is an entry point, otherwise false
+	 */
+	protected boolean isInitialMethod(SootMethod sm) {
+		for (Unit u : this.initialSeeds)
+			if (interproceduralCFG().getMethodOf(u) == sm)
+				return true;
+		return false;
+	}
+
+	
+	
+	@Override
+	public Set<Unit> initialSeeds() {
+		return initialSeeds;
+	}
+	
+	@Override
+	public boolean autoAddZero() {
+		return false;
+	}
+	
+	public boolean triggerReverseFlow(Value val){
+		if(DataTypeHandler.isFieldRefOrArrayRef(val) && !(val instanceof Constant)){
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @param val the value which gets tainted
+	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
+	 * @return true if a reverseFlow should be triggered
+	 */
+	public boolean triggerReverseFlow(Value val, Abstraction source){
+		if(val == null){
+			return false;
+		}
+		if(val instanceof Constant)
+			return false;
+		//no string!
+		if(val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
+			//TODO: do not check val but also source...
+			return false;
+		}
+		if(source.getAccessPath().getPlainValue() != null && source.getAccessPath().getPlainValue().getType() instanceof RefType &&
+				((RefType)source.getAccessPath().getPlainValue().getType()).getClassName().equals("java.lang.String")){
+			return false;
+		}
+		
+		if(DataTypeHandler.isFieldRefOrArrayRef(val)  ||
+				source.getAccessPath().isOnlyFieldsTainted() ||
+				source.getAccessPath().isInstanceFieldRef() ||
+				source.getAccessPath().isStaticFieldRef()){
+			return true;
+		}
+		return false;
+	}
+	
 
 }

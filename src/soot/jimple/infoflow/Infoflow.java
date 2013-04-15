@@ -1,6 +1,7 @@
 package soot.jimple.infoflow;
 
 import heros.InterproceduralCFG;
+import heros.solver.CountingThreadPoolExecutor;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -15,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import soot.MethodOrMethodContext;
 import soot.PackManager;
@@ -34,6 +37,7 @@ import soot.jimple.infoflow.config.IInfoflowSootConfig;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
+import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
@@ -44,15 +48,14 @@ import soot.options.Options;
 
 public class Infoflow implements IInfoflow {
 
-	public static boolean DEBUG = false;
+	private static boolean DEBUG = true;
 	public InfoflowResults results;
-	
+
 	private final String androidPath;
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
 	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	private IInfoflowSootConfig sootConfig;
-	
 	private boolean stopAfterFirstFlow = false;
 
 	/**
@@ -74,18 +77,29 @@ public class Infoflow implements IInfoflow {
 		this.androidPath = androidPath;
 		this.forceAndroidJar = forceAndroidJar;
 	}
-	
-	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
+
+	public void setTaintWrapper(ITaintPropagationWrapper wrapper) {
 		taintWrapper = wrapper;
+	}
+
+
+	public static void setDebug(boolean debug) {
+		DEBUG = debug;
+	}
+
+	/**
+	 * Sets whether and how the paths between the sources and sinks shall be tracked
+	 * 
+	 * @param method
+	 *            The method for tracking data flow paths through the program.
+	 */
+	@Override
+	public void setPathTracking(PathTrackingMethod method) {
+		this.pathTracking = method;
 	}
 	
 	public void setSootConfig(IInfoflowSootConfig config){
 		sootConfig = config;
-	}
-		
-	@Override
-	public void setPathTracking(PathTrackingMethod method) {
-		this.pathTracking = method;
 	}
 	
 	@Override
@@ -99,18 +113,18 @@ public class Infoflow implements IInfoflow {
 		this.computeInfoflow(path, entryPointCreator, entryPoints,
 				new DefaultSourceSinkManager(sources, sinks));
 	}
-
+	
 	@Override
-	public void computeInfoflow(String path, List<String> entryPoints,
-			List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, new DefaultEntryPointCreator(), entryPoints,
-				new DefaultSourceSinkManager(sources, sinks));
+	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
+		this.computeInfoflow(path, new DefaultEntryPointCreator(), entryPoints, new DefaultSourceSinkManager(sources, sinks));
 	}
 
 	@Override
 	public void computeInfoflow(String path, String entryPoint, List<String> sources, List<String> sinks) {
 		this.computeInfoflow(path, entryPoint, new DefaultSourceSinkManager(sources, sinks));
 	}
+
+
 	
 	/**
 	 * Initializes Soot.
@@ -153,6 +167,9 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_soot_classpath(path);
 //		soot.options.Options.v().set_prepend_classpath(true);
 		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
+		//for benchmark/comparison:
+		//soot.options.Options.v().setPhaseOption("cg.spark", "vta:true");
+//		soot.options.Options.v().setPhaseOption("cg.spark", "rta:true");
 		if (extraSeed == null || extraSeed.isEmpty())
 			Options.v().setPhaseOption("cg.spark", "on");
 		else
@@ -165,8 +182,7 @@ public class Infoflow implements IInfoflow {
 				soot.options.Options.v().set_force_android_jar(this.androidPath);
 			else
 				soot.options.Options.v().set_android_jars(this.androidPath);
-		}
-		else
+		} else
 			Options.v().set_src_prec(Options.src_prec_java);
 		
 		//at the end of setting: load user settings:
@@ -184,13 +200,13 @@ public class Infoflow implements IInfoflow {
 					hasClasses = true;
 			}
 		}
-
 		if (!hasClasses) {
 			System.out.println("Only phantom classes loaded, skipping analysis...");
 			return;
 		}
+
 	}
-	
+
 	@Override
 	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
 			List<String> entryPoints, SourceSinkManager sourcesSinks) {
@@ -212,6 +228,7 @@ public class Infoflow implements IInfoflow {
 			PackManager.v().writeOutput();
 	}
 
+
 	@Override
 	public void computeInfoflow(String path, String entryPoint, SourceSinkManager sourcesSinks) {
 		results = null;
@@ -222,9 +239,20 @@ public class Infoflow implements IInfoflow {
 
 		// parse classNames as String and methodNames as string in soot representation
 		HashMap<String, List<String>> classes = SootMethodRepresentationParser.v().parseClassNames
-				(Collections.singletonList(entryPoint), false);
+						(Collections.singletonList(entryPoint), false);
 
 		initializeSoot(path, classes.keySet(), sourcesSinks, entryPoint);
+		
+		if (DEBUG) {
+			for (List<String> methodList : classes.values()) {
+				for (String methodSignature : methodList) {
+					if (Scene.v().containsMethod(methodSignature)) {
+						SootMethod method = Scene.v().getMethod(methodSignature);
+						System.err.println(method.retrieveActiveBody().toString());
+					}
+				}
+			}
+		}
 
 		if (!Scene.v().containsMethod(entryPoint)){
 			System.err.println("Entry point not found: " + entryPoint);
@@ -248,18 +276,17 @@ public class Infoflow implements IInfoflow {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
 				System.out.println("Callgraph has " + Scene.v().getCallGraph().size() + " edges");
-				AbstractInfoflowProblem problem;
+				InfoflowProblem forwardProblem  = new InfoflowProblem(sourcesSinks);
+				forwardProblem.setTaintWrapper(taintWrapper);
+				forwardProblem.setPathTracking(pathTracking);
+				forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
 
-				
-				problem = new InfoflowProblem(sourcesSinks);
-				problem.setTaintWrapper(taintWrapper);
-				problem.setPathTracking(pathTracking);
-				problem.setStopAfterFirstFlow(stopAfterFirstFlow);
 
 				// We have to look through the complete program to find sources
 				// which are then taken as seeds.
 				int sinkCount = 0;
 				System.out.println("Looking for sources and sinks...");
+
 				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
 				eps.addAll(Scene.v().getEntryPoints());
 				ReachableMethods reachableMethods = new ReachableMethods(Scene.v().getCallGraph(), eps.iterator(), null);
@@ -283,14 +310,15 @@ public class Infoflow implements IInfoflow {
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
-							if (sourcesSinks.isSource(s, problem.interproceduralCFG())) {
-								problem.initialSeeds.add(s);
+							if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
+								forwardProblem.initialSeeds.add(u);
+
 								if (DEBUG)
-									System.out.println("Source found: " + s);
+									System.out.println("Source found: " + u);
 							}
-							if (sourcesSinks.isSink(s, problem.interproceduralCFG())) {
+							if (sourcesSinks.isSink(s, forwardProblem.interproceduralCFG())) {
 								if (DEBUG)
-									System.out.println("Sink found: " + s);
+									System.out.println("Sink found: " + u);
 								sinkCount++;
 							}
 						}
@@ -306,7 +334,7 @@ public class Infoflow implements IInfoflow {
 							System.err.println("Seed method " + m + " has no active body");
 							continue;
 						}
-						problem.initialSeeds.add(m.getActiveBody().getUnits().getFirst());
+						forwardProblem.initialSeeds.add(m.getActiveBody().getUnits().getFirst());
 					}
 
 				// In Debug mode, we write the Jimple files to disk
@@ -325,34 +353,47 @@ public class Infoflow implements IInfoflow {
 					
 					}
 				}
-				if (problem.initialSeeds.isEmpty() || sinkCount == 0){
+
+				if (forwardProblem.initialSeeds.isEmpty() || sinkCount == 0){
 					System.err.println("No sources or sinks found, aborting analysis");
 					return;
 				}
-				System.out.println("Source lookup done, found " + problem.initialSeeds.size()
-						+ " sources and " + sinkCount + " sinks.");
 
-				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> solver =
-						new JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>>(problem, DEBUG);
-				solver.solve();
+				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> forwardSolver;
+				System.out.println("Source lookup done, found " + forwardProblem.initialSeeds.size() + " sources.");
+
+				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+				forwardSolver = new InfoflowSolver(forwardProblem, DEBUG, executor);
+				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem();
+				InfoflowSolver backSolver = new InfoflowSolver(backProblem, DEBUG, executor);
+				forwardProblem.setBackwardSolver(backSolver);
+				forwardProblem.setDebug(DEBUG);
+				
+				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
+				backProblem.setTaintWrapper(taintWrapper);
+				backProblem.setDebug(DEBUG);
+
+				forwardSolver.solve();
 
 				for (SootMethod ep : Scene.v().getEntryPoints()) {
 					Unit ret = ep.getActiveBody().getUnits().getLast();
 
 					System.err.println("----------------------------------------------");
 					System.err.println("At end of: " + ep.getSignature());
-					System.err.println(solver.ifdsResultsAt(ret).size() + " Variables (with "+ problem.results.size() +" source-to-sink connections):");
+					System.err.println(forwardSolver.ifdsResultsAt(ret).size() + " Variables (with " + forwardProblem.results.size() + " source-to-sink connections):");
 					System.err.println("----------------------------------------------");
 
-					for (Abstraction l : solver.ifdsResultsAt(ret)) {
+					for (Abstraction l : forwardSolver.ifdsResultsAt(ret)) {
 						System.err.println(l.getAccessPath() + " contains value from " + l.getSource());
 					}
 					System.err.println("---");
 				}
 
-				results = problem.results;
+
+				results = forwardProblem.results;
 				if (results.getResults().isEmpty())
 					System.out.println("No results found.");
+
 				for (Entry<SinkInfo, Set<SourceInfo>> entry : results.getResults().entrySet()) {
 					System.out.println("The sink " + entry.getKey() + " was called with values from the following sources:");
 					for (SourceInfo source : entry.getValue()) {
@@ -367,22 +408,24 @@ public class Infoflow implements IInfoflow {
 				}
 			}
 
-			private void stringToTextFile(String fileName, String contents) throws IOException {
-				BufferedWriter wr = null;
-				try {
-					wr = new BufferedWriter(new FileWriter(fileName));
-					wr.write(contents);
-					wr.flush();
-				}
-				finally {
-					if (wr != null)
-						wr.close();
-				}
-			}
+			
 		});
 
 		PackManager.v().getPack("wjtp").add(transform);
 	}
+		
+		private void stringToTextFile(String fileName, String contents) throws IOException {
+			BufferedWriter wr = null;
+			try {
+				wr = new BufferedWriter(new FileWriter(fileName));
+				wr.write(contents);
+				wr.flush();
+			}
+			finally {
+				if (wr != null)
+					wr.close();
+			}
+		}
 
 	@Override
 	public InfoflowResults getResults() {

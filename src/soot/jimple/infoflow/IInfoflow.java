@@ -33,6 +33,7 @@ public interface IInfoflow {
 	 */
 	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow);
 
+
 	/**
 	 * Computes the information flow on a list of entry point methods. This list
 	 * is used to construct an artificial main method following the Android
@@ -99,4 +100,5 @@ public interface IInfoflow {
 	public InfoflowResults getResults();
 	
 	public boolean isResultAvailable();
+
 }

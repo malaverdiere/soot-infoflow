@@ -102,7 +102,7 @@ public class OtherTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(concat1.concat(concat2).concat("foo"));
 	}
-	
+
 	private String deviceId = "";
 	
 	public interface MyInterface {
@@ -169,5 +169,4 @@ public class OtherTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(ht.get());
 	}
-
 }

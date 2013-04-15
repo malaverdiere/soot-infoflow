@@ -1,3 +1,4 @@
+
 package soot.jimple.infoflow.test.securibench.supportClasses;
 
 import java.io.IOException;

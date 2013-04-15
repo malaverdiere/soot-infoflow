@@ -12,7 +12,9 @@ public abstract class NativeCallHandler {
 
 	public abstract void setPathTracking(PathTrackingMethod method);
 	
+
 	public abstract Set<Abstraction> getTaintedValues(Stmt call, Abstraction source, List<Value> params);
-	
+
+	public abstract Set<Abstraction> getTaintedValuesForBackwardAnalysis(Stmt call, Abstraction source, List<Value> params);
 	
 }

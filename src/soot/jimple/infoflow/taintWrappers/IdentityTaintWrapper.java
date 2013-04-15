@@ -42,4 +42,18 @@ public class IdentityTaintWrapper implements ITaintPropagationWrapper {
 		return (taintedparam >= 0 || taintedBase != null);
 	}
 
+	
+	@Override
+	public boolean supportsBackwardWrapping() {
+		//TODO: implement this
+		return false;
+	}
+
+	@Override
+	public List<Value> getBackwardTaintsForMethod(Stmt stmt) {
+		//TODO: implement this
+		return null;
+	}
+
+
 }

@@ -2,6 +2,7 @@ package soot.jimple.infoflow.test.utilclasses;
 
 public class ClassWithStatic {
 	private static String staticTitle;
+	public static String staticString;
 
 	public String getTitle() {
 		return staticTitle;
@@ -11,7 +12,4 @@ public class ClassWithStatic {
 		ClassWithStatic.staticTitle = title;
 	}
 	
-	
-	
-
 }

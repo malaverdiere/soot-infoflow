@@ -1,24 +1,52 @@
 package soot.jimple.infoflow.data;
 
+
+import java.util.Stack;
+
+import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
 
-public class Abstraction {
+public class Abstraction implements Cloneable {
 	private final AccessPath accessPath;
 	private final Value source;
 	private final Stmt sourceContext;
 	private int hashCode;
+	private Stack<Unit> callStack;
+	
 
-	public Abstraction(Value taint, Value src, Stmt srcContext){
+	public Abstraction(Value taint, Value src, boolean fieldtainted, Stmt srcContext){
 		source = src;
+		accessPath = new AccessPath(taint, fieldtainted);
+		callStack = new Stack<Unit>();
 		sourceContext = srcContext;
-		accessPath = new AccessPath(taint);
 	}
 	
-	public Abstraction(AccessPath p, Value src, Stmt srcContext){
+
+//	protected Abstraction(AccessPath p, Value src, boolean fieldtainted){
+//		source = src;
+//		accessPath = new AccessPath(taint, fieldtainted);	
+//	}
+	
+	//TODO: make private and change AwP
+	protected Abstraction(AccessPath p, Value src, Stmt srcContext){
 		source = src;
 		sourceContext = srcContext;
 		accessPath = p;
+		callStack = new Stack<Unit>();
+	}
+	
+	
+	public Abstraction deriveNewAbstraction(AccessPath p){
+		Abstraction a = new Abstraction(p, source, sourceContext);
+		a.callStack = (Stack<Unit>) this.callStack.clone();
+		return a;
+	}
+	
+	public Abstraction deriveNewAbstraction(Value taint, boolean fieldtainted){
+		Abstraction a = new Abstraction(new AccessPath(taint, fieldtainted), source, sourceContext);
+		a.callStack = (Stack<Unit>) this.callStack.clone();
+		return a;
 	}
 	
 	/**
@@ -29,6 +57,10 @@ public class Abstraction {
 	 */
 	public Abstraction(Value p, Abstraction original){
 		this(new AccessPath(p), original);
+	}
+	
+	public Abstraction(Value p, Abstraction original, boolean fieldTainted){
+		this(new AccessPath(p,fieldTainted), original);
 	}
 
 	/**
@@ -41,10 +73,12 @@ public class Abstraction {
 		if (original == null) {
 			source = null;
 			sourceContext = null;
+			callStack = new Stack<Unit>();
 		}
 		else {
 			source = original.source;
 			sourceContext = original.sourceContext;
+			callStack = (Stack<Unit>) original.callStack.clone();
 		}
 		accessPath = p;
 	}
@@ -52,7 +86,7 @@ public class Abstraction {
 	public Value getSource() {
 		return source;
 	}
-	
+
 	public Stmt getSourceContext() {
 		return this.sourceContext;
 	}
@@ -70,6 +104,11 @@ public class Abstraction {
 			if (other.accessPath != null)
 				return false;
 		} else if (!accessPath.equals(other.accessPath))
+			return false;
+		if (callStack == null) {
+			if (other.callStack != null)
+				return false;
+		} else if (!callStack.equals(other.callStack))
 			return false;
 		if (source == null) {
 			if (other.source != null)
@@ -90,6 +129,7 @@ public class Abstraction {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
+			result = prime * result + ((callStack == null) ? 0 : callStack.hashCode());
 			result = prime * result + ((source == null) ? 0 : source.hashCode());
 			result = prime * result + ((sourceContext == null) ? 0 : sourceContext.hashCode());
 			hashCode = result;
@@ -97,10 +137,29 @@ public class Abstraction {
 		return hashCode;
 	}
 	
+	public void addToStack(Unit u){
+		callStack.push(u);
+	}
+	
+	public void removeFromStack(){
+		if(!callStack.isEmpty())
+			callStack.pop();
+	}
+	
+	public boolean isStackEmpty(){
+		return callStack.isEmpty();
+	}
+	
+	public Unit getElementFromStack(){
+		if(!callStack.isEmpty())
+			return callStack.peek();
+		return null;
+	}
+	
 	@Override
 	public String toString(){
 		if(accessPath != null && source != null){
-			return accessPath.toString() + " /source: "+ source.toString();
+			return accessPath.toString() + " /source: "+ source.toString() + " " + callStack.hashCode();
 		}
 		if(accessPath != null){
 			return accessPath.toString();
@@ -110,6 +169,13 @@ public class Abstraction {
 	
 	public AccessPath getAccessPath(){
 		return accessPath;
+	}
+	
+	@Override
+	public Abstraction clone(){
+		Abstraction a = new Abstraction(accessPath, source, sourceContext);
+		a.callStack = (Stack<Unit>) this.callStack.clone();
+		return a;
 	}
 	
 }

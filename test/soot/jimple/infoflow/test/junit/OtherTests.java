@@ -10,6 +10,33 @@ import soot.jimple.infoflow.Infoflow;
 public class OtherTests extends JUnitTests{
 	
 	@Test
+	public void thirdCallBackTest(){
+		Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void tryNext2()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+	}
+
+	@Test
+	public void secondCallBackTest(){
+		Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void tryNext()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+	}
+	
+	@Test
+	public void callbackTest(){
+		Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void checkLocation()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+	}
+	
+	@Test
     public void inheritanceTestSpecial(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -73,7 +100,6 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow);
 //		assertTrue(errOutputStream.toString().contains("alsoTainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
 //		assertTrue(errOutputStream.toString().contains("<soot.jimple.infoflow.test.utilclasses.ClassWithStatic: java.lang.String staticTitle> contains value from staticinvoke"));
-
     }
     
     @Test
@@ -314,5 +340,5 @@ public class OtherTests extends JUnitTests{
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow);
     }
-    
+
 }

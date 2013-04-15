@@ -23,6 +23,7 @@ public abstract class JUnitTests {
     protected static String path;
     
     protected static List<String> sinks;
+
     protected static final String sink = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(java.lang.String)>";
     protected static final String sinkInt = "<soot.jimple.infoflow.test.android.ConnectionManager: void publish(int)>";
 
@@ -31,7 +32,9 @@ public abstract class JUnitTests {
     protected static final String sourcePwd = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>";
     protected static final String sourceUserData = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String[] getUserData(java.lang.String)>";
    	
+
     protected static boolean taintWrapper = false;
+    protected static boolean debug = true;
    
     @BeforeClass
     public static void setUp() throws IOException
@@ -80,6 +83,7 @@ public abstract class JUnitTests {
     
     protected Infoflow initInfoflow(){
     	Infoflow result = new Infoflow();
+    	Infoflow.setDebug(debug);
     	SootConfigForTest testConfig = new SootConfigForTest();
     	result.setSootConfig(testConfig);
     	if(taintWrapper){

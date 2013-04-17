@@ -158,7 +158,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			 * @param targetValue The target value that shall now be tainted
 			 * @param source The incoming taint abstraction from the source
 			 * @param taintSet The taint set to which to add all newly produced
-			 * @param keepAllFieldTaintStar defines if the field taint should be kept or whole object is tainted
 			 * taints
 			 */
 			private void addTaintViaStmt
@@ -166,19 +165,18 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					final Value targetValue,
 					Abstraction source,
 					Set<Abstraction> taintSet,
-					boolean keepAllFieldTaintStar,
 					boolean forceFields) {
 				taintSet.add(source);
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					taintSet.add(new AbstractionWithPath(targetValue,
-							(AbstractionWithPath) source, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()).addPathElement(src));
+							(AbstractionWithPath) source,  source.getAccessPath().isOnlyFieldsTainted()).addPathElement(src));
 				else
-					taintSet.add(source.deriveNewAbstraction(targetValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
+					taintSet.add(source.deriveNewAbstraction(targetValue, source.getAccessPath().isOnlyFieldsTainted()));
 
 					if (triggerReverseFlow(targetValue)) {
 						// call backwards-check:
 						Unit predUnit = getUnitBefore(src);
-						Abstraction newAbs = source.deriveNewAbstraction(targetValue, (forceFields) ? true : keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
+						Abstraction newAbs = source.deriveNewAbstraction(targetValue, (forceFields) ? true : source.getAccessPath().isOnlyFieldsTainted());
 						bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, predUnit, newAbs));
 					}
 			}
@@ -228,7 +226,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							boolean addLeftValue = false;
-							boolean keepAllFieldTaintStar = true;
 							boolean forceFields = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							// shortcuts:
@@ -321,7 +318,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										results.addResult(leftValue, assignStmt,
 												source.getSource(), source.getSourceContext());
 								}
-								addTaintViaStmt(src, leftValue, source, res, keepAllFieldTaintStar, forceFields);
+								addTaintViaStmt(src, leftValue, source, res, forceFields);
 								return res;
 							}
 							//if leftvalue contains the tainted value -> it is overwritten - remove taint:

@@ -179,6 +179,11 @@ public class AccessPath {
 		return str;
 	}
 	
+	/**
+	 * value val gets new base, fields are preserved.
+	 * @param val
+	 * @return
+	 */
 	public AccessPath copyWithNewValue(Value val){
 		if(val instanceof Local){
 			AccessPath a = new AccessPath(val);
@@ -187,6 +192,17 @@ public class AccessPath {
 			return a;
 		}else{
 			if(val instanceof InstanceFieldRef && fields != null){
+				//TODO: compare algorithm
+				InstanceFieldRef ref = (InstanceFieldRef) val;
+				//look for equal field:
+				int pos = -1;
+				for(SootField originalField: fields){
+					if(ref.getField().equals(originalField)){
+						//pos = ..l
+						break;
+					}
+				}
+				
 				AccessPath a = new AccessPath(val);
 				a.unknownfieldtainted = true;
 				return a;

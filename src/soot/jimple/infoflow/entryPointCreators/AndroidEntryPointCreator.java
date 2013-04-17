@@ -194,12 +194,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			
 			// if we need to call a constructor, we insert the respective Jimple statement here
 			if(instanceNeeded){
-				if (isConstructorGenerationPossible(currentClass)) {
-					Local localVal = generateClassConstructor(currentClass, body);
-					localVarsForClasses.put(currentClass.getName(), localVal);
-				}else{
+				Local localVal = generateClassConstructor(currentClass, body);
+				if (localVal == null) {
 					System.out.println("Constructor cannot be generated for " + currentClass.getName());
+					continue;
 				}
+				localVarsForClasses.put(currentClass.getName(), localVal);
 			}
 			Local classLocal = localVarsForClasses.get(entry.getKey());
 
@@ -550,7 +550,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	}
 	
 	/**
-	 * Generateds invocation statements for all callback methods which need to
+	 * Generates invocation statements for all callback methods which need to
 	 * be invoked during the given class' run cycle.
 	 * @param currentClass The class for which we currently build the lifecycle
 	 * @param parentClassLocal The local containing a reference to the class
@@ -585,12 +585,11 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			else {
 				// Create a new instance of this class
 				// if we need to call a constructor, we insert the respective Jimple statement here
-				if (!isConstructorGenerationPossible(callbackClass)) {
+				classLocal = generateClassConstructor(callbackClass, body);
+				if (classLocal == null) {
 					System.out.println("Constructor cannot be generated for callback class "
 							+ callbackClass.getName());
-					continue;
 				}
-				classLocal = generateClassConstructor(callbackClass, body);
 			}
 			
 			// Build the calls to all callback methods in this class

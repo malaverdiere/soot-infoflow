@@ -49,12 +49,12 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 			SootClass createdClass = Scene.v().forceResolve(className, SootClass.BODIES);
 			createdClass.setApplicationClass();
 			
-			if (isConstructorGenerationPossible(createdClass)) {
-				Local localVal = generateClassConstructor(createdClass, body);
-				localVarsForClasses.put(className, localVal);
-			}else{
+			Local localVal = generateClassConstructor(createdClass, body);
+			if (localVal == null) {
 				System.out.println("Cannot generate constructor for class: "+ createdClass);
+				continue;
 			}
+			localVarsForClasses.put(className, localVal);
 		}
 		
 		// add entrypoint calls

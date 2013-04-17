@@ -2,9 +2,11 @@ package soot.jimple.infoflow.entryPointCreators;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import soot.BooleanType;
 import soot.ByteType;
@@ -71,7 +73,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	 */
 	protected abstract SootMethod createDummyMainInternal(List<String> methods);
 	
-	public SootMethod createEmptyMainMethod(JimpleBody body){
+	protected SootMethod createEmptyMainMethod(JimpleBody body){
 		SootMethod mainMethod = new SootMethod("dummyMainMethod", new ArrayList<Type>(), VoidType.v());
 		body.setMethod(mainMethod);
 		mainMethod.setActiveBody(body);
@@ -132,104 +134,140 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	}
 	
 	protected Local generateClassConstructor(SootClass createdClass, JimpleBody body) {
+		return this.generateClassConstructor(createdClass, body, new HashSet<SootClass>());
+	}
+	
+	private Local generateClassConstructor(SootClass createdClass, JimpleBody body,
+			Set<SootClass> constructionStack) {
+		if (createdClass == null)
+			return null;
+		
+		// We cannot create instances of phantom classes as we do not have any
+		// constructor information for them
+		if (createdClass.isPhantom() || createdClass.isPhantomClass()) {
+			System.out.println("Cannot generate constructor for phantom class " + createdClass.getName());
+			return null;
+		}
+
+		LocalGenerator generator = new LocalGenerator(body);
+
 		// if sootClass is simpleClass:
 		if (isSimpleType(createdClass.toString())) {
-			LocalGenerator generator = new LocalGenerator(body);
 			Local varLocal =  generator.generateLocal(getSimpleTypeFromType(createdClass.getType()));
 			
 			AssignStmt aStmt = Jimple.v().newAssignStmt(varLocal, getSimpleDefaultValue(createdClass.toString()));
 			body.getUnits().add(aStmt);
 			return varLocal;
-		} else {
-			LocalGenerator generator = new LocalGenerator(body);
-			Local tempLocal = generator.generateLocal(RefType.v(createdClass));
-			
-			boolean isInnerClass = createdClass.getName().contains("$");
-			String outerClass = isInnerClass ? createdClass.getName().substring
-					(0, createdClass.getName().lastIndexOf("$")) : "";
-			
-			if(createdClass.isInterface() || createdClass.isAbstract()){
-				if(substituteCallParams){
-					List<SootClass> classes;
-					if(createdClass.isInterface()){
-						classes = Scene.v().getActiveHierarchy().getImplementersOf(createdClass);
-					}else{
-						classes = Scene.v().getActiveHierarchy().getSubclassesOf(createdClass);
+		}
+		
+		Local tempLocal = generator.generateLocal(RefType.v(createdClass));			
+		boolean isInnerClass = createdClass.getName().contains("$");
+		String outerClass = isInnerClass ? createdClass.getName().substring
+				(0, createdClass.getName().lastIndexOf("$")) : "";
+		
+		// Make sure that we don't run into loops
+		if (!constructionStack.add(createdClass)) {
+			System.err.println("Ran into a constructor generation loop, aborting...");
+			return null;
+		}
+		if(createdClass.isInterface() || createdClass.isAbstract()){
+			if(substituteCallParams){
+				// Find a matching implementor of the interface
+				List<SootClass> classes;
+				if (createdClass.isInterface())
+					classes = Scene.v().getActiveHierarchy().getImplementersOf(createdClass);
+				else
+					classes = Scene.v().getActiveHierarchy().getSubclassesOf(createdClass);
+				boolean foundOne = false;
+				for(SootClass sClass : classes){
+					if(substituteClasses.contains(sClass.toString())){
+						AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal,
+								generateClassConstructor(sClass, body, constructionStack));
+						body.getUnits().add(assignStmt);
+						foundOne = true;
 					}
-					boolean foundOne = false;
-					for(SootClass sClass : classes){
-						if(substituteClasses.contains(sClass.toString())){
-							AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, generateClassConstructor(sClass, body));
-							body.getUnits().add(assignStmt);
-							foundOne = true;
-						}
-					}
-					if(!foundOne){
-						System.err.println("Warning, cannot create valid constructor for " + createdClass +
-								", because it is "+(createdClass.isInterface()?"an interface":(createdClass.isAbstract()?"abstract":""))+ " and cannot substitute with subclass");
-					}else{
-						//no further constructor generation attempts required, so return now:
-						return tempLocal;
-					}
-				}else{
-					System.err.println("Warning, cannot create valid constructor for " + createdClass +
-						", because it is "+(createdClass.isInterface()?"an interface":(createdClass.isAbstract()?"abstract":"")));
-					//build the expression anyway:
-					NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
-					AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
-					body.getUnits().add(assignStmt);
 				}
-			}else{
+				if(!foundOne){
+					System.err.println("Warning, cannot create valid constructor for " + createdClass +
+							", because it is " + (createdClass.isInterface() ? "an interface" :
+								(createdClass.isAbstract() ? "abstract" : ""))+ " and cannot substitute with subclass");
+					return null;
+				}
+				return tempLocal;
+			}
+			else{
+				System.err.println("Warning, cannot create valid constructor for " + createdClass +
+					", because it is " + (createdClass.isInterface() ? "an interface" :
+						(createdClass.isAbstract() ? "abstract" : "")));
+				//build the expression anyway:
+				/* SA: why should we?
 				NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
 				AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
 				body.getUnits().add(assignStmt);
-				
+				*/
+				return null;
 			}
-					
+		}
+		else{
+			// Build the "new" expression
+			NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
+			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
+			body.getUnits().add(assignStmt);		
+			
 			// Find a constructor we can invoke
+			boolean constructorFound = false;
 			for (SootMethod currentMethod : createdClass.getMethods()) {
-				if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
-					List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
-					List<Object> params = new LinkedList<Object>();
-					for (Type type : typeList) {
-						String typeName = type.toString().replaceAll("\\[\\]]", "");
-						if (isSimpleType(type.toString()))
-						{
-							Local primLoc = createPrimitiveLocal(generator, body, type);
-							params.add(primLoc);
-						}
-						else if (isInnerClass && typeName.equals(outerClass)
-								&& this.localVarsForClasses.containsKey(typeName))
-							params.add(this.localVarsForClasses.get(typeName));
-						else if (Scene.v().containsClass(typeName)) {
-							SootClass typeClass = Scene.v().getSootClass(typeName);
-							// 2. Type not public:
-							if (!typeClass.isPrivate() && !typeClass.toString().equals(createdClass.toString())) { // avoid loops
-								params.add(generateClassConstructor(typeClass, body));
-							}else{
-								params.add(NullConstant.v());
-							}
-						}
-						else {
-							System.out.println("Type not found: " + typeName + ", using java.lang.Object instead");
-							params.add(generateClassConstructor(Scene.v().getSootClass("java.lang.Object"), body));
-						}
+				if (currentMethod.isPrivate() || !currentMethod.isConstructor())
+					continue;
+				
+				List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
+				List<Object> params = new LinkedList<Object>();
+				for (Type type : typeList) {
+					String typeName = type.toString().replaceAll("\\[\\]]", "");
+					if (isSimpleType(type.toString())) {
+						Local primLoc = createPrimitiveLocal(generator, body, type);
+						params.add(primLoc);
 					}
-					VirtualInvokeExpr vInvokeExpr;
+					else if (isInnerClass && typeName.equals(outerClass)
+							&& this.localVarsForClasses.containsKey(typeName))
+						params.add(this.localVarsForClasses.get(typeName));
+					else if (Scene.v().containsClass(typeName)) {
+						SootClass typeClass = Scene.v().getSootClass(typeName);
+						// 2. Type not public:
+						if (!typeClass.isPrivate() && !typeClass.toString().equals(createdClass.toString()))
+							params.add(generateClassConstructor(typeClass, body));
+						else
+							params.add(NullConstant.v());
+					}
+					else {
+						System.out.println("Type not found: " + typeName + ", using java.lang.Object instead");
+						params.add(generateClassConstructor(Scene.v().getSootClass("java.lang.Object"), body));
+					}
+				}
+
+				// Create the constructor invocation
+				VirtualInvokeExpr vInvokeExpr;
+				if (params.isEmpty() || params.contains(null))
+					vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef());
+				else
+					vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef(), params);
+
+				// Make sure to store return values
+				if (!(currentMethod.getReturnType() instanceof VoidType)) { 
+					Local possibleReturn = generator.generateLocal(currentMethod.getReturnType());
+					AssignStmt assignStmt2 = Jimple.v().newAssignStmt(possibleReturn, vInvokeExpr);
+					body.getUnits().add(assignStmt2);
+				}
+				else
+					body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
 					
-					if (params.isEmpty() || params.contains(null)) {
-						vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef());
-					} else {
-						vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef(), params);
-					}
-					if (!(currentMethod.getReturnType() instanceof VoidType)) { 
-						Local possibleReturn = generator.generateLocal(currentMethod.getReturnType());
-						AssignStmt assignStmt2 = Jimple.v().newAssignStmt(possibleReturn, vInvokeExpr);
-						body.getUnits().add(assignStmt2);
-					} else {
-						body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
-					}
-				} 
+				constructorFound = true;
+				break;
+			}
+			if (!constructorFound) {
+				System.err.println("Could not find a suitable constructor for class "
+						+ createdClass.getName());
+				return null;
 			}
 			return tempLocal;
 		}
@@ -307,60 +345,6 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 
 		//also for arrays etc.
 		return G.v().soot_jimple_NullConstant();
-	}
-
-	protected boolean isConstructorGenerationPossible(SootClass sClass) {
-		if (sClass == null) {
-			return false;
-		}
-		if (sClass.isPhantom() || sClass.isPhantomClass()) {
-			System.out.println("Cannot generate constructor for phantom class " + sClass.getName());
-			return false;
-		}
-		if(isSimpleType(sClass.toString())){
-			return true;
-		}
-		
-		// look for constructors:
-		List<SootMethod> methodList = (List<SootMethod>) sClass.getMethods();
-		for (SootMethod currentMethod : methodList) {
-			if (!currentMethod.isPrivate() && currentMethod.isConstructor()) {
-				boolean canGenerateConstructor = true;
-				List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
-				for (Type type : typeList) {
-					String typeName = type.toString().replaceAll("\\[\\]]", "");
-					// 1. Type not available:
-					if (!Scene.v().containsClass(typeName)) {
-						canGenerateConstructor = false;
-						break;
-					} else {
-						SootClass typeClass = Scene.v().getSootClass(typeName);
-						// 2. Type not public:
-						if (typeClass.isPrivate()) {
-							canGenerateConstructor = false;
-							break;
-						}
-						//no loops:
-						if(sClass.equals(typeClass)){
-							System.out.println("Found constructor-loop for class " + type);
-							//canGenerateConstructor = false;
-							break;
-						}
-						// we have to recursively check this type, too:
-						if (!typeClass.isJavaLibraryClass() && !isConstructorGenerationPossible(typeClass)) { // TODO: is this okay for "primitive datatypes and others - maybe not because List<CustomType> has to be created, too?
-							canGenerateConstructor = false;
-							break;
-						}
-					}
-
-					// -> no nicer way for this?
-				}
-				if (canGenerateConstructor)
-					return true;
-			}
-
-		}
-		return false;
 	}
 
 }

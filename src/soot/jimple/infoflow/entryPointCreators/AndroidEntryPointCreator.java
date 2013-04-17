@@ -38,6 +38,8 @@ import soot.jimple.internal.JNopStmt;
  * 
  */
 public class AndroidEntryPointCreator extends BaseEntryPointCreator implements IEntryPointCreator{
+	private static final boolean DEBUG = true;
+	
 	private JimpleBody body;
 	private LocalGenerator generator;
 	private int conditionCounter;
@@ -131,130 +133,135 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			currentClass.setApplicationClass();
 			JNopStmt endClassStmt = new JNopStmt();
 
-			boolean activity = false;
-			boolean service = false;
-			boolean broadcastReceiver = false;
-			boolean contentProvider = false;
-			boolean plain = false;
-
-			// Check the type of this class
-			List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
-			for(SootClass sc : extendedClasses){
-				if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS)){
-					activity = true;
-					break;
-				}
-				if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS)){
-					service = true;
-					break;
-				}
-				if(sc.getName().equals(AndroidEntryPointConstants.BROADCASTRECEIVERCLASS)){
-					broadcastReceiver = true;
-					break;
-				}
-				if(sc.getName().equals(AndroidEntryPointConstants.CONTENTPROVIDERCLASS)){
-					contentProvider = true;
-					break;
-				}
-			}
-			if(!activity && !service && !broadcastReceiver && !contentProvider)
-				plain = true;
-
-			// Check if one of the methods is instance. This tells us whether
-			// we need to create a constructor invocation or not. Furthermore,
-			// we collect references to the corresponding SootMethod objects.
-			boolean instanceNeeded = activity || service || broadcastReceiver || contentProvider;
-			Map<String, SootMethod> plainMethods = new HashMap<String, SootMethod>();
-			if (!instanceNeeded || plain)
-				for(String method : entry.getValue()){
-					SootMethod sm = null;
-					
-					// Find the method. It may either be implemented directly in the
-					// given class or it may be inherited from one of the superclasses.
-					if(Scene.v().containsMethod(method))
-						sm = Scene.v().getMethod(method);
-					else {
-						SootMethodAndClass methodAndClass = SootMethodRepresentationParser.v().parseSootMethodString(method);
-						if (!Scene.v().containsClass(methodAndClass.getClassName())) {
-							System.err.println("Class for entry point " + method + " not found, skipping...");
-							continue;
-						}
-						sm = findMethod(Scene.v().getSootClass(methodAndClass.getClassName()),
-								methodAndClass.getSubSignature());
-						if (sm == null) {
-							System.err.println("Method for entry point " + method + " not found in class, skipping...");
-							continue;
-						}
+			try {
+				boolean activity = false;
+				boolean service = false;
+				boolean broadcastReceiver = false;
+				boolean contentProvider = false;
+				boolean plain = false;
+	
+				// Check the type of this class
+				List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
+				for(SootClass sc : extendedClasses){
+					if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS)){
+						activity = true;
+						break;
 					}
-
-					plainMethods.put(method, sm);
-					if(!sm.isStatic())
-						instanceNeeded = true;
+					if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS)){
+						service = true;
+						break;
+					}
+					if(sc.getName().equals(AndroidEntryPointConstants.BROADCASTRECEIVERCLASS)){
+						broadcastReceiver = true;
+						break;
+					}
+					if(sc.getName().equals(AndroidEntryPointConstants.CONTENTPROVIDERCLASS)){
+						contentProvider = true;
+						break;
+					}
 				}
-			
-			// if we need to call a constructor, we insert the respective Jimple statement here
-			if(instanceNeeded){
-				if (isConstructorGenerationPossible(currentClass)) {
+				if(!activity && !service && !broadcastReceiver && !contentProvider)
+					plain = true;
+	
+				// Check if one of the methods is instance. This tells us whether
+				// we need to create a constructor invocation or not. Furthermore,
+				// we collect references to the corresponding SootMethod objects.
+				boolean instanceNeeded = activity || service || broadcastReceiver || contentProvider;
+				Map<String, SootMethod> plainMethods = new HashMap<String, SootMethod>();
+				if (!instanceNeeded || plain)
+					for(String method : entry.getValue()){
+						SootMethod sm = null;
+						
+						// Find the method. It may either be implemented directly in the
+						// given class or it may be inherited from one of the superclasses.
+						if(Scene.v().containsMethod(method))
+							sm = Scene.v().getMethod(method);
+						else {
+							SootMethodAndClass methodAndClass = SootMethodRepresentationParser.v().parseSootMethodString(method);
+							if (!Scene.v().containsClass(methodAndClass.getClassName())) {
+								System.err.println("Class for entry point " + method + " not found, skipping...");
+								continue;
+							}
+							sm = findMethod(Scene.v().getSootClass(methodAndClass.getClassName()),
+									methodAndClass.getSubSignature());
+							if (sm == null) {
+								System.err.println("Method for entry point " + method + " not found in class, skipping...");
+								continue;
+							}
+						}
+	
+						plainMethods.put(method, sm);
+						if(!sm.isStatic())
+							instanceNeeded = true;
+					}
+				
+				// if we need to call a constructor, we insert the respective Jimple statement here
+				if(instanceNeeded){
 					Local localVal = generateClassConstructor(currentClass, body);
-					localVarsForClasses.put(currentClass.getName(), localVal);
-				}else{
-					System.out.println("Constructor cannot be generated for " + currentClass.getName());
-				}
-			}
-			Local classLocal = localVarsForClasses.get(entry.getKey());
-
-			// Generate the lifecycles for the different kinds of Android classes
-			if(activity)
-				generateActivityLifecycle(entry.getValue(), currentClass, endClassStmt,
-						classLocal);
-			if(service)
-				generateServiceLifecycle(entry.getValue(), currentClass, endClassStmt,
-						classLocal);
-			if(broadcastReceiver)
-				generateBroadcastReceiverLifecycle(entry.getValue(), currentClass, endClassStmt,
-						classLocal);
-			if(contentProvider)
-				generateContentProviderLifecycle(entry.getValue(), currentClass, endClassStmt,
-						classLocal);
-			if(plain){
-				JNopStmt beforeClassStmt = new JNopStmt();
-				body.getUnits().add(beforeClassStmt);
-				for(SootMethod currentMethod : plainMethods.values()){
-					if (!currentMethod.isStatic() && classLocal == null) {
-						System.out.println("Skipping method " + currentMethod + " because we have no instance");
+					if (localVal == null) {
+						System.err.println("Constructor cannot be generated for " + currentClass.getName());
 						continue;
 					}
-					
-					JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-					conditionCounter++;
-					JNopStmt thenStmt = new JNopStmt();
-					JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-					body.getUnits().add(ifStmt);
-					JNopStmt elseStmt = new JNopStmt();
-					JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-					body.getUnits().add(elseGoto);
+					localVarsForClasses.put(currentClass.getName(), localVal);
+				}
+				Local classLocal = localVarsForClasses.get(entry.getKey());
+	
+				// Generate the lifecycles for the different kinds of Android classes
+				if(activity)
+					generateActivityLifecycle(entry.getValue(), currentClass, endClassStmt,
+							classLocal);
+				if(service)
+					generateServiceLifecycle(entry.getValue(), currentClass, endClassStmt,
+							classLocal);
+				if(broadcastReceiver)
+					generateBroadcastReceiverLifecycle(entry.getValue(), currentClass, endClassStmt,
+							classLocal);
+				if(contentProvider)
+					generateContentProviderLifecycle(entry.getValue(), currentClass, endClassStmt,
+							classLocal);
+				if(plain){
+					JNopStmt beforeClassStmt = new JNopStmt();
+					body.getUnits().add(beforeClassStmt);
+					for(SootMethod currentMethod : plainMethods.values()){
+						if (!currentMethod.isStatic() && classLocal == null) {
+							System.out.println("Skipping method " + currentMethod + " because we have no instance");
+							continue;
+						}
 						
-					body.getUnits().add(thenStmt);
-					buildMethodCall(currentMethod, body, classLocal, generator);
-					
-					createIfStmt(endClassStmt);
-					body.getUnits().add(elseStmt);
-					
-					// Because we don't know the order of the custom statements,
-					// we assume that you can loop arbitrarily
-					createIfStmt(beforeClassStmt);
+						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+						conditionCounter++;
+						JNopStmt thenStmt = new JNopStmt();
+						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+						body.getUnits().add(ifStmt);
+						JNopStmt elseStmt = new JNopStmt();
+						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
+						body.getUnits().add(elseGoto);
+							
+						body.getUnits().add(thenStmt);
+						buildMethodCall(currentMethod, body, classLocal, generator);
+						
+						createIfStmt(endClassStmt);
+						body.getUnits().add(elseStmt);
+						
+						// Because we don't know the order of the custom statements,
+						// we assume that you can loop arbitrarily
+						createIfStmt(beforeClassStmt);
+					}
 				}
 			}
-			body.getUnits().add(endClassStmt);
-			//if-target for entryIf
-			body.getUnits().add(entryExitStmt);
+			finally {
+				body.getUnits().add(endClassStmt);
+				body.getUnits().add(entryExitStmt);
+			}
 		}
 		
 		JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
 		conditionCounter++;
 		JIfStmt outerIfStmt = new JIfStmt(cond, outerStartStmt);
 		body.getUnits().add(outerIfStmt);
-		
+
+		if (DEBUG)
+			mainMethod.getActiveBody().validate();
 		System.out.println("Generated main method:\n" + body);
 		return mainMethod;
 	}
@@ -550,7 +557,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	}
 	
 	/**
-	 * Generateds invocation statements for all callback methods which need to
+	 * Generates invocation statements for all callback methods which need to
 	 * be invoked during the given class' run cycle.
 	 * @param currentClass The class for which we currently build the lifecycle
 	 * @param parentClassLocal The local containing a reference to the class
@@ -585,12 +592,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			else {
 				// Create a new instance of this class
 				// if we need to call a constructor, we insert the respective Jimple statement here
-				if (!isConstructorGenerationPossible(callbackClass)) {
+				classLocal = generateClassConstructor(callbackClass, body);
+				if (classLocal == null) {
 					System.out.println("Constructor cannot be generated for callback class "
 							+ callbackClass.getName());
 					continue;
 				}
-				classLocal = generateClassConstructor(callbackClass, body);
 			}
 			
 			// Build the calls to all callback methods in this class

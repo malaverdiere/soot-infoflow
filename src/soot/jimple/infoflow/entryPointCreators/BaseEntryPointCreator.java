@@ -91,7 +91,6 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		assert body != null : "Body was null";
 		assert gen != null : "Local generator was null";
 		
-		Local stringLocal = null;
 		InvokeExpr invokeExpr;
 		if(currentMethod.getParameterCount()>0){
 			List<Object> args = new LinkedList<Object>();
@@ -101,8 +100,11 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 					SootClass classToType = Scene.v().getSootClass(t.toString());
 					if(classToType != null){
 						Value val = generateClassConstructor(classToType, body);
-						if(val != null)
-							args.add(val);
+						// If we cannot create a parameter, we cannot create the
+						// whole invocation
+						if(val == null)
+							return null;
+						args.add(val);
 					}
 				}
 			}
@@ -123,8 +125,8 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		 
 		Stmt stmt;
 		if (!(currentMethod.getReturnType() instanceof VoidType)) {
-			stringLocal = gen.generateLocal(currentMethod.getReturnType());
-			stmt = Jimple.v().newAssignStmt(stringLocal, invokeExpr);
+			Local returnLocal = gen.generateLocal(currentMethod.getReturnType());
+			stmt = Jimple.v().newAssignStmt(returnLocal, invokeExpr);
 			
 		} else {
 			stmt = Jimple.v().newInvokeStmt(invokeExpr);
@@ -160,15 +162,17 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			return varLocal;
 		}
 		
-		Local tempLocal = generator.generateLocal(RefType.v(createdClass));			
 		boolean isInnerClass = createdClass.getName().contains("$");
 		String outerClass = isInnerClass ? createdClass.getName().substring
 				(0, createdClass.getName().lastIndexOf("$")) : "";
 		
 		// Make sure that we don't run into loops
 		if (!constructionStack.add(createdClass)) {
-			System.err.println("Ran into a constructor generation loop, aborting...");
-			return null;
+			System.out.println("Ran into a constructor generation loop, substituting with null...");
+			Local tempLocal = generator.generateLocal(RefType.v(createdClass));			
+			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, NullConstant.v());
+			body.getUnits().add(assignStmt);
+			return tempLocal;
 		}
 		if(createdClass.isInterface() || createdClass.isAbstract()){
 			if(substituteCallParams){
@@ -178,22 +182,21 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 					classes = Scene.v().getActiveHierarchy().getImplementersOf(createdClass);
 				else
 					classes = Scene.v().getActiveHierarchy().getSubclassesOf(createdClass);
-				boolean foundOne = false;
-				for(SootClass sClass : classes){
-					if(substituteClasses.contains(sClass.toString())){
-						AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal,
-								generateClassConstructor(sClass, body, constructionStack));
-						body.getUnits().add(assignStmt);
-						foundOne = true;
+				
+				// Generate an instance of the substitution class. If we fail,
+				// try the next substitution. If we don't find any possible
+				// substitution, we're in trouble
+				for(SootClass sClass : classes)
+					if(substituteClasses.contains(sClass.toString())) {
+						Local cons = generateClassConstructor(sClass, body, constructionStack);
+						if (cons == null)
+							continue;
+						return cons;
 					}
-				}
-				if(!foundOne){
-					System.err.println("Warning, cannot create valid constructor for " + createdClass +
-							", because it is " + (createdClass.isInterface() ? "an interface" :
-								(createdClass.isAbstract() ? "abstract" : ""))+ " and cannot substitute with subclass");
-					return null;
-				}
-				return tempLocal;
+				System.err.println("Warning, cannot create valid constructor for " + createdClass +
+						", because it is " + (createdClass.isInterface() ? "an interface" :
+							(createdClass.isAbstract() ? "abstract" : ""))+ " and cannot substitute with subclass");
+				return null;
 			}
 			else{
 				System.err.println("Warning, cannot create valid constructor for " + createdClass +
@@ -208,14 +211,10 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 				return null;
 			}
 		}
-		else{
-			// Build the "new" expression
-			NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
-			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
-			body.getUnits().add(assignStmt);		
-			
-			// Find a constructor we can invoke
-			boolean constructorFound = false;
+		else{			
+			// Find a constructor we can invoke. We do this first as we don't want
+			// to change anything in our method body if we cannot create a class
+			// instance anyway.
 			for (SootMethod currentMethod : createdClass.getMethods()) {
 				if (currentMethod.isPrivate() || !currentMethod.isConstructor())
 					continue;
@@ -233,17 +232,30 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 						params.add(this.localVarsForClasses.get(typeName));
 					else if (Scene.v().containsClass(typeName)) {
 						SootClass typeClass = Scene.v().getSootClass(typeName);
-						// 2. Type not public:
-						if (!typeClass.isPrivate() && !typeClass.toString().equals(createdClass.toString()))
-							params.add(generateClassConstructor(typeClass, body));
-						else
+						// If we must pass parameter of a private type, we use
+						// null instead. The same happens if we cannot instantiate
+						// the class.
+						if (typeClass.isPrivate())
 							params.add(NullConstant.v());
+						else {
+							Local cons = generateClassConstructor(typeClass, body, constructionStack);
+							if (cons == null)
+								params.add(NullConstant.v());
+							else
+								params.add(cons);
+						}
 					}
 					else {
 						System.out.println("Type not found: " + typeName + ", using java.lang.Object instead");
 						params.add(generateClassConstructor(Scene.v().getSootClass("java.lang.Object"), body));
 					}
 				}
+
+				// Build the "new" expression
+				NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
+				Local tempLocal = generator.generateLocal(RefType.v(createdClass));			
+				AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
+				body.getUnits().add(assignStmt);		
 
 				// Create the constructor invocation
 				VirtualInvokeExpr vInvokeExpr;
@@ -261,15 +273,12 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 				else
 					body.getUnits().add(Jimple.v().newInvokeStmt(vInvokeExpr));
 					
-				constructorFound = true;
-				break;
+				return tempLocal;
 			}
-			if (!constructorFound) {
-				System.err.println("Could not find a suitable constructor for class "
-						+ createdClass.getName());
-				return null;
-			}
-			return tempLocal;
+
+			System.err.println("Could not find a suitable constructor for class "
+					+ createdClass.getName());
+			return null;
 		}
 	}
 

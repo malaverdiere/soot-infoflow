@@ -20,6 +20,7 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
+import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.InstanceFieldRef;
@@ -518,7 +519,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							
 
 							// Check whether this return is treated as a sink
-							if (source.getAccessPath().getPlainValue().equals(returnStmt.getOp()) && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
+							assert returnStmt.getOp() == null
+									|| returnStmt.getOp() instanceof Local
+									|| returnStmt.getOp() instanceof Constant;
+							if (returnStmt.getOp() != null
+									&& source.getAccessPath().isLocal()
+									&& source.getAccessPath().getPlainValue().equals(returnStmt.getOp())
+									&& sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.getOp(), returnStmt,
 											source.getSource(),

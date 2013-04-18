@@ -46,14 +46,14 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	private Value intCounter;
 	
 	private List<String> androidClasses;
-	private List<String> callbackFunctions;
+	private Map<String, List<String>> callbackFunctions;
 	
 	/**
 	 * Creates a new instance of the {@link AndroidEntryPointCreator} class.
 	 */
 	public AndroidEntryPointCreator() {
 		this.androidClasses = new ArrayList<String>();
-		this.callbackFunctions = new ArrayList<String>();
+		this.callbackFunctions = new HashMap<String, List<String>>();
 	}
 	
 	/**
@@ -65,16 +65,18 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 */
 	public AndroidEntryPointCreator(List<String> androidClasses) {
 		this.androidClasses = androidClasses;
-		this.callbackFunctions = new ArrayList<String>();
+		this.callbackFunctions = new HashMap<String, List<String>>();
 	}
 	
 	/**
 	 * Sets the list of callback functions to be integrated into the Android
 	 * lifecycle
 	 * @param callbackFunctions The list of callback functions to be integrated
-	 * into the Android lifecycle
+	 * into the Android lifecycle. This is a mapping from the Android element
+	 * class (activity, service, etc.) to the list of callback methods for that
+	 * element.
 	 */
-	public void setCallbackFunctions(List<String> callbackFunctions) {
+	public void setCallbackFunctions(Map<String, List<String>> callbackFunctions) {
 		this.callbackFunctions = callbackFunctions;
 	}
 	
@@ -285,7 +287,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		createIfStmt(endClassStmt);
 
 		Stmt onCreateStmt = searchAndBuildMethod(AndroidEntryPointConstants.CONTENTPROVIDER_ONCREATE, currentClass, entryPoints, classLocal);
-		//TODO: which methods?
 		// see: http://developer.android.com/reference/android/content/ContentProvider.html
 		//methods
 		JNopStmt startWhileStmt = new JNopStmt();
@@ -565,9 +566,14 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 */
 	private void addCallbackMethods(SootClass currentClass,
 			Local parentClassLocal) {
+		// If no callbacks are declared for the current class, there is nothing
+		// to be done here
+		if (!this.callbackFunctions.containsKey(currentClass.getName()))
+			return;
+		
 		// Get all classes in which callback methods are declared
 		Map<SootClass, Set<SootMethod>> callbackClasses = new HashMap<SootClass, Set<SootMethod>>();
-		for (String methodSig : this.callbackFunctions) {
+		for (String methodSig : this.callbackFunctions.get(currentClass.getName())) {
 			SootMethodAndClass methodAndClass = SootMethodRepresentationParser.v().parseSootMethodString(methodSig);
 			SootClass theClass = Scene.v().getSootClass(methodAndClass.getClassName());
 			SootMethod theMethod = findMethod(theClass, methodAndClass.getSubSignature());

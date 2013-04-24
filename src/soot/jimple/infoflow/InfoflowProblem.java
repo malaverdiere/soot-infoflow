@@ -81,9 +81,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					// The taint refers to the actual type of the field, not the formal type,
 					// so we must check whether we have the tainted field at all
 					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.getFields().contains(source.getAccessPath().getLastField()))
+					if (callerClass.getFields().contains(source.getAccessPath().getFirstField()))
 						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
-								callerClass.getFieldByName(source.getAccessPath().getLastField().getName()).makeRef());
+								callerClass.getFieldByName(source.getAccessPath().getFirstField().getName()).makeRef());
 				}
 			}
 			
@@ -136,9 +136,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					// The taint refers to the actual type of the field, not the formal type,
 					// so we must check whether we have the tainted field at all
 					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.getFields().contains(source.getAccessPath().getLastField()))
+					if (callerClass.getFields().contains(source.getAccessPath().getFirstField()))
 						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
-								callerClass.getFieldByName(source.getAccessPath().getLastField().getName()).makeRef());
+								callerClass.getFieldByName(source.getAccessPath().getFirstField().getName()).makeRef());
 				}
 			}
 			if(source.getAccessPath().isStaticFieldRef()){
@@ -222,7 +222,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					return new FlowFunction<Abstraction>() {
 
-						@Override
+						 @Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
@@ -241,8 +241,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (source.getAccessPath().isStaticFieldRef()) {
 									if (rightValue instanceof StaticFieldRef) {
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-										if (source.getAccessPath().getLastField().equals(rightRef.getField())) {
-											addLeftValue = true;
+										if (source.getAccessPath().getFirstField().equals(rightRef.getField())) {
+											addLeftValue = true; //TODO: check all fields somehow? think jimple
 										}
 									}
 								} else {
@@ -256,7 +256,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										Local sourceBase =  source.getAccessPath().getPlainLocal();
 										if (rightBase.equals(sourceBase)) {
 											if (source.getAccessPath().isInstanceFieldRef()) {
-												if (rightRef.getField().equals(source.getAccessPath().getLastField())) {
+												if (rightRef.getField().equals(source.getAccessPath().getFirstField())) {
 													addLeftValue = true;
 												}
 											} else {
@@ -268,7 +268,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									// indirect taint propagation:
 									// if rightvalue is local and source is instancefield of this local:
 									// y = x && x.f tainted --> y.f, x.f tainted
-									// y.g = x && x.f tainted --> y.g, x.f tainted //TODO: fix with accesspaths 
+									// y.g = x && x.f tainted --> y.g.f, x.f tainted //TODO: fix with accesspaths 
 									if (rightValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
 										Local base = source.getAccessPath().getPlainLocal();
 										if (rightValue.equals(base)) {
@@ -334,7 +334,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 									if (leftRef.getBase().equals(source.getAccessPath().getPlainValue())) {
-										if (leftRef.getField().equals(source.getAccessPath().getLastField())) {
+										if (leftRef.getField().equals(source.getAccessPath().getFirstField())) {
 											return Collections.emptySet();
 										}
 										
@@ -347,8 +347,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}	
 							}else if(source.getAccessPath().isStaticFieldRef()){
 								//X.f = y && X.f tainted -> no taint propagated
-								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(source.getAccessPath().getLastField())){
-
+								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(source.getAccessPath().getFirstField())){
+									//TODO: all fields?
 									return Collections.emptySet();
 								}
 								

@@ -93,6 +93,10 @@ public class AccessPath {
 		return fields.getLast();
 	}
 	
+	public SootField getFirstField(){
+		return fields.getFirst();
+	}
+	
 	public LinkedList<SootField> getFields(){
 		return fields;
 	}
@@ -187,26 +191,16 @@ public class AccessPath {
 	public AccessPath copyWithNewValue(Value val){
 		if(val instanceof Local){
 			AccessPath a = new AccessPath(val);
-			a.fields = this.fields;
+			a.fields = (LinkedList<SootField>) this.fields.clone();
 			a.unknownfieldtainted = this.unknownfieldtainted;
 			return a;
 		}else{
-			if(val instanceof InstanceFieldRef && fields != null){
-				//TODO: compare algorithm
-				InstanceFieldRef ref = (InstanceFieldRef) val;
-				//look for equal field:
-				int pos = -1;
-				for(SootField originalField: fields){
-					if(ref.getField().equals(originalField)){
-						//pos = ..l
-						break;
-					}
-				}
-				
+			if(val instanceof InstanceFieldRef){
 				AccessPath a = new AccessPath(val);
+				a.fields.addAll(this.fields);
 				a.unknownfieldtainted = true;
 				return a;
-			}
+			}//TODO: staticfieldref how?
 			
 			return new AccessPath(val);
 		}

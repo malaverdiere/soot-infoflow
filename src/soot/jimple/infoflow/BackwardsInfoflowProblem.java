@@ -294,7 +294,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				for (int i = 0; i < callee.getParameterCount(); i++) {
 					paramLocals.add(callee.getActiveBody().getParameterLocal(i));
 				}
-
+				
 				return new FlowFunction<Abstraction>() {
 
 					@Override
@@ -330,16 +330,19 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// check if param is tainted:
-						for (int i = 0; i < callArgs.size(); i++) {
-							if (paramLocals.get(i).equals(base)) {
-								Abstraction abs;
-								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), source.getSourceContext());
-								else
-									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)));
-								// if abs. contains "neutral" -> this is the case :/ @LinkedListNegativeTest
-								abs.removeFromStack();
-								res.add(abs);
+						if(!callee.getName().equals("<clinit>")) {
+							assert callee.getParameterCount() == callArgs.size();
+							for (int i = 0; i < callArgs.size(); i++) {
+								if (paramLocals.get(i).equals(base)) {
+									Abstraction abs;
+									if (pathTracking == PathTrackingMethod.ForwardTracking)
+										abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), source.getSourceContext());
+									else
+										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)));
+									// if abs. contains "neutral" -> this is the case :/ @LinkedListNegativeTest
+									abs.removeFromStack();
+									res.add(abs);
+								}
 							}
 						}
 

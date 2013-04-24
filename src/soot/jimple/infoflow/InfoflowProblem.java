@@ -437,21 +437,22 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						//special treatment for clinit methods - no param mapping possible
-						if(!dest.getName().equals("<clinit>")){
-						// check if param is tainted:
-						for (int i = 0; i < callArgs.size(); i++) {
-							if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal())) {
-								Abstraction abs;
-								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(paramLocals.get(i)),
-											(AbstractionWithPath) source).addPathElement(stmt);
-								else
-									abs =source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(paramLocals.get(i)));
-								abs.addToStack(src);
-								res.add(abs);
-
+						if(!dest.getName().equals("<clinit>")) {
+							assert dest.getParameterCount() == callArgs.size();
+							// check if param is tainted:
+							for (int i = 0; i < callArgs.size(); i++) {
+								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal())) {
+									Abstraction abs;
+									if (pathTracking == PathTrackingMethod.ForwardTracking)
+										abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(paramLocals.get(i)),
+												(AbstractionWithPath) source).addPathElement(stmt);
+									else
+										abs =source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(paramLocals.get(i)));
+									abs.addToStack(src);
+									res.add(abs);
+	
+									}
 								}
-							}
 						}
 
 						// staticfieldRefs must be analyzed even if they are not part of the params:

@@ -10,6 +10,15 @@ import soot.jimple.infoflow.Infoflow;
 public class OtherTests extends JUnitTests{
 	
 	@Test
+	public void easyLengthTest(){
+		Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.LengthTestCode: void easy1()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		negativeCheckInfoflow(infoflow);
+	}
+	
+	@Test
 	public void lengthTest(){
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

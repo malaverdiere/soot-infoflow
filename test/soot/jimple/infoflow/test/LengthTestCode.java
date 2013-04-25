@@ -5,6 +5,15 @@ import soot.jimple.infoflow.test.android.TelephonyManager;
 
 public class LengthTestCode{
 	
+	public void easy1(){
+		String taint = TelephonyManager.getDeviceId();
+		Firstclass f = new Firstclass();
+		f.data.secretValue = taint;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(f.data.publicValue);	
+	}
+	
 	public void method1(){
 		String taint = TelephonyManager.getDeviceId();
 		Firstclass f = new Firstclass();

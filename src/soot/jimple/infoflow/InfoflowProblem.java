@@ -176,7 +176,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				else
 					taintSet.add(source.deriveNewAbstraction(targetValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 
-					if (triggerReverseFlow(targetValue)) {
+					if (triggerReverseFlow(targetValue, source)) {
 						// call backwards-check:
 						Unit predUnit = getUnitBefore(src);
 						Abstraction newAbs = source.deriveNewAbstraction(targetValue, (forceFields) ? true : keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());

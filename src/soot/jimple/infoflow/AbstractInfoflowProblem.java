@@ -8,6 +8,7 @@ import java.util.Set;
 import soot.Local;
 import soot.NullType;
 import soot.PatchingChain;
+import soot.PrimType;
 import soot.RefType;
 import soot.SootFieldRef;
 import soot.SootMethod;
@@ -198,12 +199,6 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		return false;
 	}
 	
-	public boolean triggerReverseFlow(Value val){
-		if(DataTypeHandler.isFieldRefOrArrayRef(val) && !(val instanceof Constant)){
-			return true;
-		}
-		return false;
-	}
 	
 	/**
 	 * 
@@ -215,11 +210,17 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		if(val == null){
 			return false;
 		}
+		if(val instanceof InstanceFieldRef && ((InstanceFieldRef)val).getBase().getType() instanceof RefType &&
+				 ((RefType)((InstanceFieldRef)val).getBase().getType()).getClassName().equals("java.lang.String")){
+			return false;
+		}
+		if(val.getType() instanceof PrimType){
+			return false;
+		}
 		if(val instanceof Constant)
 			return false;
 		//no string!
 		if(val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
-			//TODO: do not check val but also source...
 			return false;
 		}
 		if(source.getAccessPath().getPlainValue() != null && source.getAccessPath().getPlainValue().getType() instanceof RefType &&
@@ -227,7 +228,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 			return false;
 		}
 		
-		if(DataTypeHandler.isFieldRefOrArrayRef(val)  ||
+		if(DataTypeHandler.isFieldRefOrArrayRef(val) ||
 				source.getAccessPath().isOnlyFieldsTainted() ||
 				source.getAccessPath().isInstanceFieldRef() ||
 				source.getAccessPath().isStaticFieldRef()){

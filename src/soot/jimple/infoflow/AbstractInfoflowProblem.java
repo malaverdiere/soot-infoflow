@@ -109,8 +109,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public Abstraction createZeroValue() {
 		if (zeroValue == null) {
 			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-				new Abstraction(new JimpleLocal("zero", NullType.v()), null, false, null) :
-				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, false);
+				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null) :
+				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null);
 		}
 		return zeroValue;
 	}
@@ -210,6 +210,10 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		if(val == null){
 			return false;
 		}
+		//no string
+		if(!(val instanceof InstanceFieldRef) && val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
+			return false;
+		}
 		if(val instanceof InstanceFieldRef && ((InstanceFieldRef)val).getBase().getType() instanceof RefType &&
 				 ((RefType)((InstanceFieldRef)val).getBase().getType()).getClassName().equals("java.lang.String")){
 			return false;
@@ -219,17 +223,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		}
 		if(val instanceof Constant)
 			return false;
-		//no string!
-		if(val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
-			return false;
-		}
-		if(source.getAccessPath().getPlainValue() != null && source.getAccessPath().getPlainValue().getType() instanceof RefType &&
-				((RefType)source.getAccessPath().getPlainValue().getType()).getClassName().equals("java.lang.String")){
-			return false;
-		}
 		
 		if(DataTypeHandler.isFieldRefOrArrayRef(val) ||
-				source.getAccessPath().isOnlyFieldsTainted() ||
 				source.getAccessPath().isInstanceFieldRef() ||
 				source.getAccessPath().isStaticFieldRef()){
 			return true;

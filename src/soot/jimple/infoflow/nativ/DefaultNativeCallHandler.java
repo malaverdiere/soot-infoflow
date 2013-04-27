@@ -33,9 +33,9 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			if(params.get(0).equals(source.getAccessPath().getPlainValue())){
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					set.add(new AbstractionWithPath(params.get(2),
-							(AbstractionWithPath) source, false));
+							(AbstractionWithPath) source));
 				else
-					set.add(source.deriveNewAbstraction(params.get(2), false));
+					set.add(source.deriveNewAbstraction(params.get(2)));
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
@@ -45,9 +45,9 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 				if (DataTypeHandler.isFieldRefOrArrayRef(argValue) && !(argValue instanceof Constant)) {
 					if (pathTracking == PathTrackingMethod.ForwardTracking)
 						set.add(new AbstractionWithPath(argValue,
-								(AbstractionWithPath) source, false));
+								(AbstractionWithPath) source));
 					else
-						set.add(source.deriveNewAbstraction(argValue, false));
+						set.add(source.deriveNewAbstraction(argValue));
 				}
 			}	
 		}
@@ -56,9 +56,9 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			DefinitionStmt dStmt = (DefinitionStmt) call;
 			if (pathTracking == PathTrackingMethod.ForwardTracking)
 				set.add(new AbstractionWithPath(dStmt.getLeftOp(),
-						(AbstractionWithPath) source, false));
+						(AbstractionWithPath) source));
 			else
-				set.add(source.deriveNewAbstraction(dStmt.getLeftOp(), false));
+				set.add(source.deriveNewAbstraction(dStmt.getLeftOp()));
 		}
 		
 		return set;
@@ -74,14 +74,14 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
         //Copies an array from the specified source array, beginning at the specified position, to the specified position of the destination array.
 		if(call.getInvokeExpr().getMethod().toString().contains("arraycopy")){
 			if(params.get(2).equals(source.getAccessPath().getPlainValue())){
-				set.add(source.deriveNewAbstraction(params.get(0), source.getAccessPath().isOnlyFieldsTainted()));
+				set.add(source.deriveNewAbstraction(params.get(0)));
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
 			for (int i = 0; i < params.size(); i++) {
 				Value argValue = params.get(i);
 				if (DataTypeHandler.isFieldRefOrArrayRef(argValue)) {
-					set.add(source.deriveNewAbstraction(argValue, false));
+					set.add(source.deriveNewAbstraction(argValue));
 				}
 			}	
 		}

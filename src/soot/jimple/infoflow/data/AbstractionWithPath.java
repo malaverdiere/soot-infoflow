@@ -15,14 +15,14 @@ public class AbstractionWithPath extends Abstraction {
 	
 
 
-	public AbstractionWithPath(Value taint, Value src, boolean fieldsTainted, Stmt srcContext){
-		super(taint, src, fieldsTainted, srcContext);
+	public AbstractionWithPath(Value taint, Value src, Stmt srcContext){
+		super(taint, src, srcContext);
 		propagationPath = new ArrayList<Unit>();
 	}
 	
 
-	public AbstractionWithPath(Value taint, AbstractionWithPath src, boolean fieldsTainted){
-		super(taint, src, fieldsTainted);
+	public AbstractionWithPath(Value taint, AbstractionWithPath src){
+		super(taint, src);
 		if (src == null)
 			propagationPath = new ArrayList<Unit>();
 		else

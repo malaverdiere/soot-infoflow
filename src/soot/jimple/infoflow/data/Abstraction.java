@@ -1,8 +1,10 @@
 package soot.jimple.infoflow.data;
 
 
+import java.util.LinkedList;
 import java.util.Stack;
 
+import soot.SootField;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
@@ -15,9 +17,9 @@ public class Abstraction implements Cloneable {
 	private Stack<Unit> callStack;
 	
 
-	public Abstraction(Value taint, Value src, boolean fieldtainted, Stmt srcContext){
+	public Abstraction(Value taint, Value src, Stmt srcContext){
 		source = src;
-		accessPath = new AccessPath(taint, fieldtainted);
+		accessPath = new AccessPath(taint);
 		callStack = new Stack<Unit>();
 		sourceContext = srcContext;
 	}
@@ -37,11 +39,25 @@ public class Abstraction implements Cloneable {
 		return a;
 	}
 	
-	public Abstraction deriveNewAbstraction(Value taint, boolean fieldtainted){
-		Abstraction a = new Abstraction(new AccessPath(taint, fieldtainted, accessPath.getFields()), source, sourceContext);
+	public Abstraction deriveNewAbstraction(Value taint){
+		Abstraction a = new Abstraction(new AccessPath(taint, accessPath.getFields()), source, sourceContext);
 		a.callStack = (Stack<Unit>) this.callStack.clone();
 		return a;
 	}
+	
+	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField){
+		Abstraction a;
+		if(cutFirstField){
+			LinkedList<SootField> tempList = (LinkedList<SootField>) accessPath.getFields().clone();
+			tempList.removeFirst();
+			a = new Abstraction(new AccessPath(taint, tempList), source, sourceContext);
+		}else
+			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext);		
+		a.callStack = (Stack<Unit>) this.callStack.clone();
+		return a;
+	}
+	
+	
 	
 	/**
 	 * Creates an abstraction as a copy of an existing abstraction,
@@ -51,10 +67,6 @@ public class Abstraction implements Cloneable {
 	 */
 	public Abstraction(Value p, Abstraction original){
 		this(new AccessPath(p), original);
-	}
-	
-	public Abstraction(Value p, Abstraction original, boolean fieldTainted){
-		this(new AccessPath(p,fieldTainted), original);
 	}
 
 	/**

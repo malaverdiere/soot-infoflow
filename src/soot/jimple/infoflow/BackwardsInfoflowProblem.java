@@ -83,7 +83,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							boolean addRightValue = false;
-							boolean keepAllFieldTaintStar = true;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							// shortcuts:
 							// on NormalFlow taint cannot be created:
@@ -96,7 +95,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
 
 								if (triggerReverseFlow(leftValue, source) && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().equals(source.getAccessPath().getFirstField())) {
-									Abstraction abs = source.deriveNewAbstraction(leftValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
+									Abstraction abs = source.deriveNewAbstraction(leftValue);
 									// this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
 
@@ -132,7 +131,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											}
 										} else {
 											addRightValue = true;
-											keepAllFieldTaintStar = false;
 										}
 									}
 									// indirect taint propagation:
@@ -148,9 +146,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 										} else {
 											// access path length = 1 - taint entire value if left is field reference
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(rightValue, source.getSource(), true, source.getSourceContext()));
+												res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext()));
 											else
-												res.add(source.deriveNewAbstraction(rightValue, true));
+												res.add(source.deriveNewAbstraction(rightValue));
 										}
 									}
 								} else if (leftValue instanceof ArrayRef) {
@@ -170,9 +168,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								}
 								
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(rightValue, source.getSource(), keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted(), source.getSourceContext()));
+									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext()));
 								else
-									res.add(source.deriveNewAbstraction(rightValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
+									res.add(source.deriveNewAbstraction(rightValue));
 							}
 							if (!res.isEmpty()) {
 								// we have to send forward pass, for example for
@@ -381,9 +379,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (vals != null) {
 										for (Value val : vals) {
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(val, source.getSource(), false, source.getSourceContext()));
+												res.add(new AbstractionWithPath(val, source.getSource(), source.getSourceContext()));
 											else
-												res.add(source.deriveNewAbstraction(val, false));
+												res.add(source.deriveNewAbstraction(val));
 										}
 									}
 								}

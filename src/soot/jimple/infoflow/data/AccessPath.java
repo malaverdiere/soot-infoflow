@@ -12,8 +12,6 @@ import soot.jimple.StaticFieldRef;
 public class AccessPath {
 	private Value value;
 	private LinkedList<SootField> fields = new LinkedList<SootField>();
-	//in contrast to a certain value which is tainted unknownfieldtainted says that any (*) field of the value is tainted
-	private boolean unknownfieldtainted; //also known as star/*
 
 	
 	public AccessPath(Value val){
@@ -28,20 +26,13 @@ public class AccessPath {
 		}else{
 			value = val;
 		}
-		unknownfieldtainted = false;
 	}
 	
 	
-	public AccessPath(Value val, boolean fieldtainted){
+	public AccessPath(Value val, LinkedList<SootField> appendingFields){
 		this(val);
-		unknownfieldtainted = fieldtainted;
-	}
-	
-	public AccessPath(Value val, boolean fieldtainted, LinkedList<SootField> appendingFields){
-		this(val, false);
-		if(fieldtainted){
-			fields.addAll(appendingFields);
-		}
+		fields.addAll(appendingFields);
+
 	}
 	
 	
@@ -110,7 +101,6 @@ public class AccessPath {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((fields == null) ? 0 : fields.hashCode());
-		result = prime * result + (unknownfieldtainted ? 1231 : 1237);
 		result = prime * result + ((value == null) ? 0 : value.hashCode());
 		return result;
 	}
@@ -128,8 +118,6 @@ public class AccessPath {
 			if (other.fields != null)
 				return false;
 		} else if (!fields.equals(other.fields))
-			return false;
-		if (unknownfieldtainted != other.unknownfieldtainted)
 			return false;
 		if (value == null) {
 			if (other.value != null)
@@ -154,13 +142,6 @@ public class AccessPath {
 		return false;
 	}
 	
-	/**
-	 * only fields (*) are tainted, not the object itself 
-	 * @return
-	 */
-	public boolean isOnlyFieldsTainted(){
-		return unknownfieldtainted;
-	}
 	
 	public boolean isLocal(){
 		if(value != null && value instanceof Local && fields.isEmpty()){
@@ -178,8 +159,6 @@ public class AccessPath {
 		if(!fields.isEmpty()){
 			str += fields.toString();
 		}
-		if(unknownfieldtainted)
-			str += ".*";
 		return str;
 	}
 	
@@ -192,13 +171,11 @@ public class AccessPath {
 		if(val instanceof Local){
 			AccessPath a = new AccessPath(val);
 			a.fields = (LinkedList<SootField>) this.fields.clone();
-			a.unknownfieldtainted = this.unknownfieldtainted;
 			return a;
 		}else{
 			if(val instanceof InstanceFieldRef){
 				AccessPath a = new AccessPath(val);
 				a.fields.addAll(this.fields);
-				a.unknownfieldtainted = true;
 				return a;
 			}//TODO: staticfieldref how?
 			

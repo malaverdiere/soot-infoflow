@@ -44,6 +44,7 @@ import soot.jimple.VirtualInvokeExpr;
 public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 
 	protected Map<String, Local> localVarsForClasses = new HashMap<String, Local>();
+	private final Set<SootClass> failedClasses = new HashSet<SootClass>();
 	private boolean substituteCallParams = false;
 	private List<String> substituteClasses;
 	
@@ -141,7 +142,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	
 	private Local generateClassConstructor(SootClass createdClass, JimpleBody body,
 			Set<SootClass> constructionStack) {
-		if (createdClass == null)
+		if (createdClass == null || this.failedClasses.contains(createdClass))
 			return null;
 		
 		// We cannot create instances of phantom classes as we do not have any
@@ -175,7 +176,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			return tempLocal;
 		}
 		if(createdClass.isInterface() || createdClass.isAbstract()){
-			if(substituteCallParams){
+			if(substituteCallParams) {
 				// Find a matching implementor of the interface
 				List<SootClass> classes;
 				if (createdClass.isInterface())
@@ -196,6 +197,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 				System.err.println("Warning, cannot create valid constructor for " + createdClass +
 						", because it is " + (createdClass.isInterface() ? "an interface" :
 							(createdClass.isAbstract() ? "abstract" : ""))+ " and cannot substitute with subclass");
+				this.failedClasses.add(createdClass);
 				return null;
 			}
 			else{
@@ -208,6 +210,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 				AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
 				body.getUnits().add(assignStmt);
 				*/
+				this.failedClasses.add(createdClass);
 				return null;
 			}
 		}
@@ -278,6 +281,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 
 			System.err.println("Could not find a suitable constructor for class "
 					+ createdClass.getName());
+			this.failedClasses.add(createdClass);
 			return null;
 		}
 	}

@@ -22,12 +22,6 @@ public class Abstraction implements Cloneable {
 		sourceContext = srcContext;
 	}
 	
-
-//	protected Abstraction(AccessPath p, Value src, boolean fieldtainted){
-//		source = src;
-//		accessPath = new AccessPath(taint, fieldtainted);	
-//	}
-	
 	//TODO: make private and change AwP
 	protected Abstraction(AccessPath p, Value src, Stmt srcContext){
 		source = src;
@@ -159,7 +153,7 @@ public class Abstraction implements Cloneable {
 	@Override
 	public String toString(){
 		if(accessPath != null && source != null){
-			return accessPath.toString() + " /source: "+ source.toString() + " " + callStack.hashCode();
+			return accessPath.toString() + " /source: "+ source.toString();
 		}
 		if(accessPath != null){
 			return accessPath.toString();

@@ -58,6 +58,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	protected NativeCallHandler ncHandler = new DefaultNativeCallHandler();
 	protected boolean debug = false;
+	protected boolean inspectSinks = true;
 
 	Abstraction zeroValue = null;
 	
@@ -197,6 +198,10 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	@Override
 	public boolean autoAddZero() {
 		return false;
+	}
+	
+	public void setInspectSinks(boolean inspect){
+		inspectSinks = inspect;
 	}
 	
 	

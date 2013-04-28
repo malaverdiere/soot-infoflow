@@ -417,6 +417,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
+						//if we do not have to look into sinks:
+						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
+							return Collections.emptySet();
+						}
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
 						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
@@ -778,5 +782,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	public boolean autoAddZero() {
 		return false;
 	}
+
 }
 

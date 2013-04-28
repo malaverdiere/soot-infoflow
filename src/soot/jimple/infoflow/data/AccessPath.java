@@ -10,6 +10,7 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 
 public class AccessPath {
+	public static final int ACCESSPATHLENGTH = 5;
 	private Value value;
 	private LinkedList<SootField> fields = new LinkedList<SootField>();
 
@@ -18,21 +19,31 @@ public class AccessPath {
 		assert !(val instanceof EquivalentValue);
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
-			fields.add(ref.getField());
+			if(fields.size()< ACCESSPATHLENGTH)
+				fields.add(ref.getField());
 		} else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
 			value = ref.getBase();
-			fields.add(ref.getField());
+			if(fields.size()< ACCESSPATHLENGTH)
+				fields.add(ref.getField());
 		}else{
 			value = val;
 		}
 	}
 	
 	
-	public AccessPath(Value val, LinkedList<SootField> appendingFields){
+	protected AccessPath(Value val, LinkedList<SootField> appendingFields){
 		this(val);
-		fields.addAll(appendingFields);
-
+		if(appendingFields.size() + this.fields.size() <= ACCESSPATHLENGTH)
+			fields.addAll(appendingFields);
+		else{
+			//cut it:
+			int pos = 0;
+			while(fields.size() < ACCESSPATHLENGTH){
+				fields.add(appendingFields.get(pos));
+				pos++;
+			}	
+		}
 	}
 	
 	
@@ -42,7 +53,8 @@ public class AccessPath {
 	
 	public AccessPath(Value base, SootField field){
 		value = base;
-		this.fields.add(field);
+		if(fields.size()< ACCESSPATHLENGTH)
+			fields.add(field);
 	}
 
 	
@@ -93,7 +105,8 @@ public class AccessPath {
 	}
 	
 	public void addField(SootField field) {
-		this.fields.add(field);
+		if(fields.size()< ACCESSPATHLENGTH)
+			fields.add(field);
 	}
 
 	@Override
@@ -175,7 +188,17 @@ public class AccessPath {
 		}else{
 			if(val instanceof InstanceFieldRef){
 				AccessPath a = new AccessPath(val);
-				a.fields.addAll(this.fields);
+				if(a.fields.size() + this.fields.size() <= ACCESSPATHLENGTH)
+					a.fields.addAll(this.fields);
+				else{
+					//cut it:
+					int pos = 0;
+					while(a.fields.size() < ACCESSPATHLENGTH){
+						a.fields.add(this.fields.get(pos));
+						pos++;
+					}
+					
+				}
 				return a;
 			}//TODO: staticfieldref how?
 			

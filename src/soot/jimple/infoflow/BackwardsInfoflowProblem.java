@@ -95,7 +95,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
 
 								if (triggerReverseFlow(leftValue, source) && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().equals(source.getAccessPath().getFirstField())) {
-									Abstraction abs = source.deriveNewAbstraction(leftValue);
+									Abstraction abs = source.deriveNewAbstraction(leftValue, true);
 									// this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
 
@@ -115,11 +115,10 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							}
 
 							// if we have the tainted value on the left side of the assignment, we have to track the right side of the assignment
-
+							boolean cutFirstField = false;
 							// we do not track StaticFieldRefs during BackwardAnalysis:
 							if (!(leftValue instanceof StaticFieldRef)) {
 								// if both are fields, we have to compare their fieldName via equals and their bases via PTS
-								// might happen that source is local because of max(length(accesspath)) == 1
 								if (leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 									Local leftBase = (Local) leftRef.getBase();
@@ -128,6 +127,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 										if (source.getAccessPath().isInstanceFieldRef()) {
 											if (leftRef.getField().equals(source.getAccessPath().getFirstField())) {
 												addRightValue = true;
+												cutFirstField = true;
 											}
 										} else {
 											addRightValue = true;
@@ -168,9 +168,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								}
 								
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext()));
+									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext())); //TODO: cutFirstField
 								else
-									res.add(source.deriveNewAbstraction(rightValue));
+									res.add(source.deriveNewAbstraction(rightValue, cutFirstField));
 							}
 							if (!res.isEmpty()) {
 								// we have to send forward pass, for example for

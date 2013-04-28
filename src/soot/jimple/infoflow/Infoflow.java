@@ -48,7 +48,7 @@ import soot.options.Options;
 
 public class Infoflow implements IInfoflow {
 
-	private static boolean DEBUG = true;
+	private static boolean DEBUG = false;
 	public InfoflowResults results;
 
 	private final String androidPath;
@@ -57,6 +57,7 @@ public class Infoflow implements IInfoflow {
 	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	private IInfoflowSootConfig sootConfig;
 	private boolean stopAfterFirstFlow = false;
+	private boolean inspectSinks = true;
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
@@ -85,6 +86,10 @@ public class Infoflow implements IInfoflow {
 
 	public static void setDebug(boolean debug) {
 		DEBUG = debug;
+	}
+	
+	public void setInspectSinks(boolean inspect){
+		inspectSinks = inspect;
 	}
 
 	/**
@@ -368,6 +373,7 @@ public class Infoflow implements IInfoflow {
 				InfoflowSolver backSolver = new InfoflowSolver(backProblem, DEBUG, executor);
 				forwardProblem.setBackwardSolver(backSolver);
 				forwardProblem.setDebug(DEBUG);
+				forwardProblem.setInspectSinks(inspectSinks);
 				
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);

@@ -100,5 +100,13 @@ public interface IInfoflow {
 	public InfoflowResults getResults();
 	
 	public boolean isResultAvailable();
+	
+	/**
+	 * default: inspectSinks is set to true, this means sinks are analyzed as well.
+	 * If inspectSinks is set to false, then the analysis does not propagate values into 
+	 * the sink method. 
+	 * @param inspect boolean that determines the inspectSink option
+	 */
+	public void setInspectSinks(boolean inspect);
 
 }

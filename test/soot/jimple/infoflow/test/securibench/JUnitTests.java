@@ -154,6 +154,7 @@ public abstract class JUnitTests {
 
     	SootConfigSecuriBench testConfig = new SootConfigSecuriBench();
     	result.setSootConfig(testConfig);
+    	result.setInspectSinks(false);
     	if(taintWrapper){
     		EasyTaintWrapper easyWrapper;
 			try {

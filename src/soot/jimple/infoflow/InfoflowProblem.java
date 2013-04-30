@@ -176,7 +176,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				else
 					taintSet.add(source.deriveNewAbstraction(targetValue, keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted()));
 
-					if (triggerReverseFlow(targetValue)) {
+					if (triggerReverseFlow(targetValue, source)) {
 						// call backwards-check:
 						Unit predUnit = getUnitBefore(src);
 						Abstraction newAbs = source.deriveNewAbstraction(targetValue, (forceFields) ? true : keepAllFieldTaintStar && source.getAccessPath().isOnlyFieldsTainted());
@@ -415,6 +415,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 						if(isWrapperExclusive(stmt, callArgs, source)) {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
+							return Collections.emptySet();
+						}
+						//if we do not have to look into sinks:
+						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
 						}
 						Set<Abstraction> res = new HashSet<Abstraction>();
@@ -776,5 +780,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	public boolean autoAddZero() {
 		return false;
 	}
+
 }
 

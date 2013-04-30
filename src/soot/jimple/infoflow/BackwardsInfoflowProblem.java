@@ -286,8 +286,15 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 			@Override
 			public FlowFunction<Abstraction> getReturnFlowFunction(Unit callSite, final SootMethod callee, Unit exitStmt, final Unit retSite) {
 				final Stmt stmt = (Stmt) callSite;
-				final InvokeExpr ie = stmt.getInvokeExpr();
-				final List<Value> callArgs = ie.getArgs();
+				final List<Value> callArgs;
+				final InvokeExpr ie;
+				if(stmt.containsInvokeExpr()){
+					 ie = stmt.getInvokeExpr();
+					callArgs = ie.getArgs();
+				}else{
+					ie = null;
+					callArgs = new ArrayList<Value>();
+				}
 				final List<Value> paramLocals = new ArrayList<Value>();
 				for (int i = 0; i < callee.getParameterCount(); i++) {
 					paramLocals.add(callee.getActiveBody().getParameterLocal(i));
@@ -315,7 +322,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							// second, they might be changed as param - check this
 
 							// first, instancefieldRefs must be propagated if they come from the same class:
-							if (!callee.isStatic() && callee.getActiveBody().getThisLocal().equals(base) && ie instanceof InstanceInvokeExpr) {
+							if (!callee.isStatic() && callee.getActiveBody().getThisLocal().equals(base) && ie != null && ie instanceof InstanceInvokeExpr) {
 								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 								Abstraction abs;
 								if (pathTracking == PathTrackingMethod.ForwardTracking)

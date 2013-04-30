@@ -200,8 +200,8 @@ public class AccessPath {
 					
 				}
 				return a;
-			}//TODO: staticfieldref how?
-			
+			}
+			//staticfieldref etc:
 			return new AccessPath(val);
 		}
 	}

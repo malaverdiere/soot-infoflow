@@ -111,11 +111,11 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!accessPath.equals(other.accessPath))
 			return false;
-		if (callStack == null) {
-			if (other.callStack != null)
-				return false;
-		} else if (!callStack.equals(other.callStack))
-			return false;
+//		if (callStack == null) {
+//			if (other.callStack != null)
+//				return false;
+//		} else if (!callStack.equals(other.callStack))
+//			return false;
 		if (source == null) {
 			if (other.source != null)
 				return false;
@@ -135,7 +135,7 @@ public class Abstraction implements Cloneable {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
-			result = prime * result + ((callStack == null) ? 0 : callStack.hashCode());
+//			result = prime * result + ((callStack == null) ? 0 : callStack.hashCode());
 			result = prime * result + ((source == null) ? 0 : source.hashCode());
 			result = prime * result + ((sourceContext == null) ? 0 : sourceContext.hashCode());
 			hashCode = result;

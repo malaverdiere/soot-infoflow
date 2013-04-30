@@ -24,7 +24,9 @@ public class Datastructures1 extends BasicTestCase implements MicroTestCase {
     	private String tag = "abc";
     	
     	public String getData(){return this.str;}
-    	public String getTag(){return this.str;}
+    	//we manually fixed this, was originally:
+    	//public String getTag(){return this.str;}
+    	public String getTag(){return this.tag;}
     	public void setData(String str){this.str = str;}
 	}
 

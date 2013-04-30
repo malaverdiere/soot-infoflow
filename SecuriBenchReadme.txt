@@ -1,0 +1,17 @@
+This document describes the assumptions we made for our analysis:
+
+Aliasing3 -> javadoc and getVulnerability claim that one vulnerability exist but as String is an immutable object there is no dataflow.
+Hence we assume there is no vulnerability.
+
+We omitted all reflection, sanitizer and predicates tests because they are out of scope.
+We also omitted the testcase 'StrongUpdates4' because it involves threading issues.
+
+
+Datastructures1:
+'private String str;
+    	private String tag = "abc";
+    	
+    	public String getData(){return this.str;}
+    	public String getTag(){return this.str;}
+'
+We assume that the getTag() method should return the variable tag (otherwise two vulnerabilities should be found) so we fixed this in the code.

@@ -44,6 +44,7 @@ import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
+import soot.jimple.toolkits.scalar.ConstantPropagatorAndFolder;
 import soot.options.Options;
 
 public class Infoflow implements IInfoflow {
@@ -280,6 +281,15 @@ public class Infoflow implements IInfoflow {
 	private void addSceneTransformer(final SourceSinkManager sourcesSinks, final Set<String> additionalSeeds) {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
+				// Perform a constant propagation to make it easier subsequent steps to
+				// find e.g. layout IDs
+				System.out.println("Running constant propagation...");
+				for (SootClass sc : Scene.v().getClasses())
+					for (SootMethod sm : sc.getMethods())
+						if (sm.isConcrete())
+							ConstantPropagatorAndFolder.v().transform(sm.retrieveActiveBody());
+				System.out.println("Constant propagation done.");
+				
 				System.out.println("Callgraph has " + Scene.v().getCallGraph().size() + " edges");
 				InfoflowProblem forwardProblem  = new InfoflowProblem(sourcesSinks);
 				forwardProblem.setTaintWrapper(taintWrapper);

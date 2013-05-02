@@ -15,3 +15,7 @@ Datastructures1:
     	public String getTag(){return this.str;}
 '
 We assume that the getTag() method should return the variable tag (otherwise two vulnerabilities should be found) so we fixed this in the code.
+
+
+Datastructures4 -> javadoc and getVulnerability claim that one vulnerability exist but there is only one call to a sink and next to it there is a java comment stating 'OK'.
+Manual inspection shows that there is no leak. In fact the description supports this finding: "simple nexted data (false positive)" 

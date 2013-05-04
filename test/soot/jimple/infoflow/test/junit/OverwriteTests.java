@@ -63,4 +63,13 @@ public class OverwriteTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);		
 	    }
 	    
+	  @Test
+	    public void returnOverwriteTest4(){
+		  Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.OverwriteTestCode: void returnOverwrite4()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);		
+	    }
+
 }

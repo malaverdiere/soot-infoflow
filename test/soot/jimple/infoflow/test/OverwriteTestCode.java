@@ -96,6 +96,13 @@ public class OverwriteTestCode {
 		cm.publish(OverwriteTestCode.staticList.get(0));
 	}
 	
+	public void returnOverwrite4(){
+		String tainted = TelephonyManager.getDeviceId();
+		tainted = null;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(tainted);
+	}
+
 	public class Test1{
 		String field;
 		LinkedList<String> list = new LinkedList<String>();

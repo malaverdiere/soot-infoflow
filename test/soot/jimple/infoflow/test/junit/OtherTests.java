@@ -3,6 +3,8 @@ package soot.jimple.infoflow.test.junit;
 import java.util.ArrayList;
 import java.util.List;
 
+import junit.framework.Assert;
+
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
@@ -366,6 +368,17 @@ public class OtherTests extends JUnitTests{
     	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void classHierarchyTest2()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow);
+    }
+
+    @Test
+    public void multiCallTest(){
+    	taintWrapper = true;
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void multiCallTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow);
+		Assert.assertEquals(2, infoflow.getResults().size());
     }
 
 }

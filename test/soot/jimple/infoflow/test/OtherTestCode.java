@@ -169,4 +169,20 @@ public class OtherTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(ht.get());
 	}
+	
+	private String annotate(String data) {
+		return "x" + data + "x";
+	}
+
+	public void multiCallTest() {
+		ConnectionManager cm = new ConnectionManager();
+		String deviceId = TelephonyManager.getDeviceId();
+
+		String data = annotate(deviceId);
+		cm.publish(data);
+
+		String data2 = annotate(deviceId);
+		cm.publish(data2);
+	}
+	
 }

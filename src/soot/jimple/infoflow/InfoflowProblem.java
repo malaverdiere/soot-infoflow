@@ -35,6 +35,7 @@ import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
+import soot.jimple.infoflow.util.CallStackHelper;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JimpleLocal;
@@ -486,7 +487,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 						
 						//check if this is the correct method by inspecting the stack - if the stack is empty, we are fine, too (unbalanced problems!)
-						if(!source.isStackEmpty() && !callSite.equals(source.getElementFromStack())){
+						if(!source.isStackEmpty() && !CallStackHelper.isEqualCall(callSite, source.getElementFromStack())){
 							return Collections.emptySet();
 						}
 						

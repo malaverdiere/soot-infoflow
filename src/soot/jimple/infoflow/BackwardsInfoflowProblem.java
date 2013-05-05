@@ -36,6 +36,7 @@ import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.BaseSelector;
+import soot.jimple.infoflow.util.CallStackHelper;
 import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
 
 public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
@@ -309,8 +310,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						//check if this is the correct method by inspecting the stack:
-						if(!source.isStackEmpty() && !stmt.equals(source.getElementFromStack())){
-							//System.out.println("<b> CallSite is " + stmt + ", but Stack is: "+ source.getElementFromStack());
+						if(!source.isStackEmpty() && !CallStackHelper.isEqualCall(stmt, source.getElementFromStack())){
 							return Collections.emptySet();
 						}
 						

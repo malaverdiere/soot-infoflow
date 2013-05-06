@@ -653,7 +653,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									passOn = false;
 							if (passOn)
 								for (int i = 0; i < callArgs.size(); i++)
-									if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal())) {
+									if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
 										passOn = false;
 										break;
 									}

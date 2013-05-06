@@ -204,14 +204,12 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		inspectSinks = inspect;
 	}
 	
-	
 	/**
-	 * 
-	 * @param val the value which gets tainted
-	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
-	 * @return true if a reverseFlow should be triggered
+	 * returns if the value is transferable (= no primitive datatype / immutable datatypee / Constant)
+	 * @param val the value which should be analyzed
+	 * @return
 	 */
-	public boolean triggerReverseFlow(Value val, Abstraction source){
+	public boolean isTransferableValue(Value val){
 		if(val == null){
 			return false;
 		}
@@ -229,7 +227,24 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		if(val instanceof Constant)
 			return false;
 		
-		if(DataTypeHandler.isFieldRefOrArrayRef(val) ||
+		if(DataTypeHandler.isFieldRefOrArrayRef(val))
+			return true;
+		
+		return false;
+	}
+	
+	
+	/**
+	 * 
+	 * @param val the value which gets tainted
+	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
+	 * @return true if a reverseFlow should be triggered
+	 */
+	public boolean triggerReverseFlow(Value val, Abstraction source){
+		 boolean isValTransferable = isTransferableValue(val);
+		 if(!isValTransferable)
+			 return false;
+		 if(isValTransferable ||
 				source.getAccessPath().isInstanceFieldRef() ||
 				source.getAccessPath().isStaticFieldRef()){
 			return true;

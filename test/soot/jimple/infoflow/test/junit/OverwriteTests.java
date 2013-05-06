@@ -93,4 +93,14 @@ public class OverwriteTests extends JUnitTests {
 			checkInfoflow(infoflow);
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
+
+	  @Test
+	    public void returnOverwriteTest7(){
+		  Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.OverwriteTestCode: void returnOverwrite7()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
 }

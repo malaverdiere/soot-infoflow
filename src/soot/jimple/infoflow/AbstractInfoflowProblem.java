@@ -241,10 +241,24 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 * @return true if a reverseFlow should be triggered
 	 */
 	public boolean triggerReverseFlow(Value val, Abstraction source){
-		 boolean isValTransferable = isTransferableValue(val);
-		 if(!isValTransferable)
-			 return false;
-		 if(isValTransferable ||
+		if(val == null){
+			return false;
+		}
+		//no string
+		if(!(val instanceof InstanceFieldRef) && val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
+			return false;
+		}
+		if(val instanceof InstanceFieldRef && ((InstanceFieldRef)val).getBase().getType() instanceof RefType &&
+				 ((RefType)((InstanceFieldRef)val).getBase().getType()).getClassName().equals("java.lang.String")){
+			return false;
+		}
+		if(val.getType() instanceof PrimType){
+			return false;
+		}
+		if(val instanceof Constant)
+			return false;
+		
+		 if(DataTypeHandler.isFieldRefOrArrayRef(val) ||
 				source.getAccessPath().isInstanceFieldRef() ||
 				source.getAccessPath().isStaticFieldRef()){
 			return true;

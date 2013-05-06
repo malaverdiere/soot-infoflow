@@ -326,6 +326,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//if leftvalue contains the tainted value -> it is overwritten - remove taint:
 							//but not for arrayRefs:
 							// x[i] = y --> taint is preserved since we do not distinguish between elements of collections 
+							//because we do not use a MUST-Alias analysis, we cannot delete aliases of taints 
 							if(((AssignStmt)src).getLeftOp() instanceof ArrayRef){
 								return Collections.singleton(source);
 							}
@@ -657,9 +658,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										passOn = false;
 										break;
 									}
+							//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
+							//we can be sure that the value does not get "lost" if we do not pass it on:
+							if(source.getAccessPath().isStaticFieldRef()){
+								if(interproceduralCFG().getCalleesOfCallAt(call).size()>0)
+									passOn = false;
+							}
 							if (passOn)
 								res.add(source);
-							
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
 								if (callArgs.contains(source.getAccessPath().getPlainValue())) {
 									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:

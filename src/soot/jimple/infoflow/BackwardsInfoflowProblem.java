@@ -390,7 +390,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 										passOn = false;
 										break;
 									}
-							
+							//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
+							//we can be sure that the value does not get "lost" if we do not pass it on:
+							if(source.getAccessPath().isStaticFieldRef()){
+								if(interproceduralCFG().getCalleesOfCallAt(iStmt).size()>0)
+									passOn = false;
+							}
 							if(passOn)
 								res.add(source);
 							

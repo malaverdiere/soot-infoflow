@@ -642,8 +642,23 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							res.add(source);
 							res.addAll(computeWrapperTaints(iStmt, callArgs, source));
+
+							// We can only pass on a taint if it is neither a parameter nor the
+							// base object of the current call
+							boolean passOn = true;
+							if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
+								if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
+										(source.getAccessPath().getPlainLocal()))
+									passOn = false;
+							if (passOn)
+								for (int i = 0; i < callArgs.size(); i++)
+									if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal())) {
+										passOn = false;
+										break;
+									}
+							if (passOn)
+								res.add(source);
 							
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
 								if (callArgs.contains(source.getAccessPath().getPlainValue())) {

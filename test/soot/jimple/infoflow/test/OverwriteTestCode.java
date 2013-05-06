@@ -124,6 +124,12 @@ public class OverwriteTestCode {
 	private void setData(String data) {
 		this.data = data;
 	}
+	
+	private static String dataStatic = "";
+	
+	private static void setDataStatic(String data) {
+		dataStatic = data;
+	}
 
 	public void returnOverwrite5(){
 		setData(TelephonyManager.getDeviceId());
@@ -131,6 +137,14 @@ public class OverwriteTestCode {
 		cm.publish(data);
 		setData(null);
 		cm.publish(data);
+	}
+
+	public void returnOverwrite6(){
+		setDataStatic(TelephonyManager.getDeviceId());
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(dataStatic);
+		setDataStatic(null);
+		cm.publish(dataStatic);
 	}
 
 }

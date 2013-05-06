@@ -250,7 +250,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						if (!method.isStatic()) {
 							thisL = method.getActiveBody().getThisLocal();
 						}
-						// TODO: wie NullConstant
 						if (thisL != null) {
 							InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 							if (iIExpr.getBase().equals(sourceBase)) {
@@ -374,11 +373,27 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							Set<Abstraction> res = new HashSet<Abstraction>();
-
+							// We can only pass on a taint if it is neither a parameter nor the
+							// base object of the current call
+							boolean passOn = true;
 							// only pass source if the source is not created by this methodcall
-							if (!(iStmt instanceof DefinitionStmt) || !((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())) {
-								res.add(source);
+							if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())){
+								passOn = false;
 							}
+							if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
+								if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
+										(source.getAccessPath().getPlainLocal()))
+									passOn = false;
+							if (passOn)
+								for (int i = 0; i < callArgs.size(); i++)
+									if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
+										passOn = false;
+										break;
+									}
+							
+							if(passOn)
+								res.add(source);
+							
 							// taintwrapper (might be very conservative/inprecise...)
 							if (taintWrapper != null && taintWrapper.supportsBackwardWrapping() && taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass())) {
 								if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())) {

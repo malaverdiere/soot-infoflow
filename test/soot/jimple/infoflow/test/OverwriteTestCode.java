@@ -118,5 +118,19 @@ public class OverwriteTestCode {
 		}
 		
 	}
+	
+	private String data = "";
+	
+	private void setData(String data) {
+		this.data = data;
+	}
+
+	public void returnOverwrite5(){
+		setData(TelephonyManager.getDeviceId());
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(data);
+		setData(null);
+		cm.publish(data);
+	}
 
 }

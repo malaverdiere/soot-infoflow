@@ -243,7 +243,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (rightValue instanceof StaticFieldRef) {
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
 										if (source.getAccessPath().getFirstField().equals(rightRef.getField())) {
-											addLeftValue = true; //TODO: check all fields somehow? think jimple
+											addLeftValue = true; //TODO: check all fields --> create Testcase for this!
 											cutFirstField = true;
 										}
 									}
@@ -270,7 +270,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									// indirect taint propagation:
 									// if rightvalue is local and source is instancefield of this local:
 									// y = x && x.f tainted --> y.f, x.f tainted
-									// y.g = x && x.f tainted --> y.g.f, x.f tainted //TODO: fix with accesspaths 
+									// y.g = x && x.f tainted --> y.g.f, x.f tainted
 									if (rightValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
 										Local base = source.getAccessPath().getPlainLocal();
 										if (rightValue.equals(base)) {
@@ -350,7 +350,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}else if(source.getAccessPath().isStaticFieldRef()){
 								//X.f = y && X.f tainted -> no taint propagated
 								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(source.getAccessPath().getFirstField())){
-									//TODO: all fields?
+									//TODO: create Testcase for this (with several fields?)
 									return Collections.emptySet();
 								}
 								
@@ -556,7 +556,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						// checks: this/params/fields
 
-		
 						// check one of the call params are tainted (not if simple type)
 						Value sourceBase = source.getAccessPath().getPlainLocal();
 						Value originalCallArg = null;
@@ -793,13 +792,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		return zeroValue;
 	}
 	
-	
-
 	public void setBackwardSolver(InfoflowSolver backwardSolver){
 		bSolver = backwardSolver;
 	}
 
-	
 	@Override
 	public boolean autoAddZero() {
 		return false;

@@ -93,12 +93,7 @@ public class Infoflow implements IInfoflow {
 		inspectSinks = inspect;
 	}
 
-	/**
-	 * Sets whether and how the paths between the sources and sinks shall be tracked
-	 * 
-	 * @param method
-	 *            The method for tracking data flow paths through the program.
-	 */
+	
 	@Override
 	public void setPathTracking(PathTrackingMethod method) {
 		this.pathTracking = method;
@@ -171,7 +166,6 @@ public class Infoflow implements IInfoflow {
 			Options.v().set_output_format(Options.output_format_none);
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
-//		soot.options.Options.v().set_prepend_classpath(true);
 		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
 		//for benchmark/comparison:
 		//soot.options.Options.v().setPhaseOption("cg.spark", "vta:true");

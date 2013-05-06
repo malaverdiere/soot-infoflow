@@ -169,7 +169,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								}
 								
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext())); //TODO: cutFirstField
+									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext())); //TODO: cutFirstField for AbstractionWithPath
 								else
 									res.add(source.deriveNewAbstraction(rightValue, cutFirstField));
 							}
@@ -207,7 +207,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						if (taintWrapper != null && taintWrapper.supportsBackwardWrapping() && taintWrapper.supportsTaintWrappingForClass(dest.getDeclaringClass())) {
 							// taint is propagated in CallToReturnFunction, so we do not need any taint here if it is exclusive:
 							if(taintWrapper.isExclusive((Stmt)src, 0, null)){
-								//TODO: discuss how to cover second and third argument
 								return Collections.emptySet();
 							}
 						}
@@ -274,7 +273,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 							}
-							// TODO: maybe params?
+							// TODO: add testcase which requires params to be propagated
 
 						}
 						return res;

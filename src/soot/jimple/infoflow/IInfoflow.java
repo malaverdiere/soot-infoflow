@@ -97,8 +97,17 @@ public interface IInfoflow {
 	 */
 	public void computeInfoflow(String path, String entryPoint, SourceSinkManager sourcesSinks);
 
+	/**
+	 * getResults returns the results found by the analysis
+	 * @return the results
+	 */
 	public InfoflowResults getResults();
 	
+	/**
+	 * A result is available if the analysis has finished - so if this method returns false the
+	 * analysis has not finished yet or was not started (e.g. no sources or sinks found)
+	 * @return boolean that states if a result is available
+	 */
 	public boolean isResultAvailable();
 	
 	/**

@@ -230,7 +230,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 				// taint is propagated with assignStmt
 				else if (src instanceof AssignStmt) {
-					System.out.println(interproceduralCFG().getMethodOf(src).getActiveBody());
 					final AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
 					Value left = assignStmt.getLeftOp();

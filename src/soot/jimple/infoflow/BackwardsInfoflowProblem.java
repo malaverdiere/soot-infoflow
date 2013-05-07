@@ -176,10 +176,10 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (!res.isEmpty()) {
 								// we have to send forward pass, for example for
 								// $r1 = l0.<java.lang.AbstractStringBuilder: char[] value>
-								Abstraction a = res.iterator().next();
-								if (triggerReverseFlow(a.getAccessPath().getPlainValue(), a)) {
-									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, src, a));
-								}
+								for (Abstraction a : res)
+									if (a.getAccessPath().isStaticFieldRef() || triggerReverseFlow(a.getAccessPath().getPlainValue(), a)) {
+										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, src, a));
+									}
 								return res;
 							} else {
 								return Collections.singleton(source); 
@@ -397,6 +397,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							}
 							if(passOn)
 								res.add(source);
+							
+							// TODO: Some brave heart might want to look into taint wrapping for backwards analysis.
+							// Beware: There *will* be dragons.
 							
 							// taintwrapper (might be very conservative/inprecise...)
 							if (taintWrapper != null && taintWrapper.supportsBackwardWrapping() && taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass())) {

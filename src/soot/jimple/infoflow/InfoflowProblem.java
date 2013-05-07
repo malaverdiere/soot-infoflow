@@ -36,7 +36,6 @@ import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.SourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.infoflow.util.CallStackHelper;
-import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
@@ -87,22 +86,38 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								callerClass.getFieldByName(source.getAccessPath().getFirstField().getName()).makeRef());
 				}
 			}
-			
-			// For the moment, we don't implement static taints on wrappers. Pass it on
-			// not to break anything
-			if(source.getAccessPath().isStaticFieldRef()){
-				res.add(source);
-			}
 		}
 			
 		List<Value> vals = taintWrapper.getTaintsForMethod(iStmt, taintedPos, taintedBase);
-		if(vals != null)
-			for (Value val : vals)
-				if (pathTracking == PathTrackingMethod.ForwardTracking)
-					res.add(new AbstractionWithPath(val, (AbstractionWithPath) source).addPathElement(iStmt));
-				else
-					res.add(source.deriveNewAbstraction(val));
-					//res.add(new Abstraction(val, source.getSource(), false));
+		if(vals != null) {
+			Unit predUnit = getUnitBefore(iStmt);
+			for (Value val : vals) {
+				Abstraction newAbs;
+				if (pathTracking == PathTrackingMethod.ForwardTracking) {
+					newAbs = new AbstractionWithPath(val, (AbstractionWithPath) source).addPathElement(iStmt);
+					res.add(newAbs);
+				}
+				else {
+					newAbs = source.deriveNewAbstraction(val);
+					res.add(newAbs);
+				}
+
+				// If the taint wrapper taints the base object, this must be propagated
+				// backwards as there might be aliases for the base object
+				if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
+					if (iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
+							|| newAbs.getAccessPath().isStaticFieldRef())
+						bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(newAbs, predUnit, newAbs));
+				}
+			}
+		}
+
+		// For the moment, we don't implement static taints on wrappers. Pass it on
+		// not to break anything
+		if(source.getAccessPath().isStaticFieldRef())
+			res.add(source);
+
 		return res;
 	}
 
@@ -215,6 +230,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 				// taint is propagated with assignStmt
 				else if (src instanceof AssignStmt) {
+					System.out.println(interproceduralCFG().getMethodOf(src).getActiveBody());
 					final AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
 					Value left = assignStmt.getLeftOp();
@@ -673,8 +689,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 
-							if (iStmt instanceof JAssignStmt) {
-								final JAssignStmt stmt = (JAssignStmt) iStmt;
+							if (iStmt instanceof AssignStmt) {
+								final AssignStmt stmt = (AssignStmt) iStmt;
 								if (sourceSinkManager.isSource(stmt, interproceduralCFG())) {
 									if (DEBUG)
 										System.out.println("Found source: " + stmt.getInvokeExpr().getMethod());

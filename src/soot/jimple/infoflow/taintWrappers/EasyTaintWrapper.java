@@ -22,7 +22,7 @@ import soot.jimple.internal.JAssignStmt;
  * A list of methods is passed which contains signatures of instance methods
  * that taint their base objects if they are called with a tainted parameter.
  * When a base object is tainted, all return values are tainted, too.
- * For static methods, only the return value is assumed to be be tainted when
+ * For static methods, only the return value is assumed to be tainted when
  * the method is called with a tainted parameter value.
  * 
  * @author Christian

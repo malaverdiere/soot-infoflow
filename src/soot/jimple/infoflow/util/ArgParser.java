@@ -9,7 +9,6 @@ public class ArgParser {
 	public static String SOURCEKEYWORD = "-sources";
 	public static String SINKKEYWORD = "-sinks";
 	public static String PATHKEYWORD = "-path";
-	//public static String MAINKEYWORD = "-nomain";
 	
 	public List<List<String>> parseClassArguments(String[] args){
 		List<String> argList = Arrays.asList(args);

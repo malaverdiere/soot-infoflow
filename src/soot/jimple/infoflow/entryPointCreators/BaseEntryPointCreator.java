@@ -101,11 +101,13 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 					SootClass classToType = Scene.v().getSootClass(t.toString());
 					if(classToType != null){
 						Value val = generateClassConstructor(classToType, body);
-						// If we cannot create a parameter, we cannot create the
-						// whole invocation
+						// If we cannot create a parameter, we try a null reference.
+						// Better than not creating the whole invocation...
 						if(val == null)
-							return null;
-						args.add(val);
+							args.add(NullConstant.v());
+//							return null;
+						else
+							args.add(val);
 					}
 				}
 			}

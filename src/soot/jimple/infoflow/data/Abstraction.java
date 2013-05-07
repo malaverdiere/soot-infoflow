@@ -40,9 +40,7 @@ public class Abstraction implements Cloneable {
 	}
 	
 	public Abstraction deriveNewAbstraction(Value taint){
-		Abstraction a = new Abstraction(new AccessPath(taint, accessPath.getFields()), source, sourceContext);
-		a.callStack = (Stack<Unit>) this.callStack.clone();
-		return a;
+		return this.deriveNewAbstraction(taint, false);
 	}
 	
 	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField){
@@ -56,8 +54,6 @@ public class Abstraction implements Cloneable {
 		a.callStack = (Stack<Unit>) this.callStack.clone();
 		return a;
 	}
-	
-	
 	
 	/**
 	 * Creates an abstraction as a copy of an existing abstraction,

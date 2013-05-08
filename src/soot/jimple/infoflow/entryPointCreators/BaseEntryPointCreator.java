@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import soot.ArrayType;
 import soot.BooleanType;
 import soot.ByteType;
 import soot.CharType;
@@ -95,20 +96,32 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		InvokeExpr invokeExpr;
 		if(currentMethod.getParameterCount()>0){
 			List<Object> args = new LinkedList<Object>();
-			for(Object ob :currentMethod.getParameterTypes()){
-				if(ob instanceof Type){
-					Type t = (Type)ob;
-					SootClass classToType = Scene.v().getSootClass(t.toString());
+			for(Type tp :currentMethod.getParameterTypes()){
+				// Depending on the parameter type, we try to find a suitable
+				// concrete substitution
+				if (isSimpleType(tp.toString()))
+					args.add(getSimpleDefaultValue(tp.toString()));
+				else if (tp instanceof RefType) {
+					SootClass classToType = ((RefType) tp).getSootClass();
 					if(classToType != null){
 						Value val = generateClassConstructor(classToType, body);
 						// If we cannot create a parameter, we try a null reference.
 						// Better than not creating the whole invocation...
 						if(val == null)
 							args.add(NullConstant.v());
-//							return null;
 						else
 							args.add(val);
 					}
+				}
+				else if (tp instanceof ArrayType) {
+					// TODO: create real array of correct type
+					args.add(NullConstant.v());
+					System.err.println("Warning: Array paramater substituted by null");
+				}
+				else {
+					System.err.println("Unsupported parameter type in method "
+							+ currentMethod.getSignature());
+					return null;
 				}
 			}
 			if(currentMethod.isStatic()){

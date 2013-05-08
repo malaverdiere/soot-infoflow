@@ -393,7 +393,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 
-							if (source.getAccessPath().getPlainValue().equals(returnStmt.getOp()) && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
+							if (returnStmt.getOp().equals(source.getAccessPath().getPlainValue()) && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.getOp(), returnStmt,
 											source.getSource(),

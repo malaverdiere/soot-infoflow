@@ -19,3 +19,5 @@ We assume that the getTag() method should return the variable tag (otherwise two
 
 Datastructures4 -> javadoc and getVulnerability claim that one vulnerability exist but there is only one call to a sink and next to it there is a java comment stating 'OK'.
 Manual inspection shows that there is no leak. In fact the description supports this finding: "simple nexted data (false positive)" 
+
+Basic14, Basic41 and Basic42 required a code change in the BasicTestCase class (dummy implementation of getServletConfig() method)

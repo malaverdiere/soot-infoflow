@@ -42,7 +42,7 @@ public class StrongUpdateTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.strong_updates.StrongUpdates4: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test

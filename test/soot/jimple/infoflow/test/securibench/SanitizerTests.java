@@ -1,15 +1,7 @@
 package soot.jimple.infoflow.test.securibench;
 
-import static org.junit.Assert.*;
-
-import org.junit.Test;
 
 public class SanitizerTests {
-
-	@Test
-	public void test0(){
-		fail("Sanitizers are not supported yet - this should be addressed in future?");
-	}
 	
 //	@Test
 //	public void sanitizers1() {

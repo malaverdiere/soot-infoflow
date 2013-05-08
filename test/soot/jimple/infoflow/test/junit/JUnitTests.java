@@ -1,5 +1,6 @@
 package soot.jimple.infoflow.test.junit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -60,6 +61,19 @@ public abstract class JUnitTests {
     	 
     }
     
+    protected void checkInfoflow(Infoflow infoflow, int resultCount){
+    	 if(infoflow.isResultAvailable()){
+				InfoflowResults map = infoflow.getResults();
+				assertEquals(resultCount, map.size());
+				assertTrue(map.containsSinkMethod(sink) || map.containsSinkMethod(sinkInt));
+				assertTrue(map.isPathBetweenMethods(sink, sourceDeviceId)
+						|| map.isPathBetweenMethods(sinkInt, sourceDeviceId));
+			}else{
+				fail("result is not available");
+			}
+    	
+    }
+    
     protected void checkInfoflow(Infoflow infoflow){
 		  if(infoflow.isResultAvailable()){
 				InfoflowResults map = infoflow.getResults();
@@ -72,11 +86,12 @@ public abstract class JUnitTests {
 	  }
     
     protected void negativeCheckInfoflow(Infoflow infoflow){
-		  if(infoflow.isResultAvailable()){
-				InfoflowResults map = infoflow.getResults();
-				assertFalse(map.containsSinkMethod(sink));
-				assertFalse(map.containsSinkMethod(sinkInt));
-			}else{
+    	if(infoflow.isResultAvailable()){
+			InfoflowResults map = infoflow.getResults();
+			assertEquals(0, map.size());
+			assertFalse(map.containsSinkMethod(sink));
+			assertFalse(map.containsSinkMethod(sinkInt));
+		}else{
 				fail("result is not available");
 			}
 	  }

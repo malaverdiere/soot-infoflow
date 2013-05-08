@@ -14,7 +14,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter1: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -23,7 +23,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter2: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,2);
 	}
 
 	@Test
@@ -32,7 +32,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter3: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -41,7 +41,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter4: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -50,7 +50,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter5: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -59,7 +59,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter6: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -68,7 +68,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter7: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -77,7 +77,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter8: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -86,7 +86,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter9: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,2);
 	}
 
 	@Test
@@ -95,7 +95,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter10: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -104,7 +104,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter11: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -113,7 +113,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter12: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -122,7 +122,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter13: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 	@Test
@@ -131,7 +131,7 @@ public class InterTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.inter.Inter14: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow);
+	checkInfoflow(infoflow,1);
 	}
 
 

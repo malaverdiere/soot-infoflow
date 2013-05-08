@@ -1,6 +1,7 @@
 package soot.jimple.infoflow.test.securibench;
 
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -95,11 +96,12 @@ public abstract class JUnitTests {
     	 
     }
     
-    protected void checkInfoflow(Infoflow infoflow){
+    protected void checkInfoflow(Infoflow infoflow, int resultCount){
 		  if(infoflow.isResultAvailable()){
 				InfoflowResults map = infoflow.getResults();
 				boolean containsSink = false;
 				List<String> actualSinkStrings = new LinkedList<String>();
+				assertEquals(resultCount, map.size());
 				for(String sink : sinkArray){
 					if(map.containsSinkMethod(sink)){
 						containsSink = true;
@@ -136,6 +138,7 @@ public abstract class JUnitTests {
 						fail("sink is reached: " +sink);
 					}
 				}
+				assertEquals(0, map.size());
 			}else{
 				fail("result is not available");
 			}

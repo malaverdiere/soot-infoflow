@@ -36,7 +36,7 @@ public class CollectionTests extends JUnitTests {
 	checkInfoflow(infoflow,2);
 	}
 
-	//@Test
+	@Test
 	public void collections4() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();
@@ -45,7 +45,7 @@ public class CollectionTests extends JUnitTests {
 	checkInfoflow(infoflow,1);
 	}
 
-	//@Test
+	@Test
 	public void collections5() {
 	Infoflow infoflow = initInfoflow();
 	List<String> epoints = new ArrayList<String>();

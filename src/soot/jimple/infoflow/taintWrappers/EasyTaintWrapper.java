@@ -7,11 +7,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Value;
+import soot.jimple.AssignStmt;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
@@ -25,16 +27,24 @@ import soot.jimple.internal.JAssignStmt;
  * For static methods, only the return value is assumed to be tainted when
  * the method is called with a tainted parameter value.
  * 
- * @author Christian
+ * @author Christian Fritz, Steven Arzt
  *
  */
 public class EasyTaintWrapper implements ITaintPropagationWrapper {
-	private HashMap<String, List<String>> classList;
+	private final Map<String, List<String>> classList;
+	private final Map<String, List<String>> excludeList;
 
-	public EasyTaintWrapper(HashMap<String, List<String>> l){
-		classList = l;
+	public EasyTaintWrapper(HashMap<String, List<String>> classList){
+		this.classList = classList;
+		this.excludeList = new HashMap<String, List<String>>();
 	}
 	
+	public EasyTaintWrapper(HashMap<String, List<String>> classList,
+			HashMap<String, List<String>> excludeList) {
+		this.classList = classList;
+		this.excludeList = excludeList;
+	}
+
 	public EasyTaintWrapper(File f) throws IOException{
 		BufferedReader reader = null;
 		try{
@@ -42,13 +52,19 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			reader = new BufferedReader(freader);
 			String line = reader.readLine();
 			List<String> methodList = new LinkedList<String>();
+			List<String> excludeList = new LinkedList<String>();
 			while(line != null){
 				if (!line.isEmpty() && !line.startsWith("%"))
-					methodList.add(line);
+					if (line.startsWith("~"))
+						excludeList.add(line.substring(1));
+					else
+						methodList.add(line);
 				line = reader.readLine();
 			}
-			classList = SootMethodRepresentationParser.v().parseClassNames(methodList, true);
-			System.out.println("Loaded wrapper entries for " + classList.size() + " classes.");
+			this.classList = SootMethodRepresentationParser.v().parseClassNames(methodList, true);
+			this.excludeList = SootMethodRepresentationParser.v().parseClassNames(excludeList, true);
+			System.out.println("Loaded wrapper entries for " + classList.size() + " classes" +
+					"and " + excludeList.size() + " exclusions.");
 		}
 		finally {
 			if (reader != null)
@@ -81,7 +97,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 					// if the object just got tainted 
 					if(stmt instanceof JAssignStmt)
 						taints.add(((JAssignStmt)stmt).getLeftOp());
-				}				
+				}
 				else if(stmt.getInvokeExprBox().getValue() instanceof StaticInvokeExpr)
 					if(stmt instanceof JAssignStmt){
 						taints.add(((JAssignStmt)stmt).getLeftOp());
@@ -92,8 +108,14 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		// If the base object is tainted, all calls to its methods always return
 		// tainted values
 		if (taintedBase != null)
-			if(stmt instanceof JAssignStmt)
-				taints.add(((JAssignStmt)stmt).getLeftOp());
+			if(stmt instanceof JAssignStmt) {
+				AssignStmt assign = (AssignStmt) stmt;
+				// Check for exclusions
+				List<String> excludedMethods = this.excludeList.get(assign.getInvokeExpr().getMethod().getDeclaringClass().getName());
+				if (excludedMethods == null || !excludedMethods.contains
+						(assign.getInvokeExpr().getMethod().getSubSignature()))
+					taints.add(assign.getLeftOp());
+			}
 		
 		return taints;
 	}

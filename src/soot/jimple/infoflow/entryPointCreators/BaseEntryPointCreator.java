@@ -32,6 +32,7 @@ import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
 import soot.jimple.LongConstant;
+import soot.jimple.NewArrayExpr;
 import soot.jimple.NewExpr;
 import soot.jimple.NullConstant;
 import soot.jimple.Stmt;
@@ -97,32 +98,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		if(currentMethod.getParameterCount()>0){
 			List<Object> args = new LinkedList<Object>();
 			for(Type tp :currentMethod.getParameterTypes()){
-				// Depending on the parameter type, we try to find a suitable
-				// concrete substitution
-				if (isSimpleType(tp.toString()))
-					args.add(getSimpleDefaultValue(tp.toString()));
-				else if (tp instanceof RefType) {
-					SootClass classToType = ((RefType) tp).getSootClass();
-					if(classToType != null){
-						Value val = generateClassConstructor(classToType, body);
-						// If we cannot create a parameter, we try a null reference.
-						// Better than not creating the whole invocation...
-						if(val == null)
-							args.add(NullConstant.v());
-						else
-							args.add(val);
-					}
-				}
-				else if (tp instanceof ArrayType) {
-					// TODO: create real array of correct type
-					args.add(NullConstant.v());
-					System.err.println("Warning: Array paramater substituted by null");
-				}
-				else {
-					System.err.println("Unsupported parameter type in method "
-							+ currentMethod.getSignature());
-					return null;
-				}
+				args.add(getValueForType(body, gen, tp, new HashSet<SootClass>()));
 			}
 			if(currentMethod.isStatic()){
 				invokeExpr = Jimple.v().newStaticInvokeExpr(currentMethod.makeRef(), args);
@@ -150,7 +126,79 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		body.getUnits().add(stmt);
 		return stmt;
 	}
+
+	/**
+	 * Creates a value of the given type to be used as a substitution in method
+	 * invocations or fields
+	 * @param body The body in which to create the value
+	 * @param gen The local generator
+	 * @param tp The type for which to get a value
+	 * @param constructionStack The set of classes we're currently constructing.
+	 * Attempts to create a parameter of one of these classes will trigger
+	 * the constructor loop check and the respective parameter will be
+	 * substituted by null.
+	 * @return The generated value, or null if no value could be generated
+	 */
+	private Value getValueForType(JimpleBody body,
+			LocalGenerator gen, Type tp, Set<SootClass> constructionStack) {
+		// Depending on the parameter type, we try to find a suitable
+		// concrete substitution
+		if (isSimpleType(tp.toString()))
+			return getSimpleDefaultValue(tp.toString());
+		else if (tp instanceof RefType) {
+			SootClass classToType = ((RefType) tp).getSootClass();
+			if(classToType != null){
+				Value val = generateClassConstructor(classToType, body, constructionStack);
+				// If we cannot create a parameter, we try a null reference.
+				// Better than not creating the whole invocation...
+				if(val == null)
+					return NullConstant.v();
+				return val;
+			}
+		}
+		else if (tp instanceof ArrayType) {
+			Value arrVal = buildArrayOfType(body, gen, tp, constructionStack);
+			if (arrVal == null)
+				return NullConstant.v();
+			System.err.println("Warning: Array paramater substituted by null");
+			return arrVal;
+		}
+		else {
+			System.err.println("Unsupported parameter type: " + tp.toString());
+			return null;
+		}
+		throw new RuntimeException("Should never see me");
+	}
 	
+	/**
+	 * Constructs an array of the given type with a single element of this type
+	 * in the given method
+	 * @param body The body of the method in which to create the array
+	 * @param gen The local generator
+	 * @param tp The type of which to create the array
+	 * @param constructionStack Set of classes currently being built to avoid
+	 * constructor loops
+	 * @return The local referencing the newly created array, or null if the
+	 * array generation failed
+	 */
+	private Value buildArrayOfType(JimpleBody body, LocalGenerator gen, Type tp,
+			Set<SootClass> constructionStack) {
+		Local local = gen.generateLocal(tp);
+
+		// Generate a new single-element array
+		NewArrayExpr newArrayExpr = Jimple.v().newNewArrayExpr(tp.getArrayType().getArrayElementType(),
+				IntConstant.v(1));
+		AssignStmt assignArray = Jimple.v().newAssignStmt(local, newArrayExpr);
+		body.getUnits().add(assignArray);
+		
+		// Generate a single element in the array
+		AssignStmt assign = Jimple.v().newAssignStmt
+				(Jimple.v().newArrayRef(local, IntConstant.v(19)),
+				getValueForType(body, gen, tp, constructionStack));
+		body.getUnits().add(assign);
+		return local;
+	}
+
 	protected Local generateClassConstructor(SootClass createdClass, JimpleBody body) {
 		return this.generateClassConstructor(createdClass, body, new HashSet<SootClass>());
 	}
@@ -237,36 +285,18 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 				if (currentMethod.isPrivate() || !currentMethod.isConstructor())
 					continue;
 				
-				List<Type> typeList = (List<Type>) currentMethod.getParameterTypes();
-				List<Object> params = new LinkedList<Object>();
-				for (Type type : typeList) {
+				List<Value> params = new LinkedList<Value>();
+				for (Type type : currentMethod.getParameterTypes()) {
+					// We need to check whether we have a reference to the
+					// outer class. In this case, we do not generate a new
+					// instance, but use the one we already have.
 					String typeName = type.toString().replaceAll("\\[\\]]", "");
-					if (isSimpleType(type.toString())) {
-						Local primLoc = createPrimitiveLocal(generator, body, type);
-						params.add(primLoc);
-					}
-					else if (isInnerClass && typeName.equals(outerClass)
+					if (type instanceof RefType
+							&& isInnerClass && typeName.equals(outerClass)
 							&& this.localVarsForClasses.containsKey(typeName))
 						params.add(this.localVarsForClasses.get(typeName));
-					else if (Scene.v().containsClass(typeName)) {
-						SootClass typeClass = Scene.v().getSootClass(typeName);
-						// If we must pass parameter of a private type, we use
-						// null instead. The same happens if we cannot instantiate
-						// the class.
-						if (typeClass.isPrivate())
-							params.add(NullConstant.v());
-						else {
-							Local cons = generateClassConstructor(typeClass, body, constructionStack);
-							if (cons == null)
-								params.add(NullConstant.v());
-							else
-								params.add(cons);
-						}
-					}
-					else {
-						System.out.println("Type not found: " + typeName + ", using java.lang.Object instead");
-						params.add(generateClassConstructor(Scene.v().getSootClass("java.lang.Object"), body));
-					}
+					else
+						params.add(getValueForType(body, generator, type, constructionStack));
 				}
 
 				// Build the "new" expression
@@ -299,13 +329,6 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			this.failedClasses.add(createdClass);
 			return null;
 		}
-	}
-
-	private Local createPrimitiveLocal(LocalGenerator generator, JimpleBody body, Type type) {
-		Local varLocal = generator.generateLocal(getSimpleTypeFromType(type));
-		AssignStmt aStmt = Jimple.v().newAssignStmt(varLocal, getSimpleDefaultValue(type.toString()));
-		body.getUnits().add(aStmt);
-		return varLocal;
 	}
 
 	private Type getSimpleTypeFromType(Type type) {

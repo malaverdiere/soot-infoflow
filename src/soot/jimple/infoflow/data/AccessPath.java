@@ -104,11 +104,6 @@ public class AccessPath {
 		return fields;
 	}
 	
-	public void addField(SootField field) {
-		if(fields.size()< ACCESSPATHLENGTH)
-			fields.add(field);
-	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -183,7 +178,7 @@ public class AccessPath {
 	public AccessPath copyWithNewValue(Value val){
 		if(val instanceof Local){
 			AccessPath a = new AccessPath(val);
-			a.fields = (LinkedList<SootField>) this.fields.clone();
+			a.fields.addAll(this.fields);
 			return a;
 		}else{
 			if(val instanceof InstanceFieldRef){

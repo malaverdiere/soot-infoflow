@@ -104,14 +104,20 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 				invokeExpr = Jimple.v().newStaticInvokeExpr(currentMethod.makeRef(), args);
 			}else{
 				assert classLocal != null : "Class local method was null for non-static method call";
-				invokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef(),args);
+				if (currentMethod.isConstructor())
+					invokeExpr = Jimple.v().newSpecialInvokeExpr(classLocal, currentMethod.makeRef(),args);
+				else
+					invokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef(),args);
 			}
 		}else{
 			if(currentMethod.isStatic()){
 				invokeExpr = Jimple.v().newStaticInvokeExpr(currentMethod.makeRef());
 			}else{
 				assert classLocal != null : "Class local method was null for non-static method call";
-				invokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef());
+				if (currentMethod.isConstructor())
+					invokeExpr = Jimple.v().newSpecialInvokeExpr(classLocal, currentMethod.makeRef());
+				else
+					invokeExpr = Jimple.v().newVirtualInvokeExpr(classLocal, currentMethod.makeRef());
 			}
 		}
 		 
@@ -306,11 +312,11 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 				body.getUnits().add(assignStmt);		
 
 				// Create the constructor invocation
-				VirtualInvokeExpr vInvokeExpr;
+				InvokeExpr vInvokeExpr;
 				if (params.isEmpty() || params.contains(null))
-					vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef());
+					vInvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, currentMethod.makeRef());
 				else
-					vInvokeExpr = Jimple.v().newVirtualInvokeExpr(tempLocal, currentMethod.makeRef(), params);
+					vInvokeExpr = Jimple.v().newSpecialInvokeExpr(tempLocal, currentMethod.makeRef(), params);
 
 				// Make sure to store return values
 				if (!(currentMethod.getReturnType() instanceof VoidType)) { 

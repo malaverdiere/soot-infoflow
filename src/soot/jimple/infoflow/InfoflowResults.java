@@ -1,11 +1,11 @@
 package soot.jimple.infoflow;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import soot.Value;
 import soot.jimple.InvokeExpr;
@@ -113,7 +113,7 @@ public class InfoflowResults {
 		}
 	}
 	
-	private final Map<SinkInfo, Set<SourceInfo>> results = new HashMap<SinkInfo, Set<SourceInfo>>();
+	private final Map<SinkInfo, Set<SourceInfo>> results = new ConcurrentHashMap<SinkInfo, Set<SourceInfo>>();
 	
 	public InfoflowResults() {
 		
@@ -184,7 +184,9 @@ public class InfoflowResults {
 			sourceInfo = new HashSet<SourceInfo>();
 			this.results.put(sink, sourceInfo);
 		}
-		sourceInfo.add(source);
+		synchronized (sourceInfo) {
+			sourceInfo.add(source);
+		}
 	}
 
 	/**

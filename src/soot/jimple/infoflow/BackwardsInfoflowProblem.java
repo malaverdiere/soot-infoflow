@@ -20,6 +20,7 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
+import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
@@ -83,91 +84,119 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
-							boolean addRightValue = false;
-							Set<Abstraction> res = new HashSet<Abstraction>();
-							// shortcuts:
-							// on NormalFlow taint cannot be created:
-							if (source.equals(zeroValue)) {
+							// A backward analysis looks for aliases of existing taints and thus
+							// cannot create new taints out of thin air
+							if (source.equals(zeroValue))
 								return Collections.emptySet();
-							}
-							// if we have the tainted value on the right side of the assignment, we have to start a new forward task
-							// it the left side is not a PrimType or a String!
-							if (rightValue instanceof InstanceFieldRef) {
-								InstanceFieldRef ref = (InstanceFieldRef) rightValue;
+							
+							// Taints written into static fields are passed on "as is".
+							if (leftValue instanceof StaticFieldRef)
+								return Collections.singleton(source); 	
 
-								if (triggerReverseFlow(leftValue, source) && source.getAccessPath().isInstanceFieldRef() && ref.getBase().equals(source.getAccessPath().getPlainValue()) && ref.getField().equals(source.getAccessPath().getFirstField())) {
-									Abstraction abs = source.deriveNewAbstraction(leftValue, true);
-									// this should be successor (but successor is reversed because backwardsproblem, so predecessor is required.. -> but this should work, too:
-									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
-
+							// Check whether we need to start a forward search for taints.
+							if (triggerReverseFlow(leftValue, source)) {
+								// If the tainted value is assigned to some other local variable,
+								// this variable is an alias as well and we also need to mark
+								// it as tainted in the forward solver.
+								if (rightValue instanceof InstanceFieldRef) {
+									InstanceFieldRef ref = (InstanceFieldRef) rightValue;
+									if (source.getAccessPath().isInstanceFieldRef()
+											&& ref.getBase().equals(source.getAccessPath().getPlainValue())
+											&& ref.getField().equals(source.getAccessPath().getFirstField())) {
+										Abstraction abs = source.deriveNewAbstraction(leftValue, true);
+										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
+											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, u, abs));
+									}
 								}
-							}else{
-								if (rightValue.equals(source.getAccessPath().getPlainValue()) && triggerReverseFlow(leftValue, source)) {
+								else if (rightValue.equals(source.getAccessPath().getPlainValue())) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue));
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
 								}
+								// If we have an assignment to the base local of the current taint,
+								// all taint propagations must be below that point, so this is the
+								// right point to turn around.
+								else {
+									boolean leftSideMatches = leftValue.equals(source.getAccessPath().getPlainValue());
+									if (!leftSideMatches && leftValue instanceof InstanceFieldRef) {
+										InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
+										leftSideMatches = source.getAccessPath().isInstanceFieldRef()
+												&& leftRef.getBase().equals(source.getAccessPath().getPlainValue())
+												&& leftRef.getField().equals(source.getAccessPath().getFirstField());
+									}
+									if (leftSideMatches
+											&& (rightValue instanceof NewExpr
+													|| rightValue instanceof NewArrayExpr
+													|| rightValue instanceof Constant)) {
+										Abstraction abs = source.deriveNewAbstraction(leftValue, true);
+										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
+											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, u, abs));
+									}
+								}
 							}
-								
 
-							
-							// termination shortcut - if taint is not a static field
-							if (!source.getAccessPath().isStaticFieldRef() && leftValue.equals(source.getAccessPath().getPlainValue()) && (rightValue instanceof NewExpr || rightValue instanceof NewArrayExpr)) {
+							// Termination shortcut. If we are not processing a static field, we
+							// can abort if the local is overwritten here because earlier values
+							// of the local are not of interest anyway.
+							if (!source.getAccessPath().isStaticFieldRef()
+									&& leftValue.equals(source.getAccessPath().getPlainValue())
+									&& (rightValue instanceof NewExpr || rightValue instanceof NewArrayExpr))
 								return Collections.emptySet();
-							}
-
-							// if we have the tainted value on the left side of the assignment, we have to track the right side of the assignment
+							
+							// If we assign a constant, there is no need to track the right side
+							// any further or do any forward propagation since constants cannot
+							// carry taint.
+							if (rightValue instanceof Constant)
+								return Collections.emptySet();
+							
+							boolean addRightValue = false;
+							Set<Abstraction> res = new HashSet<Abstraction>();
+									
+							// if we have the tainted value on the left side of the assignment,
+							// we also have to track the right side of the assignment
 							boolean cutFirstField = false;
-							// we do not track StaticFieldRefs during BackwardAnalysis:
-							if (!(leftValue instanceof StaticFieldRef)) {
-								// if both are fields, we have to compare their fieldName via equals and their bases via PTS
-								if (leftValue instanceof InstanceFieldRef) {
-									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
-									Local leftBase = (Local) leftRef.getBase();
-									Local sourceBase = source.getAccessPath().getPlainLocal();
-									if (leftBase.equals(sourceBase)) {
-										if (source.getAccessPath().isInstanceFieldRef()) {
-											if (leftRef.getField().equals(source.getAccessPath().getFirstField())) {
-												addRightValue = true;
-												cutFirstField = true;
-											}
-										} else {
+							// if both are fields, we have to compare their fieldName via equals and their bases via PTS
+							if (leftValue instanceof InstanceFieldRef) {
+								InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
+								if (leftRef.getBase().equals(source.getAccessPath().getPlainLocal())) {
+									if (source.getAccessPath().isInstanceFieldRef()) {
+										if (leftRef.getField().equals(source.getAccessPath().getFirstField())) {
 											addRightValue = true;
+											cutFirstField = true;
 										}
-									}
-									// indirect taint propagation:
-									// if leftValue is local and source is instancefield of this local:
-								} else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
-									Local base = source.getAccessPath().getPlainLocal(); // ?
-									if (leftValue.equals(base)) {
-										if (rightValue instanceof Local) {
-											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue),(AbstractionWithPath) source));
-											else
-												res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
-										} else {
-											// access path length = 1 - taint entire value if left is field reference
-											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext()));
-											else
-												res.add(source.deriveNewAbstraction(rightValue));
-										}
-									}
-								} else if (leftValue instanceof ArrayRef) {
-									Local leftBase = (Local) ((ArrayRef) leftValue).getBase();
-									if (leftBase.equals(source.getAccessPath().getPlainValue())) {
+									} else {
 										addRightValue = true;
 									}
-									// generic case, is true for Locals, ArrayRefs that are equal etc..
-								} else if (leftValue.equals(source.getAccessPath().getPlainValue())) {
+								}
+								// indirect taint propagation:
+								// if leftValue is local and source is instancefield of this local:
+							} else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
+								Local base = source.getAccessPath().getPlainLocal(); // ?
+								if (leftValue.equals(base)) {
+									if (rightValue instanceof Local) {
+										if (pathTracking == PathTrackingMethod.ForwardTracking)
+											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue),(AbstractionWithPath) source));
+										else
+											res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
+									} else {
+										// access path length = 1 - taint entire value if left is field reference
+										if (pathTracking == PathTrackingMethod.ForwardTracking)
+											res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext()));
+										else
+											res.add(source.deriveNewAbstraction(rightValue));
+									}
+								}
+							} else if (leftValue instanceof ArrayRef) {
+								Local leftBase = (Local) ((ArrayRef) leftValue).getBase();
+								if (leftBase.equals(source.getAccessPath().getPlainValue())) {
 									addRightValue = true;
 								}
+								// generic case, is true for Locals, ArrayRefs that are equal etc..
+							} else if (leftValue.equals(source.getAccessPath().getPlainValue())) {
+								addRightValue = true;
 							}
+							
 							// if one of them is true -> add rightValue
-							if (addRightValue) {
-								if(rightValue.getType() instanceof PrimType || (rightValue.getType() instanceof RefType && ((RefType)rightValue.getType()).getClassName().equals("java.lang.String"))){
-									return Collections.emptySet();
-								}
-								
+							if (addRightValue) {								
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
 									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext())); //TODO: cutFirstField for AbstractionWithPath
 								else
@@ -178,13 +207,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								// $r1 = l0.<java.lang.AbstractStringBuilder: char[] value>
 								for (Abstraction a : res)
 									if (a.getAccessPath().isStaticFieldRef() || triggerReverseFlow(a.getAccessPath().getPlainValue(), a)) {
-										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, src, a));
+//										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, src, a));
 									}
 								return res;
 							} else {
 								return Collections.singleton(source); 
 							}
-
 						}
 					};
 
@@ -199,8 +227,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				return new FlowFunction<Abstraction>() {
 
 					@Override
-					public Set<Abstraction> computeTargets(Abstraction source) {
-						
+					public Set<Abstraction> computeTargets(Abstraction source) {						
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
@@ -212,7 +239,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						}
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
-		
 						// if the returned value is tainted - taint values from return statements
 						if (src instanceof DefinitionStmt) {
 							DefinitionStmt defnStmt = (DefinitionStmt) src;
@@ -283,12 +309,11 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 			}
 
 			@Override
-			public FlowFunction<Abstraction> getReturnFlowFunction(Unit callSite, final SootMethod callee, Unit exitStmt, final Unit retSite) {
-				final Stmt stmt = (Stmt) callSite;
+			public FlowFunction<Abstraction> getReturnFlowFunction(final Unit callSite, final SootMethod callee, Unit exitStmt, final Unit retSite) {
 				final List<Value> callArgs;
 				final InvokeExpr ie;
-				if(stmt.containsInvokeExpr()){
-					 ie = stmt.getInvokeExpr();
+				if(((Stmt) callSite).containsInvokeExpr()){
+					 ie = ((Stmt) callSite).getInvokeExpr();
 					callArgs = ie.getArgs();
 				}else{
 					ie = null;
@@ -308,7 +333,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						//check if this is the correct method by inspecting the stack:
-						if(!source.isStackEmpty() && !CallStackHelper.isEqualCall(stmt, source.getElementFromStack())){
+						if(!source.isStackEmpty() && !CallStackHelper.isEqualCall(callSite, source.getElementFromStack())){
 							return Collections.emptySet();
 						}
 						

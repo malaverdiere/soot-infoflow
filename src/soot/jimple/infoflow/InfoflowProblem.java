@@ -187,7 +187,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				taintSet.add(source);
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					taintSet.add(new AbstractionWithPath(targetValue,
-							(AbstractionWithPath) source).addPathElement(src)); //TODO: , cutFirstVariable
+						(AbstractionWithPath) source).addPathElement(src)); //TODO: , cutFirstVariable
 				else
 					taintSet.add(source.deriveNewAbstraction(targetValue, cutFirstField));
 
@@ -246,6 +246,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
+							
 							// shortcuts:
 							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {
@@ -591,10 +592,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(originalCallArg));
 										abs.removeFromStack();
 										res.add(abs.clone());
+										/*
 										// call backwards-check:
 										Unit predUnit = getUnitBefore(callSite);
 										bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, predUnit, abs));
-										
+										*/
 									}
 								}
 							}
@@ -626,11 +628,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												abs =  source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(iIExpr.getBase()));
 											abs.removeFromStack();
 											res.add(abs.clone());
+											/*
 											//trigger reverseFlow:
 											if (triggerReverseFlow(iIExpr.getBase(), source)) {
 												Unit predUnit = getUnitBefore(callSite);
 												bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, predUnit, abs));
 											}
+											*/
 										}
 									}
 								}

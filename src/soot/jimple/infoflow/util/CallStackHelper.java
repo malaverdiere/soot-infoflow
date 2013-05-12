@@ -25,9 +25,14 @@ public class CallStackHelper {
 				InvokeExpr ie1 = s1.getInvokeExpr();
 				InvokeExpr ie2 = s2.getInvokeExpr();
 				
-				if(!ie1.getClass().equals(ie2.getClass())){
+				if(!ie1.getClass().equals(ie2.getClass()))
 					return false;
-				}
+				if (ie1.getArgCount() != ie2.getArgCount())
+					return false;
+				if (ie1.getMethod().equals(ie2.getMethod()))
+					return true;
+
+				/*
 				if(ie1.getArgs().equals(ie2.getArgs()) && ie1.getMethod().equals(ie2.getMethod())){
 					if(ie1 instanceof InstanceInvokeExpr && ie2 instanceof InstanceInvokeExpr){
 						if(((InstanceInvokeExpr)ie1).getBase().equals(((InstanceInvokeExpr)ie2).getBase())){
@@ -40,6 +45,7 @@ public class CallStackHelper {
 				if(ie1.equals(ie2)){
 					return true;
 				}
+				*/
 				
 				
 			}

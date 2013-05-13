@@ -650,22 +650,4 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		body.getUnits().add(ifStmt);
 	}
 	
-	/**
-	 * Finds a method with the given signature in the given class or one of its
-	 * super classes
-	 * @param currentClass The current class in which to start the search
-	 * @param subsignature The subsignature of the method to find
-	 * @return The method with the given signature if it has been found,
-	 * otherwise null
-	 */
-	protected SootMethod findMethod(SootClass currentClass, String subsignature){
-		if(currentClass.declaresMethod(subsignature)){
-			return currentClass.getMethod(subsignature);
-		}
-		if(currentClass.hasSuperclass()){
-			return findMethod(currentClass.getSuperclass(), subsignature);
-		}
-		return null;
-	}
-
 }

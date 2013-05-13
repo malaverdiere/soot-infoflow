@@ -15,6 +15,7 @@ import soot.javaToJimple.LocalGenerator;
 import soot.jimple.IntConstant;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
+import soot.jimple.infoflow.data.SootMethodAndClass;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.internal.JEqExpr;
 import soot.jimple.internal.JGotoStmt;
@@ -66,11 +67,15 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 		for (Entry<String, List<String>> entry : classMap.entrySet()){
 			Local classLocal = localVarsForClasses.get(entry.getKey());
 			for (String method : entry.getValue()){
-				if (!Scene.v().containsMethod(method)) {
+				SootMethodAndClass methodAndClass =
+						SootMethodRepresentationParser.v().parseSootMethodString(method);
+				SootMethod currentMethod = findMethod(Scene.v().getSootClass(methodAndClass.getClassName()),
+						methodAndClass.getSubSignature());
+				if (currentMethod == null) {
 					System.err.println("Entry point not found: " + method);
 					continue;
 				}
-				SootMethod currentMethod = Scene.v().getMethod(method);
+				
 				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
 				conditionCounter++;
 				JNopStmt thenStmt = new JNopStmt();

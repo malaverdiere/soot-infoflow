@@ -117,23 +117,27 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!sourceContext.equals(other.sourceContext))
 			return false;
-		if (!callStack.equals(other.callStack))
+		if (callStack == null) {
+			if (other.callStack != null)
+				return false;
+		} else if (!callStack.equals(other.callStack))
 			return false;
 		return true;
 	}
 	
 	@Override
 	public int hashCode() {
+		final int prime = 31;
 		if(hashCode == 0){
-			final int prime = 31;
 			int result = 1;
 			result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
 			result = prime * result + ((source == null) ? 0 : source.hashCode());
 			result = prime * result + ((sourceContext == null) ? 0 : sourceContext.hashCode());
-			result = prime * result + ((callStack == null) ? 0 : callStack.hashCode());
 			hashCode = result;
 		}
-		return hashCode;
+		//because the contents of callStack are not final we cannot 
+		//cache this part of the hashCode calculation:
+		return prime * hashCode + ((callStack == null) ? 0 : callStack.hashCode());
 	}
 	
 	public void addToStack(Unit u){

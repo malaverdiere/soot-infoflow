@@ -108,7 +108,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								}
 								else if (rightValue.equals(source.getAccessPath().getPlainValue())) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue));
-									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, src, abs));
+									for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
+										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, u, abs));
 								}
 								// If we have an assignment to the base local of the current taint,
 								// all taint propagations must be below that point, so this is the

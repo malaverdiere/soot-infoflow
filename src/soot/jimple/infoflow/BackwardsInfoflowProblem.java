@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Set;
 
 import soot.Local;
-import soot.PrimType;
-import soot.RefType;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -127,9 +125,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											&& (rightValue instanceof NewExpr
 													|| rightValue instanceof NewArrayExpr
 													|| rightValue instanceof Constant)) {
-										Abstraction abs = source.deriveNewAbstraction(leftValue, true);
 										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, u, abs));
+											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source, u, source));
 									}
 								}
 							}

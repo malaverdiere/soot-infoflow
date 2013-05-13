@@ -193,7 +193,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							}
 							
 							// if one of them is true -> add rightValue
-							if (addRightValue) {								
+							if (addRightValue) {
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
 									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext())); //TODO: cutFirstField for AbstractionWithPath
 								else
@@ -204,12 +204,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								// $r1 = l0.<java.lang.AbstractStringBuilder: char[] value>
 								for (Abstraction a : res)
 									if (a.getAccessPath().isStaticFieldRef() || triggerReverseFlow(a.getAccessPath().getPlainValue(), a)) {
-//										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, src, a));
+										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
+											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, u, a));
 									}
 								return res;
-							} else {
-								return Collections.singleton(source); 
 							}
+							return Collections.singleton(source); 
 						}
 					};
 

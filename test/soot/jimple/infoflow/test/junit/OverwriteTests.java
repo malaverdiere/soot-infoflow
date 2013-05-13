@@ -80,7 +80,7 @@ public class OverwriteTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.OverwriteTestCode: void returnOverwrite5()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
+			checkInfoflow(infoflow, 1);
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
@@ -90,7 +90,7 @@ public class OverwriteTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.OverwriteTestCode: void returnOverwrite6()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
+			checkInfoflow(infoflow, 1);
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
@@ -100,7 +100,7 @@ public class OverwriteTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.OverwriteTestCode: void returnOverwrite7()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
+			checkInfoflow(infoflow, 1);
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 }

@@ -15,7 +15,7 @@ public class StaticTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void staticInitTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);	
+			checkInfoflow(infoflow, 1);	
 	    }
 	  
 }

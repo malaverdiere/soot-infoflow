@@ -18,7 +18,7 @@ public class HeapTests extends JUnitTests {
 	    List<String> epoints = new ArrayList<String>();
 	    epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testForEarlyTermination()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
 	}
 	
 	@Test
@@ -28,7 +28,7 @@ public class HeapTests extends JUnitTests {
 	    List<String> epoints = new ArrayList<String>();
 	    epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testForLoop()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
 	}
 	
 	
@@ -99,7 +99,7 @@ public class HeapTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void methodTest1()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
+			checkInfoflow(infoflow, 1);
 	    }
 	  
 	  @Test
@@ -108,7 +108,7 @@ public class HeapTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ForwardBackwardTest: void testMethod()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
+			checkInfoflow(infoflow, 1);
 	    }
 	  
 	    @Test
@@ -117,6 +117,6 @@ public class HeapTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void methodReturn()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
+			checkInfoflow(infoflow, 1);
 	    }
 }

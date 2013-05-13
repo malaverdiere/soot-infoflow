@@ -15,7 +15,7 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void concreteWriteReadSamePosTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);	
+			checkInfoflow(infoflow, 1);	
 	    }
 	  
 	  @Test
@@ -24,7 +24,7 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void concreteWriteReadDiffPosTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);		
+			checkInfoflow(infoflow, 1);		
 	    }
 	  
 	  @Test
@@ -33,7 +33,7 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void concreteStaticTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);		
+			checkInfoflow(infoflow, 1);		
 	    }
 	  
 	  @Test
@@ -42,7 +42,7 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void concreteTransientTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);		
+			checkInfoflow(infoflow, 1);		
 	    }
 	  
 	  @Test
@@ -51,7 +51,7 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void concreteGlobalTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);		
+			checkInfoflow(infoflow, 1);		
 	    }
 
 	  
@@ -61,7 +61,7 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void copyTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
+			checkInfoflow(infoflow, 1);
 	    }
 	    
 	    @Test
@@ -70,7 +70,7 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void arrayAsFieldOfClass()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
+			checkInfoflow(infoflow, 1);
 	    }
 	    
 	    @Test
@@ -79,7 +79,7 @@ public class ArrayTests extends JUnitTests {
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.ArrayTestCode: void arrayAsListTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow);
+			checkInfoflow(infoflow, 1);
 	    }
 	    
 	    @Test

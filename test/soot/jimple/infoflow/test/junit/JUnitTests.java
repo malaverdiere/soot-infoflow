@@ -74,16 +74,16 @@ public abstract class JUnitTests {
     	
     }
     
-    protected void checkInfoflow(Infoflow infoflow){
-		  if(infoflow.isResultAvailable()){
-				InfoflowResults map = infoflow.getResults();
-				assertTrue(map.containsSinkMethod(sink) || map.containsSinkMethod(sinkInt));
-				assertTrue(map.isPathBetweenMethods(sink, sourceDeviceId)
-						|| map.isPathBetweenMethods(sinkInt, sourceDeviceId));
-			}else{
-				fail("result is not available");
-			}
-	  }
+//    protected void checkInfoflow(Infoflow infoflow){
+//		  if(infoflow.isResultAvailable()){
+//				InfoflowResults map = infoflow.getResults();
+//				assertTrue(map.containsSinkMethod(sink) || map.containsSinkMethod(sinkInt));
+//				assertTrue(map.isPathBetweenMethods(sink, sourceDeviceId)
+//						|| map.isPathBetweenMethods(sinkInt, sourceDeviceId));
+//			}else{
+//				fail("result is not available");
+//			}
+//	  }
     
     protected void negativeCheckInfoflow(Infoflow infoflow){
     	if(infoflow.isResultAvailable()){

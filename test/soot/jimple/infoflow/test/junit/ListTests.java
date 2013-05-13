@@ -15,10 +15,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadPos0Test()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));
-
+		checkInfoflow(infoflow, 1);
     }
 	
 	@Test
@@ -27,7 +24,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadPos1Test()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
     }
     
     @Test
@@ -37,9 +34,7 @@ public class ListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadNegativeTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		negativeCheckInfoflow(infoflow);
-//		assertFalse(errOutputStream.toString().contains("untaintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));
-    }
+   }
     
     @Test
     public void listTest(){
@@ -47,10 +42,8 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void writeReadTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));		
-    }
+		checkInfoflow(infoflow, 1);
+	}
     
     @Test
     public void listIteratorTest(){
@@ -58,7 +51,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void iteratorTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);		
+		checkInfoflow(infoflow, 1);		
     }
     
     @Test
@@ -67,7 +60,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void subListTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);		
+		checkInfoflow(infoflow, 1);		
     }
     
     @Test
@@ -77,9 +70,6 @@ public class ListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListConcreteWriteReadNegativeTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		negativeCheckInfoflow(infoflow);
-//		assertFalse(errOutputStream.toString().contains("untaintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));
-
     }
     
     @Test
@@ -88,10 +78,8 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListConcreteWriteReadTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));	
-    }
+		checkInfoflow(infoflow, 1);
+	}
     
     @Test
     public void writeReadLinkedListTest(){
@@ -99,10 +87,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListWriteReadTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));
-		
+		checkInfoflow(infoflow, 1);	
     }
     
     
@@ -112,10 +97,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListIteratorTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));
-		
+		checkInfoflow(infoflow, 1);	
     }
     
     @Test
@@ -124,9 +106,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListSubListTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-		
+		checkInfoflow(infoflow, 1);
     }
     
 
@@ -137,9 +117,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackGetTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));		
+		checkInfoflow(infoflow, 1);
     }
     
     @Test
@@ -148,7 +126,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackPeekTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);	
+		checkInfoflow(infoflow, 1);	
     }
     
     @Test
@@ -157,7 +135,7 @@ public class ListTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackPopTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);	
+		checkInfoflow(infoflow, 1);	
     }
     
     @Test

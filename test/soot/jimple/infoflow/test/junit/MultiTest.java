@@ -20,7 +20,7 @@ public class MultiTest extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void multiSourceCode()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
     }
 
@@ -31,7 +31,7 @@ public class MultiTest extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void multiSourceCode2()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
     }
 

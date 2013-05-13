@@ -15,15 +15,9 @@ public class HTTPTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.HTTPTestCode: void testURL()>");
-    	//OutputStream streamOut = 
-        //        new FileOutputStream(new File("urldebug.txt"));
-		//PrintStream writerOut = new PrintStream(streamOut);
-		//System.setErr(writerOut);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		
-		checkInfoflow(infoflow);
-//		writerOut.close();
-//		streamOut.close();
+		checkInfoflow(infoflow, 1);
     }
     
     @Test
@@ -33,7 +27,7 @@ public class HTTPTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.HTTPTestCode: void method1()>");
     	infoflow.computeInfoflow(path, epoints,sources, sinks);
 		
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
     }
 
 }

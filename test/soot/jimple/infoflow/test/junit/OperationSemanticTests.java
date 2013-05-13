@@ -21,7 +21,7 @@ public class OperationSemanticTests extends JUnitTests{
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.OperationSemanticTestCode: void baseTestCode()>");
 		infoflow.computeInfoflow(path, epoints, sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
     }
 	    
 	@Test

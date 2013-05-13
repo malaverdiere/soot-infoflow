@@ -15,10 +15,7 @@ public class MapTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void writeReadPos0Test()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-		
+		checkInfoflow(infoflow, 1);		
     }
     
     @Test
@@ -27,7 +24,7 @@ public class MapTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void writeReadPos1Test()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);	
+		checkInfoflow(infoflow, 1);	
     }
 
     @Test
@@ -36,9 +33,7 @@ public class MapTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadPos0Test()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		checkInfoflow(infoflow, 1);
     }
     
     @Test
@@ -47,7 +42,7 @@ public class MapTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadPos1Test()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
     }
     
     @Test
@@ -56,8 +51,7 @@ public class MapTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteRead2Test()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
+		checkInfoflow(infoflow, 1);
     }
     
     @Test
@@ -66,10 +60,7 @@ public class MapTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void iteratorTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-		
+		checkInfoflow(infoflow, 1);		
     }
     
     @Test
@@ -78,7 +69,7 @@ public class MapTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void entryTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);	
+		checkInfoflow(infoflow, 1);	
     }
     
     @Test
@@ -87,7 +78,7 @@ public class MapTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadTableTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
     }
     
     @Test

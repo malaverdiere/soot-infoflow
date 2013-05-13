@@ -25,7 +25,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadPos0Test()>");
     	infoflow.setTaintWrapper(easyWrapper);
     	infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
     }
 	
 	@Test
@@ -35,7 +35,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadPos1Test()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
+		checkInfoflow(infoflow, 1);
     }
     
     @Test
@@ -55,10 +55,8 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void writeReadTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
     	infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));		
-    }
+		checkInfoflow(infoflow, 1);
+   }
     
     @Test
     public void listIteratorTest(){
@@ -67,7 +65,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void iteratorTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);		
+		checkInfoflow(infoflow, 1);		
     }
     
     @Test
@@ -77,7 +75,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void subListTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);		
+		checkInfoflow(infoflow, 1);		
     }
     
     @Test
@@ -88,9 +86,6 @@ public class EasyWrapperListTests extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		infoflow.setTaintWrapper(easyWrapper);
 		negativeCheckInfoflow(infoflow);
-//		assertFalse(errOutputStream.toString().contains("untaintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));
-
     }
     
     @Test
@@ -100,9 +95,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListConcreteWriteReadTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));	
+		checkInfoflow(infoflow, 1);
     }
     
     @Test
@@ -112,10 +105,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListWriteReadTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));
-		
+		checkInfoflow(infoflow, 1);		
     }
     
     
@@ -126,10 +116,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListIteratorTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));
-		
+		checkInfoflow(infoflow, 1);		
     }
     
     @Test
@@ -139,9 +126,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListSubListTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-		
+		checkInfoflow(infoflow, 1);
     }
     
 
@@ -153,9 +138,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackGetTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);
-//		assertTrue(errOutputStream.toString().contains("taintedElement2 contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>()"));
-//		assertTrue(errOutputStream.toString().contains("tainted contains value from staticinvoke <soot.jimple.infoflow.test.android.TelephonyManager"));		
+		checkInfoflow(infoflow, 1);
     }
     
     @Test
@@ -165,7 +148,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackPeekTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);	
+		checkInfoflow(infoflow, 1);	
     }
     
     @Test
@@ -175,7 +158,7 @@ public class EasyWrapperListTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackPopTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow);	
+		checkInfoflow(infoflow, 1);	
     }
     
     @Test

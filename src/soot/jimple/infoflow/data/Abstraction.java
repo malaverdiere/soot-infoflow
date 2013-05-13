@@ -117,6 +117,8 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!sourceContext.equals(other.sourceContext))
 			return false;
+		if (!callStack.equals(other.callStack))
+			return false;
 		return true;
 	}
 	
@@ -128,13 +130,18 @@ public class Abstraction implements Cloneable {
 			result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
 			result = prime * result + ((source == null) ? 0 : source.hashCode());
 			result = prime * result + ((sourceContext == null) ? 0 : sourceContext.hashCode());
+			result = prime * result + ((callStack == null) ? 0 : callStack.hashCode());
 			hashCode = result;
 		}
 		return hashCode;
 	}
 	
 	public void addToStack(Unit u){
-		callStack.push(u);
+		// Do not add a method we already have on the stack.
+		// Otherwise, recursive calls will make our analysis run in an
+		// infinite loop.
+		if (!callStack.contains(u))
+			callStack.push(u);
 	}
 	
 	public void removeFromStack(){

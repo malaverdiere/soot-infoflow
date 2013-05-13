@@ -89,7 +89,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							
 							// Taints written into static fields are passed on "as is".
 							if (leftValue instanceof StaticFieldRef)
-								return Collections.singleton(source); 	
+								return Collections.singleton(source);
 
 							// Check whether we need to start a forward search for taints.
 							if (triggerReverseFlow(leftValue, source)) {
@@ -328,7 +328,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-
+						
 						//check if this is the correct method by inspecting the stack:
 						if(!source.isStackEmpty() && !CallStackHelper.isEqualCall(callSite, source.getElementFromStack())){
 							return Collections.emptySet();

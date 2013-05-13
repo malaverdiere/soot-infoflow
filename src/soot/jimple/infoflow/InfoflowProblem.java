@@ -440,6 +440,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
 						}
+
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
 						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
@@ -503,7 +504,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-						
+												
 						//check if this is the correct method by inspecting the stack - if the stack is empty, we are fine, too (unbalanced problems!)
 						if(!source.isStackEmpty() && !CallStackHelper.isEqualCall(callSite, source.getElementFromStack())){
 							return Collections.emptySet();

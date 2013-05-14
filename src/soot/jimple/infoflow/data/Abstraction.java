@@ -9,7 +9,7 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
 
-public class Abstraction implements Cloneable {
+public class Abstraction {
 	private final AccessPath accessPath;
 	private final Value source;
 	private final Stmt sourceContext;
@@ -35,7 +35,7 @@ public class Abstraction implements Cloneable {
 	
 	public Abstraction deriveNewAbstraction(AccessPath p){
 		Abstraction a = new Abstraction(p, source, sourceContext);
-		a.callStack = (Stack<Unit>) this.callStack.clone();
+		a.callStack.addAll(this.callStack);
 		return a;
 	}
 	
@@ -46,12 +46,13 @@ public class Abstraction implements Cloneable {
 	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField){
 		Abstraction a;
 		if(cutFirstField){
-			LinkedList<SootField> tempList = (LinkedList<SootField>) accessPath.getFields().clone();
+			LinkedList<SootField> tempList = new LinkedList<SootField>(accessPath.getFields());
 			tempList.removeFirst();
 			a = new Abstraction(new AccessPath(taint, tempList), source, sourceContext);
-		}else
+		}
+		else
 			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext);		
-		a.callStack = (Stack<Unit>) this.callStack.clone();
+		a.callStack.addAll(this.callStack);
 		return a;
 	}
 	
@@ -72,15 +73,15 @@ public class Abstraction implements Cloneable {
 	 * @param original The original abstraction to copy
 	 */
 	public Abstraction(AccessPath p, Abstraction original){
+		callStack = new Stack<Unit>();
 		if (original == null) {
 			source = null;
 			sourceContext = null;
-			callStack = new Stack<Unit>();
 		}
 		else {
 			source = original.source;
 			sourceContext = original.sourceContext;
-			callStack = (Stack<Unit>) original.callStack.clone();
+			callStack.addAll(original.callStack);
 		}
 		accessPath = p;
 	}
@@ -173,12 +174,5 @@ public class Abstraction implements Cloneable {
 	public AccessPath getAccessPath(){
 		return accessPath;
 	}
-	
-	@Override
-	public Abstraction clone(){
-		Abstraction a = new Abstraction(accessPath, source, sourceContext);
-		a.callStack = (Stack<Unit>) this.callStack.clone();
-		return a;
-	}
-	
+
 }

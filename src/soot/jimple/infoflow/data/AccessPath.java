@@ -11,16 +11,17 @@ import soot.jimple.StaticFieldRef;
 
 public class AccessPath {
 	public static final int ACCESSPATHLENGTH = 5;
-	private Value value;
-	private LinkedList<SootField> fields = new LinkedList<SootField>();
-
 	
+	private final Value value;
+	private final LinkedList<SootField> fields = new LinkedList<SootField>();
+
 	public AccessPath(Value val){
 		assert !(val instanceof EquivalentValue);
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
 			if(fields.size()< ACCESSPATHLENGTH)
 				fields.add(ref.getField());
+			value = null;
 		} else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
 			value = ref.getBase();
@@ -46,31 +47,15 @@ public class AccessPath {
 		}
 	}
 	
-	
 	public AccessPath(SootField staticfield){
 		fields.add(staticfield);
+		value = null;
 	}
 	
 	public AccessPath(Value base, SootField field){
 		value = base;
 		if(fields.size()< ACCESSPATHLENGTH)
 			fields.add(field);
-	}
-
-	
-	/**
-	 * replaces value and returns it if matches with val, otherwise original is returned
-	 * @param val
-	 * @param replacement
-	 * @return
-	 */
-	public AccessPath replace(Value val, Value replacement){
-		if(val instanceof Local){
-			if(val.equals(value)){
-				return new AccessPath(replacement);
-			}
-		} 
-		return this;
 	}
 		
 	public Value getPlainValue() {
@@ -86,11 +71,6 @@ public class AccessPath {
 		}
 		return null;
 	}
-	
-	public void setValue(Value value) {
-		this.value = value;
-	}
-	
 	
 	public SootField getLastField() {
 		return fields.getLast();
@@ -115,23 +95,19 @@ public class AccessPath {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (super.equals(obj))
 			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
+		if (obj == null || !(obj instanceof AccessPath))
 			return false;
 		AccessPath other = (AccessPath) obj;
-		if (fields == null) {
-			if (other.fields != null)
-				return false;
-		} else if (!fields.equals(other.fields))
+		if (!fields.equals(other.fields))
 			return false;
 		if (value == null) {
 			if (other.value != null)
 				return false;
 		} else if (!value.equals(other.value))
 			return false;
+		
 		return true;
 	}
 	

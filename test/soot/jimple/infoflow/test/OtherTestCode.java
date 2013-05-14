@@ -185,4 +185,12 @@ public class OtherTestCode {
 		cm.publish(data2);
 	}
 	
+	public void loopTest() {
+		String imei = TelephonyManager.getDeviceId();
+		for (int i = 0; i < 10; i++) {
+	        ConnectionManager cm = new ConnectionManager();
+			cm.publish(imei);
+		}
+	}
+	
 }

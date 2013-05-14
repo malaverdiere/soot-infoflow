@@ -220,7 +220,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 			@Override
 			public FlowFunction<Abstraction> getCallFlowFunction(final Unit src, final SootMethod dest) {
-				final SootMethod method = dest;
 
 				return new FlowFunction<Abstraction>() {
 
@@ -235,6 +234,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							}
 						}
+						if (dest.toString().contains("FutureTask"))
+							System.out.println("x");
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// if the returned value is tainted - taint values from return statements
@@ -243,7 +244,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							Value leftOp = defnStmt.getLeftOp();
 							if (leftOp.equals(source.getAccessPath().getPlainValue())) {
 								// look for returnStmts:
-								for (Unit u : method.getActiveBody().getUnits()) {
+								for (Unit u : dest.getActiveBody().getUnits()) {
 									if (u instanceof ReturnStmt) {
 										ReturnStmt rStmt = (ReturnStmt) u;
 										Abstraction abs;
@@ -251,6 +252,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource(), source.getSourceContext());
 										else
 											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()));
+										assert abs != source;		// our source abstraction must be immutable
 										abs.addToStack(src);
 										res.add(abs);
 									}
@@ -261,6 +263,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						// easy: static
 						if (source.getAccessPath().isStaticFieldRef()) {
 							Abstraction abs = source.clone();
+							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
+							assert abs != source;		// our source abstraction must be immutable
 							abs.addToStack(src);
 							res.add(abs);
 						}
@@ -270,8 +274,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						Value sourceBase = source.getAccessPath().getPlainValue();
 						Stmt iStmt = (Stmt) src;
 						Local thisL = null;
-						if (!method.isStatic()) {
-							thisL = method.getActiveBody().getThisLocal();
+						if (!dest.isStatic()) {
+							thisL = dest.getActiveBody().getThisLocal();
 						}
 						if (thisL != null) {
 							InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
@@ -280,7 +284,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 								boolean param = false;
 								// check if it is not one of the params (then we have already fixed it)
-								for (int i = 0; i < method.getParameterCount(); i++) {
+								for (int i = 0; i < dest.getParameterCount(); i++) {
 									if (iStmt.getInvokeExpr().getArg(i).equals(sourceBase)) {
 										param = true;
 									}
@@ -292,6 +296,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource(), source.getSourceContext());
 										else
 											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL));
+										assert abs != source;		// our source abstraction must be immutable
 										abs.addToStack(src);
 										res.add(abs);
 									}
@@ -366,6 +371,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									else
 										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)));
 									// if abs. contains "neutral" -> this is the case :/ @LinkedListNegativeTest
+									assert abs != source;		// our source abstraction must be immutable
 									abs.removeFromStack();
 									res.add(abs);
 								}
@@ -375,6 +381,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						// staticfieldRefs must be analyzed even if they are not part of the params:
 						if (source.getAccessPath().isStaticFieldRef()) {
 							Abstraction abs = source.clone();
+							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
 							abs.removeFromStack();
 							res.add(abs);
 						}

@@ -3,8 +3,10 @@ package soot.jimple.infoflow.data;
 import heros.InterproceduralCFG;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
+import soot.SootField;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -12,8 +14,6 @@ import soot.jimple.Stmt;
 
 public class AbstractionWithPath extends Abstraction {
 	private final List<Unit> propagationPath;
-	
-
 
 	public AbstractionWithPath(Value taint, Value src, Stmt srcContext){
 		super(taint, src, srcContext);
@@ -37,7 +37,7 @@ public class AbstractionWithPath extends Abstraction {
 			propagationPath = new ArrayList<Unit>(src.getPropagationPath());		
 	}
 
-	public AbstractionWithPath(AccessPath p, Value src, Stmt srcContext){
+	private AbstractionWithPath(AccessPath p, Value src, Stmt srcContext){
 		super(p, src, srcContext);
 		propagationPath = new ArrayList<Unit>();		
 	}
@@ -45,12 +45,6 @@ public class AbstractionWithPath extends Abstraction {
 	public AbstractionWithPath(AccessPath p, Value src, Stmt srcContext, List<Unit> path){
 		super(p, src, srcContext);
 		propagationPath = new ArrayList<Unit>(path);
-	}
-
-	public AbstractionWithPath(AccessPath p, Value src, List<Unit> path, Unit s){
-		this(p, src,(Stmt)s, path);
-		if (s != null)
-			propagationPath.add(s);
 	}
 	
 	public List<Unit> getPropagationPath() {
@@ -73,6 +67,32 @@ public class AbstractionWithPath extends Abstraction {
 	public AbstractionWithPath addPathElement(Unit element) {
 		this.propagationPath.add(element);
 		return this;
+	}
+
+	public AbstractionWithPath deriveNewAbstraction(AccessPath p){
+		AbstractionWithPath a = new AbstractionWithPath(p, this.getSource(),
+				this.getSourceContext(), this.propagationPath);
+		a.getCallStack().addAll(this.getCallStack());
+		return a;
+	}
+	
+	public AbstractionWithPath deriveNewAbstraction(Value taint){
+		return this.deriveNewAbstraction(taint, false);
+	}
+	
+	public AbstractionWithPath deriveNewAbstraction(Value taint, boolean cutFirstField){
+		AbstractionWithPath a;
+		if(cutFirstField){
+			LinkedList<SootField> tempList = new LinkedList<SootField>(this.getAccessPath().getFields());
+			tempList.removeFirst();
+			a = new AbstractionWithPath(new AccessPath(taint, tempList), this.getSource(),
+					this.getSourceContext(), this.propagationPath);
+		}
+		else
+			a = new AbstractionWithPath(new AccessPath(taint, this.getAccessPath().getFields()),
+					this.getSource(), this.getSourceContext(), this.propagationPath);
+		a.getCallStack().addAll(this.getCallStack());
+		return a;
 	}
 
 }

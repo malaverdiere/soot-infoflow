@@ -1,6 +1,9 @@
 package soot.jimple.infoflow.data;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import soot.EquivalentValue;
 import soot.Local;
@@ -11,51 +14,57 @@ import soot.jimple.StaticFieldRef;
 
 public class AccessPath {
 	public static final int ACCESSPATHLENGTH = 5;
-	
+
+	// ATTENTION: This class *must* be immutable!
 	private final Value value;
-	private final LinkedList<SootField> fields = new LinkedList<SootField>();
+	private final List<SootField> fields;
+	private int hashCode = 0;
 
 	public AccessPath(Value val){
+		this(val, Collections.<SootField>emptyList());
+	}
+	
+	protected AccessPath(Value val, Collection<SootField> appendingFields){
 		assert !(val instanceof EquivalentValue);
+
+		List<SootField> fields = new LinkedList<SootField>();
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
 			if(fields.size()< ACCESSPATHLENGTH)
 				fields.add(ref.getField());
 			value = null;
-		} else if(val instanceof InstanceFieldRef){
+		}
+		else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
 			value = ref.getBase();
-			if(fields.size()< ACCESSPATHLENGTH)
+			if(fields.size() < ACCESSPATHLENGTH)
 				fields.add(ref.getField());
-		}else{
+		}
+		else
 			value = val;
-		}
-	}
-	
-	
-	protected AccessPath(Value val, LinkedList<SootField> appendingFields){
-		this(val);
-		if(appendingFields.size() + this.fields.size() <= ACCESSPATHLENGTH)
-			fields.addAll(appendingFields);
-		else{
-			//cut it:
-			int pos = 0;
-			while(fields.size() < ACCESSPATHLENGTH){
-				fields.add(appendingFields.get(pos));
-				pos++;
-			}	
-		}
+
+		int cnt = appendingFields.size();
+		for (SootField field : appendingFields)
+			if (cnt < ACCESSPATHLENGTH) {
+				fields.add(field);
+				cnt++;
+			}
+			else
+				break;
+		this.fields = Collections.unmodifiableList(fields);
 	}
 	
 	public AccessPath(SootField staticfield){
-		fields.add(staticfield);
+		this.fields = Collections.singletonList(staticfield);
 		value = null;
 	}
 	
 	public AccessPath(Value base, SootField field){
 		value = base;
-		if(fields.size()< ACCESSPATHLENGTH)
+		List<SootField> fields = new LinkedList<SootField>();
+		if(fields.size() < ACCESSPATHLENGTH)
 			fields.add(field);
+		this.fields = Collections.unmodifiableList(fields);
 	}
 		
 	public Value getPlainValue() {
@@ -73,24 +82,30 @@ public class AccessPath {
 	}
 	
 	public SootField getLastField() {
-		return fields.getLast();
+		if (fields.isEmpty())
+			return null;
+		return fields.get(fields.size() - 1);
 	}
 	
 	public SootField getFirstField(){
-		return fields.getFirst();
+		if (fields.isEmpty())
+			return null;
+		return fields.get(0);
 	}
 	
-	public LinkedList<SootField> getFields(){
+	protected Collection<SootField> getFields(){
 		return fields;
 	}
 	
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((fields == null) ? 0 : fields.hashCode());
-		result = prime * result + ((value == null) ? 0 : value.hashCode());
-		return result;
+		if (hashCode == 0) {
+			final int prime = 31;
+			this.hashCode = 1;
+			this.hashCode = prime * this.hashCode + ((fields == null) ? 0 : fields.hashCode());
+			this.hashCode = prime * this.hashCode + ((value == null) ? 0 : value.hashCode());
+		}
+		return this.hashCode;
 	}
 
 	@Override
@@ -113,7 +128,7 @@ public class AccessPath {
 	
 	public boolean isStaticFieldRef(){
 		if(value == null && !fields.isEmpty()){
-			assert (fields.getFirst().makeRef() instanceof StaticFieldRef || fields.getFirst().makeRef().isStatic());
+			assert (getFirstField().makeRef() instanceof StaticFieldRef || getLastField().makeRef().isStatic());
 			return true;
 		}
 		return false;
@@ -152,29 +167,7 @@ public class AccessPath {
 	 * @return
 	 */
 	public AccessPath copyWithNewValue(Value val){
-		if(val instanceof Local){
-			AccessPath a = new AccessPath(val);
-			a.fields.addAll(this.fields);
-			return a;
-		}else{
-			if(val instanceof InstanceFieldRef){
-				AccessPath a = new AccessPath(val);
-				if(a.fields.size() + this.fields.size() <= ACCESSPATHLENGTH)
-					a.fields.addAll(this.fields);
-				else{
-					//cut it:
-					int pos = 0;
-					while(a.fields.size() < ACCESSPATHLENGTH){
-						a.fields.add(this.fields.get(pos));
-						pos++;
-					}
-					
-				}
-				return a;
-			}
-			//staticfieldref etc:
-			return new AccessPath(val);
-		}
+		return new AccessPath(val, this.fields);
 	}
 
 }

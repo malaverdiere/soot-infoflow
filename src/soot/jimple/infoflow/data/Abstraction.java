@@ -13,7 +13,8 @@ public class Abstraction implements Cloneable {
 	private final AccessPath accessPath;
 	private final Value source;
 	private final Stmt sourceContext;
-	private Stack<Unit> callStack;
+	private final Stack<Unit> callStack;
+	private int hashCode;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext){
 		source = src;
@@ -22,14 +23,12 @@ public class Abstraction implements Cloneable {
 		sourceContext = srcContext;
 	}
 	
-	//TODO: make private and change AwP
 	protected Abstraction(AccessPath p, Value src, Stmt srcContext){
 		source = src;
 		sourceContext = srcContext;
 		accessPath = p;
 		callStack = new Stack<Unit>();
 	}
-	
 	
 	/**
 	 * Creates an abstraction as a copy of an existing abstraction,
@@ -127,12 +126,15 @@ public class Abstraction implements Cloneable {
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
-		result = prime * result + ((source == null) ? 0 : source.hashCode());
-		result = prime * result + ((sourceContext == null) ? 0 : sourceContext.hashCode());
-		result = prime * result + ((callStack == null) ? 0 : callStack.hashCode()); 
-		return result;
+		if (this.hashCode == 0) {
+			this.hashCode = 1;
+			this.hashCode = prime * this.hashCode + ((accessPath == null) ? 0 : accessPath.hashCode());
+			this.hashCode = prime * this.hashCode + ((source == null) ? 0 : source.hashCode());
+			this.hashCode = prime * this.hashCode + ((sourceContext == null) ? 0 : sourceContext.hashCode());
+		}
+		// The call stack is not immutable, so we must not include it in the
+		// cached hash
+		return prime * this.hashCode + ((callStack == null) ? 0 : callStack.hashCode());
 	}
 	
 	public void addToStack(Unit u){
@@ -156,6 +158,10 @@ public class Abstraction implements Cloneable {
 		if(!callStack.isEmpty())
 			return callStack.peek();
 		return null;
+	}
+	
+	protected Stack<Unit> getCallStack() {
+		return this.callStack;
 	}
 	
 	@Override

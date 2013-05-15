@@ -6,12 +6,12 @@ import java.util.List;
 import soot.SootMethod;
 import soot.Type;
 
-
 public class SootMethodAndClass {
 	private final String methodName;
 	private final String className;
 	private final String returnType;
 	private final List<String> parameters;
+	private int hashCode = 0;
 	
 	public SootMethodAndClass
 			(String methodName,
@@ -77,6 +77,31 @@ public class SootMethodAndClass {
 		}
 		s += ")>";
 		return s;
+	}
+
+	@Override
+	public boolean equals(Object another) {
+		if (super.equals(another))
+			return true;
+		if (!(another instanceof SootMethodAndClass))
+			return false;
+		SootMethodAndClass otherMethod = (SootMethodAndClass) another;
+		
+		if (!this.methodName.equals(otherMethod.methodName))
+			return false;
+		if (!this.parameters.equals(otherMethod.parameters))
+			return false;
+		if (!this.className.equals(otherMethod.className))
+			return false;
+		return true;
+	}
+	
+	@Override
+	public int hashCode() {
+		if (this.hashCode == 0)
+			this.hashCode = this.methodName.hashCode() + this.className.hashCode() * 5;
+		// The parameter list is available from the outside, so we can't cache it
+		return this.hashCode + this.parameters.hashCode() * 7;
 	}
 
 }

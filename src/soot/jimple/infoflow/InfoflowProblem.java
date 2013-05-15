@@ -93,7 +93,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			for (Value val : vals) {
 				Abstraction newAbs;
 				if (pathTracking == PathTrackingMethod.ForwardTracking) {
-					newAbs = new AbstractionWithPath(val, (AbstractionWithPath) source).addPathElement(iStmt);
+					newAbs = ((AbstractionWithPath) source).deriveNewAbstraction(val).addPathElement(iStmt);
 					res.add(newAbs);
 				}
 				else {
@@ -186,8 +186,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					boolean cutFirstField) {
 				taintSet.add(source);
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
-					taintSet.add(new AbstractionWithPath(targetValue,
-						(AbstractionWithPath) source).addPathElement(src)); //TODO: , cutFirstVariable
+					taintSet.add(((AbstractionWithPath) source.deriveNewAbstraction(targetValue, cutFirstField))
+							.addPathElement(src));
 				else
 					taintSet.add(source.deriveNewAbstraction(targetValue, cutFirstField));
 
@@ -293,16 +293,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										if (rightValue.equals(base)) {
 											if (leftValue instanceof Local) {
 												if (pathTracking == PathTrackingMethod.ForwardTracking)
-													res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(leftValue),
-															(AbstractionWithPath) source).addPathElement(src));
+													res.add(((AbstractionWithPath) source.deriveNewAbstraction
+															(source.getAccessPath().copyWithNewValue(leftValue))).addPathElement(src));
 												else
 													res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue)));												
 
 											} else {
 												// access path length = 1 - taint entire value if left is field reference
 												if (pathTracking == PathTrackingMethod.ForwardTracking)
-													res.add(new AbstractionWithPath(leftValue,
-															((AbstractionWithPath) source).addPathElement(src)));
+													res.add(((AbstractionWithPath) source.deriveNewAbstraction(leftValue))
+															.addPathElement(src));
 												else
 													res.add(source.deriveNewAbstraction(leftValue));
 											}
@@ -450,10 +450,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
 								Abstraction abs;
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									abs = new AbstractionWithPath(dest.getActiveBody().getThisLocal(),
-											(AbstractionWithPath) source).addPathElement(stmt);
+									abs = ((AbstractionWithPath) source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+											(dest.getActiveBody().getThisLocal()))).addPathElement(stmt);
 								else
-									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(dest.getActiveBody().getThisLocal()));
+									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+											(dest.getActiveBody().getThisLocal()));
 								//add new callArgs:
 								assert abs != source;		// our source abstraction must be immutable
 								abs.addToStack(src);
@@ -469,10 +470,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal())) {
 									Abstraction abs;
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(paramLocals.get(i)),
-												(AbstractionWithPath) source).addPathElement(stmt);
+										abs = ((AbstractionWithPath) source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+												(paramLocals.get(i)))).addPathElement(stmt);
 									else
-										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(paramLocals.get(i)));
+										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+												(paramLocals.get(i)));
 									assert abs != source;		// our source abstraction must be immutable
 									abs.addToStack(src);
 									res.add(abs);
@@ -526,8 +528,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (retLocal.equals(source.getAccessPath().getPlainLocal())) {
 									Abstraction abs;
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(leftOp),
-												(AbstractionWithPath) source).addPathElement(exitStmt);
+										abs = ((AbstractionWithPath) source.deriveNewAbstraction(source.getAccessPath()
+											.copyWithNewValue(leftOp))).addPathElement(exitStmt);
 									else
 										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftOp));
 									assert abs != source;		// our source abstraction must be immutable
@@ -592,8 +594,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (triggerReverseFlow(originalCallArg, source)) {
 										Abstraction abs;
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(originalCallArg),
-													(AbstractionWithPath) source).addPathElement(exitStmt);
+											abs = ((AbstractionWithPath) source.deriveNewAbstraction(source.getAccessPath()
+														.copyWithNewValue(originalCallArg))).addPathElement(exitStmt);
 										else
 											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(originalCallArg));
 										abs.removeFromStack();
@@ -628,7 +630,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
 											Abstraction abs;
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(iIExpr.getBase()), source.getSource(), ((AbstractionWithPath) source).getPropagationPath(), exitStmt);
+												abs = ((AbstractionWithPath) source).deriveNewAbstraction
+													(source.getAccessPath().copyWithNewValue(iIExpr.getBase())).addPathElement(stmt);
 											else
 												abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(iIExpr.getBase()));
 											abs.removeFromStack();
@@ -703,7 +706,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										res.add(new AbstractionWithPath(stmt.getLeftOp(),
 												stmt.getInvokeExpr(),
 												stmt).addPathElement(call));
-
 									else
 										res.add(new Abstraction(stmt.getLeftOp(),
 												stmt.getInvokeExpr(), stmt));

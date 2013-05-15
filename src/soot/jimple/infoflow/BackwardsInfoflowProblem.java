@@ -29,7 +29,6 @@ import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
@@ -171,16 +170,20 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								Local base = source.getAccessPath().getPlainLocal(); // ?
 								if (leftValue.equals(base)) {
 									if (rightValue instanceof Local) {
+										/*
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue),(AbstractionWithPath) source));
 										else
-											res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
+										*/
+										res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
 									} else {
 										// access path length = 1 - taint entire value if left is field reference
+										/*
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext()));
 										else
-											res.add(source.deriveNewAbstraction(rightValue));
+										*/
+										res.add(source.deriveNewAbstraction(rightValue));
 									}
 								}
 							} else if (leftValue instanceof ArrayRef) {
@@ -195,10 +198,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							
 							// if one of them is true -> add rightValue
 							if (addRightValue) {
+								/*
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
 									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext())); //TODO: cutFirstField for AbstractionWithPath
 								else
-									res.add(source.deriveNewAbstraction(rightValue, cutFirstField));
+								*/
+								res.add(source.deriveNewAbstraction(rightValue, cutFirstField));
 							}
 							if (!res.isEmpty()) {
 								// we have to send forward pass, for example for
@@ -248,10 +253,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (u instanceof ReturnStmt) {
 										ReturnStmt rStmt = (ReturnStmt) u;
 										Abstraction abs;
+										/*
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rStmt.getOp()), source.getSource(), source.getSourceContext());
 										else
-											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()));
+										*/
+										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()));
 										assert abs != source;		// our source abstraction must be immutable
 										abs.addToStack(src);
 										res.add(abs);
@@ -292,10 +299,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								if (!param) {
 									if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 										Abstraction abs;
+										/*
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(thisL), source.getSource(), source.getSourceContext());
 										else
-											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL));
+										*/
+										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL));
 										assert abs != source;		// our source abstraction must be immutable
 										abs.addToStack(src);
 										res.add(abs);
@@ -351,10 +360,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (!callee.isStatic() && callee.getActiveBody().getThisLocal().equals(base) && ie != null && ie instanceof InstanceInvokeExpr) {
 								InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 								Abstraction abs;
+								/*
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
 									abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(vie.getBase()), source.getSource(), source.getSourceContext());
 								else
-									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(vie.getBase()));
+								*/
+								abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(vie.getBase()));
 								abs.removeFromStack();
 								res.add(abs);
 							}
@@ -366,10 +377,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							for (int i = 0; i < callArgs.size(); i++) {
 								if (paramLocals.get(i).equals(base)) {
 									Abstraction abs;
+									/*
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										abs = new AbstractionWithPath(source.getAccessPath().copyWithNewValue(callArgs.get(i)), source.getSource(), source.getSourceContext());
 									else
-										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)));
+									*/
+									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(callArgs.get(i)));
 									// if abs. contains "neutral" -> this is the case :/ @LinkedListNegativeTest
 									assert abs != source;		// our source abstraction must be immutable
 									abs.removeFromStack();
@@ -437,10 +450,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									List<Value> vals = taintWrapper.getBackwardTaintsForMethod(iStmt);
 									if (vals != null) {
 										for (Value val : vals) {
+											/*
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
 												res.add(new AbstractionWithPath(val, source.getSource(), source.getSourceContext()));
 											else
-												res.add(source.deriveNewAbstraction(val));
+											*/
+											res.add(source.deriveNewAbstraction(val));
 										}
 									}
 								}

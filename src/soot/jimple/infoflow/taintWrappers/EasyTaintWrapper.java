@@ -63,7 +63,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			}
 			this.classList = SootMethodRepresentationParser.v().parseClassNames(methodList, true);
 			this.excludeList = SootMethodRepresentationParser.v().parseClassNames(excludeList, true);
-			System.out.println("Loaded wrapper entries for " + classList.size() + " classes" +
+			System.out.println("Loaded wrapper entries for " + classList.size() + " classes " +
 					"and " + excludeList.size() + " exclusions.");
 		}
 		finally {

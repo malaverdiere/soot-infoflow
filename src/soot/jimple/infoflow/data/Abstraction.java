@@ -13,9 +13,7 @@ public class Abstraction implements Cloneable {
 	private final AccessPath accessPath;
 	private final Value source;
 	private final Stmt sourceContext;
-	private int hashCode;
 	private Stack<Unit> callStack;
-	
 
 	public Abstraction(Value taint, Value src, Stmt srcContext){
 		source = src;
@@ -32,28 +30,6 @@ public class Abstraction implements Cloneable {
 		callStack = new Stack<Unit>();
 	}
 	
-	
-	public Abstraction deriveNewAbstraction(AccessPath p){
-		Abstraction a = new Abstraction(p, source, sourceContext);
-		a.callStack = (Stack<Unit>) this.callStack.clone();
-		return a;
-	}
-	
-	public Abstraction deriveNewAbstraction(Value taint){
-		return this.deriveNewAbstraction(taint, false);
-	}
-	
-	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField){
-		Abstraction a;
-		if(cutFirstField){
-			LinkedList<SootField> tempList = (LinkedList<SootField>) accessPath.getFields().clone();
-			tempList.removeFirst();
-			a = new Abstraction(new AccessPath(taint, tempList), source, sourceContext);
-		}else
-			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext);		
-		a.callStack = (Stack<Unit>) this.callStack.clone();
-		return a;
-	}
 	
 	/**
 	 * Creates an abstraction as a copy of an existing abstraction,
@@ -72,19 +48,42 @@ public class Abstraction implements Cloneable {
 	 * @param original The original abstraction to copy
 	 */
 	public Abstraction(AccessPath p, Abstraction original){
+		callStack = new Stack<Unit>();
 		if (original == null) {
 			source = null;
 			sourceContext = null;
-			callStack = new Stack<Unit>();
 		}
 		else {
 			source = original.source;
 			sourceContext = original.sourceContext;
-			callStack = (Stack<Unit>) original.callStack.clone();
+			callStack.addAll(original.callStack);
 		}
 		accessPath = p;
 	}
-
+	
+	public Abstraction deriveNewAbstraction(AccessPath p){
+		Abstraction a = new Abstraction(p, source, sourceContext);
+		a.callStack.addAll(this.callStack);
+		return a;
+	}
+	
+	public Abstraction deriveNewAbstraction(Value taint){
+		return this.deriveNewAbstraction(taint, false);
+	}
+	
+	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField){
+		Abstraction a;
+		if(cutFirstField){
+			LinkedList<SootField> tempList = new LinkedList<SootField>(accessPath.getFields());
+			tempList.removeFirst();
+			a = new Abstraction(new AccessPath(taint, tempList), source, sourceContext);
+		}
+		else
+			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext);		
+		a.callStack.addAll(this.callStack);
+		return a;
+	}
+	
 	public Value getSource() {
 		return source;
 	}
@@ -95,11 +94,9 @@ public class Abstraction implements Cloneable {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (super.equals(obj))
 			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
+		if (obj == null || !(obj instanceof Abstraction))
 			return false;
 		Abstraction other = (Abstraction) obj;
 		if (accessPath == null) {
@@ -122,22 +119,20 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!callStack.equals(other.callStack))
 			return false;
+		
+		assert this.hashCode() == obj.hashCode();	// make sure nothing all wonky is going on
 		return true;
 	}
 	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		if(hashCode == 0){
-			int result = 1;
-			result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
-			result = prime * result + ((source == null) ? 0 : source.hashCode());
-			result = prime * result + ((sourceContext == null) ? 0 : sourceContext.hashCode());
-			hashCode = result;
-		}
-		//because the contents of callStack are not final we cannot 
-		//cache this part of the hashCode calculation:
-		return prime * hashCode + ((callStack == null) ? 0 : callStack.hashCode());
+		int result = 1;
+		result = prime * result + ((accessPath == null) ? 0 : accessPath.hashCode());
+		result = prime * result + ((source == null) ? 0 : source.hashCode());
+		result = prime * result + ((sourceContext == null) ? 0 : sourceContext.hashCode());
+		result = prime * result + ((callStack == null) ? 0 : callStack.hashCode()); 
+		return result;
 	}
 	
 	public void addToStack(Unit u){
@@ -181,8 +176,8 @@ public class Abstraction implements Cloneable {
 	@Override
 	public Abstraction clone(){
 		Abstraction a = new Abstraction(accessPath, source, sourceContext);
-		a.callStack = (Stack<Unit>) this.callStack.clone();
+		a.callStack.addAll(this.callStack);
 		return a;
 	}
-	
+
 }

@@ -200,6 +200,8 @@
 <java.net.URL: void <init>(java.net.URL,java.lang.String)>
 <java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>
 
+<java.net.HttpURLConnection: void setRequestMethod(java.lang.String)>
+
 <java.util.Collections: java.util.List synchronizedCollection(java.util.Collection)>
 <java.util.Collections: java.util.List synchronizedList(java.util.List)>
 <java.util.Collections: java.util.List synchronizedMap(java.util.Map)>

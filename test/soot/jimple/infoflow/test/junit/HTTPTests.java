@@ -22,6 +22,7 @@ public class HTTPTests extends JUnitTests {
     
     @Test
     public void testConnection() throws IOException{
+//    	this.taintWrapper = true;
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.HTTPTestCode: void method1()>");

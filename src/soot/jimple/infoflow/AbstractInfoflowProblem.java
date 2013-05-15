@@ -21,6 +21,7 @@ import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
+import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
 
 public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
 
@@ -75,8 +76,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		this.debug = debug;
 	}
 	
-		/**
-
+	/**
 	 * Sets whether the information flow analysis shall stop after the first
 	 * flow has been found
 	 * @param stopAfterFirstFlow True if the analysis shall stop after the
@@ -99,7 +99,6 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 
-	
 	@Override
 	public Abstraction createZeroValue() {
 		if (zeroValue == null) {
@@ -126,8 +125,6 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 				return true;
 		return false;
 	}
-
-	
 	
 	@Override
 	public Set<Unit> initialSeeds() {
@@ -211,5 +208,9 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		return false;
 	}
 	
+	@Override
+	public BiDiInterproceduralCFG<Unit, SootMethod> interproceduralCFG() {
+		return (BiDiInterproceduralCFG<Unit, SootMethod>) super.interproceduralCFG();
+	}
 
 }

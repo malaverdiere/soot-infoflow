@@ -16,7 +16,7 @@ public class TestCaseCreator {
 			System.out.println("List<String> epoints = new ArrayList<String>();");
 			System.out.println("epoints.add(\"<"+pathAndClassWithoutNumber+i+ ": void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>\");");
 			System.out.println("infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);");
-			System.out.println("checkInfoflow(infoflow);");
+			System.out.println("checkInfoflow(infoflow, 1);");
 			System.out.println("}");
 			System.out.println();
 		}

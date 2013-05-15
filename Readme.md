@@ -7,10 +7,10 @@ Dependencies
 If you want to develop or customize FlowDroid or checkout all components on their own you need to take 
 care of the following dependencies:
 
-- soot-infoflow-android (https://github.com/secure-software-engineering/soot-infoflow-android.git)
-- Soot (http://github.com/Sable/soot.git)
-- Heros (http://github.com/Sable/heros.git)
-- Jasmin (http://github.com/Sable/jasmin.git)
+- [soot-infoflow-android](https://github.com/secure-software-engineering/soot-infoflow-android.git)
+- [Soot](http://github.com/Sable/soot.git)
+- [Heros](http://github.com/Sable/heros.git)
+- [Jasmin](http://github.com/Sable/jasmin.git)
 
 Build Script
 ---------------------

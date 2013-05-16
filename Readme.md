@@ -23,9 +23,5 @@ If you want to start an analysis on an Android apk file you have to use the
 soot.jimple.infoflow.android.TestApps.Test class
 
 
-
 For more information visit http://sseblog.ec-spride.de/android/flowdroid/
 
-
-It is recommended to run soot-infoflow with Java 6.
-Java 7 is not supported yet.

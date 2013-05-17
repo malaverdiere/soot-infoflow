@@ -162,7 +162,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			}
 		}
 		else if (tp instanceof ArrayType) {
-			Value arrVal = buildArrayOfType(body, gen, tp, constructionStack);
+			Value arrVal = buildArrayOfType(body, gen, (ArrayType) tp, constructionStack);
 			if (arrVal == null)
 				return NullConstant.v();
 			System.err.println("Warning: Array paramater substituted by null");
@@ -186,12 +186,12 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	 * @return The local referencing the newly created array, or null if the
 	 * array generation failed
 	 */
-	private Value buildArrayOfType(JimpleBody body, LocalGenerator gen, Type tp,
+	private Value buildArrayOfType(JimpleBody body, LocalGenerator gen, ArrayType tp,
 			Set<SootClass> constructionStack) {
 		Local local = gen.generateLocal(tp);
 
 		// Generate a new single-element array
-		NewArrayExpr newArrayExpr = Jimple.v().newNewArrayExpr(tp.getArrayType().getArrayElementType(),
+		NewArrayExpr newArrayExpr = Jimple.v().newNewArrayExpr(tp.getElementType(),
 				IntConstant.v(1));
 		AssignStmt assignArray = Jimple.v().newAssignStmt(local, newArrayExpr);
 		body.getUnits().add(assignArray);
@@ -199,7 +199,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		// Generate a single element in the array
 		AssignStmt assign = Jimple.v().newAssignStmt
 				(Jimple.v().newArrayRef(local, IntConstant.v(19)),
-				getValueForType(body, gen, tp, constructionStack));
+				getValueForType(body, gen, tp.getElementType(), constructionStack));
 		body.getUnits().add(assign);
 		return local;
 	}

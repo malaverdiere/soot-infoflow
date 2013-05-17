@@ -7,10 +7,10 @@ Dependencies
 If you want to develop or customize FlowDroid or checkout all components on their own you need to take 
 care of the following dependencies:
 
-- soot-infoflow-android (https://github.com/secure-software-engineering/soot-infoflow-android.git)
-- Soot (http://github.com/Sable/soot.git)
-- Heros (http://github.com/Sable/heros.git)
-- Jasmin (http://github.com/Sable/jasmin.git)
+- [soot-infoflow-android](https://github.com/secure-software-engineering/soot-infoflow-android.git)
+- [Soot](http://github.com/Sable/soot.git)
+- [Heros](http://github.com/Sable/heros.git)
+- [Jasmin](http://github.com/Sable/jasmin.git)
 
 Build Script
 ---------------------
@@ -23,9 +23,5 @@ If you want to start an analysis on an Android apk file you have to use the
 soot.jimple.infoflow.android.TestApps.Test class
 
 
-
 For more information visit http://sseblog.ec-spride.de/android/flowdroid/
 
-
-It is recommended to run soot-infoflow with Java 6.
-Java 7 is not supported yet.

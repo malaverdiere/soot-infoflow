@@ -15,8 +15,8 @@ import soot.jimple.Stmt;
 public class AbstractionWithPath extends Abstraction {
 	private final List<Unit> propagationPath;
 
-	public AbstractionWithPath(Value taint, Value src, Stmt srcContext){
-		super(taint, src, srcContext);
+	public AbstractionWithPath(Value taint, Value src, Stmt srcContext, boolean exceptionThrown){
+		super(taint, src, srcContext, exceptionThrown);
 		propagationPath = new ArrayList<Unit>();
 	}
 	
@@ -29,24 +29,19 @@ public class AbstractionWithPath extends Abstraction {
 			propagationPath = new ArrayList<Unit>(src.propagationPath);
 	}
 
-	public AbstractionWithPath(AccessPath p, AbstractionWithPath src){
+	protected AbstractionWithPath(AccessPath p, AbstractionWithPath src){
 		super(p, src);
 		if (src == null)
 			propagationPath = new ArrayList<Unit>();
 		else
 			propagationPath = new ArrayList<Unit>(src.getPropagationPath());		
 	}
-
-	private AbstractionWithPath(AccessPath p, Value src, Stmt srcContext){
-		super(p, src, srcContext);
-		propagationPath = new ArrayList<Unit>();		
-	}
 	
-	public AbstractionWithPath(AccessPath p, Value src, Stmt srcContext, List<Unit> path){
-		super(p, src, srcContext);
+	public AbstractionWithPath(AccessPath p, Value src, Stmt srcContext, boolean exceptionThrown, List<Unit> path){
+		super(p, src, srcContext, exceptionThrown);
 		propagationPath = new ArrayList<Unit>(path);
 	}
-	
+
 	public List<Unit> getPropagationPath() {
 		return this.propagationPath;
 	}
@@ -71,7 +66,7 @@ public class AbstractionWithPath extends Abstraction {
 
 	public AbstractionWithPath deriveNewAbstraction(AccessPath p){
 		AbstractionWithPath a = new AbstractionWithPath(p, this.getSource(),
-				this.getSourceContext(), this.propagationPath);
+				this.getSourceContext(), this.getExceptionThrown(), this.propagationPath);
 		a.getCallStack().addAll(this.getCallStack());
 		return a;
 	}
@@ -80,19 +75,51 @@ public class AbstractionWithPath extends Abstraction {
 		return this.deriveNewAbstraction(taint, false);
 	}
 	
+	@Override
 	public AbstractionWithPath deriveNewAbstraction(Value taint, boolean cutFirstField){
 		AbstractionWithPath a;
 		if(cutFirstField){
 			LinkedList<SootField> tempList = new LinkedList<SootField>(this.getAccessPath().getFields());
 			tempList.removeFirst();
 			a = new AbstractionWithPath(new AccessPath(taint, tempList), this.getSource(),
-					this.getSourceContext(), this.propagationPath);
+					this.getSourceContext(), this.getExceptionThrown(), this.propagationPath);
 		}
 		else
 			a = new AbstractionWithPath(new AccessPath(taint, this.getAccessPath().getFields()),
-					this.getSource(), this.getSourceContext(), this.propagationPath);
+					this.getSource(), this.getSourceContext(), this.getExceptionThrown(), this.propagationPath);
 		a.getCallStack().addAll(this.getCallStack());
 		return a;
+	}
+
+	/**
+	 * Derives a new abstraction that models the current local being thrown as
+	 * an exception
+	 * @return The newly derived abstraction
+	 */
+	@Override
+	public AbstractionWithPath deriveNewAbstractionOnThrow(){
+		assert this.getAccessPath().isLocal();
+		assert !this.getExceptionThrown();
+		AbstractionWithPath abs = new AbstractionWithPath(this.getAccessPath(), this.getSource(),
+				this.getSourceContext(), true, this.propagationPath);
+		abs.getCallStack().addAll(this.getCallStack());
+		return abs;
+	}
+
+	/**
+	 * Derives a new abstraction that models the current local being caught as
+	 * an exception
+	 * @param taint The value in which the tainted exception is stored
+	 * @return The newly derived abstraction
+	 */
+	@Override
+	public AbstractionWithPath deriveNewAbstractionOnCatch(Value taint){
+		assert this.getAccessPath().isLocal();
+		assert !this.getExceptionThrown();
+		AbstractionWithPath abs = new AbstractionWithPath(new AccessPath(taint), this.getSource(),
+				this.getSourceContext(), false, this.propagationPath);
+		abs.getCallStack().addAll(this.getCallStack());
+		return abs;
 	}
 
 }

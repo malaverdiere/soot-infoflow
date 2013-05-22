@@ -20,6 +20,7 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
+import soot.jimple.CaughtExceptionRef;
 import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.IdentityStmt;
@@ -29,6 +30,7 @@ import soot.jimple.InvokeExpr;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
+import soot.jimple.ThrowStmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.heros.InfoflowSolver;
@@ -211,17 +213,29 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
+							
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							res.add(source);
+							boolean addOriginal = true;
+							if (is.getRightOp() instanceof CaughtExceptionRef) {
+								if (source.getExceptionThrown()) {
+									res.add(source.deriveNewAbstractionOnCatch(is.getLeftOp()));
+									addOriginal = false;
+								}
+							}
+
+							if (addOriginal)
+								res.add(source);
+							
 							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									res.add(new AbstractionWithPath(is.getLeftOp(),
 										is.getRightOp(),
-										is).addPathElement(is));
+										is, false).addPathElement(is));
 								else
 									res.add(new Abstraction(is.getLeftOp(),
-										is.getRightOp(), is));
+										is.getRightOp(), is, false));
 							}
+							
 							return res;
 						}
 					};
@@ -246,7 +260,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							
+														
 							// shortcuts:
 							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {
@@ -406,6 +420,21 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											source.getSource(), source.getSourceContext());
 							}
 
+							return Collections.singleton(source);
+						}
+					};
+				}
+				else if (src instanceof ThrowStmt) {
+					final ThrowStmt throwStmt = (ThrowStmt) src;
+					return new FlowFunction<Abstraction>() {
+
+						@Override
+						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
+							
+							if (source.getAccessPath().getPlainLocal().equals(throwStmt.getOp()))
+								return Collections.singleton(source.deriveNewAbstractionOnThrow());
 							return Collections.singleton(source);
 						}
 					};
@@ -705,10 +734,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										res.add(new AbstractionWithPath(stmt.getLeftOp(),
 												stmt.getInvokeExpr(),
-												stmt).addPathElement(call));
+												stmt, false).addPathElement(call));
 									else
 										res.add(new Abstraction(stmt.getLeftOp(),
-												stmt.getInvokeExpr(), stmt));
+												stmt.getInvokeExpr(), stmt, false));
 									res.remove(zeroValue);
 								}
 							}
@@ -792,8 +821,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	public Abstraction createZeroValue() {
 		if (zeroValue == null) {
 			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null) :
-				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, null);
+				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false) :
+				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, null, false);
 		}
 		return zeroValue;
 	}

@@ -14,22 +14,25 @@ public class Abstraction implements Cloneable {
 	private final Value source;
 	private final Stmt sourceContext;
 	private final Stack<Unit> callStack;
+	private final boolean exceptionThrown;
 	private int hashCode;
 
-	public Abstraction(Value taint, Value src, Stmt srcContext){
-		source = src;
-		accessPath = new AccessPath(taint);
-		callStack = new Stack<Unit>();
-		sourceContext = srcContext;
+	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown){
+		this.source = src;
+		this.accessPath = new AccessPath(taint);
+		this.callStack = new Stack<Unit>();
+		this.sourceContext = srcContext;
+		this.exceptionThrown = exceptionThrown;
 	}
-	
-	protected Abstraction(AccessPath p, Value src, Stmt srcContext){
-		source = src;
-		sourceContext = srcContext;
-		accessPath = p;
-		callStack = new Stack<Unit>();
+		
+	protected Abstraction(AccessPath p, Value src, Stmt srcContext, boolean exceptionThrown){
+		this.source = src;
+		this.sourceContext = srcContext;
+		this.accessPath = p;
+		this.callStack = new Stack<Unit>();
+		this.exceptionThrown = exceptionThrown;
 	}
-	
+
 	/**
 	 * Creates an abstraction as a copy of an existing abstraction,
 	 * only exchanging the access path.
@@ -58,10 +61,11 @@ public class Abstraction implements Cloneable {
 			callStack.addAll(original.callStack);
 		}
 		accessPath = p;
+		exceptionThrown = original.exceptionThrown;
 	}
 	
 	public Abstraction deriveNewAbstraction(AccessPath p){
-		Abstraction a = new Abstraction(p, source, sourceContext);
+		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown);
 		a.callStack.addAll(this.callStack);
 		return a;
 	}
@@ -75,14 +79,41 @@ public class Abstraction implements Cloneable {
 		if(cutFirstField){
 			LinkedList<SootField> tempList = new LinkedList<SootField>(accessPath.getFields());
 			tempList.removeFirst();
-			a = new Abstraction(new AccessPath(taint, tempList), source, sourceContext);
+			a = new Abstraction(new AccessPath(taint, tempList), source, sourceContext, exceptionThrown);
 		}
 		else
-			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext);		
+			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext, exceptionThrown);
 		a.callStack.addAll(this.callStack);
 		return a;
 	}
+
+	/**
+	 * Derives a new abstraction that models the current local being thrown as
+	 * an exception
+	 * @return The newly derived abstraction
+	 */
+	public Abstraction deriveNewAbstractionOnThrow(){
+		assert this.accessPath.isLocal();
+		assert !this.exceptionThrown;
+		Abstraction abs = new Abstraction(accessPath, source, sourceContext, true);
+		abs.callStack.addAll(this.callStack);
+		return abs;
+	}
 	
+	/**
+	 * Derives a new abstraction that models the current local being caught as
+	 * an exception
+	 * @param taint The value in which the tainted exception is stored
+	 * @return The newly derived abstraction
+	 */
+	public Abstraction deriveNewAbstractionOnCatch(Value taint){
+		assert this.accessPath.isLocal();
+		assert this.exceptionThrown;
+		Abstraction abs = new Abstraction(new AccessPath(taint), source, sourceContext, false);
+		abs.callStack.addAll(this.callStack);
+		return abs;
+	}
+
 	public Value getSource() {
 		return source;
 	}
@@ -118,6 +149,8 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!callStack.equals(other.callStack))
 			return false;
+		if (this.exceptionThrown != other.exceptionThrown)
+			return false;
 		
 		assert this.hashCode() == obj.hashCode();	// make sure nothing all wonky is going on
 		return true;
@@ -131,6 +164,7 @@ public class Abstraction implements Cloneable {
 			this.hashCode = prime * this.hashCode + ((accessPath == null) ? 0 : accessPath.hashCode());
 			this.hashCode = prime * this.hashCode + ((source == null) ? 0 : source.hashCode());
 			this.hashCode = prime * this.hashCode + ((sourceContext == null) ? 0 : sourceContext.hashCode());
+			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 		}
 		// The call stack is not immutable, so we must not include it in the
 		// cached hash
@@ -179,9 +213,18 @@ public class Abstraction implements Cloneable {
 		return accessPath;
 	}
 	
+	/**
+	 * Gets whether this value has been thrown as an exception
+	 * @return True if this value has been thrown as an exception, otherwise
+	 * false
+	 */
+	public boolean getExceptionThrown() {
+		return this.exceptionThrown;
+	}
+	
 	@Override
 	public Abstraction clone(){
-		Abstraction a = new Abstraction(accessPath, source, sourceContext);
+		Abstraction a = new Abstraction(accessPath, source, sourceContext, exceptionThrown);
 		a.callStack.addAll(this.callStack);
 		return a;
 	}

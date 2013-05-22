@@ -83,6 +83,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							// A backward analysis looks for aliases of existing taints and thus
 							// cannot create new taints out of thin air
+							System.out.println(interproceduralCFG().getMethodOf(src).getName());
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
 							

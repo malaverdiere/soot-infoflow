@@ -1,6 +1,7 @@
 package soot.jimple.infoflow.entryPointCreators;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -564,8 +565,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * @param parentClassLocal The local containing a reference to the class
 	 * for which we are currently building the lifecycle.
 	 */
-	private void addCallbackMethods(SootClass currentClass,
-			Local parentClassLocal) {
+	private void addCallbackMethods(SootClass currentClass, Local parentClassLocal) {
 		// If no callbacks are declared for the current class, there is nothing
 		// to be done here
 		if (!this.callbackFunctions.containsKey(currentClass.getName()))
@@ -593,12 +593,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 
 		for (SootClass callbackClass : callbackClasses.keySet()) {
 			Local classLocal;
-			if (callbackClass.getName().equals(currentClass.getName()))
+			if (isCompatible(currentClass, callbackClass))
 				classLocal = parentClassLocal;
 			else {
 				// Create a new instance of this class
 				// if we need to call a constructor, we insert the respective Jimple statement here
-				classLocal = generateClassConstructor(callbackClass, body);
+				classLocal = generateClassConstructor(callbackClass, body, Collections.singleton(currentClass));
 				if (classLocal == null) {
 					System.out.println("Constructor cannot be generated for callback class "
 							+ callbackClass.getName());
@@ -624,7 +624,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			}
 		}
 	}
-
+	
 	private Stmt searchAndBuildMethod(String subsignature, SootClass currentClass, List<String> entryPoints, Local classLocal){
 		SootMethod method = findMethod(currentClass, subsignature);
 		if (method == null) {

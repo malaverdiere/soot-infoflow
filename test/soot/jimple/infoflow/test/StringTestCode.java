@@ -153,7 +153,6 @@ public class StringTestCode {
 		cm.publish(test);
 	}
 
-	
 	public void methodStringBuilder4(String a){
 		String b = a;
 		fieldc.field = b;
@@ -168,6 +167,24 @@ public class StringTestCode {
 		
 		ClassWithField cf = new ClassWithField();
 		cf.field = fieldc.field;
+	}
+
+	public void methodStringBuilder5(){
+		String tainted = TelephonyManager.getDeviceId();
+		StringBuilder sb = new StringBuilder("Hello World");
+        sb.insert(0, tainted);
+        String test = sb.toString();
+        ConnectionManager cm = new ConnectionManager();
+		cm.publish(test);
+	}
+
+	public void methodStringBuilder6(){
+		String tainted = TelephonyManager.getDeviceId();
+		StringBuilder sb = new StringBuilder("Hello World");
+        sb.insert(0, Integer.valueOf(tainted));		// does not run, just for simplicity
+        String test = sb.toString();
+        ConnectionManager cm = new ConnectionManager();
+		cm.publish(test);
 	}
 
 	public void getChars(){

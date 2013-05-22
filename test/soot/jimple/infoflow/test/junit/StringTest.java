@@ -167,6 +167,15 @@ public class StringTest extends JUnitTests {
     }
     
     @Test
+    public void stringBuilderTest3(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder3()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);	
+    }
+    
+    @Test
     public void stringBuilderTest4(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -176,15 +185,23 @@ public class StringTest extends JUnitTests {
     }
     
     @Test
-    public void stringBuilderTest3(){
+    public void stringBuilderTest5(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
-    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder3()>");
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder5()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);	
     }
-    
-    
+
+    @Test
+    public void stringBuilderTest6(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder6()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);	
+    }
+
     @Test
     public void test133(){
     	Infoflow infoflow = initInfoflow();

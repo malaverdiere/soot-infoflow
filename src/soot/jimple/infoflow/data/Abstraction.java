@@ -93,7 +93,6 @@ public class Abstraction implements Cloneable {
 	 * @return The newly derived abstraction
 	 */
 	public Abstraction deriveNewAbstractionOnThrow(){
-		assert this.accessPath.isLocal();
 		assert !this.exceptionThrown;
 		Abstraction abs = new Abstraction(accessPath, source, sourceContext, true);
 		abs.callStack.addAll(this.callStack);
@@ -107,7 +106,6 @@ public class Abstraction implements Cloneable {
 	 * @return The newly derived abstraction
 	 */
 	public Abstraction deriveNewAbstractionOnCatch(Value taint){
-		assert this.accessPath.isLocal();
 		assert this.exceptionThrown;
 		Abstraction abs = new Abstraction(new AccessPath(taint), source, sourceContext, false);
 		abs.callStack.addAll(this.callStack);

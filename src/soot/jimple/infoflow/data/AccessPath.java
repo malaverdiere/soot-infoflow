@@ -128,7 +128,7 @@ public class AccessPath {
 	
 	public boolean isStaticFieldRef(){
 		if(value == null && !fields.isEmpty()){
-			assert (getFirstField().makeRef() instanceof StaticFieldRef || getLastField().makeRef().isStatic());
+			assert (getFirstField().makeRef() instanceof StaticFieldRef || getFirstField().makeRef().isStatic()) : "Assertion failed for fields: " + fields.toString();
 			return true;
 		}
 		return false;

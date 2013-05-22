@@ -690,10 +690,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
-							
-							if (interproceduralCFG().getMethodOf(call).getName().contains("getChars")
-									&& iStmt.getInvokeExpr().getMethod().getName().contains("arraycopy"))
-								System.out.println(source);
 
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.addAll(computeWrapperTaints(iStmt, callArgs, source));

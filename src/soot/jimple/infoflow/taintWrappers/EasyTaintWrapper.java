@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,16 +34,27 @@ import soot.jimple.internal.JAssignStmt;
 public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	private final Map<String, List<String>> classList;
 	private final Map<String, List<String>> excludeList;
+	private final Map<String, List<String>> killList;
 
 	public EasyTaintWrapper(HashMap<String, List<String>> classList){
 		this.classList = classList;
 		this.excludeList = new HashMap<String, List<String>>();
+		this.killList = new HashMap<String, List<String>>();
 	}
 	
 	public EasyTaintWrapper(HashMap<String, List<String>> classList,
 			HashMap<String, List<String>> excludeList) {
 		this.classList = classList;
 		this.excludeList = excludeList;
+		this.killList = new HashMap<String, List<String>>();
+	}
+
+	public EasyTaintWrapper(HashMap<String, List<String>> classList,
+			HashMap<String, List<String>> excludeList,
+			HashMap<String, List<String>> killList) {
+		this.classList = classList;
+		this.excludeList = excludeList;
+		this.killList = killList;
 	}
 
 	public EasyTaintWrapper(File f) throws IOException{
@@ -53,16 +65,20 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			String line = reader.readLine();
 			List<String> methodList = new LinkedList<String>();
 			List<String> excludeList = new LinkedList<String>();
+			List<String> killList = new LinkedList<String>();
 			while(line != null){
 				if (!line.isEmpty() && !line.startsWith("%"))
 					if (line.startsWith("~"))
 						excludeList.add(line.substring(1));
+					else if (line.startsWith("-"))
+						killList.add(line.substring(1));
 					else
 						methodList.add(line);
 				line = reader.readLine();
 			}
 			this.classList = SootMethodRepresentationParser.v().parseClassNames(methodList, true);
 			this.excludeList = SootMethodRepresentationParser.v().parseClassNames(excludeList, true);
+			this.killList = SootMethodRepresentationParser.v().parseClassNames(killList, true);
 			System.out.println("Loaded wrapper entries for " + classList.size() + " classes " +
 					"and " + excludeList.size() + " exclusions.");
 		}
@@ -81,6 +97,13 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 
 	@Override
 	public List<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+		if (!stmt.containsInvokeExpr())
+			return Collections.emptyList();
+		
+		List<String> killMethods = this.killList.get(stmt.getInvokeExpr().getMethod().getDeclaringClass().getName());
+		if (killMethods != null && killMethods.contains(stmt.getInvokeExpr().getMethod().getSubSignature()))
+			return Collections.emptyList();
+		
 		List<Value> taints = new ArrayList<Value>();
 		
 		//if param is tainted && classList contains classname && if list. contains signature of method -> add propagation
@@ -107,7 +130,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		
 		// If the base object is tainted, all calls to its methods always return
 		// tainted values
-		if (taintedBase != null)
+		if (taintedBase != null) {
 			if(stmt instanceof JAssignStmt) {
 				AssignStmt assign = (AssignStmt) stmt;
 				// Check for exclusions
@@ -116,6 +139,10 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 						(assign.getInvokeExpr().getMethod().getSubSignature()))
 					taints.add(assign.getLeftOp());
 			}
+
+			// If the base object is tainted, we pass this taint on
+			taints.add(taintedBase);
+		}
 		
 		return taints;
 	}

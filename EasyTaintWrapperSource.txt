@@ -1,11 +1,15 @@
 <java.util.Stack: java.lang.Object push(java.lang.Object)>
 
 <java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>
+-<java.util.Map: void clear()>
 
 <java.util.HashMap: void <init>(java.util.Map)>
 <java.util.WeakHashMap: void <init>(java.util.Map)>
 <java.util.ConcurrentHashMap: void <init>(java.util.Map)>
 <java.util.LinkedHashMap: void <init>(java.util.Map)>
+
+<java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>
+<java.util.Map: java.lang.Object putAll(java.util.Map)>
 
 <java.util.List: boolean add(java.lang.Object)>
 <java.util.List: void add(int,java.lang.Object)>

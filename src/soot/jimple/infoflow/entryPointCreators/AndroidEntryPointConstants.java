@@ -12,6 +12,7 @@ public class AndroidEntryPointConstants {
 	public static final String SERVICECLASS = "android.app.Service";
 	public static final String BROADCASTRECEIVERCLASS = "android.content.BroadcastReceiver";
 	public static final String CONTENTPROVIDERCLASS = "android.content.ContentProvider";
+	public static final String APPLICATIONCLASS = "android.app.Application";
 	
 	public static final String ACTIVITY_ONCREATE = "void onCreate(android.os.Bundle)";
 	public static final String ACTIVITY_ONSTART = "void onStart()";
@@ -38,6 +39,9 @@ public class AndroidEntryPointConstants {
 	
 	public static final String CONTENTPROVIDER_ONCREATE = "boolean onCreate()";
 	
+	public static final String APPLICATION_ONCREATE = "void onCreate()";
+	public static final String APPLICATION_ONTERMINATE = "void onCreate()";
+	
 	private static final String[] activityMethods = {ACTIVITY_ONCREATE, ACTIVITY_ONDESTROY, ACTIVITY_ONPAUSE,
 		ACTIVITY_ONRESTART, ACTIVITY_ONRESUME, ACTIVITY_ONSTART, ACTIVITY_ONSTOP,
 		ACTIVITY_ONSAVEINSTANCESTATE, ACTIVITY_ONRESTOREINSTANCESTATE,
@@ -46,6 +50,7 @@ public class AndroidEntryPointConstants {
 		SERVICE_ONSTART2, SERVICE_ONBIND, SERVICE_ONREBIND, SERVICE_ONUNBIND};
 	private static final String[] broadcastMethods = {BROADCAST_ONRECEIVE};
 	private static final String[] contentproviderMethods = {CONTENTPROVIDER_ONCREATE};
+	private static final String[] applicationMethods = {APPLICATION_ONCREATE, APPLICATION_ONTERMINATE};
 	
 	public static List<String> getActivityLifecycleMethods(){
 		return Arrays.asList(activityMethods);
@@ -61,6 +66,25 @@ public class AndroidEntryPointConstants {
 	
 	public static List<String> getContentproviderLifecycleMethods(){
 		return Arrays.asList(contentproviderMethods);
+	}
+
+	public static List<String> getApplicationLifecycleMethods(){
+		return Arrays.asList(applicationMethods);
+	}
+
+	/**
+	 * Gets whether the given class if one of Android's default lifecycle
+	 * classes (android.app.Activity etc.)
+	 * @param className The name of the class to check
+	 * @return True if the given class is one of Android's default lifecycle
+	 * classes, otherwise false
+	 */
+	public static boolean isLifecycleClass(String className) {
+		return className.equals(ACTIVITYCLASS)
+				|| className.equals(SERVICECLASS)
+				|| className.equals(BROADCASTRECEIVERCLASS)
+				|| className.equals(CONTENTPROVIDERCLASS)
+				|| className.equals(APPLICATIONCLASS);
 	}
 
 }

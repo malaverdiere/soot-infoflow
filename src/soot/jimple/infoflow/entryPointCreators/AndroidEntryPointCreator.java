@@ -119,6 +119,36 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 
 		JAssignStmt assignStmt = new JAssignStmt(intCounter, IntConstant.v(conditionCounter));
 		body.getUnits().add(assignStmt);
+
+		// Resolve all requested classes
+		for (Entry<String, List<String>> entry : classMap.entrySet())
+			Scene.v().forceResolve(entry.getKey(), SootClass.BODIES);
+		
+		// If we have an activity, we need to start it in the very beginning
+		SootClass applicationClass = null;
+		Local applicationLocal = null;
+		for (Entry<String, List<String>> entry : classMap.entrySet()) {
+			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
+			List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
+			for(SootClass sc : extendedClasses)
+				if(sc.getName().equals(AndroidEntryPointConstants.APPLICATIONCLASS)) {
+					applicationClass = currentClass;
+					
+					// Create the application
+					applicationLocal = generateClassConstructor(applicationClass, body);
+					if (applicationLocal == null) {
+						System.err.println("Constructor cannot be generated for application class "
+								+ applicationClass.getName());
+						continue;
+					}
+					localVarsForClasses.put(applicationClass.getName(), applicationLocal);
+					
+					// Call the onCreate() method
+					searchAndBuildMethod(AndroidEntryPointConstants.APPLICATION_ONCREATE,
+							applicationClass, entry.getValue(), applicationLocal);					
+					break;
+				}
+		}
 		
 		//prepare outer loop:
 		JNopStmt outerStartStmt = new JNopStmt();
@@ -132,7 +162,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			JIfStmt entryIfStmt = new JIfStmt(entryCond, entryExitStmt);
 			body.getUnits().add(entryIfStmt);
 			
-			SootClass currentClass = Scene.v().forceResolve(entry.getKey(), SootClass.BODIES);
+			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
 			currentClass.setApplicationClass();
 			JNopStmt endClassStmt = new JNopStmt();
 
@@ -146,19 +176,19 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				// Check the type of this class
 				List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
 				for(SootClass sc : extendedClasses){
-					if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS)){
+					if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS)) {
 						activity = true;
 						break;
 					}
-					if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS)){
+					else if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS)) {
 						service = true;
 						break;
 					}
-					if(sc.getName().equals(AndroidEntryPointConstants.BROADCASTRECEIVERCLASS)){
+					else if(sc.getName().equals(AndroidEntryPointConstants.BROADCASTRECEIVERCLASS)) {
 						broadcastReceiver = true;
 						break;
 					}
-					if(sc.getName().equals(AndroidEntryPointConstants.CONTENTPROVIDERCLASS)){
+					else if(sc.getName().equals(AndroidEntryPointConstants.CONTENTPROVIDERCLASS)) {
 						contentProvider = true;
 						break;
 					}
@@ -258,10 +288,19 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			}
 		}
 		
+		// Add conditional calls to the application callback methods
+		if (applicationLocal != null)
+			addApplicationCallbackMethods(applicationClass, applicationLocal);
+		
 		JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
 		conditionCounter++;
 		JIfStmt outerIfStmt = new JIfStmt(cond, outerStartStmt);
 		body.getUnits().add(outerIfStmt);
+		
+		// Add a call to application.onTerminate()
+		if (applicationLocal != null)
+			searchAndBuildMethod(AndroidEntryPointConstants.APPLICATION_ONTERMINATE,
+					applicationClass, classMap.get(applicationClass.getName()), applicationLocal);
 
 		if (DEBUG)
 			mainMethod.getActiveBody().validate();
@@ -559,6 +598,43 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	}
 	
 	/**
+	 * Adds calls to the callback methods defined in the application class
+	 * @param applicationClass The class in which the user-defined application
+	 * is implemented
+	 * @param applicationLocal The local containing the instance of the
+	 * user-defined application
+	 */
+	private void addApplicationCallbackMethods(SootClass applicationClass,
+			Local applicationLocal) {
+		// There may be multiple user classes between the class registered in
+		// the manifest file and the Android system class
+		for (SootClass currentClass : Scene.v().getActiveHierarchy()
+				.getSuperclassesOfIncluding(applicationClass)) {
+			// If we have arrived at the Android system class, we can abort the
+			// search
+			if (currentClass.getName().equals(AndroidEntryPointConstants.APPLICATIONCLASS))
+				break;
+			
+			for (SootMethod method : currentClass.getMethods()) {
+				// We do not consider lifecycle methods which are directly inserted
+				// at their respective positions
+				if (AndroidEntryPointConstants.getApplicationLifecycleMethods().contains
+						(method.getSubSignature()))
+					continue;
+				
+				// Add a conditional call to the method
+  				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
+				conditionCounter++;
+				JNopStmt thenStmt = new JNopStmt();
+				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
+				body.getUnits().add(ifStmt);
+				buildMethodCall(method, body, applicationLocal, generator);	
+				body.getUnits().add(thenStmt);
+			}
+		}
+	}
+
+	/**
 	 * Generates invocation statements for all callback methods which need to
 	 * be invoked during the given class' run cycle.
 	 * @param currentClass The class for which we currently build the lifecycle
@@ -613,14 +689,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				JNopStmt thenStmt = new JNopStmt();
 				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
 				body.getUnits().add(ifStmt);
-				JNopStmt elseStmt = new JNopStmt();
-				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-				body.getUnits().add(elseGoto);
-				
+				buildMethodCall(callbackMethod, body, classLocal, generator);	
 				body.getUnits().add(thenStmt);
-				buildMethodCall(callbackMethod, body, classLocal, generator);
-	
-				body.getUnits().add(elseStmt);
 			}
 		}
 	}
@@ -632,6 +702,11 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			return null;
 		}
 		entryPoints.remove(method.getSignature());
+		
+		// If the method is in one of the predefined Android classes, it cannot
+		// contain custom code, so we do not need to call it
+		if (AndroidEntryPointConstants.isLifecycleClass(method.getDeclaringClass().getName()))
+			return null;
 
 		assert method.isStatic() || classLocal != null : "Class local was null for non-static method "
 				+ method.getSignature();

@@ -15,6 +15,7 @@ public class Abstraction implements Cloneable {
 	private Unit activationUnit;
 	private final boolean exceptionThrown;
 	private int hashCode;
+	private Abstraction abstractionFromCallEdge;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown){
 		this.source = src;
@@ -70,6 +71,7 @@ public class Abstraction implements Cloneable {
 	
 	public Abstraction deriveNewAbstraction(AccessPath p){
 		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown);
+		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		return a;
 	}
 	
@@ -96,6 +98,7 @@ public class Abstraction implements Cloneable {
 		}
 		else
 			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext, exceptionThrown);
+		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		return a;
 	}
 	
@@ -113,6 +116,7 @@ public class Abstraction implements Cloneable {
 	public Abstraction deriveNewAbstractionOnThrow(){
 		assert !this.exceptionThrown;
 		Abstraction abs = new Abstraction(accessPath, source, sourceContext, true);
+		abs.abstractionFromCallEdge = abstractionFromCallEdge;
 		return abs;
 	}
 	
@@ -125,6 +129,7 @@ public class Abstraction implements Cloneable {
 	public Abstraction deriveNewAbstractionOnCatch(Value taint){
 		assert this.exceptionThrown;
 		Abstraction abs = new Abstraction(new AccessPath(taint), source, sourceContext, false);
+		abs.abstractionFromCallEdge = abstractionFromCallEdge;
 		return abs;
 	}
 
@@ -209,6 +214,24 @@ public class Abstraction implements Cloneable {
 		return activationUnit;
 	}
 	
+	public Abstraction getAbstractionFromCallEdge(){
+		return abstractionFromCallEdge;
+	}
+	/**
+	 * best-effort approach: if we are at level 0 and have not seen a call edge, we just take the abstraction which is imprecise
+	 * null is not allowed
+	 * @return
+	 */
+	public Abstraction getNotNullAbstractionFromCallEdge(){
+		if(abstractionFromCallEdge == null)
+			return this;
+		return abstractionFromCallEdge;
+	}
+	
+	public void setAbstractionFromCallEdge(Abstraction abs){
+		abstractionFromCallEdge = abs;
+	}
+	
 	public Abstraction getActiveCopy(){
 		Abstraction a = clone();
 		a.activationUnit = null;
@@ -228,6 +251,7 @@ public class Abstraction implements Cloneable {
 	public Abstraction clone(){
 		Abstraction a = new Abstraction(accessPath, source, sourceContext, exceptionThrown);
 		a.activationUnit = activationUnit;
+		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		return a;
 	}
 	

@@ -494,6 +494,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											(dest.getActiveBody().getThisLocal()));
 								//add new callArgs:
 								assert abs != source;		// our source abstraction must be immutable
+								abs.setAbstractionFromCallEdge(abs.clone());
 								res.add(abs);
 							}
 						}
@@ -512,6 +513,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
 												(paramLocals.get(i)));
 									assert abs != source;		// our source abstraction must be immutable
+									abs.setAbstractionFromCallEdge(abs.clone());
 									res.add(abs);
 								}
 							}
@@ -523,6 +525,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							abs = source.clone();
 							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
 							assert abs != source;		// our source abstraction must be immutable
+							abs.setAbstractionFromCallEdge(abs.clone());
 							res.add(abs);
 						}
 						
@@ -542,6 +545,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
+						}
+						if(callee.getName().contains("add")){
+							System.out.println("x");
 						}
 						Abstraction newSource;
 						if(!source.isAbstractionActive() && source.getActivationUnit().equals(callSite)){

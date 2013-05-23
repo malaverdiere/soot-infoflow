@@ -69,7 +69,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							IdentityStmt iStmt = (IdentityStmt) src;
 							if(iStmt.getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source, u, source));
+									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
 							}
 							return Collections.singleton(source);
 						}
@@ -115,13 +115,13 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											&& ref.getField().equals(source.getAccessPath().getFirstField())) {
 										Abstraction abs = source.deriveNewAbstraction(leftValue, true);
 										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, u, abs));
+											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs.getNotNullAbstractionFromCallEdge(), u, abs));
 									}
 								}
 								else if (rightValue.equals(source.getAccessPath().getPlainValue())) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue));
 									for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs, u, abs));
+										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs.getNotNullAbstractionFromCallEdge(), u, abs));
 								}
 								// If we have an assignment to the base local of the current taint,
 								// all taint propagations must be below that point, so this is the
@@ -139,7 +139,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 													|| rightValue instanceof NewArrayExpr
 													|| rightValue instanceof Constant)) {
 										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source, u, source));
+											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
 									}
 								}
 							}
@@ -223,8 +223,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								// $r1 = l0.<java.lang.AbstractStringBuilder: char[] value>
 								for (Abstraction a : res)
 									if (a.getAccessPath().isStaticFieldRef() || triggerReverseFlow(a.getAccessPath().getPlainValue(), a)) {
+
 										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(a, u, a));
+											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, a));
 									}
 								return res;
 							}

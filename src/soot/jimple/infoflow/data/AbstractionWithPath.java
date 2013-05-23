@@ -67,7 +67,6 @@ public class AbstractionWithPath extends Abstraction {
 	public AbstractionWithPath deriveNewAbstraction(AccessPath p){
 		AbstractionWithPath a = new AbstractionWithPath(p, this.getSource(),
 				this.getSourceContext(), this.getExceptionThrown(), this.propagationPath);
-		a.getCallStack().addAll(this.getCallStack());
 		return a;
 	}
 	
@@ -87,7 +86,6 @@ public class AbstractionWithPath extends Abstraction {
 		else
 			a = new AbstractionWithPath(new AccessPath(taint, this.getAccessPath().getFields()),
 					this.getSource(), this.getSourceContext(), this.getExceptionThrown(), this.propagationPath);
-		a.getCallStack().addAll(this.getCallStack());
 		return a;
 	}
 
@@ -102,7 +100,6 @@ public class AbstractionWithPath extends Abstraction {
 		assert !this.getExceptionThrown();
 		AbstractionWithPath abs = new AbstractionWithPath(this.getAccessPath(), this.getSource(),
 				this.getSourceContext(), true, this.propagationPath);
-		abs.getCallStack().addAll(this.getCallStack());
 		return abs;
 	}
 
@@ -118,7 +115,6 @@ public class AbstractionWithPath extends Abstraction {
 		assert !this.getExceptionThrown();
 		AbstractionWithPath abs = new AbstractionWithPath(new AccessPath(taint), this.getSource(),
 				this.getSourceContext(), false, this.propagationPath);
-		abs.getCallStack().addAll(this.getCallStack());
 		return abs;
 	}
 

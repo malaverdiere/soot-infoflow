@@ -2,7 +2,6 @@ package soot.jimple.infoflow.data;
 
 
 import java.util.LinkedList;
-import java.util.Stack;
 
 import soot.SootField;
 import soot.Unit;
@@ -13,14 +12,14 @@ public class Abstraction implements Cloneable {
 	private final AccessPath accessPath;
 	private final Value source;
 	private final Stmt sourceContext;
-	private final Stack<Unit> callStack;
+	private Unit activationUnit;
 	private final boolean exceptionThrown;
 	private int hashCode;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown){
 		this.source = src;
 		this.accessPath = new AccessPath(taint);
-		this.callStack = new Stack<Unit>();
+		this.activationUnit = null;
 		this.sourceContext = srcContext;
 		this.exceptionThrown = exceptionThrown;
 	}
@@ -29,7 +28,7 @@ public class Abstraction implements Cloneable {
 		this.source = src;
 		this.sourceContext = srcContext;
 		this.accessPath = p;
-		this.callStack = new Stack<Unit>();
+		this.activationUnit = null;
 		this.exceptionThrown = exceptionThrown;
 	}
 
@@ -50,7 +49,7 @@ public class Abstraction implements Cloneable {
 	 * @param original The original abstraction to copy
 	 */
 	public Abstraction(AccessPath p, Abstraction original){
-		callStack = new Stack<Unit>();
+		activationUnit = null;
 		if (original == null) {
 			source = null;
 			sourceContext = null;
@@ -58,20 +57,34 @@ public class Abstraction implements Cloneable {
 		else {
 			source = original.source;
 			sourceContext = original.sourceContext;
-			callStack.addAll(original.callStack);
 		}
 		accessPath = p;
 		exceptionThrown = original.exceptionThrown;
 	}
 	
+	public Abstraction deriveNewAbstraction(Unit u){
+		Abstraction a = clone();
+		a.activationUnit = u;
+		return a;
+	}
+	
 	public Abstraction deriveNewAbstraction(AccessPath p){
 		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown);
-		a.callStack.addAll(this.callStack);
+		return a;
+	}
+	
+	public Abstraction deriveNewAbstraction(AccessPath p, Unit srcUnit){
+		Abstraction a = deriveNewAbstraction(p);
+		a.activationUnit = srcUnit;
 		return a;
 	}
 	
 	public Abstraction deriveNewAbstraction(Value taint){
 		return this.deriveNewAbstraction(taint, false);
+	}
+	
+	public Abstraction deriveNewAbstraction(Value taint, Unit srcUnit){
+		return this.deriveNewAbstraction(taint, false, srcUnit);
 	}
 	
 	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField){
@@ -83,7 +96,12 @@ public class Abstraction implements Cloneable {
 		}
 		else
 			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext, exceptionThrown);
-		a.callStack.addAll(this.callStack);
+		return a;
+	}
+	
+	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit srcStmt){
+		Abstraction a = deriveNewAbstraction(taint, cutFirstField);
+		a.activationUnit = srcStmt;
 		return a;
 	}
 
@@ -95,7 +113,6 @@ public class Abstraction implements Cloneable {
 	public Abstraction deriveNewAbstractionOnThrow(){
 		assert !this.exceptionThrown;
 		Abstraction abs = new Abstraction(accessPath, source, sourceContext, true);
-		abs.callStack.addAll(this.callStack);
 		return abs;
 	}
 	
@@ -108,7 +125,6 @@ public class Abstraction implements Cloneable {
 	public Abstraction deriveNewAbstractionOnCatch(Value taint){
 		assert this.exceptionThrown;
 		Abstraction abs = new Abstraction(new AccessPath(taint), source, sourceContext, false);
-		abs.callStack.addAll(this.callStack);
 		return abs;
 	}
 
@@ -142,10 +158,10 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!sourceContext.equals(other.sourceContext))
 			return false;
-		if (callStack == null) {
-			if (other.callStack != null)
+		if (activationUnit == null) {
+			if (other.activationUnit != null)
 				return false;
-		} else if (!callStack.equals(other.callStack))
+		} else if (!activationUnit.equals(other.activationUnit))
 			return false;
 		if (this.exceptionThrown != other.exceptionThrown)
 			return false;
@@ -162,38 +178,16 @@ public class Abstraction implements Cloneable {
 			this.hashCode = prime * this.hashCode + ((accessPath == null) ? 0 : accessPath.hashCode());
 			this.hashCode = prime * this.hashCode + ((source == null) ? 0 : source.hashCode());
 			this.hashCode = prime * this.hashCode + ((sourceContext == null) ? 0 : sourceContext.hashCode());
+			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 		}
 		// The call stack is not immutable, so we must not include it in the
 		// cached hash
-		return prime * this.hashCode + ((callStack == null) ? 0 : callStack.hashCode());
+		return this.hashCode;
 	}
 	
-	public void addToStack(Unit u){
-		// Do not add a method we already have on the stack.
-		// Otherwise, recursive calls will make our analysis run in an
-		// infinite loop.
-		if (!callStack.contains(u))
-			callStack.push(u);
-	}
-	
-	public void removeFromStack(){
-		if(!callStack.isEmpty())
-			callStack.pop();
-	}
-	
-	public boolean isStackEmpty(){
-		return callStack.isEmpty();
-	}
-	
-	public Unit getElementFromStack(){
-		if(!callStack.isEmpty())
-			return callStack.peek();
-		return null;
-	}
-	
-	protected Stack<Unit> getCallStack() {
-		return this.callStack;
+	public boolean isAbstractionActive(){
+		return activationUnit == null;
 	}
 	
 	@Override
@@ -211,6 +205,16 @@ public class Abstraction implements Cloneable {
 		return accessPath;
 	}
 	
+	public Unit getActivationUnit(){
+		return activationUnit;
+	}
+	
+	public Abstraction getActiveCopy(){
+		Abstraction a = clone();
+		a.activationUnit = null;
+		return a;
+	}
+	
 	/**
 	 * Gets whether this value has been thrown as an exception
 	 * @return True if this value has been thrown as an exception, otherwise
@@ -223,8 +227,10 @@ public class Abstraction implements Cloneable {
 	@Override
 	public Abstraction clone(){
 		Abstraction a = new Abstraction(accessPath, source, sourceContext, exceptionThrown);
-		a.callStack.addAll(this.callStack);
+		a.activationUnit = activationUnit;
 		return a;
 	}
+	
+	
 
 }

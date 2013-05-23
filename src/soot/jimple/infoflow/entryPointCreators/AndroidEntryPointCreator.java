@@ -50,6 +50,17 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	private Map<String, List<String>> callbackFunctions;
 	
 	/**
+	 * Array containing all types of components supported in Android lifecycles
+	 */
+	private enum ComponentType {
+		Activity,
+		Service,
+		BroadcastReceiver,
+		ContentProvider,
+		Plain
+	}
+	
+	/**
 	 * Creates a new instance of the {@link AndroidEntryPointCreator} class.
 	 */
 	public AndroidEntryPointCreator() {
@@ -124,7 +135,37 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		for (Entry<String, List<String>> entry : classMap.entrySet())
 			Scene.v().forceResolve(entry.getKey(), SootClass.BODIES);
 		
-		// If we have an activity, we need to start it in the very beginning
+		// For some weird reason unknown to anyone except the flying spaghetti
+		// monster, the onCreate() methods of content providers run even before
+		// the application object's onCreate() is called.
+		{
+			JNopStmt beforeContentProvidersStmt = new JNopStmt();
+			body.getUnits().add(beforeContentProvidersStmt);
+			for(String className : classMap.keySet()) {
+				SootClass currentClass = Scene.v().getSootClass(className);
+				if (getComponentType(currentClass) == ComponentType.ContentProvider) {
+					// Create an instance of the content provider
+					Local localVal = generateClassConstructor(currentClass, body);
+					if (localVal == null) {
+						System.err.println("Constructor cannot be generated for " + currentClass.getName());
+						continue;
+					}
+					localVarsForClasses.put(currentClass.getName(), localVal);
+					
+					// Conditionally call the onCreate method
+					JNopStmt thenStmt = new JNopStmt();
+					createIfStmt(thenStmt);
+					buildMethodCall(findMethod(currentClass, AndroidEntryPointConstants.CONTENTPROVIDER_ONCREATE),
+							body, localVal, generator);
+					body.getUnits().add(thenStmt);
+				}
+			}
+			// Jump back to the beginning of this section to overapproximate the
+			// order in which the methods are called
+			createIfStmt(beforeContentProvidersStmt);
+		}
+		
+		// If we have an application, we need to start it in the very beginning
 		SootClass applicationClass = null;
 		Local applicationLocal = null;
 		for (Entry<String, List<String>> entry : classMap.entrySet()) {
@@ -167,41 +208,17 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			JNopStmt endClassStmt = new JNopStmt();
 
 			try {
-				boolean activity = false;
-				boolean service = false;
-				boolean broadcastReceiver = false;
-				boolean contentProvider = false;
-				boolean plain = false;
-	
-				// Check the type of this class
-				List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
-				for(SootClass sc : extendedClasses){
-					if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS)) {
-						activity = true;
-						break;
-					}
-					else if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS)) {
-						service = true;
-						break;
-					}
-					else if(sc.getName().equals(AndroidEntryPointConstants.BROADCASTRECEIVERCLASS)) {
-						broadcastReceiver = true;
-						break;
-					}
-					else if(sc.getName().equals(AndroidEntryPointConstants.CONTENTPROVIDERCLASS)) {
-						contentProvider = true;
-						break;
-					}
-				}
-				if(!activity && !service && !broadcastReceiver && !contentProvider)
-					plain = true;
-	
+				ComponentType componentType = getComponentType(currentClass);
+		
 				// Check if one of the methods is instance. This tells us whether
 				// we need to create a constructor invocation or not. Furthermore,
 				// we collect references to the corresponding SootMethod objects.
-				boolean instanceNeeded = activity || service || broadcastReceiver || contentProvider;
+				boolean instanceNeeded = componentType == ComponentType.Activity
+						|| componentType == ComponentType.Service
+						|| componentType == ComponentType.BroadcastReceiver
+						|| componentType == ComponentType.ContentProvider;
 				Map<String, SootMethod> plainMethods = new HashMap<String, SootMethod>();
-				if (!instanceNeeded || plain)
+				if (!instanceNeeded)
 					for(String method : entry.getValue()){
 						SootMethod sm = null;
 						
@@ -229,7 +246,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					}
 				
 				// if we need to call a constructor, we insert the respective Jimple statement here
-				if(instanceNeeded){
+				if (instanceNeeded && !localVarsForClasses.containsKey(currentClass.getName())){
 					Local localVal = generateClassConstructor(currentClass, body);
 					if (localVal == null) {
 						System.err.println("Constructor cannot be generated for " + currentClass.getName());
@@ -240,46 +257,46 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				Local classLocal = localVarsForClasses.get(entry.getKey());
 	
 				// Generate the lifecycles for the different kinds of Android classes
-				if(activity)
+				switch (componentType) {
+				case Activity:
 					generateActivityLifecycle(entry.getValue(), currentClass, endClassStmt,
 							classLocal);
-				if(service)
+					break;
+				case Service:
 					generateServiceLifecycle(entry.getValue(), currentClass, endClassStmt,
 							classLocal);
-				if(broadcastReceiver)
+					break;
+				case BroadcastReceiver:
 					generateBroadcastReceiverLifecycle(entry.getValue(), currentClass, endClassStmt,
 							classLocal);
-				if(contentProvider)
+					break;
+				case ContentProvider:
 					generateContentProviderLifecycle(entry.getValue(), currentClass, endClassStmt,
 							classLocal);
-				if(plain){
+					break;
+				case Plain:
+					// Allow the complete class to be skipped
+					createIfStmt(endClassStmt);
+
 					JNopStmt beforeClassStmt = new JNopStmt();
 					body.getUnits().add(beforeClassStmt);
-					for(SootMethod currentMethod : plainMethods.values()){
+					for(SootMethod currentMethod : plainMethods.values()) {
 						if (!currentMethod.isStatic() && classLocal == null) {
 							System.out.println("Skipping method " + currentMethod + " because we have no instance");
 							continue;
 						}
 						
-						JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-						conditionCounter++;
+						// Create a conditional call on the current method
 						JNopStmt thenStmt = new JNopStmt();
-						JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-						body.getUnits().add(ifStmt);
-						JNopStmt elseStmt = new JNopStmt();
-						JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-						body.getUnits().add(elseGoto);
-							
-						body.getUnits().add(thenStmt);
+						createIfStmt(thenStmt);
 						buildMethodCall(currentMethod, body, classLocal, generator);
-						
-						createIfStmt(endClassStmt);
-						body.getUnits().add(elseStmt);
+						body.getUnits().add(thenStmt);
 						
 						// Because we don't know the order of the custom statements,
 						// we assume that you can loop arbitrarily
 						createIfStmt(beforeClassStmt);
 					}
+					break;
 				}
 			}
 			finally {
@@ -309,6 +326,27 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	}
 
 	/**
+	 * Gets the type of component represented by the given Soot class
+	 * @param currentClass The class for which to get the component type
+	 * @return The component type of the given class
+	 */
+	private ComponentType getComponentType(SootClass currentClass) {
+		// Check the type of this class
+		List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
+		for(SootClass sc : extendedClasses){
+			if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS))
+				return ComponentType.Activity;
+			else if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS))
+				return ComponentType.Service;
+			else if(sc.getName().equals(AndroidEntryPointConstants.BROADCASTRECEIVERCLASS))
+				return ComponentType.BroadcastReceiver;
+			else if(sc.getName().equals(AndroidEntryPointConstants.CONTENTPROVIDERCLASS))
+				return ComponentType.ContentProvider;
+		}
+		return ComponentType.Plain; 
+	}
+
+	/**
 	 * Generates the lifecycle for an Android content provider class
 	 * @param entryPoints The list of methods to consider in this class
 	 * @param currentClass The class for which to build the content provider
@@ -326,7 +364,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		// run, we allow for each single one of them to be skipped
 		createIfStmt(endClassStmt);
 
-		Stmt onCreateStmt = searchAndBuildMethod(AndroidEntryPointConstants.CONTENTPROVIDER_ONCREATE, currentClass, entryPoints, classLocal);
+		// ContentProvider.onCreate() runs before everything else, even before
+		// Application.onCreate(). We must thus handle it elsewhere.
+		// Stmt onCreateStmt = searchAndBuildMethod(AndroidEntryPointConstants.CONTENTPROVIDER_ONCREATE, currentClass, entryPoints, classLocal);
+		
 		// see: http://developer.android.com/reference/android/content/ContentProvider.html
 		//methods
 		JNopStmt startWhileStmt = new JNopStmt();
@@ -334,25 +375,16 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		body.getUnits().add(startWhileStmt);
 		for(SootMethod currentMethod : currentClass.getMethods()){
 			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getContentproviderLifecycleMethods().contains(currentMethod.getSubSignature())){
-				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-				conditionCounter++;
 				JNopStmt thenStmt = new JNopStmt();
-				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-				body.getUnits().add(ifStmt);
-				JNopStmt elseStmt = new JNopStmt();
-				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-				body.getUnits().add(elseGoto);
-				
-				body.getUnits().add(thenStmt);
+				createIfStmt(thenStmt);
 				buildMethodCall(currentMethod, body, classLocal, generator);
-
-				body.getUnits().add(elseStmt);
+				body.getUnits().add(thenStmt);
 			}
 		}
 		addCallbackMethods(currentClass, classLocal);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
-		createIfStmt(onCreateStmt);
+		// createIfStmt(onCreateStmt);
 	}
 
 	/**
@@ -380,19 +412,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		body.getUnits().add(startWhileStmt);
 		for(SootMethod currentMethod : currentClass.getMethods()){
 			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getBroadcastLifecycleMethods().contains(currentMethod.getSubSignature())){
-				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-				conditionCounter++;
 				JNopStmt thenStmt = new JNopStmt();
-				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-				body.getUnits().add(ifStmt);
-				JNopStmt elseStmt = new JNopStmt();
-				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-				body.getUnits().add(elseGoto);
-				
-				body.getUnits().add(thenStmt);
+				createIfStmt(thenStmt);
 				buildMethodCall(currentMethod, body, classLocal, generator);
-
-				body.getUnits().add(elseStmt);
+				body.getUnits().add(thenStmt);
 			}
 		}
 		addCallbackMethods(currentClass, classLocal);
@@ -433,19 +456,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		body.getUnits().add(startWhileStmt);
 		for(SootMethod currentMethod : currentClass.getMethods()){
 			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getServiceLifecycleMethods().contains(currentMethod.getSubSignature())){
-				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-				conditionCounter++;
 				JNopStmt thenStmt = new JNopStmt();
-				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-				body.getUnits().add(ifStmt);
-				JNopStmt elseStmt = new JNopStmt();
-				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-				body.getUnits().add(elseGoto);
-				
-				body.getUnits().add(thenStmt);
+				createIfStmt(thenStmt);
 				buildMethodCall(currentMethod, body, classLocal, generator);
-
-				body.getUnits().add(elseStmt);
+				body.getUnits().add(thenStmt);
 			}
 		}
 		addCallbackMethods(currentClass, classLocal);
@@ -466,19 +480,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		body.getUnits().add(startWhile2Stmt);
 		for(SootMethod currentMethod : currentClass.getMethods()){
 			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getServiceLifecycleMethods().contains(currentMethod.getSubSignature())){
-				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-				conditionCounter++;
 				JNopStmt thenStmt = new JNopStmt();
-				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-				body.getUnits().add(ifStmt);
-				JNopStmt elseStmt = new JNopStmt();
-				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-				body.getUnits().add(elseGoto);
-				
-				body.getUnits().add(thenStmt);
+				createIfStmt(thenStmt);
 				buildMethodCall(currentMethod, body, classLocal, generator);
-
-				body.getUnits().add(elseStmt);
+				body.getUnits().add(thenStmt);
 			}
 		}
 		addCallbackMethods(currentClass, classLocal);
@@ -541,19 +546,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		for(SootMethod currentMethod : currentClass.getMethods()){
 			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getActivityLifecycleMethods().contains(currentMethod.getSubSignature())){
-				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-				conditionCounter++;
 				JNopStmt thenStmt = new JNopStmt();
-				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-				body.getUnits().add(ifStmt);
-				JNopStmt elseStmt = new JNopStmt();
-				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-				body.getUnits().add(elseGoto);
-				
-				body.getUnits().add(thenStmt);
+				createIfStmt(thenStmt);
 				buildMethodCall(currentMethod, body, classLocal, generator);
-
-				body.getUnits().add(elseStmt);
+				body.getUnits().add(thenStmt);
 			}
 		}		
 		addCallbackMethods(currentClass, classLocal);
@@ -623,11 +619,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					continue;
 				
 				// Add a conditional call to the method
-  				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-				conditionCounter++;
 				JNopStmt thenStmt = new JNopStmt();
-				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-				body.getUnits().add(ifStmt);
+				createIfStmt(thenStmt);
 				buildMethodCall(method, body, applicationLocal, generator);	
 				body.getUnits().add(thenStmt);
 			}
@@ -684,11 +677,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			
 			// Build the calls to all callback methods in this class
 			for (SootMethod callbackMethod : callbackClasses.get(callbackClass)) {
-				JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-				conditionCounter++;
 				JNopStmt thenStmt = new JNopStmt();
-				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
-				body.getUnits().add(ifStmt);
+				createIfStmt(thenStmt);
 				buildMethodCall(callbackMethod, body, classLocal, generator);	
 				body.getUnits().add(thenStmt);
 			}

@@ -147,7 +147,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 	/**
-	 * returns if the value is transferable (= no primitive datatype / immutable datatypee / Constant)
+	 * returns if the value is transferable (= no primitive datatype / immutable datatype / Constant)
 	 * @param val the value which should be analyzed
 	 * @return
 	 */

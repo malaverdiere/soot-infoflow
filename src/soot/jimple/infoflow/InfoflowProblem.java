@@ -546,9 +546,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-						if(callee.getName().contains("add")){
-							System.out.println("x");
-						}
 						Abstraction newSource;
 						if(!source.isAbstractionActive() && source.getActivationUnit().equals(callSite)){
 							newSource = source.getActiveCopy();
@@ -581,9 +578,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									assert abs != newSource;		// our source abstraction must be immutable
 									res.add(abs);
 									 //call backwards-solver:
-									Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
-									for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-										bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+									if(!newSource.getAccessPath().isLocal()){
+										Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
+										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
+											bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+									}
 								}
 							}
 								// this is required for sublists, because they assign the list to the return variable and call a method that taints the list afterwards
@@ -645,11 +644,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										else
 											abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg));
 										res.add(abs);
-
-										// call backwards-check:
-										Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
-										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-											bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+										if(!newSource.getAccessPath().isLocal()){
+											// call backwards-check:
+											Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
+											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
+												bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+										}
 									}
 								}
 							}
@@ -681,9 +681,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											else
 												abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()));
 											res.add(abs);
-											Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()), callSite);
-											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-												bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+											if(!newSource.getAccessPath().isLocal()){
+												Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()), callSite);
+												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
+													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+											}
 										}
 									}
 								}

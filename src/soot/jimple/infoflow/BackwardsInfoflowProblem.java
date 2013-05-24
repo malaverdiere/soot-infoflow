@@ -29,8 +29,6 @@ import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.heros.InfoflowSolver;
-import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
-import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
@@ -266,17 +264,25 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							// only pass source if the source is not created by this methodcall
 							if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								passOn = false;
-							}
+							} 
+							//if init we have to send forward pass - no more backward necessary:
 							if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
 								if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
-										(source.getAccessPath().getPlainLocal()))
-									passOn = false;
-							if (passOn)
-								for (int i = 0; i < callArgs.size(); i++)
-									if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
+										(source.getAccessPath().getPlainLocal())){
+									InstanceInvokeExpr iiexpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
+									if(iiexpr.getMethod().getName().equals("<init>")){
 										passOn = false;
-										break;
+										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(iStmt))
+											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
 									}
+								}
+									
+//							if (passOn)
+//								for (int i = 0; i < callArgs.size(); i++)
+//									if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
+//										passOn = false;
+//										break;
+//									}
 							//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
 							//we can be sure that the value does not get "lost" if we do not pass it on:
 							if(source.getAccessPath().isStaticFieldRef()){
@@ -286,33 +292,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if(passOn)
 								res.add(source);
 							
-							// TODO: Some brave heart might want to look into taint wrapping for backwards analysis.
-							// Beware: There *will* be dragons.
-							
-							// taintwrapper (might be very conservative/imprecise...)
-							if (taintWrapper != null && taintWrapper.supportsBackwardWrapping() && taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass())) {
-								if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())) {
-									List<Value> vals = taintWrapper.getBackwardTaintsForMethod(iStmt);
-									if (vals != null) {
-										for (Value val : vals) {
-											/*
-											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(new AbstractionWithPath(val, source.getSource(), source.getSourceContext()));
-											else
-											*/
-											res.add(source.deriveNewAbstraction(val));
-										}
-									}
-								}
-							}
-							if (iStmt.getInvokeExpr().getMethod().isNative()) {
-								if (callArgs.contains(source.getAccessPath().getPlainValue()) || (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue()))) {
-									// java uses call by value, but fields of complex objects can be changed (and tainted), so use this conservative approach:
-									// taint all params if one param or return value is tainted)
-									NativeCallHandler ncHandler = new DefaultNativeCallHandler();
-									res.addAll(ncHandler.getTaintedValuesForBackwardAnalysis(iStmt, source, callArgs));
-								}
-							}
 							return res;
 						}
 					};

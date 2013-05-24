@@ -228,13 +228,27 @@ public class Abstraction implements Cloneable {
 		return abstractionFromCallEdge;
 	}
 	
+	public void usePredAbstractionOfCG(){
+		if(abstractionFromCallEdge == null)
+			return;
+		abstractionFromCallEdge = abstractionFromCallEdge.abstractionFromCallEdge;
+		
+	}
+	
 	public void setAbstractionFromCallEdge(Abstraction abs){
 		abstractionFromCallEdge = abs;
 	}
 	
-	public Abstraction getActiveCopy(){
+	public Abstraction getActiveCopy(boolean dropAbstractionFromCallEdge){
 		Abstraction a = clone();
 		a.activationUnit = null;
+		
+		if(dropAbstractionFromCallEdge){
+			if(a.abstractionFromCallEdge != null){
+				a.abstractionFromCallEdge = a.abstractionFromCallEdge.abstractionFromCallEdge;
+			}
+		}
+		
 		return a;
 	}
 	
@@ -252,6 +266,14 @@ public class Abstraction implements Cloneable {
 		Abstraction a = new Abstraction(accessPath, source, sourceContext, exceptionThrown);
 		a.activationUnit = activationUnit;
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
+		return a;
+	}
+	
+	public Abstraction cloneUsePredAbstractionOfCG(){
+		Abstraction a = clone();
+		if(a.abstractionFromCallEdge != null){
+			a.abstractionFromCallEdge = a.abstractionFromCallEdge.abstractionFromCallEdge;
+		}
 		return a;
 	}
 	

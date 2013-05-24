@@ -270,7 +270,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Abstraction newSource;
 							//check inactive elements:
 							if (!source.isAbstractionActive() && source.getActivationUnit().equals(src)){
-								newSource = source.getActiveCopy();
+								newSource = source.getActiveCopy(false);
 							}else{
 								newSource = source;
 							}
@@ -548,9 +548,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 						Abstraction newSource;
 						if(!source.isAbstractionActive() && source.getActivationUnit().equals(callSite)){
-							newSource = source.getActiveCopy();
+							newSource = source.getActiveCopy(true);
 						}else{
-							newSource = source;
+							newSource = source.cloneUsePredAbstractionOfCG();
 						}
 						
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
@@ -578,7 +578,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									assert abs != newSource;		// our source abstraction must be immutable
 									res.add(abs);
 									 //call backwards-solver:
-									if(!newSource.getAccessPath().isLocal()){
+									if(triggerReverseFlow(leftOp, newSource)){
 										Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
 										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 											bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
@@ -644,7 +644,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										else
 											abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg));
 										res.add(abs);
-										if(!newSource.getAccessPath().isLocal()){
+										if(triggerReverseFlow(originalCallArg, newSource)){
 											// call backwards-check:
 											Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
 											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
@@ -681,7 +681,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											else
 												abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()));
 											res.add(abs);
-											if(!newSource.getAccessPath().isLocal()){
+											if(triggerReverseFlow(iIExpr.getBase(), newSource)){
 												Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()), callSite);
 												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
@@ -689,7 +689,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										}
 									}
 								}
-							}	
+							}
 						}
 
 						return res; 
@@ -714,7 +714,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Abstraction newSource;
 							//check inactive elements:
 							if (!source.isAbstractionActive() && source.getActivationUnit().equals(call)){
-								newSource = source.getActiveCopy();
+								newSource = source.getActiveCopy(false);
 							}else{
 								newSource = source;
 							}

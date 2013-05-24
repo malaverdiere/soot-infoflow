@@ -235,4 +235,31 @@ public class HeapTestCode {
 		
 	}
 	
+	public void twoLevelTest(){
+		SecondLevel l2 = new SecondLevel();
+		FirstLevel l1 = new FirstLevel();
+		
+		String x = l1.getValue(l2, TelephonyManager.getDeviceId());
+		String y = l1.getValue(l2, "test");
+		x.toString();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(y);
+	}
+	
+	public class FirstLevel{
+		
+		public String getValue(SecondLevel l, String c){
+			return l.id(c);
+		}
+	}
+	
+	public class SecondLevel{
+		
+		public String id(String i){
+			return i;
+		}
+	}
+	
+	
+	
 }

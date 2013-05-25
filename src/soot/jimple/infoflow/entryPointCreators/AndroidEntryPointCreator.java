@@ -198,10 +198,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		for(Entry<String, List<String>> entry : classMap.entrySet()){
 			//no execution order given for all apps:
 			JNopStmt entryExitStmt = new JNopStmt();
-			JEqExpr entryCond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-			conditionCounter++;
-			JIfStmt entryIfStmt = new JIfStmt(entryCond, entryExitStmt);
-			body.getUnits().add(entryIfStmt);
+			createIfStmt(entryExitStmt);
 			
 			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
 			currentClass.setApplicationClass();
@@ -309,10 +306,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		if (applicationLocal != null)
 			addApplicationCallbackMethods(applicationClass, applicationLocal);
 		
-		JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-		conditionCounter++;
-		JIfStmt outerIfStmt = new JIfStmt(cond, outerStartStmt);
-		body.getUnits().add(outerIfStmt);
+		createIfStmt(outerStartStmt);
 		
 		// Add a call to application.onTerminate()
 		if (applicationLocal != null)
@@ -571,7 +565,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		//5. onStop:
 		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSTOP, currentClass, entryPoints, classLocal);
 		//goTo onDestroy, onRestart or onCreate:
-		conditionCounter++;
 		JNopStmt stopToDestroyStmt = new JNopStmt();
 		JNopStmt stopToRestartStmt = new JNopStmt();
 		createIfStmt(stopToDestroyStmt);
@@ -709,8 +702,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		if(target == null){
 			return;
 		}
-		JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter));
-		conditionCounter++;
+		JEqExpr cond = new JEqExpr(intCounter, IntConstant.v(conditionCounter++));
 		JIfStmt ifStmt = new JIfStmt(cond, target);
 		body.getUnits().add(ifStmt);
 	}

@@ -81,20 +81,10 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 				JNopStmt thenStmt = new JNopStmt();
 				JIfStmt ifStmt = new JIfStmt(cond, thenStmt);
 				body.getUnits().add(ifStmt);
-				JNopStmt elseStmt = new JNopStmt();
-				JGotoStmt elseGoto = new JGotoStmt(elseStmt);
-				body.getUnits().add(elseGoto);
-					
-				body.getUnits().add(thenStmt);
 				buildMethodCall(currentMethod, body, classLocal, generator);
-					
-				body.getUnits().add(new JGotoStmt(endStmt));
-				body.getUnits().add(elseStmt);
+				body.getUnits().add(thenStmt);
 			}
 		}
-		JGotoStmt gotoStmt = new JGotoStmt(endStmt);
-		body.getUnits().add(gotoStmt);
-		
 		body.getUnits().add(endStmt);
 		JGotoStmt gotoStart = new JGotoStmt(startStmt);
 		body.getUnits().add(gotoStart);

@@ -193,4 +193,39 @@ public class OtherTestCode {
 		}
 	}
 	
+	public void dataObjectTest(){
+		String imei = TelephonyManager.getDeviceId();
+
+		APIClass api = new APIClass();
+		api.testMethod(imei);
+        ConnectionManager cm = new ConnectionManager();
+		cm.publish(api.getDi());
+	}
+
+	class APIClass{
+		InternalData d = new InternalData();
+		
+		public void testMethod(String i){
+			//d = i;
+			d.setI(i);
+		}
+		
+		String getDi(){
+			return d.getI();
+		}
+	}
+	
+	class InternalData{
+		
+		public String getI() {
+			return i;
+		}
+
+		public void setI(String i) {
+			this.i = i;
+		}
+
+		String i = "";
+	}
+
 }

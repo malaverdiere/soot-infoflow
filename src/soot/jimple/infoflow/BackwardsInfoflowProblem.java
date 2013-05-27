@@ -9,7 +9,6 @@ import heros.solver.PathEdge;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import soot.Local;
@@ -102,7 +101,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.singleton(source);
 
 							// Check whether we need to start a forward search for taints.
-							if (triggerReverseFlow(leftValue, source)) {
+							if (triggerInaktiveTaintOrReverseFlow(leftValue, source)) {
 								// If the tainted value is assigned to some other local variable,
 								// this variable is an alias as well and we also need to mark
 								// it as tainted in the forward solver.
@@ -220,7 +219,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								// we have to send forward pass, for example for
 								// $r1 = l0.<java.lang.AbstractStringBuilder: char[] value>
 								for (Abstraction a : res)
-									if (a.getAccessPath().isStaticFieldRef() || triggerReverseFlow(a.getAccessPath().getPlainValue(), a)) {
+									if (a.getAccessPath().isStaticFieldRef() || triggerInaktiveTaintOrReverseFlow(a.getAccessPath().getPlainValue(), a)) {
 
 										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
 											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, a));
@@ -251,7 +250,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				// special treatment for native methods:
 				if (call instanceof Stmt) {
 					final Stmt iStmt = (Stmt) call;
-					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
 
 					return new FlowFunction<Abstraction>() {
 
@@ -264,6 +262,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							// only pass source if the source is not created by this methodcall
 							if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								passOn = false;
+								//terminates here, but we have to start a forward pass to consider all method calls:
+								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(iStmt))
+									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
 							} 
 							//if init we have to send forward pass - no more backward necessary:
 							if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
@@ -276,18 +277,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
 									}
 								}
-									
-//							if (passOn)
-//								for (int i = 0; i < callArgs.size(); i++)
-//									if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
-//										passOn = false;
-//										break;
-//									}
-							//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
-							//we can be sure that the value does not get "lost" if we do not pass it on:
+							//static variables are always propagated if they are not overwritten.
 							if(source.getAccessPath().isStaticFieldRef()){
-								if(interproceduralCFG().getCalleesOfCallAt(iStmt).size()>0)
-									passOn = false;
+								passOn = false;
 							}
 							if(passOn)
 								res.add(source);

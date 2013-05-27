@@ -180,9 +180,9 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 * 
 	 * @param val the value which gets tainted
 	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
-	 * @return true if a reverseFlow should be triggered
+	 * @return true if a reverseFlow should be triggered or an inactive taint should be propagated (= resulting object is stored in heap = alias)
 	 */
-	public boolean triggerReverseFlow(Value val, Abstraction source){
+	public boolean triggerInaktiveTaintOrReverseFlow(Value val, Abstraction source){
 		if(val == null){
 			return false;
 		}

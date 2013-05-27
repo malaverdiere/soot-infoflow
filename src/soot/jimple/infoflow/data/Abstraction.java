@@ -63,21 +63,29 @@ public class Abstraction implements Cloneable {
 		exceptionThrown = original.exceptionThrown;
 	}
 	
+	/**
+	 * 
+	 * @param u the Unit which activates the Abstraction 
+	 * @return
+	 */
 	public Abstraction deriveNewAbstraction(Unit u){
 		Abstraction a = clone();
-		a.activationUnit = u;
+		if(a.activationUnit == null)
+			a.activationUnit = u;
 		return a;
 	}
 	
 	public Abstraction deriveNewAbstraction(AccessPath p){
 		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown);
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
+		a.activationUnit = activationUnit;
 		return a;
 	}
 	
 	public Abstraction deriveNewAbstraction(AccessPath p, Unit srcUnit){
 		Abstraction a = deriveNewAbstraction(p);
-		a.activationUnit = srcUnit;
+		if(a.activationUnit == null)
+			a.activationUnit = srcUnit;
 		return a;
 	}
 	
@@ -99,12 +107,14 @@ public class Abstraction implements Cloneable {
 		else
 			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext, exceptionThrown);
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
+		a.activationUnit = activationUnit;
 		return a;
 	}
 	
 	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit srcStmt){
 		Abstraction a = deriveNewAbstraction(taint, cutFirstField);
-		a.activationUnit = srcStmt;
+		if(a.activationUnit == null)
+			a.activationUnit = srcStmt;
 		return a;
 	}
 
@@ -198,7 +208,7 @@ public class Abstraction implements Cloneable {
 	@Override
 	public String toString(){
 		if(accessPath != null && source != null){
-			return accessPath.toString() + " /source: "+ source.toString();
+			return (activationUnit==null?"":"_")+accessPath.toString() + " /source: "+ source.toString();
 		}
 		if(accessPath != null){
 			return accessPath.toString();

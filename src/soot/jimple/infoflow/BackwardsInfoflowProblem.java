@@ -21,7 +21,6 @@ import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.InstanceFieldRef;
-import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.NewArrayExpr;
 import soot.jimple.NewExpr;
 import soot.jimple.StaticFieldRef;
@@ -57,22 +56,25 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 			@Override
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, final Unit dest) {
-				// taint is propagated with assignStmt
+				
 				if(src instanceof IdentityStmt){
-					//invoke forward solver:
+					//invoke forward solver - but only if we already inspected some stmts:
 					return new FlowFunction<Abstraction>() {
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							IdentityStmt iStmt = (IdentityStmt) src;
 							if(iStmt.getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
+									if(!u.equals(source.getUnitOfDirectionChange())){
+										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
+									}
+								return Collections.emptySet();
 							}
 							return Collections.singleton(source);
 						}
 					};
 				}
-				
+				// taint is propagated with assignStmt
 				if (src instanceof AssignStmt) {
 					AssignStmt assignStmt = (AssignStmt) src;
 					Value right = assignStmt.getRightOp();
@@ -100,6 +102,15 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (leftValue instanceof StaticFieldRef)
 								return Collections.singleton(source);
 
+							//new Stmt -> no more backwards propagation, start forward pass:
+							if(leftValue.equals(source.getAccessPath().getPlainValue())&&
+									rightValue instanceof NewExpr){
+								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
+									if(!u.equals(source.getUnitOfDirectionChange()))
+										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
+								return Collections.emptySet();
+							}
+							
 							// Check whether we need to start a forward search for taints.
 							if (triggerInaktiveTaintOrReverseFlow(leftValue, source)) {
 								// If the tainted value is assigned to some other local variable,
@@ -110,13 +121,13 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (source.getAccessPath().isInstanceFieldRef()
 											&& ref.getBase().equals(source.getAccessPath().getPlainValue())
 											&& ref.getField().equals(source.getAccessPath().getFirstField())) {
-										Abstraction abs = source.deriveNewAbstraction(leftValue, true);
+										Abstraction abs = source.deriveNewAbstraction(leftValue, true, src);
 										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
 											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs.getNotNullAbstractionFromCallEdge(), u, abs));
 									}
 								}
 								else if (rightValue.equals(source.getAccessPath().getPlainValue())) {
-									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue));
+									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue), src);
 									for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
 										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs.getNotNullAbstractionFromCallEdge(), u, abs));
 								}
@@ -185,7 +196,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue),(AbstractionWithPath) source));
 										else
 										*/
-										res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
+										res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue), src));
 									} else {
 										// access path length = 1 - taint entire value if left is field reference
 										/*
@@ -193,7 +204,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext()));
 										else
 										*/
-										res.add(source.deriveNewAbstraction(rightValue));
+										res.add(source.deriveNewAbstraction(rightValue, src));
 									}
 								}
 							} else if (leftValue instanceof ArrayRef) {
@@ -213,7 +224,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext())); //TODO: cutFirstField for AbstractionWithPath
 								else
 								*/
-								res.add(source.deriveNewAbstraction(rightValue, cutFirstField));
+								res.add(source.deriveNewAbstraction(rightValue, cutFirstField, src));
 							}
 							if (!res.isEmpty()) {
 								// we have to send forward pass, for example for
@@ -256,8 +267,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							// We can only pass on a taint if it is neither a parameter nor the
-							// base object of the current call
+
 							boolean passOn = true;
 							// only pass source if the source is not created by this methodcall
 							if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())){
@@ -266,17 +276,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(iStmt))
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
 							} 
-							//if init we have to send forward pass - no more backward necessary:
-							if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
-								if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
-										(source.getAccessPath().getPlainLocal())){
-									InstanceInvokeExpr iiexpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-									if(iiexpr.getMethod().getName().equals("<init>")){
-										passOn = false;
-										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(iStmt))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
-									}
-								}
+							
 							//static variables are always propagated if they are not overwritten.
 							if(source.getAccessPath().isStaticFieldRef()){
 								passOn = false;

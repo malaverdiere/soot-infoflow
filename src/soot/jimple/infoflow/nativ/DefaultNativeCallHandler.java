@@ -35,7 +35,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 					set.add(new AbstractionWithPath(params.get(2),
 							(AbstractionWithPath) source));
 				else
-					set.add(source.deriveNewAbstraction(params.get(2)));
+					set.add(source.deriveNewAbstraction(params.get(2), call));
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
@@ -47,7 +47,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 						set.add(new AbstractionWithPath(argValue,
 								(AbstractionWithPath) source));
 					else
-						set.add(source.deriveNewAbstraction(argValue));
+						set.add(source.deriveNewAbstraction(argValue, call));
 				}
 			}	
 		}
@@ -58,7 +58,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 				set.add(new AbstractionWithPath(dStmt.getLeftOp(),
 						(AbstractionWithPath) source));
 			else
-				set.add(source.deriveNewAbstraction(dStmt.getLeftOp()));
+				set.add(source.deriveNewAbstraction(dStmt.getLeftOp(), call));
 		}
 		
 		return set;
@@ -74,14 +74,14 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
         //Copies an array from the specified source array, beginning at the specified position, to the specified position of the destination array.
 		if(call.getInvokeExpr().getMethod().toString().contains("arraycopy")){
 			if(params.get(2).equals(source.getAccessPath().getPlainValue())){
-				set.add(source.deriveNewAbstraction(params.get(0)));
+				set.add(source.deriveNewAbstraction(params.get(0), call));
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
 			for (int i = 0; i < params.size(); i++) {
 				Value argValue = params.get(i);
 				if (DataTypeHandler.isFieldRefOrArrayRef(argValue)) {
-					set.add(source.deriveNewAbstraction(argValue));
+					set.add(source.deriveNewAbstraction(argValue, call));
 				}
 			}	
 		}

@@ -1,6 +1,7 @@
 package soot.jimple.infoflow.entryPointCreators;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -97,7 +98,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		if(currentMethod.getParameterCount()>0){
 			List<Object> args = new LinkedList<Object>();
 			for(Type tp :currentMethod.getParameterTypes()){
-				args.add(getValueForType(body, gen, tp, new HashSet<SootClass>()));
+				args.add(getValueForType(body, gen, tp, new HashSet<SootClass>(), Collections.<SootClass>emptySet()));
 			}
 			if(currentMethod.isStatic()){
 				invokeExpr = Jimple.v().newStaticInvokeExpr(currentMethod.makeRef(), args);
@@ -142,27 +143,43 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	 * Attempts to create a parameter of one of these classes will trigger
 	 * the constructor loop check and the respective parameter will be
 	 * substituted by null.
+	 * @param parentClasses If the given type is compatible with one of the types
+	 * in this list, the already-created object is used instead of creating a
+	 * new one.
 	 * @return The generated value, or null if no value could be generated
 	 */
-	private Value getValueForType(JimpleBody body,
-			LocalGenerator gen, Type tp, Set<SootClass> constructionStack) {
+	private Value getValueForType(JimpleBody body, LocalGenerator gen,
+			Type tp, Set<SootClass> constructionStack, Set<SootClass> parentClasses) {
 		// Depending on the parameter type, we try to find a suitable
 		// concrete substitution
 		if (isSimpleType(tp.toString()))
 			return getSimpleDefaultValue(tp.toString());
 		else if (tp instanceof RefType) {
 			SootClass classToType = ((RefType) tp).getSootClass();
+			
 			if(classToType != null){
-				Value val = generateClassConstructor(classToType, body, constructionStack);
+				// If we have a parent class compatible with this type, we use
+				// it before we check any other option
+				for (SootClass parent : parentClasses)
+					if (isCompatible(parent, classToType)) {
+						Value val = this.localVarsForClasses.get(parent.getName());
+						if (val != null)
+							return val;
+					}
+
+				// Create a new instance to plug in here
+				Value val = generateClassConstructor(classToType, body, constructionStack, parentClasses);
+				
 				// If we cannot create a parameter, we try a null reference.
 				// Better than not creating the whole invocation...
 				if(val == null)
 					return NullConstant.v();
+				
 				return val;
 			}
 		}
 		else if (tp instanceof ArrayType) {
-			Value arrVal = buildArrayOfType(body, gen, (ArrayType) tp, constructionStack);
+			Value arrVal = buildArrayOfType(body, gen, (ArrayType) tp, constructionStack, parentClasses);
 			if (arrVal == null)
 				return NullConstant.v();
 			System.err.println("Warning: Array paramater substituted by null");
@@ -183,11 +200,14 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	 * @param tp The type of which to create the array
 	 * @param constructionStack Set of classes currently being built to avoid
 	 * constructor loops
+	 * @param parentClasses If a requested type is compatible with one of the
+	 * types in this list, the already-created object is used instead of
+	 * creating a new one.
 	 * @return The local referencing the newly created array, or null if the
 	 * array generation failed
 	 */
 	private Value buildArrayOfType(JimpleBody body, LocalGenerator gen, ArrayType tp,
-			Set<SootClass> constructionStack) {
+			Set<SootClass> constructionStack, Set<SootClass> parentClasses) {
 		Local local = gen.generateLocal(tp);
 
 		// Generate a new single-element array
@@ -199,17 +219,58 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		// Generate a single element in the array
 		AssignStmt assign = Jimple.v().newAssignStmt
 				(Jimple.v().newArrayRef(local, IntConstant.v(19)),
-				getValueForType(body, gen, tp.getElementType(), constructionStack));
+				getValueForType(body, gen, tp.getElementType(), constructionStack, parentClasses));
 		body.getUnits().add(assign);
 		return local;
 	}
 
+	/**
+	 * Generates code which creates a new instance of the given class.
+	 * @param createdClass The class of which to create an instance
+	 * @param body The body to which to add the new statements ("new" statement,
+	 * constructor call, etc.)
+	 * @return The local containing the new object instance if the operation
+	 * completed successfully, otherwise null.
+	 */
 	protected Local generateClassConstructor(SootClass createdClass, JimpleBody body) {
-		return this.generateClassConstructor(createdClass, body, new HashSet<SootClass>());
+		return this.generateClassConstructor(createdClass, body, new HashSet<SootClass>(),
+				Collections.<SootClass>emptySet());
 	}
 	
+	/**
+	 * Generates code which creates a new instance of the given class.
+	 * @param createdClass The class of which to create an instance
+	 * @param body The body to which to add the new statements ("new" statement,
+	 * constructor call, etc.)
+	 * @param parentClasses If a constructor call requires an object of a type
+	 * which is compatible with one of the types in this list, the already-created
+	 * object is used instead of creating a new one.
+	 * @return The local containing the new object instance if the operation
+	 * completed successfully, otherwise null.
+	 */
+	protected Local generateClassConstructor(SootClass createdClass, JimpleBody body,
+			Set<SootClass> parentClasses) {
+		return this.generateClassConstructor(createdClass, body, new HashSet<SootClass>(),
+				parentClasses);
+	}
+
+	/**
+	 * Generates code which creates a new instance of the given class.
+	 * @param createdClass The class of which to create an instance
+	 * @param body The body to which to add the new statements ("new" statement,
+	 * constructor call, etc.)
+	 * @param constructionStack The stack of classes currently under construction.
+	 * This is used to detect constructor loops. If a constructor requires a
+	 * parameter of a type that is already on the stack, this value is substituted
+	 * by null.
+	 * @param parentClasses If a constructor call requires an object of a type
+	 * which is compatible with one of the types in this list, the already-created
+	 * object is used instead of creating a new one.
+	 * @return The local containing the new object instance if the operation
+	 * completed successfully, otherwise null.
+	 */
 	private Local generateClassConstructor(SootClass createdClass, JimpleBody body,
-			Set<SootClass> constructionStack) {
+			Set<SootClass> constructionStack, Set<SootClass> parentClasses) {
 		if (createdClass == null || this.failedClasses.contains(createdClass))
 			return null;
 		
@@ -257,7 +318,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 				// substitution, we're in trouble
 				for(SootClass sClass : classes)
 					if(substituteClasses.contains(sClass.toString())) {
-						Local cons = generateClassConstructor(sClass, body, constructionStack);
+						Local cons = generateClassConstructor(sClass, body, constructionStack, parentClasses);
 						if (cons == null)
 							continue;
 						return cons;
@@ -272,12 +333,6 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 				System.err.println("Warning, cannot create valid constructor for " + createdClass +
 					", because it is " + (createdClass.isInterface() ? "an interface" :
 						(createdClass.isAbstract() ? "abstract" : "")));
-				//build the expression anyway:
-				/* SA: why should we?
-				NewExpr newExpr = Jimple.v().newNewExpr(RefType.v(createdClass));
-				AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, newExpr);
-				body.getUnits().add(assignStmt);
-				*/
 				this.failedClasses.add(createdClass);
 				return null;
 			}
@@ -301,7 +356,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 							&& this.localVarsForClasses.containsKey(typeName))
 						params.add(this.localVarsForClasses.get(typeName));
 					else
-						params.add(getValueForType(body, generator, type, constructionStack));
+						params.add(getValueForType(body, generator, type, constructionStack, parentClasses));
 				}
 
 				// Build the "new" expression
@@ -419,6 +474,35 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			return findMethod(currentClass.getSuperclass(), subsignature);
 		}
 		return null;
+	}
+
+	/**
+	 * Checks whether an object of type "actual" can be inserted where an
+	 * object of  type "expected" is required.
+	 * @param actual The actual type (the substitution candidate)
+	 * @param expected The requested type
+	 * @return True if the two types are compatible and "actual" can be used
+	 * as a substitute for "expected", otherwise false
+	 */
+	protected boolean isCompatible(SootClass actual, SootClass expected) {
+		SootClass act = actual;
+		while (true) {
+			// Do we have a direct match?
+			if (act.getName().equals(expected.getName()))
+				return true;
+			
+			// If we expect an interface, the current class might implement it
+			if (expected.isInterface())
+				for (SootClass intf : act.getInterfaces())
+					if (intf.getName().equals(expected.getName()))
+						return true;
+			
+			// If we cannot continue our search further up the hierarchy, the
+			// two types are incompatible
+			if (!act.hasSuperclass())
+				return false;
+			act = act.getSuperclass();
+		}
 	}
 
 }

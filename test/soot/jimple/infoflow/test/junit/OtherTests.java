@@ -349,4 +349,15 @@ public class OtherTests extends JUnitTests{
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
+    @Test
+    public void dataObjectTest(){
+    	taintWrapper = true;
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void dataObjectTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);
+		Assert.assertEquals(1, infoflow.getResults().size());
+    }
+
 }

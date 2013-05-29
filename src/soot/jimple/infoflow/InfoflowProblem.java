@@ -265,9 +265,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 											
-							if(assignStmt.toString().contains("$r0.<soot.jimple.infoflow.test.HeapTestCode$Worker: java.lang.String mParams> = t")){
-								System.out.println(assignStmt);
-							}
 							// shortcuts:
 							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {

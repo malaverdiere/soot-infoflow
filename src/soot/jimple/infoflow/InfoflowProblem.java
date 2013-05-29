@@ -106,8 +106,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				// backwards as there might be aliases for the base object
 				if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-					if (iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
-							|| newAbs.getAccessPath().isStaticFieldRef()){
+					if ((iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
+							|| newAbs.getAccessPath().isStaticFieldRef()) && !iStmt.equals(newAbs.getUnitOfDirectionChange())){
 						Abstraction bwAbs = source.deriveNewAbstraction(val,iStmt, false);
 						bwAbs.setUnitOfDirectionChange(iStmt);
 						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
@@ -196,7 +196,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				else
 					newAbs = source.deriveNewAbstraction(targetValue, cutFirstField, src);
 				taintSet.add(newAbs);
-				if (triggerInaktiveTaintOrReverseFlow(targetValue, source)) {
+				if (triggerInaktiveTaintOrReverseFlow(targetValue, source) && !src.equals(newAbs.getUnitOfDirectionChange())) {
 					// call backwards-check:
 					Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
 					bwAbs.setUnitOfDirectionChange(src);
@@ -584,7 +584,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									assert abs != newSource;		// our source abstraction must be immutable
 									res.add(abs);
 									 //call backwards-solver:
-									if(triggerInaktiveTaintOrReverseFlow(leftOp, newSource)){
+									if(triggerInaktiveTaintOrReverseFlow(leftOp, newSource) && !callSite.equals(newSource.getUnitOfDirectionChange())){
 										Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite, false);
 										bwAbs.setUnitOfDirectionChange(callSite);
 										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
@@ -621,12 +621,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Abstraction abs = newSource.clone();
 							assert (abs.equals(newSource) && abs.hashCode() == newSource.hashCode());
 							res.add(abs);
-							//TODO: hier auch immer bw starten?! geht das nicht anders?
 							// call backwards-check:
-							Abstraction bwAbs = newSource.deriveInactiveAbstraction();
-							bwAbs.setUnitOfDirectionChange(callSite);
-							for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-								bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+							if(!callSite.equals(newSource.getUnitOfDirectionChange())){
+								Abstraction bwAbs = newSource.deriveInactiveAbstraction();
+								bwAbs.setUnitOfDirectionChange(callSite);
+								for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
+									bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+							}
 						}
 						
 						// checks: this/params/fields
@@ -649,7 +650,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										else
 											abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
 										res.add(abs);
-										if(triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)){
+										if(triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource) && !callSite.equals(newSource.getUnitOfDirectionChange())){
 											// call backwards-check:
 											Abstraction bwAbs = abs.deriveInactiveAbstraction();
 											bwAbs.setUnitOfDirectionChange(callSite);
@@ -687,7 +688,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											else
 												abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()));
 											res.add(abs);
-											if(triggerInaktiveTaintOrReverseFlow(iIExpr.getBase(), newSource)){
+											if(triggerInaktiveTaintOrReverseFlow(iIExpr.getBase(), newSource) && !callSite.equals(newSource.getUnitOfDirectionChange())){
 												Abstraction bwAbs = abs.deriveInactiveAbstraction();
 												bwAbs.setUnitOfDirectionChange(callSite);
 												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))

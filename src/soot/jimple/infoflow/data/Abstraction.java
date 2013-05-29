@@ -66,6 +66,7 @@ public class Abstraction implements Cloneable {
 		accessPath = p;
 		exceptionThrown = original.exceptionThrown;
 		activationUnit = original.activationUnit;
+		unitOfDirectionChange = original.unitOfDirectionChange;
 		isActive = original.isActive;
 	}
 	
@@ -80,6 +81,7 @@ public class Abstraction implements Cloneable {
 		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown, isActive);
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		a.activationUnit = activationUnit;
+		a.unitOfDirectionChange = unitOfDirectionChange;
 		
 		return a;
 	}
@@ -92,6 +94,7 @@ public class Abstraction implements Cloneable {
 		}else{
 			a.activationUnit = activationUnit;
 		}
+		a.unitOfDirectionChange = unitOfDirectionChange;
 		return a;
 	}
 	
@@ -103,6 +106,7 @@ public class Abstraction implements Cloneable {
 		}else{
 			a.activationUnit = activationUnit;
 		}
+		a.unitOfDirectionChange = unitOfDirectionChange;
 		return a;
 	}
 	
@@ -128,6 +132,7 @@ public class Abstraction implements Cloneable {
 		else
 			a = new Abstraction(new AccessPath(taint,accessPath.getFields()), source, sourceContext, exceptionThrown, isActive);
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
+		a.unitOfDirectionChange = unitOfDirectionChange;
 		if(isActive){
 			a.activationUnit = newActUnit;
 		}else{
@@ -145,6 +150,7 @@ public class Abstraction implements Cloneable {
 		assert !this.exceptionThrown;
 		Abstraction abs = new Abstraction(accessPath, source, sourceContext, true, isActive);
 		abs.abstractionFromCallEdge = abstractionFromCallEdge;
+		abs.unitOfDirectionChange = unitOfDirectionChange;
 		return abs;
 	}
 	
@@ -164,6 +170,7 @@ public class Abstraction implements Cloneable {
 		}
 		
 		abs.abstractionFromCallEdge = abstractionFromCallEdge;
+		abs.unitOfDirectionChange = unitOfDirectionChange;
 		return abs;
 	}
 
@@ -251,6 +258,7 @@ public class Abstraction implements Cloneable {
 		Abstraction a = new Abstraction(accessPath, source, sourceContext, exceptionThrown, isActive);
 		a.activationUnit = activationUnit;
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
+		a.unitOfDirectionChange = unitOfDirectionChange;
 		return a;
 	}
 	

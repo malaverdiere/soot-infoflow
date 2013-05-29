@@ -90,7 +90,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			}
 		}
 			
-		List<Value> vals = taintWrapper.getTaintsForMethod(iStmt, taintedPos, taintedBase);
+		Set<Value> vals = taintWrapper.getTaintsForMethod(iStmt, taintedPos, taintedBase);
 		if(vals != null) {
 			for (Value val : vals) {
 				Abstraction newAbs;

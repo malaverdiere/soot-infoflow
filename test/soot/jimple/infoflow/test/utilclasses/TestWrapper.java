@@ -1,7 +1,9 @@
 package soot.jimple.infoflow.test.utilclasses;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import soot.SootClass;
 import soot.Value;
@@ -19,8 +21,8 @@ public class TestWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public List<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
-		return new LinkedList<Value>();
+	public Set<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+		return new HashSet<Value>();
 	}
 
 	@Override

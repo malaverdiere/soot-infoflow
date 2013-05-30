@@ -11,8 +11,6 @@ import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.internal.JAssignStmt;
 
-import com.google.common.collect.Lists;
-
 /**
  * Internal taint wrapper for the use in some test cases
  */

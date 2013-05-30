@@ -16,6 +16,7 @@ import org.junit.BeforeClass;
 
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowResults;
+import soot.jimple.infoflow.config.ConfigSecuriBench;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
@@ -157,7 +158,7 @@ public abstract class JUnitTests {
 
     	Infoflow result = new Infoflow();
 
-    	SootConfigSecuriBench testConfig = new SootConfigSecuriBench();
+    	ConfigSecuriBench testConfig = new ConfigSecuriBench();
     	result.setSootConfig(testConfig);
     	result.setInspectSinks(false);
     	if(taintWrapper){

@@ -726,28 +726,29 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}else{
 								newSource = source;
 							}
-
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.addAll(computeWrapperTaints(iStmt, callArgs, newSource));
 
 							// We can only pass on a taint if it is neither a parameter nor the
 							// base object of the current call
 							boolean passOn = true;
+							//we only can remove the taint if we step into the call/return edges
+							if(interproceduralCFG().getCalleesOfCallAt(call).size()>0){
 							if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
 								if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
 										(newSource.getAccessPath().getPlainLocal()))
 									passOn = false;
-							if (passOn)
-								for (int i = 0; i < callArgs.size(); i++)
-									if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
-										passOn = false;
-										break;
-									}
-							//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
-							//we can be sure that the value does not get "lost" if we do not pass it on:
-							if(newSource.getAccessPath().isStaticFieldRef()){
-								if(interproceduralCFG().getCalleesOfCallAt(call).size()>0)
+								if (passOn)
+									for (int i = 0; i < callArgs.size(); i++)
+										if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
+											passOn = false;
+											break;
+										}
+								//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
+								//we can be sure that the value does not get "lost" if we do not pass it on:
+								if(newSource.getAccessPath().isStaticFieldRef()){
 									passOn = false;
+								}
 							}
 							if (passOn)
 								res.add(newSource);

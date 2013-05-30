@@ -120,6 +120,8 @@
 <java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>
 <java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>
 
+<java.lang.String: char[] toCharArray()>
+
 <java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>
 
 <java.lang.Integer: java.lang.String toBinaryString(int)>

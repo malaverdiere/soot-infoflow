@@ -13,7 +13,7 @@ import soot.jimple.Stmt;
  * @author Steven Arzt
  *
  */
-public abstract class MethodBasedSourceSinkManager implements SourceSinkManager {
+public abstract class MethodBasedSourceSinkManager implements ISourceSinkManager {
 
 	public abstract boolean isSourceMethod(SootMethod method);
 	public abstract boolean isSinkMethod(SootMethod method);

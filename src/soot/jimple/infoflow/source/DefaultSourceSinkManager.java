@@ -12,7 +12,7 @@ import soot.jimple.ReturnStmt;
 import soot.jimple.Stmt;
 
 /**
- * A {@link SourceSinkManager} working on lists of source and sink methods
+ * A {@link ISourceSinkManager} working on lists of source and sink methods
  * 
  * @author Steven Arzt
  */

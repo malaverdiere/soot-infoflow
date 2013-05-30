@@ -35,7 +35,7 @@ import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
-import soot.jimple.infoflow.source.SourceSinkManager;
+import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JimpleLocal;
@@ -45,7 +45,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 	InfoflowSolver bSolver;
 	private final static boolean DEBUG = false;
-	final SourceSinkManager sourceSinkManager;
+	final ISourceSinkManager sourceSinkManager;
 	Abstraction zeroValue = null;
 	
 	/**
@@ -102,9 +102,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					res.add(newAbs);
 				}
 
-				// If the taint wrapper taints the base object, this must be propagated
+				// If the taint wrapper taints the base object (new taint), this must be propagated
 				// backwards as there might be aliases for the base object
-				if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+				if(taintedBase == null && iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 					if ((iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
 							|| newAbs.getAccessPath().isStaticFieldRef()) && !iStmt.equals(newAbs.getUnitOfDirectionChange())){
@@ -829,7 +829,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		this.sourceSinkManager = new DefaultSourceSinkManager(sourceList, sinkList);
 	}
 
-	public InfoflowProblem(SourceSinkManager sourceSinkManager) {
+	public InfoflowProblem(ISourceSinkManager sourceSinkManager) {
 		super(new JimpleBasedBiDiICFG());
 		this.sourceSinkManager = sourceSinkManager;
 	}
@@ -839,12 +839,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		this.sourceSinkManager = new DefaultSourceSinkManager(sourceList, sinkList);
 	}
 
-	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, SourceSinkManager sourceSinkManager) {
+	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, ISourceSinkManager sourceSinkManager) {
 		super(icfg);
 		this.sourceSinkManager = sourceSinkManager;
 	}
 
-	public InfoflowProblem(SourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds) {
+	public InfoflowProblem(ISourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds) {
 	    super(new JimpleBasedBiDiICFG());
 	    this.sourceSinkManager = mySourceSinkManager;
 	    this.initialSeeds.addAll(analysisSeeds);

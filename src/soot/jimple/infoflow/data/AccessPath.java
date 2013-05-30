@@ -11,10 +11,10 @@ import soot.SootField;
 import soot.Value;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
+import soot.jimple.infoflow.Infoflow;
 
 public class AccessPath {
-	public static final int ACCESSPATHLENGTH = 5;
-
+	
 	// ATTENTION: This class *must* be immutable!
 	private final Value value;
 	private final List<SootField> fields;
@@ -30,14 +30,14 @@ public class AccessPath {
 		List<SootField> fields = new LinkedList<SootField>();
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
-			if(fields.size()< ACCESSPATHLENGTH)
+			if(fields.size()< Infoflow.ACCESSPATHLENGTH)
 				fields.add(ref.getField());
 			value = null;
 		}
 		else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
 			value = ref.getBase();
-			if(fields.size() < ACCESSPATHLENGTH)
+			if(fields.size() < Infoflow.ACCESSPATHLENGTH)
 				fields.add(ref.getField());
 		}
 		else
@@ -45,7 +45,7 @@ public class AccessPath {
 
 		int cnt = appendingFields.size();
 		for (SootField field : appendingFields)
-			if (cnt < ACCESSPATHLENGTH) {
+			if (cnt < Infoflow.ACCESSPATHLENGTH) {
 				fields.add(field);
 				cnt++;
 			}
@@ -62,7 +62,7 @@ public class AccessPath {
 	public AccessPath(Value base, SootField field){
 		value = base;
 		List<SootField> fields = new LinkedList<SootField>();
-		if(fields.size() < ACCESSPATHLENGTH)
+		if(fields.size() < Infoflow.ACCESSPATHLENGTH)
 			fields.add(field);
 		this.fields = Collections.unmodifiableList(fields);
 	}

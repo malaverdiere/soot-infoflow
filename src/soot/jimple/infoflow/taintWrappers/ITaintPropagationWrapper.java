@@ -1,6 +1,7 @@
 package soot.jimple.infoflow.taintWrappers;
 
 import java.util.List;
+import java.util.Set;
 
 import soot.SootClass;
 import soot.Value;
@@ -34,7 +35,7 @@ public interface ITaintPropagationWrapper {
 	 * @return The list of tainted values after the invocation statement referenced in {@link Stmt}
 	 * has been executed
 	 */
-	public List<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase);
+	public Set<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase);
 
 	/**
 	 * Gets whether the taints produced by this taint wrapper are exclusive, i.e. there are

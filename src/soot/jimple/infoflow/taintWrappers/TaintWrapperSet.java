@@ -37,12 +37,12 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public List<Value> getTaintsForMethod(Stmt stmt, int taintedparam,
+	public Set<Value> getTaintsForMethod(Stmt stmt, int taintedparam,
 			Value taintedBase) {
 		Set<Value> resList = new HashSet<Value>();
 		for (ITaintPropagationWrapper w : this.wrappers)
 			resList.addAll(w.getTaintsForMethod(stmt, taintedparam, taintedBase));
-		return new ArrayList<Value>(resList);
+		return new HashSet<Value>(resList);
 	}
 
 	@Override

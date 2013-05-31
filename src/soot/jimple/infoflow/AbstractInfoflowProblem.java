@@ -103,8 +103,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public Abstraction createZeroValue() {
 		if (zeroValue == null) {
 			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false) :
-				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, null, false);
+				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false, true, null) :
+				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, null, false, true, null);
 		}
 		return zeroValue;
 	}
@@ -147,7 +147,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 	/**
-	 * returns if the value is transferable (= no primitive datatype / immutable datatypee / Constant)
+	 * returns if the value is transferable (= no primitive datatype / immutable datatype / Constant)
 	 * @param val the value which should be analyzed
 	 * @return
 	 */
@@ -180,9 +180,9 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 * 
 	 * @param val the value which gets tainted
 	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
-	 * @return true if a reverseFlow should be triggered
+	 * @return true if a reverseFlow should be triggered or an inactive taint should be propagated (= resulting object is stored in heap = alias)
 	 */
-	public boolean triggerReverseFlow(Value val, Abstraction source){
+	public boolean triggerInaktiveTaintOrReverseFlow(Value val, Abstraction source){
 		if(val == null){
 			return false;
 		}

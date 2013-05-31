@@ -15,7 +15,7 @@ import org.junit.BeforeClass;
 
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowResults;
-import soot.jimple.infoflow.config.SootConfigForTest;
+import soot.jimple.infoflow.config.ConfigForTest;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 
 public abstract class JUnitTests {
@@ -99,7 +99,7 @@ public abstract class JUnitTests {
     protected Infoflow initInfoflow(){
     	Infoflow result = new Infoflow();
     	Infoflow.setDebug(debug);
-    	SootConfigForTest testConfig = new SootConfigForTest();
+    	ConfigForTest testConfig = new ConfigForTest();
     	result.setSootConfig(testConfig);
     	if(taintWrapper){
     		EasyTaintWrapper easyWrapper;

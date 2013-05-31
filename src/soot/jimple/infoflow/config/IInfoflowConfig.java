@@ -4,7 +4,7 @@ package soot.jimple.infoflow.config;
  * @author Christian
  *
  */
-public interface IInfoflowSootConfig {
+public interface IInfoflowConfig {
 
 	/**
 	 * Configure Soot options (Be careful, wrong options can corrupt the analysis results!)

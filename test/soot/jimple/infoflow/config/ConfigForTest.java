@@ -1,12 +1,11 @@
-package soot.jimple.infoflow.test.securibench;
+package soot.jimple.infoflow.config;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import soot.jimple.infoflow.config.IInfoflowSootConfig;
 import soot.options.Options;
 
-public class SootConfigSecuriBench implements IInfoflowSootConfig{
+public class ConfigForTest implements IInfoflowConfig{
 
 	@Override
 	public void setSootOptions(Options options) {
@@ -17,20 +16,22 @@ public class SootConfigSecuriBench implements IInfoflowSootConfig{
 		includeList.add("java.io.");
 		includeList.add("sun.misc.");
 		includeList.add("java.net.");
+		includeList.add("javax.servlet.");
+		includeList.add("javax.crypto.");
+
+		includeList.add("android.");
 		includeList.add("org.apache.http.");
 		includeList.add("de.test.");
 		includeList.add("soot.");
+		includeList.add("com.example.");
+		includeList.add("libcore.icu.");
 		includeList.add("securibench.");
-		includeList.add("javax.servlet.");
-		includeList.add("com.oreilly.servlet.");
-//		includeList.add("java.security.");
-//		includeList.add("javax.crypto.");
+		Options.v().set_no_bodies_for_excluded(true);
+		Options.v().set_allow_phantom_refs(true);
 		options.set_include(includeList);
 		options.set_output_format(Options.output_format_none);
+		Options.v().setPhaseOption("jb", "use-original-names:true");
 		
-		//this options might help:
-		//options.setPhaseOption("cg.spark", "types-for-sites:true");
-		//options.setPhaseOption("cg.spark", "vta:true");
 	}
 
 }

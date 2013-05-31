@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import soot.Scene;
 import soot.SootClass;
@@ -96,15 +98,15 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public List<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+	public Set<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
 		if (!stmt.containsInvokeExpr())
-			return Collections.emptyList();
+			return Collections.emptySet();
 		
 		List<String> killMethods = this.killList.get(stmt.getInvokeExpr().getMethod().getDeclaringClass().getName());
 		if (killMethods != null && killMethods.contains(stmt.getInvokeExpr().getMethod().getSubSignature()))
-			return Collections.emptyList();
+			return Collections.emptySet();
 		
-		List<Value> taints = new ArrayList<Value>();
+		Set<Value> taints = new HashSet<Value>();
 		
 		//if param is tainted && classList contains classname && if list. contains signature of method -> add propagation
 		if(taintedparam >= 0){

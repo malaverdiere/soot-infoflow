@@ -5,7 +5,7 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.Stmt;
 
-public interface SourceSinkManager {
+public interface ISourceSinkManager {
 
 	/**
 	 * determines if a method called by the Stmt is a source method or not

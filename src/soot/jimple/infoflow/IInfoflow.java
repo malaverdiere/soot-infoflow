@@ -4,7 +4,7 @@ import java.util.List;
 
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
-import soot.jimple.infoflow.source.SourceSinkManager;
+import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 
 public interface IInfoflow {
@@ -85,7 +85,7 @@ public interface IInfoflow {
 	 * @param sourcesSinks manager class for identifying sources and sinks in the source code
 	 */
 	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
-			List<String> entryPoints, SourceSinkManager sourcesSinks);
+			List<String> entryPoints, ISourceSinkManager sourcesSinks);
 
 	/**
 	 * Computes the information flow on a single method. This method is
@@ -95,7 +95,7 @@ public interface IInfoflow {
 	 * @param entryPoint the main method to analyze
 	 * @param sourcesSinks manager class for identifying sources and sinks in the source code
 	 */
-	public void computeInfoflow(String path, String entryPoint, SourceSinkManager sourcesSinks);
+	public void computeInfoflow(String path, String entryPoint, ISourceSinkManager sourcesSinks);
 
 	/**
 	 * getResults returns the results found by the analysis
@@ -117,5 +117,13 @@ public interface IInfoflow {
 	 * @param inspect boolean that determines the inspectSink option
 	 */
 	public void setInspectSinks(boolean inspect);
-
+	
+	/**
+	 * sets the depth of the access path that are tracked
+	 * @param value the maximum value of an access path. If it gets longer than
+	 *  this number, it is truncated and all following fields are assumed as tainted 
+	 *  (which is imprecise but gains performance)
+	 *  Default value is 5.
+	 */
+	public void setAnalysisDepth(int value);
 }

@@ -15,7 +15,7 @@ public class cmdInfoflow {
 
 				if (inputArgs.get(0) == null
 						|| inputArgs.size() < 3) {
-					System.err.println("Parsen der Argumente war nicht erfolgreich!");
+					System.err.println("Arguments could not be parsed!");
 					return;
 				}
 				IInfoflow infoflow = new Infoflow();

@@ -119,4 +119,14 @@ public class HeapTests extends JUnitTests {
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			checkInfoflow(infoflow, 1);
 	    }
+	    
+	    @Test
+	    public void testTwoLevels(){
+		  Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void twoLevelTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);
+	    }
+	    
 }

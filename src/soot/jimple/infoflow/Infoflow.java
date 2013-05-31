@@ -33,13 +33,13 @@ import soot.jimple.Stmt;
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.InfoflowResults.SinkInfo;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
-import soot.jimple.infoflow.config.IInfoflowSootConfig;
+import soot.jimple.infoflow.config.IInfoflowConfig;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
-import soot.jimple.infoflow.source.SourceSinkManager;
+import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
@@ -50,13 +50,14 @@ import soot.options.Options;
 public class Infoflow implements IInfoflow {
 
 	private static boolean DEBUG = false;
+	public static int ACCESSPATHLENGTH = 5;
 	public InfoflowResults results;
 
 	private final String androidPath;
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
 	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
-	private IInfoflowSootConfig sootConfig;
+	private IInfoflowConfig sootConfig;
 	private boolean stopAfterFirstFlow = false;
 	private boolean inspectSinks = true;
 
@@ -99,7 +100,7 @@ public class Infoflow implements IInfoflow {
 		this.pathTracking = method;
 	}
 	
-	public void setSootConfig(IInfoflowSootConfig config){
+	public void setSootConfig(IInfoflowConfig config){
 		sootConfig = config;
 	}
 	
@@ -134,7 +135,7 @@ public class Infoflow implements IInfoflow {
 	 * analysis seeds. All sources in these classes are used as seeds.
 	 * @param sourcesSinks The manager object for identifying sources and sinks
 	 */
-	private void initializeSoot(String path, Set<String> classes, SourceSinkManager sourcesSinks) {
+	private void initializeSoot(String path, Set<String> classes, ISourceSinkManager sourcesSinks) {
 		initializeSoot(path, classes, sourcesSinks, "");
 	}
 	
@@ -147,7 +148,7 @@ public class Infoflow implements IInfoflow {
 	 * @param sourcesSinks The manager object for identifying sources and sinks
 	 * @param extraSeed An optional extra seed, can be empty.
 	 */
-	private void initializeSoot(String path, Set<String> classes, SourceSinkManager sourcesSinks, String extraSeed) {
+	private void initializeSoot(String path, Set<String> classes, ISourceSinkManager sourcesSinks, String extraSeed) {
 		// reset Soot:
 		soot.G.reset();
 		DexResolver.reset();
@@ -176,6 +177,9 @@ public class Infoflow implements IInfoflow {
 			Options.v().setPhaseOption("cg.spark", "vta:true");
 		// do not merge variables (causes problems with PointsToSets)
 		Options.v().setPhaseOption("jb.ulp", "off");
+		
+		Options.v().setPhaseOption("cg", "trim-clinit:false");
+		
 		if (!this.androidPath.isEmpty()) {
 			Options.v().set_src_prec(Options.src_prec_apk);
 			if (this.forceAndroidJar)
@@ -209,7 +213,7 @@ public class Infoflow implements IInfoflow {
 
 	@Override
 	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
-			List<String> entryPoints, SourceSinkManager sourcesSinks) {
+			List<String> entryPoints, ISourceSinkManager sourcesSinks) {
 		results = null;
 		if (sourcesSinks == null) {
 			System.out.println("Error: sources are empty!");
@@ -230,7 +234,7 @@ public class Infoflow implements IInfoflow {
 
 
 	@Override
-	public void computeInfoflow(String path, String entryPoint, SourceSinkManager sourcesSinks) {
+	public void computeInfoflow(String path, String entryPoint, ISourceSinkManager sourcesSinks) {
 		results = null;
 		if (sourcesSinks == null) {
 			System.out.println("Error: sources are empty!");
@@ -272,7 +276,7 @@ public class Infoflow implements IInfoflow {
 			PackManager.v().writeOutput();
 	}
 
-	private void addSceneTransformer(final SourceSinkManager sourcesSinks, final Set<String> additionalSeeds) {
+	private void addSceneTransformer(final ISourceSinkManager sourcesSinks, final Set<String> additionalSeeds) {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
 				// Perform a constant propagation to make it easier subsequent steps to
@@ -448,5 +452,10 @@ public class Infoflow implements IInfoflow {
 			return false;
 		}
 		return true;
+	}
+	
+	@Override
+	public void setAnalysisDepth(int value){
+		
 	}
 }

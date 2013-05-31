@@ -3,7 +3,7 @@ package soot.jimple.infoflow.source;
 import soot.SootMethod;
 
 /**
- * A {@link SourceSinkManager} that always returns false, i.e. one for which
+ * A {@link ISourceSinkManager} that always returns false, i.e. one for which
  * there are no sources or sinks at all.
  * 
  * @author Steven Arzt

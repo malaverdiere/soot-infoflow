@@ -34,7 +34,7 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 	 * @return list of entryPoints
 	 */
 	@Override
-	public SootMethod createDummyMainInternal(List<String> methods) {
+	protected SootMethod createDummyMainInternal(List<String> methods) {
 		Map<String, List<String>> classMap =
 				SootMethodRepresentationParser.v().parseClassNames(methods, false);
 		

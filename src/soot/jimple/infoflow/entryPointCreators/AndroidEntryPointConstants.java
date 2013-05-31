@@ -40,7 +40,15 @@ public class AndroidEntryPointConstants {
 	public static final String CONTENTPROVIDER_ONCREATE = "boolean onCreate()";
 	
 	public static final String APPLICATION_ONCREATE = "void onCreate()";
-	public static final String APPLICATION_ONTERMINATE = "void onCreate()";
+	public static final String APPLICATION_ONTERMINATE = "void onTerminate()";
+
+	public static final String APPLIFECYCLECALLBACK_ONACTIVITYSTARTED = "void onActivityStarted(android.app.Activity)";
+	public static final String APPLIFECYCLECALLBACK_ONACTIVITYSTOPPED = "void onActivityStopped(android.app.Activity)";
+	public static final String APPLIFECYCLECALLBACK_ONACTIVITYSAVEINSTANCESTATE = "void onActivitySaveInstanceState(android.app.Activity,android.os.Bundle)";
+	public static final String APPLIFECYCLECALLBACK_ONACTIVITYRESUMED = "void onActivityResumed(android.app.Activity)";
+	public static final String APPLIFECYCLECALLBACK_ONACTIVITYPAUSED = "void onActivityPaused(android.app.Activity)";
+	public static final String APPLIFECYCLECALLBACK_ONACTIVITYDESTROYED = "void onActivityDestroyed(android.app.Activity)";
+	public static final String APPLIFECYCLECALLBACK_ONACTIVITYCREATED = "void onActivityCreated(android.app.Activity,android.os.Bundle)";
 	
 	private static final String[] activityMethods = {ACTIVITY_ONCREATE, ACTIVITY_ONDESTROY, ACTIVITY_ONPAUSE,
 		ACTIVITY_ONRESTART, ACTIVITY_ONRESUME, ACTIVITY_ONSTART, ACTIVITY_ONSTOP,
@@ -50,7 +58,11 @@ public class AndroidEntryPointConstants {
 		SERVICE_ONSTART2, SERVICE_ONBIND, SERVICE_ONREBIND, SERVICE_ONUNBIND};
 	private static final String[] broadcastMethods = {BROADCAST_ONRECEIVE};
 	private static final String[] contentproviderMethods = {CONTENTPROVIDER_ONCREATE};
-	private static final String[] applicationMethods = {APPLICATION_ONCREATE, APPLICATION_ONTERMINATE};
+	private static final String[] applicationMethods = {APPLICATION_ONCREATE, APPLICATION_ONTERMINATE,
+		APPLIFECYCLECALLBACK_ONACTIVITYSTARTED, APPLIFECYCLECALLBACK_ONACTIVITYSTOPPED,
+		APPLIFECYCLECALLBACK_ONACTIVITYSAVEINSTANCESTATE, APPLIFECYCLECALLBACK_ONACTIVITYRESUMED,
+		APPLIFECYCLECALLBACK_ONACTIVITYPAUSED, APPLIFECYCLECALLBACK_ONACTIVITYDESTROYED,
+		APPLIFECYCLECALLBACK_ONACTIVITYCREATED};
 	
 	public static List<String> getActivityLifecycleMethods(){
 		return Arrays.asList(activityMethods);

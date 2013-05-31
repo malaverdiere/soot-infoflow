@@ -20,6 +20,7 @@ import soot.javaToJimple.LocalGenerator;
 import soot.jimple.IntConstant;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
+import soot.jimple.NopStmt;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.SootMethodAndClass;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
@@ -46,6 +47,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	private int conditionCounter;
 	private Value intCounter;
 	
+	private SootClass applicationClass = null;
+	private Local applicationLocal = null;
+	private Set<SootClass> applicationCallbackClasses = new HashSet<SootClass>();
+	
 	private List<String> androidClasses;
 	private Map<String, List<String>> callbackFunctions;
 	
@@ -53,6 +58,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * Array containing all types of components supported in Android lifecycles
 	 */
 	private enum ComponentType {
+		Application,
 		Activity,
 		Service,
 		BroadcastReceiver,
@@ -110,7 +116,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * @return the dummyMethod which was created
 	 */
 	@Override
-	public SootMethod createDummyMainInternal(List<String> methods){
+	protected SootMethod createDummyMainInternal(List<String> methods){
 		Map<String, List<String>> classMap =
 				SootMethodRepresentationParser.v().parseClassNames(methods, false);
 		for (String androidClass : this.androidClasses)
@@ -166,13 +172,13 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		}
 		
 		// If we have an application, we need to start it in the very beginning
-		SootClass applicationClass = null;
-		Local applicationLocal = null;
 		for (Entry<String, List<String>> entry : classMap.entrySet()) {
 			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
 			List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
 			for(SootClass sc : extendedClasses)
 				if(sc.getName().equals(AndroidEntryPointConstants.APPLICATIONCLASS)) {
+					if (applicationClass != null)
+						throw new RuntimeException("Multiple application classes in app");
 					applicationClass = currentClass;
 					
 					// Create the application
@@ -184,9 +190,35 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					}
 					localVarsForClasses.put(applicationClass.getName(), applicationLocal);
 					
+					// Create instances of all application callback classes
+					if (callbackFunctions.containsKey(applicationClass.getName())) {
+						NopStmt beforeCbCons = new JNopStmt();
+						body.getUnits().add(beforeCbCons);
+						for (String appCallback : callbackFunctions.get(applicationClass.getName())) {
+							JNopStmt thenStmt = new JNopStmt();
+							createIfStmt(thenStmt);
+
+							String callbackClass = SootMethodRepresentationParser.v().parseSootMethodString
+									(appCallback).getClassName();
+							Local l = localVarsForClasses.get(callbackClass);
+							if (l == null) {
+								SootClass theClass = Scene.v().getSootClass(callbackClass);
+								applicationCallbackClasses.add(theClass);
+								l = generateClassConstructor(theClass, body,
+										Collections.singleton(applicationClass));
+								localVarsForClasses.put(callbackClass, l);
+							}
+							
+							body.getUnits().add(thenStmt);
+						}
+						// Jump back to overapproximate the order in which the
+						// constructors are called 
+						createIfStmt(beforeCbCons);
+					}
+					
 					// Call the onCreate() method
 					searchAndBuildMethod(AndroidEntryPointConstants.APPLICATION_ONCREATE,
-							applicationClass, entry.getValue(), applicationLocal);					
+							applicationClass, entry.getValue(), applicationLocal);
 					break;
 				}
 		}
@@ -303,8 +335,11 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		}
 		
 		// Add conditional calls to the application callback methods
-		if (applicationLocal != null)
+		if (applicationLocal != null) {
 			addApplicationCallbackMethods(applicationClass, applicationLocal);
+			for (SootClass callbackClass : applicationCallbackClasses)
+				addApplicationCallbackMethods(callbackClass, localVarsForClasses.get(callbackClass.getName()));
+		}
 		
 		createIfStmt(outerStartStmt);
 		
@@ -327,8 +362,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	private ComponentType getComponentType(SootClass currentClass) {
 		// Check the type of this class
 		List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
-		for(SootClass sc : extendedClasses){
-			if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS))
+		for(SootClass sc : extendedClasses) {
+			if(sc.getName().equals(AndroidEntryPointConstants.APPLICATIONCLASS))
+				return ComponentType.Application;
+			else if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS))
 				return ComponentType.Activity;
 			else if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS))
 				return ComponentType.Service;
@@ -375,7 +412,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(thenStmt);
 			}
 		}
-		addCallbackMethods(currentClass, classLocal);
+		addCallbackMethods(currentClass);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		// createIfStmt(onCreateStmt);
@@ -412,7 +449,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(thenStmt);
 			}
 		}
-		addCallbackMethods(currentClass, classLocal);
+		addCallbackMethods(currentClass);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		createIfStmt(onReceiveStmt);
@@ -456,7 +493,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(thenStmt);
 			}
 		}
-		addCallbackMethods(currentClass, classLocal);
+		addCallbackMethods(currentClass);
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		
@@ -480,7 +517,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				body.getUnits().add(thenStmt);
 			}
 		}
-		addCallbackMethods(currentClass, classLocal);
+		addCallbackMethods(currentClass);
 		body.getUnits().add(endWhile2Stmt);
 		createIfStmt(startWhile2Stmt);
 		
@@ -517,19 +554,62 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		// run, we allow for each single one of them to be skipped
 		createIfStmt(endClassStmt);
 		
+		Set<SootClass> referenceClasses = new HashSet<SootClass>();
+		if (applicationClass != null)
+			referenceClasses.add(applicationClass);
+		for (SootClass callbackClass : this.applicationCallbackClasses)
+			referenceClasses.add(callbackClass);
+		referenceClasses.add(currentClass);
+		
 		// 1. onCreate:
-		Stmt onCreateStmt = searchAndBuildMethod
+		Stmt onCreateStmt = new JNopStmt();
+		body.getUnits().add(onCreateStmt);
+		{
+			Stmt onCreateStmt2 = searchAndBuildMethod
 				(AndroidEntryPointConstants.ACTIVITY_ONCREATE, currentClass, entryPoints, classLocal);
+			boolean found = addCallbackMethods(applicationClass, referenceClasses,
+					AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYCREATED);
+			if (!found && onCreateStmt2 == null) {
+				body.getUnits().remove(onCreateStmt);
+				onCreateStmt = null;
+			}
+			else if (found && onCreateStmt2 != null)
+				createIfStmt(onCreateStmt2);
+		}
+		
 		//2. onStart:
-		Stmt onStartStmt = searchAndBuildMethod
-				(AndroidEntryPointConstants.ACTIVITY_ONSTART, currentClass, entryPoints, classLocal);
-		searchAndBuildMethod
-				(AndroidEntryPointConstants.ACTIVITY_ONRESTOREINSTANCESTATE, currentClass, entryPoints, classLocal);
-		searchAndBuildMethod
-				(AndroidEntryPointConstants.ACTIVITY_ONPOSTCREATE, currentClass, entryPoints, classLocal);
+		Stmt onStartStmt = new JNopStmt();
+		body.getUnits().add(onStartStmt);
+		{
+			Stmt onStartStmt2 = searchAndBuildMethod
+					(AndroidEntryPointConstants.ACTIVITY_ONSTART, currentClass, entryPoints, classLocal);
+			boolean found = addCallbackMethods(applicationClass, referenceClasses,
+					AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYSTARTED);
+			if (!found && onStartStmt2 == null) {
+				body.getUnits().remove(onStartStmt);
+				onStartStmt = null;
+			}
+			else if (found && onStartStmt2 != null)
+				createIfStmt(onStartStmt2);
+		}
+		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONRESTOREINSTANCESTATE, currentClass, entryPoints, classLocal);
+		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONPOSTCREATE, currentClass, entryPoints, classLocal);
+		
 		//3. onResume:
-		Stmt onResumeStmt = searchAndBuildMethod
-				(AndroidEntryPointConstants.ACTIVITY_ONRESUME, currentClass, entryPoints, classLocal);
+		Stmt onResumeStmt = new JNopStmt();
+		body.getUnits().add(onResumeStmt);
+		{
+			Stmt onResumeStmt2 = searchAndBuildMethod
+					(AndroidEntryPointConstants.ACTIVITY_ONRESUME, currentClass, entryPoints, classLocal);
+			boolean found = addCallbackMethods(applicationClass, referenceClasses,
+					AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYRESUMED);
+			if (!found && onResumeStmt2 == null) {
+				body.getUnits().remove(onResumeStmt);
+				onResumeStmt = null;
+			}
+			else if (found && onResumeStmt2 != null)
+				createIfStmt(onResumeStmt2);
+		}
 		searchAndBuildMethod
 				(AndroidEntryPointConstants.ACTIVITY_ONPOSTRESUME, currentClass, entryPoints, classLocal);
 		
@@ -537,24 +617,33 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		JNopStmt startWhileStmt = new JNopStmt();
 		JNopStmt endWhileStmt = new JNopStmt();
 		body.getUnits().add(startWhileStmt);
-		
 		for(SootMethod currentMethod : currentClass.getMethods()){
-			if(entryPoints.contains(currentMethod.toString()) && !AndroidEntryPointConstants.getActivityLifecycleMethods().contains(currentMethod.getSubSignature())){
+			if(entryPoints.contains(currentMethod.toString())
+					&& !AndroidEntryPointConstants.getActivityLifecycleMethods().contains(currentMethod.getSubSignature())) {
 				JNopStmt thenStmt = new JNopStmt();
 				createIfStmt(thenStmt);
 				buildMethodCall(currentMethod, body, classLocal, generator);
 				body.getUnits().add(thenStmt);
 			}
 		}		
-		addCallbackMethods(currentClass, classLocal);
+		addCallbackMethods(currentClass);
 		
 		body.getUnits().add(endWhileStmt);
 		createIfStmt(startWhileStmt);
 		
 		//4. onPause:
-		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONPAUSE, currentClass, entryPoints, classLocal);
+		Stmt onPause = searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONPAUSE, currentClass, entryPoints, classLocal);
+		boolean hasAppOnPause = addCallbackMethods(applicationClass, referenceClasses,
+				AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYPAUSED);
+		if (hasAppOnPause && onPause != null)
+			createIfStmt(onPause);
 		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONCREATEDESCRIPTION, currentClass, entryPoints, classLocal);
-		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSAVEINSTANCESTATE, currentClass, entryPoints, classLocal);
+		Stmt onSaveInstance = searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSAVEINSTANCESTATE, currentClass, entryPoints, classLocal);
+		boolean hasAppOnSaveInstance = addCallbackMethods(applicationClass, referenceClasses,
+				AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYSAVEINSTANCESTATE);
+		if (hasAppOnSaveInstance && onSaveInstance != null)
+			createIfStmt(onSaveInstance);
+
 		//goTo Stop, Resume or Create:
 		JNopStmt pauseToStopStmt = new JNopStmt();
 		createIfStmt(pauseToStopStmt);
@@ -563,7 +652,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		body.getUnits().add(pauseToStopStmt);
 		//5. onStop:
-		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSTOP, currentClass, entryPoints, classLocal);
+		Stmt onStop = searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSTOP, currentClass, entryPoints, classLocal);
+		boolean hasAppOnStop = addCallbackMethods(applicationClass, referenceClasses,
+				AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYSTOPPED);
+		if (hasAppOnStop && onStop != null)
+			createIfStmt(onStop);
+
 		//goTo onDestroy, onRestart or onCreate:
 		JNopStmt stopToDestroyStmt = new JNopStmt();
 		JNopStmt stopToRestartStmt = new JNopStmt();
@@ -581,7 +675,11 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		//7. onDestroy
 		body.getUnits().add(stopToDestroyStmt);
-		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONDESTROY, currentClass, entryPoints, classLocal);
+		Stmt onDestroy = searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONDESTROY, currentClass, entryPoints, classLocal);
+		boolean hasAppOnDestroy = addCallbackMethods(applicationClass, referenceClasses,
+				AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYDESTROYED);
+		if (hasAppOnDestroy && onDestroy != null)
+			createIfStmt(onDestroy);
 
 		createIfStmt(endClassStmt);
 	}
@@ -605,6 +703,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				break;
 			
 			for (SootMethod method : currentClass.getMethods()) {
+				// Do not add calls to constructor methods
+				if (method.isConstructor())
+					continue;
+				
 				// We do not consider lifecycle methods which are directly inserted
 				// at their respective positions
 				if (AndroidEntryPointConstants.getApplicationLifecycleMethods().contains
@@ -624,19 +726,40 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * Generates invocation statements for all callback methods which need to
 	 * be invoked during the given class' run cycle.
 	 * @param currentClass The class for which we currently build the lifecycle
-	 * @param parentClassLocal The local containing a reference to the class
-	 * for which we are currently building the lifecycle.
+	 * @return True if a matching callback has been found, otherwise false.
 	 */
-	private void addCallbackMethods(SootClass currentClass, Local parentClassLocal) {
+	private boolean addCallbackMethods(SootClass currentClass) {
+		return addCallbackMethods(currentClass, Collections.<SootClass>emptySet(), "");
+	}
+	
+	/**
+	 * Generates invocation statements for all callback methods which need to
+	 * be invoked during the given class' run cycle.
+	 * @param currentClass The class for which we currently build the lifecycle
+	 * @param referenceClasses The classes for which no new instances shall be
+	 * created, but rather existing ones shall be used.
+	 * @param callbackSignature An empty string if calls to all callback methods
+	 * for the given class shall be generated, otherwise the subsignature of the
+	 * only callback method to generate.
+	 * @return True if a matching callback has been found, otherwise false.
+	 */
+	private boolean addCallbackMethods(SootClass currentClass, Set<SootClass> referenceClasses,
+			String callbackSignature) {
 		// If no callbacks are declared for the current class, there is nothing
 		// to be done here
+		if (currentClass == null)
+			return false;
 		if (!this.callbackFunctions.containsKey(currentClass.getName()))
-			return;
+			return false;
 		
 		// Get all classes in which callback methods are declared
+		boolean callbackFound = false;
 		Map<SootClass, Set<SootMethod>> callbackClasses = new HashMap<SootClass, Set<SootMethod>>();
 		for (String methodSig : this.callbackFunctions.get(currentClass.getName())) {
 			SootMethodAndClass methodAndClass = SootMethodRepresentationParser.v().parseSootMethodString(methodSig);
+			if (!callbackSignature.isEmpty() && !callbackSignature.equals(methodAndClass.getSubSignature()))
+				continue;
+			
 			SootClass theClass = Scene.v().getSootClass(methodAndClass.getClassName());
 			SootMethod theMethod = findMethod(theClass, methodAndClass.getSubSignature());
 			if (theMethod == null) {
@@ -653,32 +776,55 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			}
 		}
 
+		// The class for which we are generating the lifecycle always has an
+		// instance.
+		if (referenceClasses.isEmpty())
+			referenceClasses = Collections.singleton(currentClass);
+		else {
+			referenceClasses = new HashSet<SootClass>(referenceClasses);
+			referenceClasses.add(currentClass);
+		}
+
 		for (SootClass callbackClass : callbackClasses.keySet()) {
-			Local classLocal;
-			if (isCompatible(currentClass, callbackClass))
-				classLocal = parentClassLocal;
-			else {
+			// If we already have a parent class that defines this callback, we
+			// use it. Otherwise, we create a new one.
+			Set<Local> classLocals = new HashSet<Local>();
+			for (SootClass parentClass : referenceClasses) {
+				Local parentLocal = this.localVarsForClasses.get(parentClass.getName());
+				if (isCompatible(parentClass, callbackClass))
+					classLocals.add(parentLocal);
+			}
+			if (classLocals.isEmpty()) {
 				// Create a new instance of this class
 				// if we need to call a constructor, we insert the respective Jimple statement here
-				classLocal = generateClassConstructor(callbackClass, body, Collections.singleton(currentClass));
+				Local classLocal = generateClassConstructor(callbackClass, body, referenceClasses);
 				if (classLocal == null) {
 					System.out.println("Constructor cannot be generated for callback class "
 							+ callbackClass.getName());
 					continue;
 				}
+				classLocals.add(classLocal);
 			}
 			
 			// Build the calls to all callback methods in this class
-			for (SootMethod callbackMethod : callbackClasses.get(callbackClass)) {
-				JNopStmt thenStmt = new JNopStmt();
-				createIfStmt(thenStmt);
-				buildMethodCall(callbackMethod, body, classLocal, generator);	
-				body.getUnits().add(thenStmt);
+			for (Local classLocal : classLocals) {
+				for (SootMethod callbackMethod : callbackClasses.get(callbackClass)) {
+					JNopStmt thenStmt = new JNopStmt();
+					createIfStmt(thenStmt);
+					buildMethodCall(callbackMethod, body, classLocal, generator, referenceClasses);
+					body.getUnits().add(thenStmt);
+				}
+				callbackFound = true;
 			}
 		}
+	
+		return callbackFound;
 	}
 	
 	private Stmt searchAndBuildMethod(String subsignature, SootClass currentClass, List<String> entryPoints, Local classLocal){
+		if (currentClass == null || classLocal == null)
+			return null;
+		
 		SootMethod method = findMethod(currentClass, subsignature);
 		if (method == null) {
 			System.err.println("Could not find Android entry point method: " + subsignature);
@@ -690,7 +836,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		// contain custom code, so we do not need to call it
 		if (AndroidEntryPointConstants.isLifecycleClass(method.getDeclaringClass().getName()))
 			return null;
-
+		
 		assert method.isStatic() || classLocal != null : "Class local was null for non-static method "
 				+ method.getSignature();
 		

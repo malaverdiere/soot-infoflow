@@ -90,6 +90,11 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 	}
 	
 	protected Stmt buildMethodCall(SootMethod currentMethod, JimpleBody body, Local classLocal, LocalGenerator gen){
+		return buildMethodCall(currentMethod, body, classLocal, gen, Collections.<SootClass>emptySet());
+	}
+
+	protected Stmt buildMethodCall(SootMethod currentMethod, JimpleBody body, Local classLocal, LocalGenerator gen,
+			Set<SootClass> parentClasses){
 		assert currentMethod != null : "Current method was null";
 		assert body != null : "Body was null";
 		assert gen != null : "Local generator was null";
@@ -98,7 +103,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		if(currentMethod.getParameterCount()>0){
 			List<Object> args = new LinkedList<Object>();
 			for(Type tp :currentMethod.getParameterTypes()){
-				args.add(getValueForType(body, gen, tp, new HashSet<SootClass>(), Collections.<SootClass>emptySet()));
+				args.add(getValueForType(body, gen, tp, new HashSet<SootClass>(), parentClasses));
 			}
 			if(currentMethod.isStatic()){
 				invokeExpr = Jimple.v().newStaticInvokeExpr(currentMethod.makeRef(), args);

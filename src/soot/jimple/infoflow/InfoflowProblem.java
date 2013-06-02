@@ -482,22 +482,28 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
 						}
-
+						Abstraction newSource;
+						if(!source.isAbstractionActive() && src.equals(source.getActivationUnit())){
+							newSource = source.popActivationUnit();
+						}else{
+							newSource = source;
+						}
+						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
 						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
 							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 							// this might be enough because every call must happen with a local variable which is tainted itself:
-							if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
+							if (vie.getBase().equals(newSource.getAccessPath().getPlainValue())) {
 								Abstraction abs;
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									abs = ((AbstractionWithPath) source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+									abs = ((AbstractionWithPath) newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
 											(dest.getActiveBody().getThisLocal()))).addPathElement(stmt);
 								else
-									abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+									abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
 											(dest.getActiveBody().getThisLocal()));
 								//add new callArgs:
-								assert abs != source;		// our source abstraction must be immutable
+								assert abs != newSource;		// our source abstraction must be immutable
 								abs.setAbstractionFromCallEdge(abs.clone());
 								res.add(abs);
 							}
@@ -508,16 +514,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							assert dest.getParameterCount() == callArgs.size();
 							// check if param is tainted:
 							for (int i = 0; i < callArgs.size(); i++) {
-								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) &&
-										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())) {
+								if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) &&
+										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), newSource) || newSource.isAbstractionActive())) {
 									Abstraction abs;
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										abs = ((AbstractionWithPath) source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+										abs = ((AbstractionWithPath) newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
 												(paramLocals.get(i)), stmt)).addPathElement(stmt);
 									else
-										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+										abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
 												(paramLocals.get(i)), stmt);
-									assert abs != source;		// our source abstraction must be immutable
+									assert abs != newSource;		// our source abstraction must be immutable
 									abs.setAbstractionFromCallEdge(abs.clone());
 									res.add(abs);
 								}
@@ -525,11 +531,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// staticfieldRefs must be analyzed even if they are not part of the params:
-						if (source.getAccessPath().isStaticFieldRef()) {
+						if (newSource.getAccessPath().isStaticFieldRef()) {
 							Abstraction abs;
-							abs = source.clone();
-							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
-							assert abs != source;		// our source abstraction must be immutable
+							abs = newSource.clone();
+							assert (abs.equals(newSource) && abs.hashCode() == newSource.hashCode());
+							assert abs != newSource;		// our source abstraction must be immutable
 							abs.setAbstractionFromCallEdge(abs.clone());
 							res.add(abs);
 						}
@@ -552,8 +558,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 						Abstraction newSource;
-						if(!source.isAbstractionActive() && source.getActivationUnit().equals(callSite)){
-							newSource = source.getActiveCopy(true);
+						if(!source.isAbstractionActive()){
+							if(source.getActivationUnit().equals(callSite)){
+								newSource = source.getActiveCopy(true);
+							}else{
+								newSource = source.cloneUsePredAbstractionOfCG();
+//								newSource = newSource.pushActivationUnit(callSite);
+							}
 						}else{
 							newSource = source.cloneUsePredAbstractionOfCG();
 						}
@@ -691,6 +702,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											if(triggerInaktiveTaintOrReverseFlow(iIExpr.getBase(), newSource) && !callSite.equals(newSource.getUnitOfDirectionChange())){
 												Abstraction bwAbs = abs.deriveInactiveAbstraction();
 												bwAbs.setUnitOfDirectionChange(callSite);
+												bwAbs = bwAbs.pushActivationUnit(callSite);
 												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 											}

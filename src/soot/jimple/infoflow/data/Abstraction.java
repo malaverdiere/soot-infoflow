@@ -2,6 +2,7 @@ package soot.jimple.infoflow.data;
 
 
 import java.util.LinkedList;
+import java.util.Stack;
 
 import soot.SootField;
 import soot.Unit;
@@ -12,7 +13,7 @@ public class Abstraction implements Cloneable {
 	private final AccessPath accessPath;
 	private final Value source;
 	private final Stmt sourceContext;
-	private Unit activationUnit;
+	private Stack<Unit> activationUnit;
 	private boolean isActive = true;
 	private final boolean exceptionThrown;
 	private int hashCode;
@@ -22,7 +23,8 @@ public class Abstraction implements Cloneable {
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
 		this.source = src;
 		this.accessPath = new AccessPath(taint);
-		this.activationUnit = activationUnit;
+		this.activationUnit = new Stack<Unit>();
+		this.activationUnit.push(activationUnit);
 		this.sourceContext = srcContext;
 		this.exceptionThrown = exceptionThrown;
 		this.isActive = isActive;
@@ -32,7 +34,7 @@ public class Abstraction implements Cloneable {
 		this.source = src;
 		this.sourceContext = srcContext;
 		this.accessPath = p;
-		this.activationUnit = null;
+		this.activationUnit = new Stack<Unit>();
 		this.exceptionThrown = exceptionThrown;
 		this.isActive = isActive;
 	}
@@ -90,9 +92,13 @@ public class Abstraction implements Cloneable {
 		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown, isActive);
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		if(isActive){
-			a.activationUnit = newActUnit;
+			a.activationUnit = new Stack<Unit>();
+			a.activationUnit.push(newActUnit);
 		}else{
 			a.activationUnit = activationUnit;
+			if(newActUnit != null){
+				a.activationUnit.push(newActUnit);
+			}
 		}
 		a.unitOfDirectionChange = unitOfDirectionChange;
 		return a;
@@ -102,9 +108,13 @@ public class Abstraction implements Cloneable {
 		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown, isActive);
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		if(isActive){
-			a.activationUnit = srcUnit;
+			a.activationUnit = new Stack<Unit>();
+			a.activationUnit.push(srcUnit);
 		}else{
 			a.activationUnit = activationUnit;
+			if(srcUnit != null){
+				a.activationUnit.push(srcUnit);
+			}
 		}
 		a.unitOfDirectionChange = unitOfDirectionChange;
 		return a;
@@ -134,9 +144,13 @@ public class Abstraction implements Cloneable {
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		a.unitOfDirectionChange = unitOfDirectionChange;
 		if(isActive){
-			a.activationUnit = newActUnit;
+			a.activationUnit = new Stack<Unit>();
+			a.activationUnit.push(newActUnit);
 		}else{
 			a.activationUnit = activationUnit;
+			if(newActUnit != null){
+				a.activationUnit.push(newActUnit);
+			}
 		}
 		return a;
 	}
@@ -164,9 +178,13 @@ public class Abstraction implements Cloneable {
 		assert this.exceptionThrown;
 		Abstraction abs = new Abstraction(new AccessPath(taint), source, sourceContext, false, isActive);
 		if(isActive){
-			abs.activationUnit = newActivationUnit;
+			abs.activationUnit = new Stack<Unit>();
+			abs.activationUnit.push(newActivationUnit);
 		}else{
 			abs.activationUnit = activationUnit;
+			if(newActivationUnit != null){
+				abs.activationUnit.push(newActivationUnit);
+			}
 		}
 		
 		abs.abstractionFromCallEdge = abstractionFromCallEdge;
@@ -203,7 +221,19 @@ public class Abstraction implements Cloneable {
 	
 	public Unit getActivationUnit(){
 		assert(activationUnit!=null);
-		return activationUnit;
+		return activationUnit.peek();
+	}
+	
+	public Abstraction popActivationUnit(){
+		Abstraction a = this.clone();
+		a.activationUnit.pop();
+		return a;
+	}
+	
+	public Abstraction pushActivationUnit(Unit e){
+		Abstraction a = this.clone();
+		a.activationUnit.push(e);
+		return a;
 	}
 	
 	public Abstraction getAbstractionFromCallEdge(){
@@ -234,7 +264,7 @@ public class Abstraction implements Cloneable {
 	public Abstraction getActiveCopy(boolean dropAbstractionFromCallEdge){
 		Abstraction a = clone();
 		a.isActive = true;
-		
+		a.activationUnit = new Stack<Unit>();
 		if(dropAbstractionFromCallEdge){
 			if(a.abstractionFromCallEdge != null){
 				a.abstractionFromCallEdge = a.abstractionFromCallEdge.abstractionFromCallEdge;
@@ -256,7 +286,7 @@ public class Abstraction implements Cloneable {
 	@Override
 	public Abstraction clone(){
 		Abstraction a = new Abstraction(accessPath, source, sourceContext, exceptionThrown, isActive);
-		a.activationUnit = activationUnit;
+		a.activationUnit = (Stack<Unit>) activationUnit.clone();
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		a.unitOfDirectionChange = unitOfDirectionChange;
 		return a;

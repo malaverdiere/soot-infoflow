@@ -2,7 +2,6 @@ package soot.jimple.infoflow.data;
 
 
 import java.util.LinkedList;
-import java.util.Stack;
 
 import soot.SootField;
 import soot.Unit;
@@ -13,7 +12,8 @@ public class Abstraction implements Cloneable {
 	private final AccessPath accessPath;
 	private final Value source;
 	private final Stmt sourceContext;
-	private Stack<Unit> activationUnit;
+	private Unit activationUnit;
+	private Unit activationUnitOnCurrentLevel;
 	private boolean isActive = true;
 	private final boolean exceptionThrown;
 	private int hashCode;
@@ -23,8 +23,7 @@ public class Abstraction implements Cloneable {
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
 		this.source = src;
 		this.accessPath = new AccessPath(taint);
-		this.activationUnit = new Stack<Unit>();
-		this.activationUnit.push(activationUnit);
+		this.activationUnit = activationUnit;
 		this.sourceContext = srcContext;
 		this.exceptionThrown = exceptionThrown;
 		this.isActive = isActive;
@@ -34,7 +33,7 @@ public class Abstraction implements Cloneable {
 		this.source = src;
 		this.sourceContext = srcContext;
 		this.accessPath = p;
-		this.activationUnit = new Stack<Unit>();
+		this.activationUnit = null;
 		this.exceptionThrown = exceptionThrown;
 		this.isActive = isActive;
 	}
@@ -68,6 +67,7 @@ public class Abstraction implements Cloneable {
 		accessPath = p;
 		exceptionThrown = original.exceptionThrown;
 		activationUnit = original.activationUnit;
+		activationUnitOnCurrentLevel = original.activationUnitOnCurrentLevel;
 		unitOfDirectionChange = original.unitOfDirectionChange;
 		isActive = original.isActive;
 	}
@@ -83,6 +83,7 @@ public class Abstraction implements Cloneable {
 		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown, isActive);
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		a.activationUnit = activationUnit;
+		a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		a.unitOfDirectionChange = unitOfDirectionChange;
 		
 		return a;
@@ -92,13 +93,10 @@ public class Abstraction implements Cloneable {
 		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown, isActive);
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		if(isActive){
-			a.activationUnit = new Stack<Unit>();
-			a.activationUnit.push(newActUnit);
+			a.activationUnit = newActUnit;
 		}else{
 			a.activationUnit = activationUnit;
-			if(newActUnit != null){
-				a.activationUnit.push(newActUnit);
-			}
+			a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		}
 		a.unitOfDirectionChange = unitOfDirectionChange;
 		return a;
@@ -108,13 +106,10 @@ public class Abstraction implements Cloneable {
 		Abstraction a = new Abstraction(p, source, sourceContext, exceptionThrown, isActive);
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		if(isActive){
-			a.activationUnit = new Stack<Unit>();
-			a.activationUnit.push(srcUnit);
+			a.activationUnit = srcUnit;
 		}else{
 			a.activationUnit = activationUnit;
-			if(srcUnit != null){
-				a.activationUnit.push(srcUnit);
-			}
+			a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		}
 		a.unitOfDirectionChange = unitOfDirectionChange;
 		return a;
@@ -144,13 +139,10 @@ public class Abstraction implements Cloneable {
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		a.unitOfDirectionChange = unitOfDirectionChange;
 		if(isActive){
-			a.activationUnit = new Stack<Unit>();
-			a.activationUnit.push(newActUnit);
+			a.activationUnit = newActUnit;
 		}else{
 			a.activationUnit = activationUnit;
-			if(newActUnit != null){
-				a.activationUnit.push(newActUnit);
-			}
+			a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		}
 		return a;
 	}
@@ -164,6 +156,8 @@ public class Abstraction implements Cloneable {
 		assert !this.exceptionThrown;
 		Abstraction abs = new Abstraction(accessPath, source, sourceContext, true, isActive);
 		abs.abstractionFromCallEdge = abstractionFromCallEdge;
+		abs.activationUnit = activationUnit;
+		abs.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		abs.unitOfDirectionChange = unitOfDirectionChange;
 		return abs;
 	}
@@ -178,13 +172,10 @@ public class Abstraction implements Cloneable {
 		assert this.exceptionThrown;
 		Abstraction abs = new Abstraction(new AccessPath(taint), source, sourceContext, false, isActive);
 		if(isActive){
-			abs.activationUnit = new Stack<Unit>();
-			abs.activationUnit.push(newActivationUnit);
+			abs.activationUnit = newActivationUnit;
 		}else{
 			abs.activationUnit = activationUnit;
-			if(newActivationUnit != null){
-				abs.activationUnit.push(newActivationUnit);
-			}
+			abs.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		}
 		
 		abs.abstractionFromCallEdge = abstractionFromCallEdge;
@@ -207,7 +198,7 @@ public class Abstraction implements Cloneable {
 	@Override
 	public String toString(){
 		if(accessPath != null && source != null){
-			return (isActive?"":"_")+accessPath.toString() + " | "+(activationUnit==null?"":activationUnit.toString());
+			return (isActive?"":"_")+accessPath.toString() + " | "+(activationUnit==null?"":activationUnit.toString()) + ">>"+ (activationUnitOnCurrentLevel==null?"":activationUnitOnCurrentLevel.toString());
 		}
 		if(accessPath != null){
 			return accessPath.toString();
@@ -220,20 +211,17 @@ public class Abstraction implements Cloneable {
 	}
 	
 	public Unit getActivationUnit(){
-		assert(activationUnit!=null);
-		return activationUnit.peek();
+		return activationUnit;
 	}
 	
-	public Abstraction popActivationUnit(){
+	public Abstraction getAbstractionWithNewActivationUnitOnCurrentLevel(Unit u){
 		Abstraction a = this.clone();
-		a.activationUnit.pop();
+		a.activationUnitOnCurrentLevel = u;
 		return a;
 	}
 	
-	public Abstraction pushActivationUnit(Unit e){
-		Abstraction a = this.clone();
-		a.activationUnit.push(e);
-		return a;
+	public Unit getActivationUnitOnCurrentLevel(){
+		return activationUnitOnCurrentLevel;
 	}
 	
 	public Abstraction getAbstractionFromCallEdge(){
@@ -264,7 +252,8 @@ public class Abstraction implements Cloneable {
 	public Abstraction getActiveCopy(boolean dropAbstractionFromCallEdge){
 		Abstraction a = clone();
 		a.isActive = true;
-		a.activationUnit = new Stack<Unit>();
+		a.activationUnit = null;
+		a.activationUnitOnCurrentLevel = null;
 		if(dropAbstractionFromCallEdge){
 			if(a.abstractionFromCallEdge != null){
 				a.abstractionFromCallEdge = a.abstractionFromCallEdge.abstractionFromCallEdge;
@@ -286,7 +275,8 @@ public class Abstraction implements Cloneable {
 	@Override
 	public Abstraction clone(){
 		Abstraction a = new Abstraction(accessPath, source, sourceContext, exceptionThrown, isActive);
-		a.activationUnit = (Stack<Unit>) activationUnit.clone();
+		a.activationUnit = activationUnit;
+		a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		a.unitOfDirectionChange = unitOfDirectionChange;
 		return a;
@@ -336,6 +326,11 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!activationUnit.equals(other.activationUnit))
 			return false;
+		if (activationUnitOnCurrentLevel == null) {
+			if (other.activationUnitOnCurrentLevel != null)
+				return false;
+		} else if (!activationUnitOnCurrentLevel.equals(other.activationUnitOnCurrentLevel))
+			return false;
 		if (this.exceptionThrown != other.exceptionThrown)
 			return false;
 		if(this.isActive != other.isActive)
@@ -353,6 +348,7 @@ public class Abstraction implements Cloneable {
 			this.hashCode = prime * this.hashCode + ((source == null) ? 0 : source.hashCode());
 			this.hashCode = prime * this.hashCode + ((sourceContext == null) ? 0 : sourceContext.hashCode());
 			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
+			this.hashCode = prime * this.hashCode + ((activationUnitOnCurrentLevel == null) ? 0 : activationUnitOnCurrentLevel.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
 		}

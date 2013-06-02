@@ -43,7 +43,7 @@ import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
-	InfoflowSolver bSolver;
+	InfoflowSolver bSolver; 
 	private final static boolean DEBUG = false;
 	final ISourceSinkManager sourceSinkManager;
 	Abstraction zeroValue = null;
@@ -217,6 +217,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
+
 							
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							boolean addOriginal = true;
@@ -272,7 +273,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							Abstraction newSource;
 							//check inactive elements:
-							if (!source.isAbstractionActive() && source.getActivationUnit().equals(src)){
+							if (!source.isAbstractionActive() && (src.equals(source.getActivationUnit()) || src.equals(source.getActivationUnitOnCurrentLevel()))){
 								newSource = source.getActiveCopy(false);
 							}else{
 								newSource = source;
@@ -380,28 +381,69 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 									if (leftRef.getBase().equals(newSource.getAccessPath().getPlainValue())) {
 										if (leftRef.getField().equals(newSource.getAccessPath().getFirstField())) {
-											return Collections.emptySet();
+											if(newSource.isAbstractionActive()){
+												return Collections.emptySet();
+											}else{
+												//start backward:
+												for (Value rightValue : rightVals) {
+													Abstraction newAbs = newSource.deriveNewAbstraction(rightValue, true, src);
+													if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs) && !src.equals(newAbs.getUnitOfDirectionChange())) {
+														Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
+														bwAbs.setUnitOfDirectionChange(src);
+														for (Unit predUnit : interproceduralCFG().getPredsOf(src))
+															bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+													}
+												}
+											}
 										}
 										
 									}
 									//x = y && x.f tainted -> no taint propagated
 								}else if (leftValue instanceof Local){
 									if (leftValue.equals(newSource.getAccessPath().getPlainValue())) {
-										return Collections.emptySet();
+										if(newSource.isAbstractionActive()){
+											return Collections.emptySet();
+										}else{
+											//start backward:
+											for (Value rightValue : rightVals) {
+												Abstraction newAbs = newSource.deriveNewAbstraction(rightValue, false, src);
+												if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs) && !src.equals(newAbs.getUnitOfDirectionChange())) {
+													Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
+													bwAbs.setUnitOfDirectionChange(src);
+													for (Unit predUnit : interproceduralCFG().getPredsOf(src))
+														bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+												}
+											}
+										}
 									}
 								}	
 							}else if(newSource.getAccessPath().isStaticFieldRef()){
 								//X.f = y && X.f tainted -> no taint propagated
 								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(newSource.getAccessPath().getFirstField())){
 									//TODO: create Testcase for this (with several fields?)
-									return Collections.emptySet();
+									if(newSource.isAbstractionActive()){
+										return Collections.emptySet();
+									}else{
+										//start backward:
+										for (Value rightValue : rightVals) {
+											Abstraction newAbs = newSource.deriveNewAbstraction(rightValue, false, src);
+											if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs) && !src.equals(newAbs.getUnitOfDirectionChange())) {
+												Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
+												bwAbs.setUnitOfDirectionChange(src);
+												for (Unit predUnit : interproceduralCFG().getPredsOf(src))
+													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+											}
+										}
+									}
 								}
 								
 							}
 							//when the fields of an object are tainted, but the base object is overwritten then the fields should not be tainted any more
-							//x.. = y && x tainted -> no taint propagated
+							//x = y && x.f tainted -> no taint propagated
 							if(newSource.getAccessPath().isLocal() && leftValue.equals(newSource.getAccessPath().getPlainValue())){
-								return Collections.emptySet();
+								if(newSource.isAbstractionActive()){
+									return Collections.emptySet();
+								}
 							}
 							//nothing applies: z = y && x tainted -> taint is preserved
 							return Collections.singleton(newSource);
@@ -482,12 +524,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
 						}
-						Abstraction newSource;
-						if(!source.isAbstractionActive() && src.equals(source.getActivationUnit())){
-							newSource = source.popActivationUnit();
-						}else{
-							newSource = source;
-						}
+						Abstraction newSource = source;
+					
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
@@ -559,18 +597,18 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 						Abstraction newSource;
 						if(!source.isAbstractionActive()){
-							if(source.getActivationUnit().equals(callSite)){
+							if(callSite.equals(source.getActivationUnit()) || callSite.equals(source.getActivationUnitOnCurrentLevel()) ){
 								newSource = source.getActiveCopy(true);
 							}else{
 								newSource = source.cloneUsePredAbstractionOfCG();
-//								newSource = newSource.pushActivationUnit(callSite);
+								
 							}
 						}else{
 							newSource = source.cloneUsePredAbstractionOfCG();
 						}
 						
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
-						if(!newSource.isAbstractionActive() && interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee)){
+						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null && interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee)){
 							return Collections.emptySet();
 						}
 						
@@ -598,6 +636,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if(triggerInaktiveTaintOrReverseFlow(leftOp, newSource) && !callSite.equals(newSource.getUnitOfDirectionChange())){
 										Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite, false);
 										bwAbs.setUnitOfDirectionChange(callSite);
+										bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 											bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 									}
@@ -636,6 +675,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if(!callSite.equals(newSource.getUnitOfDirectionChange())){
 								Abstraction bwAbs = newSource.deriveInactiveAbstraction();
 								bwAbs.setUnitOfDirectionChange(callSite);
+								bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 								for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 									bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 							}
@@ -665,6 +705,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											// call backwards-check:
 											Abstraction bwAbs = abs.deriveInactiveAbstraction();
 											bwAbs.setUnitOfDirectionChange(callSite);
+											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 												bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 										}
@@ -702,7 +743,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											if(triggerInaktiveTaintOrReverseFlow(iIExpr.getBase(), newSource) && !callSite.equals(newSource.getUnitOfDirectionChange())){
 												Abstraction bwAbs = abs.deriveInactiveAbstraction();
 												bwAbs.setUnitOfDirectionChange(callSite);
-												bwAbs = bwAbs.pushActivationUnit(callSite);
+												bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 											}
@@ -733,7 +774,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							Abstraction newSource;
 							//check inactive elements:
-							if (!source.isAbstractionActive() && source.getActivationUnit().equals(call)){
+							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit()))|| call.equals(source.getActivationUnitOnCurrentLevel())){
 								newSource = source.getActiveCopy(false);
 							}else{
 								newSource = source;

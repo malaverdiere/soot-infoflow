@@ -445,7 +445,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
-							if (source.getAccessPath().getPlainLocal().equals(throwStmt.getOp()))
+							if (throwStmt.getOp().equals(source.getAccessPath().getPlainLocal()))
 								return Collections.singleton(source.deriveNewAbstractionOnThrow());
 							return Collections.singleton(source);
 						}

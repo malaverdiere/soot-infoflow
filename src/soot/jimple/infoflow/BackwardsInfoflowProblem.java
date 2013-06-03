@@ -268,23 +268,15 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							boolean passOn = true;
 							// only pass source if the source is not created by this methodcall
 							if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())){
-								passOn = false;
 								//terminates here, but we have to start a forward pass to consider all method calls:
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(iStmt))
 									
 									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
-							} 
-							
-							//static variables are always propagated if they are not overwritten.
-							if(source.getAccessPath().isStaticFieldRef()){
-								passOn = false;
-							}
-							if(passOn)
+							}else{
 								res.add(source);
-							
+							}
 							return res;
 						}
 					};

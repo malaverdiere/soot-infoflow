@@ -300,11 +300,10 @@ public class Infoflow implements IInfoflow {
 				int sinkCount = 0;
 				System.out.println("Looking for sources and sinks...");
 
-				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>();
-				eps.addAll(Scene.v().getEntryPoints());
+				List<MethodOrMethodContext> eps = new ArrayList<MethodOrMethodContext>(Scene.v().getEntryPoints());
 				ReachableMethods reachableMethods = new ReachableMethods(Scene.v().getCallGraph(), eps.iterator(), null);
 				reachableMethods.update();
-				Map<String, String> classes = new HashMap<String, String>(10000);				
+				Map<String, String> classes = new HashMap<String, String>(10000);
 				for(Iterator<MethodOrMethodContext> iter = reachableMethods.listener(); iter.hasNext(); ) {
 					SootMethod m = iter.next().method();
 					if (m.hasActiveBody()) {

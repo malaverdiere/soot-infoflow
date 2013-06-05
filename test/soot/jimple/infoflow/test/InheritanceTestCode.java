@@ -1,6 +1,6 @@
 package soot.jimple.infoflow.test;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import soot.jimple.infoflow.test.android.ConnectionManager;
@@ -42,7 +42,7 @@ public class InheritanceTestCode {
 		List<String> a;
 		
 		void addToList(String t){
-			a = new LinkedList<String>();
+			a = new ArrayList<String>();
 			List<String> b = a;
 			b.add(t);
 		}

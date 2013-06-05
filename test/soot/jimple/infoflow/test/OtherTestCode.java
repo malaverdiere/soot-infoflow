@@ -329,4 +329,23 @@ public class OtherTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(outcome);
 	}
+	public L1 l;
+	public void paramTransferTest(){
+		ConnectionManager cm = new ConnectionManager();
+		String tainted = TelephonyManager.getDeviceId();
+		l = new L1();
+		taint(tainted, l);
+		
+		cm.publish(l.f);
+		
+	}
+	
+	public void taint(String e, L1 m){
+		m.f = e;
+	}
+	
+	class L1{
+		String f;
+	}
+	
 }

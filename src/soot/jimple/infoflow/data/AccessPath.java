@@ -43,7 +43,7 @@ public class AccessPath {
 		else
 			value = val;
 
-		int cnt = appendingFields.size();
+		int cnt = fields.size();
 		for (SootField field : appendingFields)
 			if (cnt < Infoflow.ACCESSPATHLENGTH) {
 				fields.add(field);
@@ -168,6 +168,12 @@ public class AccessPath {
 	 */
 	public AccessPath copyWithNewValue(Value val){
 		return new AccessPath(val, this.fields);
+	}
+	
+	@Override
+	public AccessPath clone(){
+		AccessPath a = new AccessPath(value, new LinkedList<SootField>(fields));
+		return a;
 	}
 
 }

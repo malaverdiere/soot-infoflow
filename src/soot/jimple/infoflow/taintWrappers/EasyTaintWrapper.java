@@ -149,7 +149,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		return taints;
 	}
 	
-	public List<String> getMethodsForClass(SootClass c){
+	private List<String> getMethodsForClass(SootClass c){
 		List<String> methodList = new LinkedList<String>();
 		if(classList.containsKey(c.getName())){
 			methodList.addAll(classList.get(c.getName()));

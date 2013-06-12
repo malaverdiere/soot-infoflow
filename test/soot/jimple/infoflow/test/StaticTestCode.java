@@ -2,6 +2,7 @@ package soot.jimple.infoflow.test;
 
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
+import soot.jimple.infoflow.test.utilclasses.ClassWithStatic;
 
 public class StaticTestCode {
 	public static String im;
@@ -26,4 +27,25 @@ public class StaticTestCode {
 	}
 		
 
+	public void staticTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		ClassWithStatic static1 = new ClassWithStatic();
+		static1.setTitle(tainted);
+		ClassWithStatic static2 = new ClassWithStatic();
+		String alsoTainted = static2.getTitle();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(alsoTainted);
+	}
+	
+	public static void static2Test(){
+		String tainted = TelephonyManager.getDeviceId();
+		ClassWithStatic static1 = new ClassWithStatic();
+		static1.setTitle(tainted);
+		ClassWithStatic static2 = new ClassWithStatic();
+		String alsoTainted = static2.getTitle();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(alsoTainted);
+		}
 }

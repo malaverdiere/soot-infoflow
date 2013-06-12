@@ -7,6 +7,8 @@ import soot.jimple.infoflow.test.utilclasses.ClassWithField;
 
 public class StringTestCode {
 	
+	private ClassWithField fieldc = new ClassWithField();
+	
 	public void multipleSources(){
 		String tainted1 = TelephonyManager.getDeviceId();
 		AccountManager mgr = new AccountManager();
@@ -68,6 +70,36 @@ public class StringTestCode {
 		String post = tainted.concat(pre);
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(post);
+	}
+	
+	public void stringConcatTest(){
+		String tainted = TelephonyManager.getDeviceId();
+		String concat1 = tainted.concat("eins");
+		String two = "zwei";
+		String concat2 = two.concat(tainted);
+		String concat3 = "test " + tainted;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(concat1.concat(concat2).concat(concat3));	
+	}
+	
+	
+	public void stringConcatTestSmall1(){
+		String tainted = TelephonyManager.getDeviceId();
+		String one = tainted.concat("zwei").concat("eins");
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(one);
+	}
+	
+	public void stringConcatTestSmall2(){
+		String tainted = TelephonyManager.getDeviceId();
+		String concat1 = tainted.concat("eins");
+		String two = "zwei";
+		String concat2 = two.concat(tainted);
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(concat1.concat(concat2).concat("foo"));
 	}
 	
 	public void methodStringConcatNegative(){
@@ -206,13 +238,5 @@ public class StringTestCode {
 		cm.publish(deviceID + pwd);
 	}
 
-
-//	private String imei;
-//	private String URL = "http://www.google.de/?q=";
-	private ClassWithField fieldc = new ClassWithField();
-//	public void originalFromPrototyp(){
-//		imei = TelephonyManager.getDeviceId();
-//		URL = URL.concat(imei);
-//	}
 
 }

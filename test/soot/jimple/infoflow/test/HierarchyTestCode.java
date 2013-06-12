@@ -37,20 +37,56 @@ public class HierarchyTestCode {
 		cm.publish(taintedOutput);
 	}
 	
-	
-	
-	
-	
 	private class Outer{
 		public Inner next;
-		
-			
 	}
 	
 	private class Inner{
 		public String field;
+	}
+	
+	private class HierarchyTest1 {
+
+		private String foo;
+				
+		public void set() {
+			this.foo = TelephonyManager.getDeviceId();
+		}
 		
+		public String get() {
+			return this.foo;
+		}
+			
+	}
+
+	private class HierarchyTest2 extends HierarchyTest1 {
+		public String foo;
 		
+		public String get() {
+			return this.foo;
+		}
+	}
+
+	private class HierarchyTest3 extends HierarchyTest1 {
+		public String get() {
+			return super.get();
+		}
+	}
+
+	public void classHierarchyTest() {
+		HierarchyTest2 ht = new HierarchyTest2();
+		ht.set();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ht.get());
+	}
+	
+	public void classHierarchyTest2() {
+		HierarchyTest3 ht = new HierarchyTest3();
+		ht.set();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ht.get());
 	}
 
 }

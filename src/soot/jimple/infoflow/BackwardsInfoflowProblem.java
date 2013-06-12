@@ -65,7 +65,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							IdentityStmt iStmt = (IdentityStmt) src;
 							if(iStmt.getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-									if(!u.equals(source.getUnitOfDirectionChange())){
+									if(!source.isLoop(u)){
 										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
 									}
 								return Collections.emptySet();
@@ -106,7 +106,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if(leftValue.equals(source.getAccessPath().getPlainValue())&&
 									rightValue instanceof NewExpr){
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-									if(!u.equals(source.getUnitOfDirectionChange()))
+									if(!source.isLoop(u))
 										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
 								return Collections.emptySet();
 							}
@@ -121,13 +121,13 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									if (source.getAccessPath().isInstanceFieldRef()
 											&& ref.getBase().equals(source.getAccessPath().getPlainValue())
 											&& ref.getField().equals(source.getAccessPath().getFirstField())) {
-										Abstraction abs = source.deriveNewAbstraction(leftValue, true, src);
+										Abstraction abs = source.deriveNewAbstraction(leftValue, true, null);
 										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
 											fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs.getNotNullAbstractionFromCallEdge(), u, abs));
 									}
 								}
 								else if (rightValue.equals(source.getAccessPath().getPlainValue())) {
-									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue), src);
+									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue));
 									for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
 										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(abs.getNotNullAbstractionFromCallEdge(), u, abs));
 								}
@@ -190,22 +190,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							} else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
 								Local base = source.getAccessPath().getPlainLocal(); // ?
 								if (leftValue.equals(base)) {
-									if (rightValue instanceof Local) {
 										/*
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue),(AbstractionWithPath) source));
 										else
 										*/
-										res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue), src));
-									} else {
-										// access path length = 1 - taint entire value if left is field reference
-										/*
-										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext()));
-										else
-										*/
-										res.add(source.deriveNewAbstraction(rightValue, src));
-									}
+									res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
 								}
 							} else if (leftValue instanceof ArrayRef) {
 								Local leftBase = (Local) ((ArrayRef) leftValue).getBase();
@@ -224,7 +214,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext())); //TODO: cutFirstField for AbstractionWithPath
 								else
 								*/
-								res.add(source.deriveNewAbstraction(rightValue, cutFirstField, src));
+								res.add(source.deriveNewAbstraction(rightValue, cutFirstField, null));
 							}
 							if (!res.isEmpty()) {
 								// we have to send forward pass, for example for

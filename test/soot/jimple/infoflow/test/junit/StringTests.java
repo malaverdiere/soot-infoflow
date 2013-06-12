@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
 
-public class StringTest extends JUnitTests {
+public class StringTests extends JUnitTests {
 	
 	@Test
     public void multipleSourcesTest(){
@@ -83,6 +83,33 @@ public class StringTest extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
+    
+    @Test
+    public void stringConcatTest(){
+	   Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void stringConcatTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);
+    }
+   
+   @Test
+   public void stringConcatTestSmall(){
+	   Infoflow infoflow = initInfoflow();
+   		List<String> epoints = new ArrayList<String>();
+   		epoints.add("<soot.jimple.infoflow.test.StringTestCode: void stringConcatTestSmall()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);
+   }
+   
+   @Test
+   public void stringConcatTestSmall2(){
+	   Infoflow infoflow = initInfoflow();
+   		List<String> epoints = new ArrayList<String>();
+   		epoints.add("<soot.jimple.infoflow.test.StringTestCode: void stringConcatTestSmall2()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);
+   }
     
     @Test
     public void concatTestNegative(){

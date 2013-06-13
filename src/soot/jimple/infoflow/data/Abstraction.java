@@ -68,7 +68,8 @@ public class Abstraction implements Cloneable {
 		exceptionThrown = original.exceptionThrown;
 		activationUnit = original.activationUnit;
 		activationUnitOnCurrentLevel = original.activationUnitOnCurrentLevel;
-		directionChangeInfo = original.directionChangeInfo.clone();
+		if(directionChangeInfo != null)
+			directionChangeInfo = original.directionChangeInfo.clone();
 		isActive = original.isActive;
 	}
 	

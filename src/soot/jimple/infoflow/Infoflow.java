@@ -28,7 +28,6 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
-import soot.dexpler.DexResolver;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.InfoflowResults.SinkInfo;
@@ -151,7 +150,6 @@ public class Infoflow implements IInfoflow {
 	private void initializeSoot(String path, Set<String> classes, ISourceSinkManager sourcesSinks, String extraSeed) {
 		// reset Soot:
 		soot.G.reset();
-		DexResolver.reset();
 		
 		// add SceneTransformer which calculates and prints infoflow
 		Set<String> seeds = Collections.emptySet();

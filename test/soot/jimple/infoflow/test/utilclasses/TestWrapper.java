@@ -1,8 +1,6 @@
 package soot.jimple.infoflow.test.utilclasses;
 
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 import soot.SootClass;
@@ -28,16 +26,6 @@ public class TestWrapper implements ITaintPropagationWrapper {
 	@Override
 	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
 		return true;
-	}
-
-	@Override
-	public boolean supportsBackwardWrapping() {
-		return true;
-	}
-
-	@Override
-	public List<Value> getBackwardTaintsForMethod(Stmt stmt) {
-		return new LinkedList<Value>();
 	}
 
 }

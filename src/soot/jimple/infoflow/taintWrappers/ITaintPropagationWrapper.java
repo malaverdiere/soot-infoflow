@@ -1,6 +1,5 @@
 package soot.jimple.infoflow.taintWrappers;
 
-import java.util.List;
 import java.util.Set;
 
 import soot.SootClass;
@@ -48,20 +47,5 @@ public interface ITaintPropagationWrapper {
 	 * @return True if this taint wrapper is exclusive, otherwise false. 
 	 */
 	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase);
-
-	
-	/**
-	 * determines if the used TaintWrapper-Class supports taintWrapping in backward analysis
-	 * @return
-	 */
-	public boolean supportsBackwardWrapping();
-	
-	/**
-	 * gets a list of taints (usually the arguments or the base object) given a statement which contains of a method call 
-	 * and an assignment which has a tainted left side.
-	 * @param stmt the statement (leftValue is tainted)
-	 * @return list of tainted values
-	 */
-	public List<Value> getBackwardTaintsForMethod(Stmt stmt);
 
 }

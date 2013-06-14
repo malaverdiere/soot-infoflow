@@ -1,7 +1,6 @@
 package soot.jimple.infoflow.taintWrappers;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import soot.Local;
@@ -47,17 +46,4 @@ public class ListExampleWrapper implements ITaintPropagationWrapper {
 	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
 		return false;
 	}
-
-	
-	@Override
-	public boolean supportsBackwardWrapping() {
-		return false;
-	}
-
-	@Override
-	public List<Value> getBackwardTaintsForMethod(Stmt stmt) {
-		return null;
-	}
-
-
 }

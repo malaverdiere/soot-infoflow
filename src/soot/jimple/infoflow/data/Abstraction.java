@@ -21,6 +21,8 @@ public class Abstraction implements Cloneable {
 	private DirectionChangeInfo directionChangeInfo;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
+		assert src != null;
+		
 		this.source = src;
 		this.accessPath = new AccessPath(taint);
 		this.activationUnit = activationUnit;
@@ -30,6 +32,8 @@ public class Abstraction implements Cloneable {
 	}
 		
 	protected Abstraction(AccessPath p, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive){
+		assert src != null;
+
 		this.source = src;
 		this.sourceContext = srcContext;
 		this.accessPath = p.clone();

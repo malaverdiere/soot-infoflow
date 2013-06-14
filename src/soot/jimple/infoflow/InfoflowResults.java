@@ -28,12 +28,16 @@ public class InfoflowResults {
 		private final List<String> path;
 		
 		public SourceInfo(Value source, Stmt context) {
+			assert source != null;
+			
 			this.source = source;
 			this.context = context;
 			this.path = null;
 		}
 		
 		public SourceInfo(Value source, Stmt context, List<String> path) {
+			assert source != null;
+
 			this.source = source;
 			this.context = context;
 			this.path = path;
@@ -78,6 +82,8 @@ public class InfoflowResults {
 		private final Stmt context;
 		
 		public SinkInfo(Value sink, Stmt context) {
+			assert sink != null;
+
 			this.sink = sink;
 			this.context = context;
 		}

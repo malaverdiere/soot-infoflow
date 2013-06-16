@@ -264,6 +264,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
+							
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
@@ -525,7 +526,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 						Abstraction newSource = source;
-					
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
@@ -606,8 +606,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}else{
 							newSource = source.cloneUsePredAbstractionOfCG();
 						}
-						
-						
+
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null && interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee)){
 							return Collections.emptySet();
@@ -727,6 +726,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								for (int i = 0; i < callee.getParameterCount(); i++) {
 									if (callee.getActiveBody().getParameterLocal(i).equals(sourceBase)) {
 										param = true;
+										break;
 									}
 								}
 								if (!param) {

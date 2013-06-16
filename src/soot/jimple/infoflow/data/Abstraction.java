@@ -1,9 +1,12 @@
 package soot.jimple.infoflow.data;
 
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 import soot.SootField;
+import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
@@ -14,11 +17,12 @@ public class Abstraction implements Cloneable {
 	private final Stmt sourceContext;
 	private Unit activationUnit;
 	private Unit activationUnitOnCurrentLevel;
-	private boolean isActive = true;
+	private boolean isActive;
 	private final boolean exceptionThrown;
 	private int hashCode;
 	private Abstraction abstractionFromCallEdge;
 	private DirectionChangeInfo directionChangeInfo;
+	private SootMethod backwardsStartMethod = null;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
 		this.source = src;
@@ -87,6 +91,7 @@ public class Abstraction implements Cloneable {
 		a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		if(directionChangeInfo != null)
 			a.directionChangeInfo = directionChangeInfo.clone();
+		a.backwardsStartMethod = backwardsStartMethod;
 		
 		return a;
 	}
@@ -102,6 +107,7 @@ public class Abstraction implements Cloneable {
 		}
 		if(directionChangeInfo != null)
 			a.directionChangeInfo = directionChangeInfo.clone();
+		a.backwardsStartMethod = backwardsStartMethod;
 		return a;
 	}
 	
@@ -116,6 +122,7 @@ public class Abstraction implements Cloneable {
 		}
 		if(directionChangeInfo != null)
 			a.directionChangeInfo = directionChangeInfo.clone();
+		a.backwardsStartMethod = backwardsStartMethod;
 		return a;
 	}
 	
@@ -148,6 +155,7 @@ public class Abstraction implements Cloneable {
 			a.activationUnit = activationUnit;
 			a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		}
+		a.backwardsStartMethod = backwardsStartMethod;
 		return a;
 	}
 
@@ -164,6 +172,7 @@ public class Abstraction implements Cloneable {
 		abs.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		if(directionChangeInfo != null)
 			abs.directionChangeInfo = directionChangeInfo.clone();
+		abs.backwardsStartMethod = backwardsStartMethod;
 		return abs;
 	}
 	
@@ -186,6 +195,7 @@ public class Abstraction implements Cloneable {
 		abs.abstractionFromCallEdge = abstractionFromCallEdge;
 		if(directionChangeInfo != null)
 			abs.directionChangeInfo = directionChangeInfo.clone();
+		abs.backwardsStartMethod = backwardsStartMethod;
 		return abs;
 	}
 
@@ -286,6 +296,8 @@ public class Abstraction implements Cloneable {
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		if(directionChangeInfo != null)
 			a.directionChangeInfo = directionChangeInfo.clone();
+		a.backwardsStartMethod = backwardsStartMethod;
+		assert this.equals(a);
 		return a;
 	}
 	
@@ -346,7 +358,7 @@ public class Abstraction implements Cloneable {
 			return false;
 		if(this.isActive != other.isActive)
 			return false;
-		assert this.hashCode() == obj.hashCode();	// make sure nothing all wonky is going on
+//		assert this.hashCode() == obj.hashCode();	// make sure nothing all wonky is going on
 		return true;
 	}
 	
@@ -366,5 +378,11 @@ public class Abstraction implements Cloneable {
 
 		return this.hashCode;
 	}
-
+	
+	/*
+	public List<Unit> getBackwardsCallStack() {
+		return this.backwardsCallStack;
+	}
+	*/
+	
 }

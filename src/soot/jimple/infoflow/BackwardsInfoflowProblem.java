@@ -193,11 +193,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							} else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
 								Local base = source.getAccessPath().getPlainLocal(); // ?
 								if (leftValue.equals(base)) {
-										/*
-										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											res.add(new AbstractionWithPath(source.getAccessPath().copyWithNewValue(rightValue),(AbstractionWithPath) source));
-										else
-										*/
 									res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
 								}
 							} else if (leftValue instanceof ArrayRef) {
@@ -212,11 +207,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							
 							// if one of them is true -> add rightValue
 							if (addRightValue) {
-								/*
-								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									res.add(new AbstractionWithPath(rightValue, source.getSource(), source.getSourceContext())); //TODO: cutFirstField for AbstractionWithPath
-								else
-								*/
 								res.add(source.deriveNewAbstraction(rightValue, cutFirstField, null));
 							}
 							if (!res.isEmpty()) {

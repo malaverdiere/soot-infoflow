@@ -92,7 +92,6 @@ public class Infoflow implements IInfoflow {
 	public void setInspectSinks(boolean inspect){
 		inspectSinks = inspect;
 	}
-
 	
 	@Override
 	public void setPathTracking(PathTrackingMethod method) {

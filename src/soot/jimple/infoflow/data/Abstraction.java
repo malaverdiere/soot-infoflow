@@ -1,12 +1,9 @@
 package soot.jimple.infoflow.data;
 
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 
 import soot.SootField;
-import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
@@ -18,11 +15,10 @@ public class Abstraction implements Cloneable {
 	private Unit activationUnit;
 	private Unit activationUnitOnCurrentLevel;
 	private boolean isActive;
-	private final boolean exceptionThrown;
+	private boolean exceptionThrown;
 	private int hashCode;
 	private Abstraction abstractionFromCallEdge;
 	private DirectionChangeInfo directionChangeInfo;
-	private SootMethod backwardsStartMethod = null;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
 		this.source = src;
@@ -59,25 +55,32 @@ public class Abstraction implements Cloneable {
 	 * @param original The original abstraction to copy
 	 */
 	public Abstraction(AccessPath p, Abstraction original){
-		
 		if (original == null) {
 			source = null;
 			sourceContext = null;
+			exceptionThrown = false;
+			activationUnit = null;
+			activationUnitOnCurrentLevel = null;
+			abstractionFromCallEdge = null;
+			directionChangeInfo = null;
 		}
 		else {
 			source = original.source;
 			sourceContext = original.sourceContext;
+			exceptionThrown = original.exceptionThrown;
+			activationUnit = original.activationUnit;
+			activationUnitOnCurrentLevel = original.activationUnitOnCurrentLevel;
+			abstractionFromCallEdge = original.abstractionFromCallEdge;
+			if (original.directionChangeInfo != null)
+				directionChangeInfo = original.directionChangeInfo.clone();
+			else
+				directionChangeInfo = null;
+			isActive = original.isActive;
 		}
 		accessPath = p.clone();
-		exceptionThrown = original.exceptionThrown;
-		activationUnit = original.activationUnit;
-		activationUnitOnCurrentLevel = original.activationUnitOnCurrentLevel;
-		if(directionChangeInfo != null)
-			directionChangeInfo = original.directionChangeInfo.clone();
-		isActive = original.isActive;
 	}
 	
-	public Abstraction deriveInactiveAbstraction(){
+	public final Abstraction deriveInactiveAbstraction(){
 		Abstraction a = clone();
 		a.isActive = false;
 		return a;
@@ -85,77 +88,46 @@ public class Abstraction implements Cloneable {
 	
 	//should be only called by call-/returnFunctions!
 	public Abstraction deriveNewAbstraction(AccessPath p){
-		Abstraction a = new Abstraction(p.clone(), source, sourceContext, exceptionThrown, isActive);
-		a.abstractionFromCallEdge = abstractionFromCallEdge;
-		a.activationUnit = activationUnit;
-		a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
-		if(directionChangeInfo != null)
-			a.directionChangeInfo = directionChangeInfo.clone();
-		a.backwardsStartMethod = backwardsStartMethod;
-		
-		return a;
+		return new Abstraction(p.clone(), this);
 	}
 	
-	public Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
-		Abstraction a = new Abstraction(p.clone(), source, sourceContext, exceptionThrown, isActive);
-		a.abstractionFromCallEdge = abstractionFromCallEdge;
-		if(isActive){
+	public final Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
+		Abstraction a = deriveNewAbstraction(p);
+		if(isActive)
 			a.activationUnit = newActUnit;
-		}else{
-			a.activationUnit = activationUnit;
-			a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
-		}
-		if(directionChangeInfo != null)
-			a.directionChangeInfo = directionChangeInfo.clone();
-		a.backwardsStartMethod = backwardsStartMethod;
 		return a;
 	}
 	
-	public Abstraction deriveNewAbstraction(AccessPath p, Unit srcUnit, boolean isActive){
-		Abstraction a = new Abstraction(p.clone(), source, sourceContext, exceptionThrown, isActive);
-		a.abstractionFromCallEdge = abstractionFromCallEdge;
-		if(isActive){
+	public final Abstraction deriveNewAbstraction(AccessPath p, Unit srcUnit, boolean isActive){
+		Abstraction a = deriveNewAbstraction(p);
+		a.isActive = isActive;
+		if (isActive)
 			a.activationUnit = srcUnit;
-		}else{
-			a.activationUnit = activationUnit;
-			a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
-		}
-		if(directionChangeInfo != null)
-			a.directionChangeInfo = directionChangeInfo.clone();
-		a.backwardsStartMethod = backwardsStartMethod;
 		return a;
 	}
 	
-	public Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
+	public final Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
 		return this.deriveNewAbstraction(taint, false, activationUnit);
 	}
 	
-	public Abstraction deriveNewAbstraction(Value taint, Unit srcUnit, boolean isActive){
+	public final Abstraction deriveNewAbstraction(Value taint, Unit srcUnit, boolean isActive){
 		return this.deriveNewAbstraction(taint, false, srcUnit, isActive);
 	}
 	
-	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit){
+	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit){
 		return deriveNewAbstraction(taint, cutFirstField, newActUnit, isActive);
 	}
 	
-	public Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit, boolean isActive){
+	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit, boolean isActive){
 		Abstraction a;
 		LinkedList<SootField> tempList = new LinkedList<SootField>(accessPath.getFields());
 		if(cutFirstField){
 			tempList.removeFirst();
 		}
-		a = new Abstraction(new AccessPath(taint, tempList), source, sourceContext, exceptionThrown, isActive);
-
-		a.abstractionFromCallEdge = abstractionFromCallEdge;
-		if(directionChangeInfo != null)
-			a.directionChangeInfo = directionChangeInfo.clone();
-		if(isActive){
+		a = deriveNewAbstraction(new AccessPath(taint, tempList));
+		a.isActive = isActive;
+		if (isActive)
 			a.activationUnit = newActUnit;
-		}else{
-			a.activationUnit = activationUnit;
-			a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
-		}
-		a.backwardsStartMethod = backwardsStartMethod;
 		return a;
 	}
 
@@ -164,15 +136,10 @@ public class Abstraction implements Cloneable {
 	 * an exception
 	 * @return The newly derived abstraction
 	 */
-	public Abstraction deriveNewAbstractionOnThrow(){
+	public final Abstraction deriveNewAbstractionOnThrow(){
 		assert !this.exceptionThrown;
-		Abstraction abs = new Abstraction(accessPath, source, sourceContext, true, isActive);
-		abs.abstractionFromCallEdge = abstractionFromCallEdge;
-		abs.activationUnit = activationUnit;
-		abs.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
-		if(directionChangeInfo != null)
-			abs.directionChangeInfo = directionChangeInfo.clone();
-		abs.backwardsStartMethod = backwardsStartMethod;
+		Abstraction abs = clone();
+		abs.exceptionThrown = true;
 		return abs;
 	}
 	
@@ -182,20 +149,12 @@ public class Abstraction implements Cloneable {
 	 * @param taint The value in which the tainted exception is stored
 	 * @return The newly derived abstraction
 	 */
-	public Abstraction deriveNewAbstractionOnCatch(Value taint, Unit newActivationUnit){
+	public final Abstraction deriveNewAbstractionOnCatch(Value taint, Unit newActivationUnit){
 		assert this.exceptionThrown;
-		Abstraction abs = new Abstraction(new AccessPath(taint), source, sourceContext, false, isActive);
-		if(isActive){
+		Abstraction abs = deriveNewAbstraction(new AccessPath(taint));
+		abs.exceptionThrown = false;
+		if(isActive)
 			abs.activationUnit = newActivationUnit;
-		}else{
-			abs.activationUnit = activationUnit;
-			abs.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
-		}
-		
-		abs.abstractionFromCallEdge = abstractionFromCallEdge;
-		if(directionChangeInfo != null)
-			abs.directionChangeInfo = directionChangeInfo.clone();
-		abs.backwardsStartMethod = backwardsStartMethod;
 		return abs;
 	}
 
@@ -289,16 +248,18 @@ public class Abstraction implements Cloneable {
 	}
 	
 	@Override
-	public Abstraction clone(){
-		Abstraction a = new Abstraction(accessPath.clone(), source, sourceContext, exceptionThrown, isActive);
+	public Abstraction clone() {
+		return new Abstraction(accessPath, this);
+
+		/*
+		Abstraction a = new Abstraction(accessPath, source, sourceContext, exceptionThrown, isActive);
 		a.activationUnit = activationUnit;
 		a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
 		a.abstractionFromCallEdge = abstractionFromCallEdge;
 		if(directionChangeInfo != null)
 			a.directionChangeInfo = directionChangeInfo.clone();
-		a.backwardsStartMethod = backwardsStartMethod;
-		assert this.equals(a);
 		return a;
+		*/
 	}
 	
 	public Abstraction cloneUsePredAbstractionOfCG(){
@@ -378,11 +339,5 @@ public class Abstraction implements Cloneable {
 
 		return this.hashCode;
 	}
-	
-	/*
-	public List<Unit> getBackwardsCallStack() {
-		return this.backwardsCallStack;
-	}
-	*/
-	
+		
 }

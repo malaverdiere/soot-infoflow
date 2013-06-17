@@ -92,15 +92,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		Set<Value> vals = taintWrapper.getTaintsForMethod(iStmt, taintedPos, taintedBase);
 		if(vals != null) {
 			for (Value val : vals) {
-				Abstraction newAbs;
-				if (pathTracking == PathTrackingMethod.ForwardTracking) {
-					newAbs = ((AbstractionWithPath) source).deriveNewAbstraction(val, iStmt).addPathElement(iStmt);
-					res.add(newAbs);
-				}
-				else {
-					newAbs = new Abstraction(val, source);
-					res.add(newAbs);
-				}
+				Abstraction newAbs = source.deriveNewAbstraction(val, iStmt);
+				if (pathTracking == PathTrackingMethod.ForwardTracking)
+					((AbstractionWithPath) newAbs).addPathElement(iStmt);
+				res.add(newAbs);
 
 				// If the taint wrapper taints the base object (new taint), this must be propagated
 				// backwards as there might be aliases for the base object

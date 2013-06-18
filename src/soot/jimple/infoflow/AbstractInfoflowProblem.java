@@ -22,7 +22,12 @@ import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
-
+/**
+ * abstract super class which 
+ * 	- concentrates functionality used by InfoflowProblem and BackwardsInfoflowProblem
+ *  - contains helper functions which should not pollute the naturally large InfofflowProblems
+ *
+ */
 public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
 
 	/**

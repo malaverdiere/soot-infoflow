@@ -9,7 +9,10 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-
+/**
+ * subclass of abstraction which additionally stores the complete path between source and sink
+ *
+ */
 public class AbstractionWithPath extends Abstraction {
 	private final List<Unit> propagationPath;
 

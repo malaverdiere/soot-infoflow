@@ -7,7 +7,9 @@ import soot.SootField;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-
+/**
+ * this class represents our abstraction of a flow fact. It contains all necessary information (some of them technical to ensure functionality of the analysis) for taint tracking
+ */
 public class Abstraction implements Cloneable {
 	private final AccessPath accessPath;
 	private final Value source;
@@ -88,7 +90,7 @@ public class Abstraction implements Cloneable {
 	
 	//should be only called by call-/returnFunctions!
 	public Abstraction deriveNewAbstraction(AccessPath p){
-		return new Abstraction(p.clone(), this);
+		return new Abstraction(p, this);
 	}
 	
 	public final Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
@@ -250,16 +252,6 @@ public class Abstraction implements Cloneable {
 	@Override
 	public Abstraction clone() {
 		return new Abstraction(accessPath, this);
-
-		/*
-		Abstraction a = new Abstraction(accessPath, source, sourceContext, exceptionThrown, isActive);
-		a.activationUnit = activationUnit;
-		a.activationUnitOnCurrentLevel = activationUnitOnCurrentLevel;
-		a.abstractionFromCallEdge = abstractionFromCallEdge;
-		if(directionChangeInfo != null)
-			a.directionChangeInfo = directionChangeInfo.clone();
-		return a;
-		*/
 	}
 	
 	public Abstraction cloneUsePredAbstractionOfCG(){
@@ -270,19 +262,6 @@ public class Abstraction implements Cloneable {
 		return a;
 	}
 
-	public boolean isLoop(Unit u) {
-		if(directionChangeInfo == null)
-			return false;
-		return directionChangeInfo.isLoop(u, this);
-	}
-
-	public void setDirectionChange(Unit unitOfDirectionChange) {
-		this.directionChangeInfo = new DirectionChangeInfo();
-		directionChangeInfo.setUnitOfDirectionChange(unitOfDirectionChange);
-		directionChangeInfo.setAccessPathOfDirectionChange(accessPath);
-	}
-
-	
 	@Override
 	public boolean equals(Object obj) {
 		if (super.equals(obj))
@@ -305,21 +284,20 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!sourceContext.equals(other.sourceContext))
 			return false;
-//		if (activationUnit == null) {
-//			if (other.activationUnit != null)
-//				return false;
-//		} else if (!activationUnit.equals(other.activationUnit))
-//			return false;
-//		if (activationUnitOnCurrentLevel == null) {
-//			if (other.activationUnitOnCurrentLevel != null)
-//				return false;
-//		} else if (!activationUnitOnCurrentLevel.equals(other.activationUnitOnCurrentLevel))
-//			return false;
+		if (activationUnit == null) {
+			if (other.activationUnit != null)
+				return false;
+		} else if (!activationUnit.equals(other.activationUnit))
+			return false;
+		if (activationUnitOnCurrentLevel == null) {
+			if (other.activationUnitOnCurrentLevel != null)
+				return false;
+		} else if (!activationUnitOnCurrentLevel.equals(other.activationUnitOnCurrentLevel))
+			return false;
 		if (this.exceptionThrown != other.exceptionThrown)
 			return false;
 		if(this.isActive != other.isActive)
 			return false;
-//		assert this.hashCode() == obj.hashCode();	// make sure nothing all wonky is going on
 		return true;
 	}
 	
@@ -331,13 +309,12 @@ public class Abstraction implements Cloneable {
 			this.hashCode = prime * this.hashCode + ((accessPath == null) ? 0 : accessPath.hashCode());
 			this.hashCode = prime * this.hashCode + ((source == null) ? 0 : source.hashCode());
 			this.hashCode = prime * this.hashCode + ((sourceContext == null) ? 0 : sourceContext.hashCode());
-//			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
-//			this.hashCode = prime * this.hashCode + ((activationUnitOnCurrentLevel == null) ? 0 : activationUnitOnCurrentLevel.hashCode());
+			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
+			this.hashCode = prime * this.hashCode + ((activationUnitOnCurrentLevel == null) ? 0 : activationUnitOnCurrentLevel.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
 		}
-
-		return this.hashCode;
+		return hashCode;
 	}
 		
 }

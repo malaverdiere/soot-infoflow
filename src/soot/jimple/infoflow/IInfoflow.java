@@ -6,7 +6,10 @@ import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
-
+/**
+ * interface for the main infoflow class
+ *
+ */
 public interface IInfoflow {
 	
 	/**

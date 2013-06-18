@@ -12,7 +12,10 @@ import soot.Value;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * This class represents the taint
+ *
+ */
 public class AccessPath {
 	
 	// ATTENTION: This class *must* be immutable!

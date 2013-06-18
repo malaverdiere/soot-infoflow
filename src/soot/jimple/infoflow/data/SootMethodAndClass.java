@@ -5,7 +5,9 @@ import java.util.List;
 
 import soot.SootMethod;
 import soot.Type;
-
+/**
+ * data container which stores the string representation of a SootMethod and its corresponding class
+ */
 public class SootMethodAndClass {
 	private final String methodName;
 	private final String className;

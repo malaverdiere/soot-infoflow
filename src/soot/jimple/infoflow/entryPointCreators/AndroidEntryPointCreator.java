@@ -26,7 +26,6 @@ import soot.jimple.infoflow.data.SootMethodAndClass;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JEqExpr;
-import soot.jimple.internal.JGotoStmt;
 import soot.jimple.internal.JIfStmt;
 import soot.jimple.internal.JNopStmt;
 
@@ -569,11 +568,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				(AndroidEntryPointConstants.ACTIVITY_ONCREATE, currentClass, entryPoints, classLocal);
 			boolean found = addCallbackMethods(applicationClass, referenceClasses,
 					AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYCREATED);
-			if (!found && onCreateStmt2 == null) {
-				body.getUnits().remove(onCreateStmt);
-				onCreateStmt = null;
-			}
-			else if (found && onCreateStmt2 != null)
+			if (found && onCreateStmt2 != null)
 				createIfStmt(onCreateStmt2);
 		}
 		
@@ -585,11 +580,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					(AndroidEntryPointConstants.ACTIVITY_ONSTART, currentClass, entryPoints, classLocal);
 			boolean found = addCallbackMethods(applicationClass, referenceClasses,
 					AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYSTARTED);
-			if (!found && onStartStmt2 == null) {
-				body.getUnits().remove(onStartStmt);
-				onStartStmt = null;
-			}
-			else if (found && onStartStmt2 != null)
+			if (found && onStartStmt2 != null)
 				createIfStmt(onStartStmt2);
 		}
 		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONRESTOREINSTANCESTATE, currentClass, entryPoints, classLocal);
@@ -603,11 +594,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					(AndroidEntryPointConstants.ACTIVITY_ONRESUME, currentClass, entryPoints, classLocal);
 			boolean found = addCallbackMethods(applicationClass, referenceClasses,
 					AndroidEntryPointConstants.APPLIFECYCLECALLBACK_ONACTIVITYRESUMED);
-			if (!found && onResumeStmt2 == null) {
-				body.getUnits().remove(onResumeStmt);
-				onResumeStmt = null;
-			}
-			else if (found && onResumeStmt2 != null)
+			if (found && onResumeStmt2 != null)
 				createIfStmt(onResumeStmt2);
 		}
 		searchAndBuildMethod
@@ -668,10 +655,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		//6. onRestart:
 		body.getUnits().add(stopToRestartStmt);
 		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONRESTART, currentClass, entryPoints, classLocal);
-		if(onStartStmt != null){
-			JGotoStmt startGoto = new JGotoStmt(onStartStmt);
-			body.getUnits().add(startGoto);
-		}
+		createIfStmt(onStartStmt);	// jump to onStart(), fall through to onDestroy()
 		
 		//7. onDestroy
 		body.getUnits().add(stopToDestroyStmt);
@@ -785,6 +769,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			referenceClasses.add(currentClass);
 		}
 
+		Stmt beforeCallbacks = Jimple.v().newNopStmt();
+		body.getUnits().add(beforeCallbacks);
 		for (SootClass callbackClass : callbackClasses.keySet()) {
 			// If we already have a parent class that defines this callback, we
 			// use it. Otherwise, we create a new one.
@@ -817,6 +803,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				callbackFound = true;
 			}
 		}
+		// jump back since we don't now the order of the callbacks
+		createIfStmt(beforeCallbacks);
 	
 		return callbackFound;
 	}

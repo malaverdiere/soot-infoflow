@@ -27,9 +27,13 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 		// We are generating a fact out of thin air here. If we have an
 		// edge <d1,n,d2>, there need not necessarily be a jump function
 		// to <n,d2>.
-		if (jumpFn.reverseLookup(edge.getTarget(), edge.factAtTarget()).isEmpty())
+		boolean prop = false;
+		if (!jumpFn.forwardLookup(edge.factAtSource(), edge.getTarget()).containsKey(edge.factAtTarget()))
+			prop = true;
+		if (jumpFn.forwardLookup(edge.factAtSource(), edge.getTarget()).isEmpty())
 			jumpFn.addFunction(edge.factAtSource(), edge.getTarget(), edge.factAtSource(),
 					EdgeIdentity.<IFDSSolver.BinaryDomain>v());
-		scheduleEdgeProcessing(edge);
+		if (prop)
+			scheduleEdgeProcessing(edge);
 	}
 }

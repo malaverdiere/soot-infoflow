@@ -102,9 +102,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				if(taintedBase == null && iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 					if ((iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
-							|| newAbs.getAccessPath().isStaticFieldRef()) && !newAbs.isLoop(iStmt)){
+							|| newAbs.getAccessPath().isStaticFieldRef())){
 						Abstraction bwAbs = source.deriveNewAbstraction(val,iStmt, false);
-						bwAbs.setDirectionChange(iStmt);
 						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
 							bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 					}
@@ -192,10 +191,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					newAbs = source.deriveNewAbstraction(targetValue, cutFirstField, src);
 				taintSet.add(newAbs);
 				//only heap-objects
-				if (triggerInaktiveTaintOrReverseFlow(targetValue, source) && !newAbs.isLoop(src)) {
+				if (triggerInaktiveTaintOrReverseFlow(targetValue, source)) {
 					// call backwards-check:
 					Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-					bwAbs.setDirectionChange(src);
 					for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
 						bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 					}
@@ -214,7 +212,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
-
 							
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							boolean addOriginal = true;
@@ -260,10 +257,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
+							if (src.toString().equals("$r3 = $r4.<de.ecspride.FieldSensitivity4$Datacontainer: java.lang.String value>"))
+								System.out.println("x");
+
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
-											
+								
 							// shortcuts:
 							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {
@@ -384,9 +384,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												//start backward:
 												for (Value rightValue : rightVals) {
 													Abstraction newAbs = newSource.deriveNewAbstraction(rightValue, true, src);
-													if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs) && !newAbs.isLoop(src)) {
+													if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs)) {
 														Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-														bwAbs.setDirectionChange(src);
 //														for (Unit predUnit : interproceduralCFG().getPredsOf(src))
 //															bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 													}
@@ -404,9 +403,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											//start backward:
 											for (Value rightValue : rightVals) {
 												Abstraction newAbs = newSource.deriveNewAbstraction(rightValue, false, src);
-												if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs) && !newAbs.isLoop(src)) {
+												if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs)) {
 													Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-													bwAbs.setDirectionChange(src);
 //													for (Unit predUnit : interproceduralCFG().getPredsOf(src))
 //														bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 												}
@@ -423,9 +421,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										//start backward:
 										for (Value rightValue : rightVals) {
 											Abstraction newAbs = newSource.deriveNewAbstraction(rightValue, false, src);
-											if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs) && !newAbs.isLoop(src)) {
+											if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs)) {
 												Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-												bwAbs.setDirectionChange(src);
 //												for (Unit predUnit : interproceduralCFG().getPredsOf(src))
 //													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 											}
@@ -528,13 +525,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 							// this might be enough because every call must happen with a local variable which is tainted itself:
 							if (vie.getBase().equals(newSource.getAccessPath().getPlainValue())) {
-								Abstraction abs;
+								Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
+										(dest.getActiveBody().getThisLocal()));
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									abs = ((AbstractionWithPath) newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
-											(dest.getActiveBody().getThisLocal()))).addPathElement(stmt);
-								else
-									abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
-											(dest.getActiveBody().getThisLocal()));
+									((AbstractionWithPath) abs).addPathElement(stmt);
 								//add new callArgs:
 								assert abs != newSource; 		// our source abstraction must be immutable
 								abs.setAbstractionFromCallEdge(abs.clone());
@@ -549,13 +543,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							for (int i = 0; i < callArgs.size(); i++) {
 								if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) &&
 										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), newSource) || newSource.isAbstractionActive())) {
-									Abstraction abs;
+									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
+											(paramLocals.get(i)), stmt);
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										abs = ((AbstractionWithPath) newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
-												(paramLocals.get(i)), stmt)).addPathElement(stmt);
-									else
-										abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
-												(paramLocals.get(i)), stmt);
+										((AbstractionWithPath) abs).addPathElement(stmt);
 									assert abs != newSource;		// our source abstraction must be immutable
 									abs.setAbstractionFromCallEdge(abs.clone());
 									res.add(abs);
@@ -619,18 +610,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								Value leftOp = defnStmt.getLeftOp();
 								if (retLocal.equals(newSource.getAccessPath().getPlainLocal()) &&
 										(triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive())) {
-									Abstraction abs;
+									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										abs = ((AbstractionWithPath) newSource.deriveNewAbstraction(newSource.getAccessPath()
-											.copyWithNewValue(leftOp), callSite)).addPathElement(exitStmt);
-									else
-										abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
+										((AbstractionWithPath) abs).addPathElement(exitStmt);
 									assert abs != newSource;		// our source abstraction must be immutable
 									res.add(abs);
 									 //call backwards-solver:
-									if(triggerInaktiveTaintOrReverseFlow(leftOp, abs) && !abs.isLoop(callSite)){
+									if(triggerInaktiveTaintOrReverseFlow(leftOp, abs) && abs.isAbstractionActive()){
 										Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite, false);
-										bwAbs.setDirectionChange(callSite);
 										bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 											bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
@@ -640,7 +627,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								
 
 							// Check whether this return is treated as a sink
-
 							assert returnStmt.getOp() == null
 									|| returnStmt.getOp() instanceof Local
 									|| returnStmt.getOp() instanceof Constant;
@@ -662,18 +648,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// easy: static
-						if (newSource.getAccessPath().isStaticFieldRef()) {
+						if (newSource.getAccessPath().isStaticFieldRef() && newSource.isAbstractionActive()) {
 							Abstraction abs = newSource.clone();
 							assert (abs.equals(newSource) && abs.hashCode() == newSource.hashCode());
 							res.add(abs);
 							// call backwards-check:
-							if(!newSource.isLoop(callSite)){
-								Abstraction bwAbs = newSource.deriveInactiveAbstraction();
-								bwAbs.setDirectionChange(callSite);
-								bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
-								for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-									bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
-							}
+							Abstraction bwAbs = newSource.deriveInactiveAbstraction();
+							bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
+							for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
+								bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 						}
 						
 						// checks: this/params/fields
@@ -689,17 +672,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									originalCallArg = iStmt.getInvokeExpr().getArg(i);
 									//either the param is a fieldref (not possible in jimple?) or an array Or one of its fields is tainted/all fields are tainted
 									if (triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)) {
-										Abstraction abs;
+										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											abs = ((AbstractionWithPath) newSource.deriveNewAbstraction(newSource.getAccessPath()
-														.copyWithNewValue(originalCallArg), callSite)).addPathElement(exitStmt);
-										else
-											abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
+											abs = ((AbstractionWithPath) abs).addPathElement(exitStmt);
 										res.add(abs);
-										if(triggerInaktiveTaintOrReverseFlow(originalCallArg, abs) && !abs.isLoop(callSite)){
+										if(triggerInaktiveTaintOrReverseFlow(originalCallArg, abs) && abs.isAbstractionActive()){
 											// call backwards-check:
 											Abstraction bwAbs = abs.deriveInactiveAbstraction();
-											bwAbs.setDirectionChange(callSite);
 											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 												bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
@@ -729,16 +708,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										Stmt stmt = (Stmt) callSite;
 										if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 											InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
-											Abstraction abs;
+											Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()));
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												abs = ((AbstractionWithPath) newSource).deriveNewAbstraction
-													(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase())).addPathElement(stmt);
-											else
-												abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()));
-											res.add(abs); 
-											if(triggerInaktiveTaintOrReverseFlow(iIExpr.getBase(), abs) && !abs.isLoop(callSite)){
+												((AbstractionWithPath) abs).addPathElement(stmt);
+											res.add(abs);
+											if(triggerInaktiveTaintOrReverseFlow(iIExpr.getBase(), abs) && abs.isAbstractionActive()){
 												Abstraction bwAbs = abs.deriveInactiveAbstraction();
-												bwAbs.setDirectionChange(callSite);
 												bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
 													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));

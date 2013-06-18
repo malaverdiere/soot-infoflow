@@ -22,16 +22,17 @@ public class DirectionChangeInfo {
 	}
 	@Override
 	public int hashCode() {
-		return unitOfDirectionChange.hashCode();
+		int prime = 1337;
+		return prime * unitOfDirectionChange.hashCode()
+				+ prime * accessPathOfDirectionChange.hashCode();
 	}
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null)
+		if (obj == null || !(obj instanceof DirectionChangeInfo))
 			return false;
-		if (getClass() != obj.getClass())
-			return false;
+
 		DirectionChangeInfo other = (DirectionChangeInfo) obj;
 		if (accessPathOfDirectionChange == null) {
 			if (other.accessPathOfDirectionChange != null)
@@ -66,7 +67,7 @@ public class DirectionChangeInfo {
 	@Override
 	public DirectionChangeInfo clone(){
 		DirectionChangeInfo dci = new DirectionChangeInfo();
-		dci.setAccessPathOfDirectionChange(accessPathOfDirectionChange);
+		dci.setAccessPathOfDirectionChange(accessPathOfDirectionChange.clone());
 		dci.setUnitOfDirectionChange(unitOfDirectionChange);
 		return dci;
 	}

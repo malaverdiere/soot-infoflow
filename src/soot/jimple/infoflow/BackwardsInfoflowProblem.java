@@ -67,10 +67,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							IdentityStmt iStmt = (IdentityStmt) src;
 							if(iStmt.getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-									if(!source.isLoop(u)){
-										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>
-											(source.getNotNullAbstractionFromCallEdge(), u, source));
-									}
+									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>
+										(source.getNotNullAbstractionFromCallEdge(), u, source));
 								return Collections.emptySet();
 							}
 							return Collections.singleton(source);
@@ -109,8 +107,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if(leftValue.equals(source.getAccessPath().getPlainValue())&&
 									rightValue instanceof NewExpr){
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-									if(!source.isLoop(u))
-										fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
+									fSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(source.getNotNullAbstractionFromCallEdge(), u, source));
 								return Collections.emptySet();
 							}
 							

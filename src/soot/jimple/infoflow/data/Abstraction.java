@@ -7,9 +7,7 @@ import soot.SootField;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-/**
- * this class represents our abstraction of a flow fact. It contains all necessary information (some of them technical to ensure functionality of the analysis) for taint tracking
- */
+
 public class Abstraction implements Cloneable {
 	private final AccessPath accessPath;
 	private final Value source;
@@ -223,7 +221,10 @@ public class Abstraction implements Cloneable {
 	public Abstraction getActiveCopy(boolean dropAbstractionFromCallEdge){
 		Abstraction a = clone();
 		a.isActive = true;
-		a.activationUnit = null;
+		// do not kill the original activation point since we might return into
+		// a caller, find a new alias there and then need to know where both
+		// aliases originally became active.
+//		a.activationUnit = null;
 		a.activationUnitOnCurrentLevel = null;
 		if(dropAbstractionFromCallEdge){
 			if(a.abstractionFromCallEdge != null){

@@ -196,9 +196,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				if (triggerInaktiveTaintOrReverseFlow(targetValue, source)) {
 					// call backwards-check:
 					Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-//					for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
-//						bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
-//					}
+					for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
+						bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+					}
 				}
 			}
 
@@ -258,7 +258,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
-							
+							if(assignStmt.toString().contains("$r0.<soot.jimple.infoflow.test.HeapTestCode$Worker: java.lang.String mParams> = t")){
+								System.out.println("!!");
+							}
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();

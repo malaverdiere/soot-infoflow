@@ -5,6 +5,7 @@ import java.util.Set;
 import soot.SootClass;
 import soot.Value;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.data.AccessPath;
 
 /**
  * This interface declares methods to define classes and methods which should not be analyzed directly.
@@ -34,7 +35,7 @@ public interface ITaintPropagationWrapper {
 	 * @return The list of tainted values after the invocation statement referenced in {@link Stmt}
 	 * has been executed
 	 */
-	public Set<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase);
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase);
 
 	/**
 	 * Gets whether the taints produced by this taint wrapper are exclusive, i.e. there are

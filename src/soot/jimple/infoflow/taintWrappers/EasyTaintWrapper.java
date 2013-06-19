@@ -19,6 +19,7 @@ import soot.jimple.AssignStmt;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.internal.JAssignStmt;
 
@@ -97,7 +98,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public Set<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
 		if (!stmt.containsInvokeExpr())
 			return Collections.emptySet();
 		
@@ -105,7 +106,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		if (killMethods != null && killMethods.contains(stmt.getInvokeExpr().getMethod().getSubSignature()))
 			return Collections.emptySet();
 		
-		Set<Value> taints = new HashSet<Value>();
+		Set<AccessPath> taints = new HashSet<AccessPath>();
 		
 		//if param is tainted && classList contains classname && if list. contains signature of method -> add propagation
 		if(taintedparam >= 0){
@@ -115,16 +116,16 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			if(methodList.contains(method.getSubSignature())){
 				// If we call a method on an instance, this instance is assumed to be tainted
 				if(stmt.getInvokeExprBox().getValue() instanceof InstanceInvokeExpr) {
-					taints.add(((InstanceInvokeExpr) stmt.getInvokeExprBox().getValue()).getBase());
+					taints.add(new AccessPath(((InstanceInvokeExpr) stmt.getInvokeExprBox().getValue()).getBase()));
 					
 					// If make sure to also taint the left side of an assignment
 					// if the object just got tainted 
 					if(stmt instanceof JAssignStmt)
-						taints.add(((JAssignStmt)stmt).getLeftOp());
+						taints.add(new AccessPath(((JAssignStmt)stmt).getLeftOp()));
 				}
 				else if(stmt.getInvokeExprBox().getValue() instanceof StaticInvokeExpr)
 					if(stmt instanceof JAssignStmt){
-						taints.add(((JAssignStmt)stmt).getLeftOp());
+						taints.add(new AccessPath(((JAssignStmt)stmt).getLeftOp()));
 					}
 			}
 		}
@@ -138,11 +139,11 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 				List<String> excludedMethods = this.excludeList.get(assign.getInvokeExpr().getMethod().getDeclaringClass().getName());
 				if (excludedMethods == null || !excludedMethods.contains
 						(assign.getInvokeExpr().getMethod().getSubSignature()))
-					taints.add(assign.getLeftOp());
+					taints.add(new AccessPath(assign.getLeftOp()));
 			}
 
 			// If the base object is tainted, we pass this taint on
-			taints.add(taintedBase);
+			taints.add(new AccessPath(taintedBase));
 		}
 		
 		return taints;

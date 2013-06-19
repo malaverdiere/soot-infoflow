@@ -6,6 +6,7 @@ import java.util.Set;
 import soot.SootClass;
 import soot.Value;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.internal.JAssignStmt;
 
 /**
@@ -23,16 +24,16 @@ public class IdentityTaintWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public Set<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
 		// If the base object is tainted, the return value is always tainted
 		if (taintedBase != null)
 			if (stmt instanceof JAssignStmt)
-				return Collections.singleton(((JAssignStmt)stmt).getLeftOp());
+				return Collections.singleton(new AccessPath(((JAssignStmt)stmt).getLeftOp()));
 		
 		// If one of the parameters is tainted, the return value is tainted, too
 		if (taintedparam >= 0)
 			if (stmt instanceof JAssignStmt)
-				return Collections.singleton(((JAssignStmt)stmt).getLeftOp());
+				return Collections.singleton(new AccessPath(((JAssignStmt)stmt).getLeftOp()));
 		
 		return Collections.emptySet();
 	}

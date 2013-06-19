@@ -44,7 +44,7 @@ public class MultiTest extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
-		Assert.assertEquals(1, infoflow.getResults().size());
+		Assert.assertEquals(2, infoflow.getResults().size());
     }
 
     @Test

@@ -20,7 +20,6 @@ public class Abstraction implements Cloneable {
 	private boolean exceptionThrown;
 	private int hashCode;
 	private Abstraction abstractionFromCallEdge;
-	private DirectionChangeInfo directionChangeInfo;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
 		this.source = src;
@@ -64,7 +63,6 @@ public class Abstraction implements Cloneable {
 			activationUnit = null;
 			activationUnitOnCurrentLevel = null;
 			abstractionFromCallEdge = null;
-			directionChangeInfo = null;
 		}
 		else {
 			source = original.source;
@@ -73,10 +71,6 @@ public class Abstraction implements Cloneable {
 			activationUnit = original.activationUnit;
 			activationUnitOnCurrentLevel = original.activationUnitOnCurrentLevel;
 			abstractionFromCallEdge = original.abstractionFromCallEdge;
-			if (original.directionChangeInfo != null)
-				directionChangeInfo = original.directionChangeInfo.clone();
-			else
-				directionChangeInfo = null;
 			isActive = original.isActive;
 		}
 		accessPath = p.clone();

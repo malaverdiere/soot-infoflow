@@ -6,6 +6,7 @@ import java.util.Set;
 import soot.SootClass;
 import soot.Value;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 
 public class TestWrapper implements ITaintPropagationWrapper {
@@ -19,8 +20,8 @@ public class TestWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public Set<Value> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
-		return new HashSet<Value>();
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+		return new HashSet<AccessPath>();
 	}
 
 	@Override

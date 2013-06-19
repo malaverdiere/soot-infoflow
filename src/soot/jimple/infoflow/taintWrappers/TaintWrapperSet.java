@@ -6,6 +6,7 @@ import java.util.Set;
 import soot.SootClass;
 import soot.Value;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.data.AccessPath;
 
 /**
  * Set of taint wrappers. It supports taint wrapping for a class if at least one
@@ -35,12 +36,12 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public Set<Value> getTaintsForMethod(Stmt stmt, int taintedparam,
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, int taintedparam,
 			Value taintedBase) {
-		Set<Value> resList = new HashSet<Value>();
+		Set<AccessPath> resList = new HashSet<AccessPath>();
 		for (ITaintPropagationWrapper w : this.wrappers)
 			resList.addAll(w.getTaintsForMethod(stmt, taintedparam, taintedBase));
-		return new HashSet<Value>(resList);
+		return new HashSet<AccessPath>(resList);
 	}
 
 	@Override

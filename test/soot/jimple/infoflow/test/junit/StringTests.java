@@ -94,10 +94,10 @@ public class StringTests extends JUnitTests {
     }
    
    @Test
-   public void stringConcatTestSmall(){
+   public void stringConcatTestSmall1(){
 	   Infoflow infoflow = initInfoflow();
    		List<String> epoints = new ArrayList<String>();
-   		epoints.add("<soot.jimple.infoflow.test.StringTestCode: void stringConcatTestSmall()>");
+   		epoints.add("<soot.jimple.infoflow.test.StringTestCode: void stringConcatTestSmall1()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);
    }

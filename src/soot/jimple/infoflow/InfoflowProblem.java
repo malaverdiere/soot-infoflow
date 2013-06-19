@@ -192,9 +192,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				if (triggerInaktiveTaintOrReverseFlow(targetValue, source)) {
 					// call backwards-check:
 					Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-//					for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
-//						bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
-//					}
+					for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
+						bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+					}
 				}
 			}
 

@@ -237,6 +237,14 @@ public class StringTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(deviceID + pwd);
 	}
+	
+	public void methodStringConvert() {
+		String deviceID = TelephonyManager.getDeviceId();
+		int i1 = Integer.valueOf(deviceID);
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(String.valueOf(i1));
+	}
 
 
 }

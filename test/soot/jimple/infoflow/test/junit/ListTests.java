@@ -101,6 +101,15 @@ public class ListTests extends JUnitTests {
     }
     
     @Test
+    public void staticLinkedListIteratorTest(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void staticLinkedList()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);	
+    }
+    
+    @Test
     public void subLinkedListTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -146,5 +155,5 @@ public class ListTests extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		negativeCheckInfoflow(infoflow);	
     }
-
+    
 }

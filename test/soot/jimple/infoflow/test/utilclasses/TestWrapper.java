@@ -20,12 +20,12 @@ public class TestWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public Set<AccessPath> getTaintsForMethod(Stmt stmt, int taintedparam, Value taintedBase) {
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
 		return new HashSet<AccessPath>();
 	}
 
 	@Override
-	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
+	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
 		return true;
 	}
 

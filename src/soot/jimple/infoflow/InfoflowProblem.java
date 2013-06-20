@@ -14,7 +14,6 @@ import java.util.Set;
 
 import soot.Local;
 import soot.NullType;
-import soot.SootClass;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -38,7 +37,6 @@ import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
-import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 
@@ -59,38 +57,26 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	 */
 	private Set<Abstraction> computeWrapperTaints
 			(final Stmt iStmt,
-			final List<Value> callArgs,
 			Abstraction source) {
 		Set<Abstraction> res = new HashSet<Abstraction>();
 		if(taintWrapper == null || !taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass()))
 			return Collections.emptySet();
 		
-		int taintedPos = -1;
-		for(int i=0; i< callArgs.size(); i++){
-			if(source.getAccessPath().isLocal() && callArgs.get(i).equals(source.getAccessPath().getPlainValue())){
-				taintedPos = i;
-				break;
-			}
-		}
-		Value taintedBase = null;
-		if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr){
-			InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-			if(iiExpr.getBase().equals(source.getAccessPath().getPlainValue())){
-				if(source.getAccessPath().isLocal()){
-					taintedBase = iiExpr.getBase();
+		if (!source.getAccessPath().isStaticFieldRef())
+			if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+				InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
+				boolean found = iiExpr.getBase().equals(source.getAccessPath().getPlainValue());
+				if (!found)
+					for (Value param : iiExpr.getArgs())
+						if (source.getAccessPath().getPlainValue().equals(param)) {
+							found = true;
+							break;
 				}
-				else if(source.getAccessPath().isInstanceFieldRef()){
-					// The taint refers to the actual type of the field, not the formal type,
-					// so we must check whether we have the tainted field at all
-					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.getFields().contains(source.getAccessPath().getFirstField()))
-						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
-								callerClass.getFieldByName(source.getAccessPath().getFirstField().getName()).makeRef());
-				}
+				if (!found)
+					return Collections.emptySet();
 			}
-		}
 			
-		Set<AccessPath> vals = taintWrapper.getTaintsForMethod(iStmt, taintedPos, taintedBase);
+		Set<AccessPath> vals = taintWrapper.getTaintsForMethod(iStmt, source.getAccessPath());
 		if(vals != null) {
 			for (AccessPath val : vals) {
 				Abstraction newAbs = source.deriveNewAbstraction(val, iStmt);
@@ -100,13 +86,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 				// If the taint wrapper taints the base object (new taint), this must be propagated
 				// backwards as there might be aliases for the base object
-				if(taintedBase == null && iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+				if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-					if ((iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
-							|| newAbs.getAccessPath().isStaticFieldRef())){
-						Abstraction bwAbs = source.deriveNewAbstraction(val,iStmt, false);
-						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
-							bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+					if(newAbs.getAccessPath().getPlainValue().equals(iiExpr.getBase())
+								|| newAbs.getAccessPath().isStaticFieldRef()) {
+							Abstraction bwAbs = source.deriveNewAbstraction(val,iStmt, false);
+							for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
+								bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
 					}
 				}
 			}
@@ -130,39 +116,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	 */
 	private boolean isWrapperExclusive
 			(final Stmt iStmt,
-			final List<Value> callArgs,
 			Abstraction source) {
 		if(taintWrapper == null || !taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass()))
 			return false;
-		
-		int taintedPos = -1;
-		for(int i=0; i< callArgs.size(); i++){
-			if(source.getAccessPath().isLocal() && callArgs.get(i).equals(source.getAccessPath().getPlainValue())){
-				taintedPos = i;
-				break;
-			}
-		}
-		Value taintedBase = null;
-		if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr){
-			InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-			if(iiExpr.getBase().equals(source.getAccessPath().getPlainValue())){
-				if(source.getAccessPath().isLocal()){
-					taintedBase = iiExpr.getBase();
-				}else if(source.getAccessPath().isInstanceFieldRef()){
-					// The taint refers to the actual type of the field, not the formal type,
-					// so we must check whether we have the tainted field at all
-					SootClass callerClass = interproceduralCFG().getMethodOf(iStmt).getDeclaringClass();
-					if (callerClass.getFields().contains(source.getAccessPath().getFirstField()))
-						taintedBase = new JInstanceFieldRef(iiExpr.getBase(),
-								callerClass.getFieldByName(source.getAccessPath().getFirstField().getName()).makeRef());
-				}
-			}
-			if(source.getAccessPath().isStaticFieldRef()){
-				//TODO
-			}
-		}
-			
-		return taintWrapper.isExclusive(iStmt, taintedPos, taintedBase);
+		return taintWrapper.isExclusive(iStmt, source.getAccessPath());
 	}
 	
 	@Override
@@ -503,7 +460,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
-						if(isWrapperExclusive(stmt, callArgs, source)) {
+						if(isWrapperExclusive(stmt, source)) {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
@@ -751,30 +708,30 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								newSource = source;
 							}
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							res.addAll(computeWrapperTaints(iStmt, callArgs, newSource));
+							res.addAll(computeWrapperTaints(iStmt, newSource));
 
 							// We can only pass on a taint if it is neither a parameter nor the
 							// base object of the current call
 							boolean passOn = true;
 							//we only can remove the taint if we step into the call/return edges
 							//otherwise we will loose taint - see ArrayTests/arrayCopyTest
-//							if(!interproceduralCFG().getCalleesOfCallAt(call).isEmpty()){
-							if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
-								if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
-										(newSource.getAccessPath().getPlainLocal()))
-									passOn = false;
-								if (passOn)
-									for (int i = 0; i < callArgs.size(); i++)
-										if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
-											passOn = false;
-											break;
-										}
-								//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
-								//we can be sure that the value does not get "lost" if we do not pass it on:
-								if(newSource.getAccessPath().isStaticFieldRef()){
-									passOn = false;
+							if(!interproceduralCFG().getCalleesOfCallAt(call).isEmpty() && taintWrapper == null) {
+								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
+									if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
+											(newSource.getAccessPath().getPlainLocal()))
+										passOn = false;
+									if (passOn)
+										for (int i = 0; i < callArgs.size(); i++)
+											if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
+												passOn = false;
+												break;
+											}
+									//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
+									//we can be sure that the value does not get "lost" if we do not pass it on:
+									if(newSource.getAccessPath().isStaticFieldRef()){
+										passOn = false;
+									}
 								}
-//							}
 							if (passOn)
 								res.add(newSource);
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {

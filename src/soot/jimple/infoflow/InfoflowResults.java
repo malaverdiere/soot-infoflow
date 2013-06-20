@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import soot.Unit;
 import soot.Value;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
@@ -25,7 +26,7 @@ public class InfoflowResults {
 	public class SourceInfo {
 		private final Value source;
 		private final Stmt context;
-		private final List<String> path;
+		private final List<Unit> path;
 		
 		public SourceInfo(Value source, Stmt context) {
 			assert source != null;
@@ -35,7 +36,7 @@ public class InfoflowResults {
 			this.path = null;
 		}
 		
-		public SourceInfo(Value source, Stmt context, List<String> path) {
+		public SourceInfo(Value source, Stmt context, List<Unit> path) {
 			assert source != null;
 
 			this.source = source;
@@ -51,7 +52,7 @@ public class InfoflowResults {
 			return this.context;
 		}
 		
-		public List<String> getPath() {
+		public List<Unit> getPath() {
 			return this.path;
 		}
 		
@@ -172,13 +173,13 @@ public class InfoflowResults {
 	}
 	
 	public void addResult(Value sink, Stmt sinkStmt, Value source,
-			Stmt sourceStmt, List<String> propagationPath) {
+			Stmt sourceStmt, List<Unit> propagationPath) {
 		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source, sourceStmt, propagationPath));
 	}
 
 	public void addResult(Value sink, Stmt sinkContext, Value source,
-			Stmt sourceStmt, List<String> propagationPath, String stmt) {
-		List<String> newPropPath = new ArrayList<String>(propagationPath);
+			Stmt sourceStmt, List<Unit> propagationPath, Unit stmt) {
+		List<Unit> newPropPath = new ArrayList<Unit>(propagationPath);
 		newPropPath.add(stmt);
 		this.addResult(new SinkInfo(sink, sinkContext),
 				new SourceInfo(source, sourceStmt, newPropPath));

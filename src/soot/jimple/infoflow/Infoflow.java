@@ -413,7 +413,7 @@ public class Infoflow implements IInfoflow {
 						System.out.println("- " + source.getSource());
 						if (source.getPath() != null && !source.getPath().isEmpty()) {
 							System.out.println("\ton Path: ");
-							for (String p : source.getPath()) {
+							for (Unit p : source.getPath()) {
 								System.out.println("\t\t -> " + p);
 							}
 						}

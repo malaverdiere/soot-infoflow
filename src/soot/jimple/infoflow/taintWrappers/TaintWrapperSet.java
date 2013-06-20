@@ -36,18 +36,17 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public Set<AccessPath> getTaintsForMethod(Stmt stmt, int taintedparam,
-			Value taintedBase) {
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
 		Set<AccessPath> resList = new HashSet<AccessPath>();
 		for (ITaintPropagationWrapper w : this.wrappers)
-			resList.addAll(w.getTaintsForMethod(stmt, taintedparam, taintedBase));
+			resList.addAll(w.getTaintsForMethod(stmt, taintedPath));
 		return new HashSet<AccessPath>(resList);
 	}
 
 	@Override
-	public boolean isExclusive(Stmt stmt, int taintedparam, Value taintedBase) {
+	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
 		for (ITaintPropagationWrapper w : this.wrappers)
-			if (w.isExclusive(stmt, taintedparam, taintedBase))
+			if (w.isExclusive(stmt, taintedPath))
 				return true;
 		return false;
 	}

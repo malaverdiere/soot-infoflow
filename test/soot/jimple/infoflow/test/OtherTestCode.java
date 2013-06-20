@@ -348,4 +348,37 @@ public class OtherTestCode {
 		String f;
 	}
 	
+	public void objectSensitiveTest1(){
+		ConnectionManager cm = new ConnectionManager();
+		IntermediateObject i1 = new IntermediateObject("123");
+		IntermediateObject i2 = new IntermediateObject(TelephonyManager.getDeviceId());
+		
+		cm.publish(i1.getValue());
+	
+	}
+
+	class IntermediateObject{
+		Object1 o;
+		
+		public IntermediateObject(String s){
+			o = new Object1();
+			o.setField1(s);
+		}
+		
+		public String getValue(){
+			return o.getField1();
+		}
+	}
+
+	class Object1{
+		String field1;
+		
+		public void setField1(String s){
+			field1 = s;
+		}
+		public String getField1(){
+			return field1;
+		}
+	}
+	
 }

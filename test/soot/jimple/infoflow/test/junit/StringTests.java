@@ -256,12 +256,4 @@ public class StringTests extends JUnitTests {
 		assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourcePwd));
     }
 
-    @Test
-    public void testPrototyp() throws FileNotFoundException{
-    	Infoflow infoflow = initInfoflow();
-    	List<String> epoints = new ArrayList<String>();
-    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void originalFromPrototyp()>");
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
-    }
-
 }

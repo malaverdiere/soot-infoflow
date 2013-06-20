@@ -188,4 +188,14 @@ public class OtherTests extends JUnitTests{
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
+    @Test
+    public void objectSensitiveTest1(){
+    	taintWrapper = true;
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void objectSensitiveTest1()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		negativeCheckInfoflow(infoflow);
+		
+    }
 }

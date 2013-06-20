@@ -334,7 +334,7 @@ public class BasicTests extends JUnitTests {
 	List<String> epoints = new ArrayList<String>();
 	epoints.add("<securibench.micro.basic.Basic35: void doGet(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>");
 	infoflow.computeInfoflow(path, entryPointCreator, epoints, sources, sinks);
-	checkInfoflow(infoflow,4);
+	checkInfoflow(infoflow,6);
 	}
 
 	@Test(timeout=300000)

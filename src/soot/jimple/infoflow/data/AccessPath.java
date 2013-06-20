@@ -13,7 +13,8 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.Infoflow;
 /**
- * This class represents the taint
+ * This class represents the taint, containing a base value and a list of fields (length is bounded by Infoflow.ACCESSPATHLENGTH)
+ *  
  *
  */
 public class AccessPath {

@@ -68,6 +68,10 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		results = new InfoflowResults();
 	}
 	
+	/**
+	 * we need this option as we start directly at the sources, but need to go 
+	 * backward in the call stack
+	 */
 	@Override
 	public boolean followReturnsPastSeeds(){
 		return true;
@@ -136,6 +140,10 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		return initialSeeds;
 	}
 	
+	/**
+	 * performance improvement: since we start directly at the sources, we do not 
+	 * need to generate additional taints unconditionally
+	 */
 	@Override
 	public boolean autoAddZero() {
 		return false;

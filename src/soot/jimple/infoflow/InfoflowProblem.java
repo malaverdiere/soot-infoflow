@@ -757,6 +757,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// base object of the current call
 							boolean passOn = true;
 							//we only can remove the taint if we step into the call/return edges
+							//otherwise we will loose taint - see ArrayTests/arrayCopyTest
 //							if(!interproceduralCFG().getCalleesOfCallAt(call).isEmpty()){
 							if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
 								if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals

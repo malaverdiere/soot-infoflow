@@ -123,10 +123,11 @@ public interface IInfoflow {
 	
 	/**
 	 * sets the depth of the access path that are tracked
-	 * @param value the maximum value of an access path. If it gets longer than
-	 *  this number, it is truncated and all following fields are assumed as tainted 
+	 * @param accessPathLength the maximum value of an access path. If it gets longer than
+	 *  this value, it is truncated and all following fields are assumed as tainted 
 	 *  (which is imprecise but gains performance)
 	 *  Default value is 5.
 	 */
-	public void setAnalysisDepth(int value);
+	public void setAccessPathLength(int accessPathLength);
+	
 }

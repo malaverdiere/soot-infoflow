@@ -306,8 +306,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										results.addResult(leftValue, assignStmt,
 												newSource.getSource(),
 												newSource.getSourceContext(),
-												((AbstractionWithPath) newSource).getPropagationPathAsString(interproceduralCFG()),
-												assignStmt.toString());
+												((AbstractionWithPath) newSource).getPropagationPath(),
+												assignStmt);
 									else
 										results.addResult(leftValue, assignStmt,
 												newSource.getSource(), newSource.getSourceContext());
@@ -412,8 +412,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									results.addResult(returnStmt.getOp(), returnStmt,
 											source.getSource(),
 											source.getSourceContext(),
-											((AbstractionWithPath) source).getPropagationPathAsString(interproceduralCFG()),
-											interproceduralCFG().getMethodOf(returnStmt) + ": " + returnStmt.toString());
+											((AbstractionWithPath) source).getPropagationPath(),
+											returnStmt);
 								else
 									results.addResult(returnStmt.getOp(), returnStmt,
 											source.getSource(), source.getSourceContext());
@@ -469,7 +469,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
 						}
-						Abstraction newSource = source;
+						Abstraction newSource;
+						if (!source.isAbstractionActive() && (src.equals(source.getActivationUnit()) || src.equals(source.getActivationUnitOnCurrentLevel()))){
+							newSource = source.getActiveCopy(false);
+						}else{
+							newSource = source;
+						}
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
@@ -593,8 +598,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									results.addResult(returnStmt.getOp(), returnStmt,
 											newSource.getSource(),
 											newSource.getSourceContext(),
-											((AbstractionWithPath) newSource).getPropagationPathAsString(interproceduralCFG()),
-											interproceduralCFG().getMethodOf(returnStmt) + ": " + returnStmt.toString());
+											((AbstractionWithPath) newSource).getPropagationPath(),
+											returnStmt);
 								else
 									results.addResult(returnStmt.getOp(), returnStmt,
 											newSource.getSource(), newSource.getSourceContext());
@@ -772,8 +777,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										results.addResult(iStmt.getInvokeExpr(), iStmt,
 												newSource.getSource(),
 												newSource.getSourceContext(),
-												((AbstractionWithPath) newSource).getPropagationPathAsString(interproceduralCFG()),
-												interproceduralCFG().getMethodOf(call) + ": " + call.toString());
+												((AbstractionWithPath) newSource).getPropagationPath(),
+												call);
 									else
 										results.addResult(iStmt.getInvokeExpr(), iStmt,
 												newSource.getSource(), newSource.getSourceContext());
@@ -786,8 +791,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											results.addResult(iStmt.getInvokeExpr(), iStmt,
 													newSource.getSource(),
 													newSource.getSourceContext(),
-													((AbstractionWithPath) newSource).getPropagationPathAsString(interproceduralCFG()),
-													interproceduralCFG().getMethodOf(call) + ": " + call.toString());
+													((AbstractionWithPath) newSource).getPropagationPath(),
+													call);
 
 										else
 											results.addResult(iStmt.getInvokeExpr(), iStmt,

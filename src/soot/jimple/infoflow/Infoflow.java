@@ -51,9 +51,9 @@ import soot.options.Options;
  */
 public class Infoflow implements IInfoflow {
 
-	private static boolean DEBUG = false;
-	public static int ACCESSPATHLENGTH = 5;
-	public InfoflowResults results;
+	private static boolean debug = true;
+	private static int accessPathLength = 5;
+	private InfoflowResults results;
 
 	private final String androidPath;
 	private final boolean forceAndroidJar;
@@ -88,8 +88,8 @@ public class Infoflow implements IInfoflow {
 	}
 
 
-	public static void setDebug(boolean debug) {
-		DEBUG = debug;
+	public static void setDebug(boolean debugflag) {
+		debug = debugflag;
 	}
 	
 	public void setInspectSinks(boolean inspect){
@@ -161,7 +161,7 @@ public class Infoflow implements IInfoflow {
 
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
-		if (DEBUG)
+		if (debug)
 			Options.v().set_output_format(Options.output_format_jimple);
 		else
 			Options.v().set_output_format(Options.output_format_none);
@@ -228,7 +228,7 @@ public class Infoflow implements IInfoflow {
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
 		Scene.v().setEntryPoints(Collections.singletonList(entryPointCreator.createDummyMain(entryPoints)));
 		PackManager.v().runPacks();
-		if (DEBUG)
+		if (debug)
 			PackManager.v().writeOutput();
 	}
 
@@ -247,7 +247,7 @@ public class Infoflow implements IInfoflow {
 
 		initializeSoot(path, classes.keySet(), sourcesSinks, entryPoint);
 		
-		if (DEBUG) {
+		if (debug) {
 			for (List<String> methodList : classes.values()) {
 				for (String methodSignature : methodList) {
 					if (Scene.v().containsMethod(methodSignature)) {
@@ -272,7 +272,7 @@ public class Infoflow implements IInfoflow {
 		Scene.v().setEntryPoints(Collections.singletonList(ep));
 		Options.v().set_main_class(ep.getDeclaringClass().getName());
 		PackManager.v().runPacks();
-		if (DEBUG)
+		if (debug)
 			PackManager.v().writeOutput();
 	}
 
@@ -309,7 +309,7 @@ public class Infoflow implements IInfoflow {
 					if (m.hasActiveBody()) {
 						// In Debug mode, we collect the Jimple bodies for
 						// writing them to disk later
-						if (DEBUG)
+						if (debug)
 							if (classes.containsKey(m.getDeclaringClass().getName()))
 								classes.put(m.getDeclaringClass().getName(), classes.get(m.getDeclaringClass().getName())
 										+ m.getActiveBody().toString());
@@ -325,11 +325,11 @@ public class Infoflow implements IInfoflow {
 							if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
 								forwardProblem.initialSeeds.add(u);
 
-								if (DEBUG)
+								if (debug)
 									System.out.println("Source found: " + u);
 							}
 							if (sourcesSinks.isSink(s, forwardProblem.interproceduralCFG())) {
-								if (DEBUG)
+								if (debug)
 									System.out.println("Sink found: " + u);
 								sinkCount++;
 							}
@@ -350,7 +350,7 @@ public class Infoflow implements IInfoflow {
 					}
 
 				// In Debug mode, we write the Jimple files to disk
-				if (DEBUG){
+				if (debug){
 					File dir = new File("JimpleFiles");
 					if(!dir.exists()){
 						dir.mkdir();
@@ -375,16 +375,16 @@ public class Infoflow implements IInfoflow {
 				System.out.println("Source lookup done, found " + forwardProblem.initialSeeds.size() + " sources.");
 
 				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-				forwardSolver = new InfoflowSolver(forwardProblem, DEBUG, executor);
+				forwardSolver = new InfoflowSolver(forwardProblem, debug, executor);
 				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem();
-				InfoflowSolver backSolver = new InfoflowSolver(backProblem, DEBUG, executor);
+				InfoflowSolver backSolver = new InfoflowSolver(backProblem, debug, executor);
 				forwardProblem.setBackwardSolver(backSolver);
-				forwardProblem.setDebug(DEBUG);
+				forwardProblem.setDebug(debug);
 				forwardProblem.setInspectSinks(inspectSinks);
 				
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);
-				backProblem.setDebug(DEBUG);
+				backProblem.setDebug(debug);
 
 				forwardSolver.solve();
 
@@ -413,7 +413,7 @@ public class Infoflow implements IInfoflow {
 						System.out.println("- " + source.getSource());
 						if (source.getPath() != null && !source.getPath().isEmpty()) {
 							System.out.println("\ton Path: ");
-							for (String p : source.getPath()) {
+							for (Unit p : source.getPath()) {
 								System.out.println("\t\t -> " + p);
 							}
 						}
@@ -452,9 +452,12 @@ public class Infoflow implements IInfoflow {
 		}
 		return true;
 	}
-	
-	@Override
-	public void setAnalysisDepth(int value){
-		
+
+	public static int getAccessPathLength() {
+		return accessPathLength;
+	}
+
+	public void setAccessPathLength(int accessPathLength) {
+		Infoflow.accessPathLength = accessPathLength;
 	}
 }

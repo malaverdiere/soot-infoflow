@@ -2,7 +2,6 @@ package soot.jimple.infoflow.test.junit;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -254,15 +253,6 @@ public class StringTests extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);
 		assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourcePwd));
-    }
-    
-    @Test
-    public void testStringConvert(){
-    	Infoflow infoflow = initInfoflow();
-    	List<String> epoints = new ArrayList<String>();
-    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringConvert()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow, 1);
     }
 
 }

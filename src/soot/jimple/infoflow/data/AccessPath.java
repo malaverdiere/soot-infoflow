@@ -17,7 +17,7 @@ import soot.jimple.infoflow.Infoflow;
  *  
  *
  */
-public class AccessPath {
+public class AccessPath implements Cloneable {
 	
 	// ATTENTION: This class *must* be immutable!
 	private final Value value;
@@ -34,14 +34,14 @@ public class AccessPath {
 		List<SootField> fields = new LinkedList<SootField>();
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
-			if(fields.size()< Infoflow.ACCESSPATHLENGTH)
+			if(fields.size()< Infoflow.getAccessPathLength())
 				fields.add(ref.getField());
 			value = null;
 		}
 		else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
 			value = ref.getBase();
-			if(fields.size() < Infoflow.ACCESSPATHLENGTH)
+			if(fields.size() < Infoflow.getAccessPathLength())
 				fields.add(ref.getField());
 		}
 		else
@@ -49,7 +49,7 @@ public class AccessPath {
 
 		int cnt = fields.size();
 		for (SootField field : appendingFields)
-			if (cnt < Infoflow.ACCESSPATHLENGTH) {
+			if (cnt < Infoflow.getAccessPathLength()) {
 				fields.add(field);
 				cnt++;
 			}
@@ -66,7 +66,7 @@ public class AccessPath {
 	public AccessPath(Value base, SootField field){
 		value = base;
 		List<SootField> fields = new LinkedList<SootField>();
-		if(fields.size() < Infoflow.ACCESSPATHLENGTH)
+		if(fields.size() < Infoflow.getAccessPathLength())
 			fields.add(field);
 		this.fields = Collections.unmodifiableList(fields);
 	}

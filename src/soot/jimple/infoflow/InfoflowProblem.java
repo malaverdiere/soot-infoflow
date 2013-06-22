@@ -707,7 +707,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							Abstraction newSource;
 							//check inactive elements:
-							System.out.println(interproceduralCFG().getMethodOf(call).getActiveBody());
 							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit()))|| call.equals(source.getActivationUnitOnCurrentLevel())){
 								newSource = source.getActiveCopy(false);
 							}else{

@@ -59,7 +59,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			(final Stmt iStmt,
 			Abstraction source) {
 		Set<Abstraction> res = new HashSet<Abstraction>();
-		if(taintWrapper == null || !taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass()))
+		if(taintWrapper == null)
 			return Collections.emptySet();
 		
 		if (!source.getAccessPath().isStaticFieldRef())
@@ -79,7 +79,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		Set<AccessPath> vals = taintWrapper.getTaintsForMethod(iStmt, source.getAccessPath());
 		if(vals != null) {
 			for (AccessPath val : vals) {
-				Abstraction newAbs = source.deriveNewAbstraction(val, iStmt);
+				Abstraction newAbs = source.deriveNewAbstraction(val);
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					((AbstractionWithPath) newAbs).addPathElement(iStmt);
 				res.add(newAbs);
@@ -117,7 +117,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	private boolean isWrapperExclusive
 			(final Stmt iStmt,
 			Abstraction source) {
-		if(taintWrapper == null || !taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass()))
+		if(taintWrapper == null)
 			return false;
 		return taintWrapper.isExclusive(iStmt, source.getAccessPath());
 	}
@@ -544,8 +544,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}else{
 							newSource = source.cloneUsePredAbstractionOfCG();
-						}
-						
+						}					
+
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null && interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee)){
 							return Collections.emptySet();
@@ -702,6 +702,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							Abstraction newSource;
 							//check inactive elements:
+							System.out.println(interproceduralCFG().getMethodOf(call).getActiveBody());
 							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit()))|| call.equals(source.getActivationUnitOnCurrentLevel())){
 								newSource = source.getActiveCopy(false);
 							}else{
@@ -715,11 +716,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean passOn = true;
 							//we only can remove the taint if we step into the call/return edges
 							//otherwise we will loose taint - see ArrayTests/arrayCopyTest
-							if(!interproceduralCFG().getCalleesOfCallAt(call).isEmpty() && taintWrapper == null) {
+							if(!interproceduralCFG().getCalleesOfCallAt(call).isEmpty() || (taintWrapper != null
+									&& taintWrapper.isExclusive(iStmt, newSource.getAccessPath()))) {
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
 									if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
-											(newSource.getAccessPath().getPlainLocal()))
+											(newSource.getAccessPath().getPlainLocal())) {
 										passOn = false;
+									}
 									if (passOn)
 										for (int i = 0; i < callArgs.size(); i++)
 											if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {

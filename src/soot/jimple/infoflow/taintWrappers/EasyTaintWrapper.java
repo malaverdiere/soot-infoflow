@@ -91,13 +91,6 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	}
 	
 	@Override
-	public boolean supportsTaintWrappingForClass(SootClass c) {
-		// We can't tell without knowing whether the base object is tainted, so
-		// we accept all objects here and filter later on
-		return true;
-	}
-
-	@Override
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
 		if (!stmt.containsInvokeExpr())
 			return Collections.emptySet();
@@ -128,7 +121,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 				taints.add(taintedPath);
 			}
 		}
-				
+		
 		//if param is tainted && classList contains classname && if list. contains signature of method -> add propagation
 		for (Value param : stmt.getInvokeExpr().getArgs())
 			if (taintedPath.getPlainValue().equals(param)) {
@@ -148,11 +141,11 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 					else if (stmt.getInvokeExprBox().getValue() instanceof StaticInvokeExpr)
 						if (stmt instanceof JAssignStmt)
 							taints.add(new AccessPath(((JAssignStmt)stmt).getLeftOp()));
+				}
 					
-					// The parameter as such stays tainted
-					taints.add(taintedPath);
+				// The parameter as such stays tainted
+				taints.add(taintedPath);
 			}
-		}
 		
 		return taints;
 	}
@@ -184,7 +177,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	@Override
 	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
 		SootMethod method = stmt.getInvokeExpr().getMethod();
-		return getMethodsForClass(method.getDeclaringClass()).contains(method.getSubSignature());
+		return !getMethodsForClass(method.getDeclaringClass()).isEmpty();
 	}
 
 }

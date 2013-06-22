@@ -26,14 +26,6 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 	public void addWrapper(ITaintPropagationWrapper wrapper) {
 		this.wrappers.add(wrapper);
 	}
-	
-	@Override
-	public boolean supportsTaintWrappingForClass(SootClass c) {
-		for (ITaintPropagationWrapper w : this.wrappers)
-			if (w.supportsTaintWrappingForClass(c))
-				return true;
-		return false;
-	}
 
 	@Override
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {

@@ -204,6 +204,11 @@ public class Abstraction implements Cloneable {
 	public Abstraction getNotNullAbstractionFromCallEdge(){
 		if(abstractionFromCallEdge == null)
 			return this;
+		/*
+		Abstraction abs = abstractionFromCallEdge.clone();
+		abs.abstractionFromCallEdge = abs.clone();
+		return abs;
+		*/
 		return abstractionFromCallEdge;
 	}
 	

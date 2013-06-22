@@ -16,14 +16,6 @@ import soot.jimple.internal.JAssignStmt;
 public class ListExampleWrapper implements ITaintPropagationWrapper {
 
 	@Override
-	public boolean supportsTaintWrappingForClass(SootClass c) {
-		if(c.implementsInterface("java.util.List"))
-			return true;
-
-		return false;
-	}
-
-	@Override
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
 		// method add + added element is tainted -> whole list is tainted
 		if(stmt.getInvokeExpr().getMethod().getSubSignature().equals("boolean add(java.lang.Object)"))

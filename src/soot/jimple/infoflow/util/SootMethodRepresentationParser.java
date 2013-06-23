@@ -7,7 +7,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import soot.jimple.infoflow.data.SootMethodAndClass;
-
+/**
+ * handles conversion from the string representation of SootMethod to our internal format {@link soot.jimple.infoflow.data.SootMethodAndClass}
+ *
+ */
 public class SootMethodRepresentationParser {
 	
 	private static final SootMethodRepresentationParser instance = new SootMethodRepresentationParser();

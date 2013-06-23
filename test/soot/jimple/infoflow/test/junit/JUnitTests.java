@@ -17,7 +17,10 @@ import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.InfoflowResults;
 import soot.jimple.infoflow.config.ConfigForTest;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
-
+/**
+ * abstract super class of all test cases which handles initialization, keeps track of sources and sinks and allows to customize the tests (taintWrapper, debug)
+ *
+ */
 public abstract class JUnitTests {
 
 

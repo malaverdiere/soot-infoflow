@@ -235,7 +235,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (rightValue instanceof StaticFieldRef) {
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
 										if (newSource.getAccessPath().getFirstField().equals(rightRef.getField())) {
-											addLeftValue = true; //TODO: check all fields --> create Testcase for this!
+											addLeftValue = true;
 											cutFirstField = true;
 										}
 									}
@@ -538,7 +538,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-												
+						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource;
 						if(!source.isAbstractionActive()){
 							if(callSite.equals(source.getActivationUnit()) || callSite.equals(source.getActivationUnitOnCurrentLevel()) ){

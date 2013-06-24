@@ -8,7 +8,11 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * covers taint propagation for Strings, String functions such as concat, toUpperCase() or substring, but also StringBuilder and concatenation via '+' operato
+ * @author Christian
+ *
+ */
 public class StringTests extends JUnitTests {
 	
 	@Test
@@ -226,14 +230,6 @@ public class StringTests extends JUnitTests {
     	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder6()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);	
-    }
-
-    @Test
-    public void test133(){
-    	Infoflow infoflow = initInfoflow();
-    	List<String> epoints = new ArrayList<String>();
-    	epoints.add("<soot.jimple.infoflow.test.IndexOutOfBoundsException: void method()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
     }
     
     @Test

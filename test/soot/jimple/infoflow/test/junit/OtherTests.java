@@ -8,7 +8,9 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * contain several tests that cannot be assigned to the other categories - often they are added due to findings in real-world applications, including negative tests and tests for lifecycle handling
+ */
 public class OtherTests extends JUnitTests{
 
 	@Test

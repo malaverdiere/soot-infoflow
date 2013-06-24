@@ -6,8 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
-
+/**
+ * test taint propagation in sets
+ */
 public class SetTests extends JUnitTests {
     
     @Test

@@ -7,7 +7,9 @@ import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.test.utilclasses.TestWrapper;
-
+/**
+ * tests aliasing of heap references
+ */
 public class HeapTests extends JUnitTests {
 	
 	

@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * contain tests which check taint propagation for static variables
+ */
 public class StaticTests extends JUnitTests {
 	  
 	    @Test

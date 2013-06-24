@@ -98,11 +98,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			}
 		}
 
-		// For the moment, we don't implement static taints on wrappers. Pass it on
-		// not to break anything
-		if(source.getAccessPath().isStaticFieldRef())
-			res.add(source);
-
 		return res;
 	}
 
@@ -215,7 +210,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
-								
+							
 							// shortcuts:
 							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {

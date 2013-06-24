@@ -21,6 +21,12 @@ public class IdentityTaintWrapper implements ITaintPropagationWrapper {
 	@Override
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
 		assert stmt.containsInvokeExpr();
+		
+		// For the moment, we don't implement static taints on wrappers. Pass it on
+		// not to break anything
+		if(taintedPath.isStaticFieldRef())
+			return Collections.singleton(taintedPath);
+
 		if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 			InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
 			

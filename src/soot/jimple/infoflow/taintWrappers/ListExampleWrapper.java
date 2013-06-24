@@ -3,8 +3,6 @@ package soot.jimple.infoflow.taintWrappers;
 import java.util.Collections;
 import java.util.Set;
 
-import soot.SootClass;
-import soot.Value;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.AccessPath;
@@ -30,6 +28,11 @@ public class ListExampleWrapper implements ITaintPropagationWrapper {
 					if(stmt instanceof JAssignStmt)
 						return Collections.singleton(new AccessPath(((JAssignStmt)stmt).getLeftOp()));
 			}
+
+		// For the moment, we don't implement static taints on wrappers. Pass it on
+		// not to break anything
+		if(taintedPath.isStaticFieldRef())
+			return Collections.singleton(taintedPath);
 
 		return Collections.emptySet();
 	}

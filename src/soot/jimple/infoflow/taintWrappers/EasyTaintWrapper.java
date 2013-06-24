@@ -37,11 +37,13 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	private final Map<String, List<String>> classList;
 	private final Map<String, List<String>> excludeList;
 	private final Map<String, List<String>> killList;
+	private final Set<String> includeList;
 
 	public EasyTaintWrapper(HashMap<String, List<String>> classList){
 		this.classList = classList;
 		this.excludeList = new HashMap<String, List<String>>();
 		this.killList = new HashMap<String, List<String>>();
+		this.includeList = new HashSet<String>();
 	}
 	
 	public EasyTaintWrapper(HashMap<String, List<String>> classList,
@@ -49,6 +51,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		this.classList = classList;
 		this.excludeList = excludeList;
 		this.killList = new HashMap<String, List<String>>();
+		this.includeList = new HashSet<String>();
 	}
 
 	public EasyTaintWrapper(HashMap<String, List<String>> classList,
@@ -57,6 +60,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		this.classList = classList;
 		this.excludeList = excludeList;
 		this.killList = killList;
+		this.includeList = new HashSet<String>();
 	}
 
 	public EasyTaintWrapper(File f) throws IOException{
@@ -68,12 +72,15 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			List<String> methodList = new LinkedList<String>();
 			List<String> excludeList = new LinkedList<String>();
 			List<String> killList = new LinkedList<String>();
+			this.includeList = new HashSet<String>();
 			while(line != null){
 				if (!line.isEmpty() && !line.startsWith("%"))
 					if (line.startsWith("~"))
 						excludeList.add(line.substring(1));
 					else if (line.startsWith("-"))
 						killList.add(line.substring(1));
+					else if (line.startsWith("^"))
+						includeList.add(line.substring(1));
 					else
 						methodList.add(line);
 				line = reader.readLine();
@@ -94,8 +101,30 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
 		if (!stmt.containsInvokeExpr())
 			return Collections.emptySet();
-
+		
 		Set<AccessPath> taints = new HashSet<AccessPath>();
+
+		SootMethod method = stmt.getInvokeExpr().getMethod();
+		List<String> methodList = getMethodsForClass(method.getDeclaringClass());
+		
+		// If the callee is a phantom class or has no body, we pass on the taint
+		if (method.isPhantom() || !method.hasActiveBody())
+			return Collections.singleton(taintedPath);
+
+		// If this is not one of the supported classes, we skip it
+		boolean isSupported = false;
+		for (String supportedClass : this.includeList)
+			if (method.getDeclaringClass().getName().startsWith(supportedClass)) {
+				isSupported = true;
+				break;
+			}
+		if (!isSupported)
+			return Collections.emptySet();
+
+		// For the moment, we don't implement static taints on wrappers. Pass it on
+		// not to break anything
+		if(taintedPath.isStaticFieldRef())
+			return Collections.singleton(taintedPath);
 
 		if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 			InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
@@ -125,9 +154,6 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		//if param is tainted && classList contains classname && if list. contains signature of method -> add propagation
 		for (Value param : stmt.getInvokeExpr().getArgs())
 			if (taintedPath.getPlainValue().equals(param)) {
-				SootMethod method = stmt.getInvokeExpr().getMethod();
-				List<String> methodList = getMethodsForClass(method.getDeclaringClass());
-			
 				if(methodList.contains(method.getSubSignature())) {
 					// If we call a method on an instance, this instance is assumed to be tainted
 					if(stmt.getInvokeExprBox().getValue() instanceof InstanceInvokeExpr) {

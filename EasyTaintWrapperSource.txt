@@ -1,3 +1,8 @@
+# Packages to include in the analysis
+^android.
+^java.
+^org.apache.http.
+
 <java.util.Stack: java.lang.Object push(java.lang.Object)>
 
 <java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>
@@ -15,21 +20,25 @@
 <java.util.List: void add(int,java.lang.Object)>
 <java.util.List: boolean addAll(java.util.Collection)>
 <java.util.List: boolean addAll(int,java.util.Collection)>
+-<java.util.List: void clear()>
 
 <java.util.ArrayList: void <init>(java.util.Collection)>
 <java.util.LinkedList: void <init>(java.util.Collection)>
 
 <java.util.Set: boolean add(java.lang.Object)>
 <java.util.Set: boolean addAll(java.util.Collection)>
+-<java.util.Set: void clear()>
 
 <java.util.Collection: boolean add(java.lang.Object)>
 <java.util.Collection: boolean addAll(java.util.Collection)>
+-<java.util.Collection: void clear()>
 
 <java.util.Vector: void <init>(java.util.Collection)>
 <java.util.Vector: void add(int,java.lang.Object)>
 <java.util.Vector: boolean add(java.lang.Object)>
 <java.util.Vector: boolean addAll(java.util.Collection)>
 <java.util.Vector: void addElement(java.lang.Object)>
+-<java.util.Vector: void clear()>
 
 <java.io.StringReader: void <init>(java.lang.String)>
 

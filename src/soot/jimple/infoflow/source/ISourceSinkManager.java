@@ -4,7 +4,9 @@ import heros.InterproceduralCFG;
 import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.Stmt;
-
+/**
+ * the SourceSinkManager can tell if a statement contains a source or a sink
+ */
 public interface ISourceSinkManager {
 
 	/**

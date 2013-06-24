@@ -10,7 +10,11 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
-
+/**
+ * We are subclassing the JimpleIFDSSolver because we need the same executor for both the forward and the backward analysis
+ * Also we need to be able to insert edges containing new taint information
+ * 
+ */
 public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
 
 	public InfoflowSolver(IFDSTabulationProblem<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>> problem, boolean dumpResults, CountingThreadPoolExecutor executor) {

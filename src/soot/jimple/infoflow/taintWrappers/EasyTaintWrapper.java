@@ -129,7 +129,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 			InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
 			
-			if (taintedPath.getPlainValue().equals(iiExpr.getBase())) {
+			if (iiExpr.getBase().equals(taintedPath.getPlainValue())) {
 				// If the base object is tainted, we have to check whether we must kill the taint
 				List<String> killMethods = this.killList.get(stmt.getInvokeExpr().getMethod().getDeclaringClass().getName());
 				if (killMethods != null && killMethods.contains(stmt.getInvokeExpr().getMethod().getSubSignature()))
@@ -153,7 +153,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		
 		//if param is tainted && classList contains classname && if list. contains signature of method -> add propagation
 		for (Value param : stmt.getInvokeExpr().getArgs())
-			if (taintedPath.getPlainValue().equals(param)) {
+			if (param.equals(taintedPath.getPlainValue())) {		
 				if(methodList.contains(method.getSubSignature())) {
 					// If we call a method on an instance, this instance is assumed to be tainted
 					if(stmt.getInvokeExprBox().getValue() instanceof InstanceInvokeExpr) {

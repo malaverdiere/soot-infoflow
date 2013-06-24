@@ -3,8 +3,6 @@ package soot.jimple.infoflow.taintWrappers;
 import java.util.HashSet;
 import java.util.Set;
 
-import soot.SootClass;
-import soot.Value;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.AccessPath;
 

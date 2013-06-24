@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * argument parser which is used in {@link soot.jimple.infoflow.cmdInfoflow}. It parses the command line arguments.
+ * @author Christian
+ *
+ */
 public class ArgParser {
 	public static String METHODKEYWORD = "-entrypoints";
 	public static String SOURCEKEYWORD = "-sources";

@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * check taint propagation in all sorts of lists, for example LinkedLists, ArrayLists and Stacks.
+ */
 public class ListTests extends JUnitTests {
 
 	@Test

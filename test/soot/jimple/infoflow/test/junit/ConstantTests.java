@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * ensure proper taint propagation for constant values. 
+ */
 public class ConstantTests extends JUnitTests {
 	
 	  @Test

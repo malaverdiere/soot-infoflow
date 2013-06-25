@@ -10,6 +10,9 @@ import soot.jimple.BinopExpr;
 import soot.jimple.UnopExpr;
 import soot.jimple.internal.JCastExpr;
 
+/**
+ * BaseSelector removes unnecessary information from a value such as casts
+ */
 public class BaseSelector {
 	
 	/**

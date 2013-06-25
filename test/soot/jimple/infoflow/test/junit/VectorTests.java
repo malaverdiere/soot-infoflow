@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ *  test taint propagation in vectors
+ */
 public class VectorTests extends JUnitTests {
 
 	@Test

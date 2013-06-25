@@ -8,7 +8,9 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * contain several tests that cannot be assigned to the other categories - often they are added due to findings in real-world applications, including negative tests and tests for lifecycle handling
+ */
 public class OtherTests extends JUnitTests{
 
 	@Test
@@ -197,5 +199,16 @@ public class OtherTests extends JUnitTests{
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		negativeCheckInfoflow(infoflow);
 		
+    }
+
+    @Test
+    public void accessPathTest(){
+    	taintWrapper = false;
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void accessPathTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);
+		Assert.assertEquals(1, infoflow.getResults().size());
     }
 }

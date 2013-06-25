@@ -9,7 +9,9 @@ import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
-
+/**
+ * tests functionality of TaintWrapper. Additionally all tests can be executed with TaintWrapper by setting the debug flag in {@link soot.jimple.infoflow.test.junit.JUnitTests} to true
+ */
 public class EasyWrapperListTests extends JUnitTests {
 	
 	private final EasyTaintWrapper easyWrapper;

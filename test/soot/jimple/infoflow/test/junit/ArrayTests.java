@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * These tests check taint propagation in arrays, for instance the propagation for copied arrays and arrays converted to lists
+ */
 public class ArrayTests extends JUnitTests {
 
 	  @Test

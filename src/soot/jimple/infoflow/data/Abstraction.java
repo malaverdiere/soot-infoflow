@@ -7,16 +7,43 @@ import soot.SootField;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-
+/**
+ * the abstraction class contains all information that is necessary to track the taint.
+ *
+ */
 public class Abstraction implements Cloneable {
+	/**
+	 * the access path contains the currently tainted variable or field
+	 */
 	private final AccessPath accessPath;
 	private final Value source;
+	/**
+	 * the statement which contains the source
+	 */
 	private final Stmt sourceContext;
+	/**
+	 * Unit/Stmt which activates the taint when the abstraction passes it
+	 */
 	private Unit activationUnit;
+	/**
+	 * Unit/Stmt which activates the taint when the abstraction passes it,
+	 * adapts to the current level
+	 */
 	private Unit activationUnitOnCurrentLevel;
+	/**
+	 * active abstraction is tainted value,
+	 * inactive abstraction is an alias to a tainted value that
+	 * might be activated in the future
+	 */
 	private boolean isActive;
+	/**
+	 * taint is thrown by an exception (is set to false when it reaches the catch-Stmt)
+	 */
 	private boolean exceptionThrown;
 	private int hashCode;
+	/**
+	 * technically required to pass taint from backward to forward solver
+	 */
 	private Abstraction abstractionFromCallEdge;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
@@ -204,6 +231,11 @@ public class Abstraction implements Cloneable {
 	public Abstraction getNotNullAbstractionFromCallEdge(){
 		if(abstractionFromCallEdge == null)
 			return this;
+		/*
+		Abstraction abs = abstractionFromCallEdge.clone();
+		abs.abstractionFromCallEdge = abs.clone();
+		return abs;
+		*/
 		return abstractionFromCallEdge;
 	}
 	

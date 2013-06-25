@@ -59,7 +59,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			(final Stmt iStmt,
 			Abstraction source) {
 		Set<Abstraction> res = new HashSet<Abstraction>();
-		if(taintWrapper == null || !taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass()))
+		if(taintWrapper == null)
 			return Collections.emptySet();
 		
 		if (!source.getAccessPath().isStaticFieldRef())
@@ -79,7 +79,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		Set<AccessPath> vals = taintWrapper.getTaintsForMethod(iStmt, source.getAccessPath());
 		if(vals != null) {
 			for (AccessPath val : vals) {
-				Abstraction newAbs = source.deriveNewAbstraction(val, iStmt);
+				Abstraction newAbs = source.deriveNewAbstraction(val);
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					((AbstractionWithPath) newAbs).addPathElement(iStmt);
 				res.add(newAbs);
@@ -98,11 +98,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			}
 		}
 
-		// For the moment, we don't implement static taints on wrappers. Pass it on
-		// not to break anything
-		if(source.getAccessPath().isStaticFieldRef())
-			res.add(source);
-
 		return res;
 	}
 
@@ -117,7 +112,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	private boolean isWrapperExclusive
 			(final Stmt iStmt,
 			Abstraction source) {
-		if(taintWrapper == null || !taintWrapper.supportsTaintWrappingForClass(iStmt.getInvokeExpr().getMethod().getDeclaringClass()))
+		if(taintWrapper == null)
 			return false;
 		return taintWrapper.isExclusive(iStmt, source.getAccessPath());
 	}
@@ -215,7 +210,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
-								
+							
 							// shortcuts:
 							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {
@@ -235,7 +230,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (rightValue instanceof StaticFieldRef) {
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
 										if (newSource.getAccessPath().getFirstField().equals(rightRef.getField())) {
-											addLeftValue = true; //TODO: check all fields --> create Testcase for this!
+											addLeftValue = true;
 											cutFirstField = true;
 										}
 									}
@@ -538,7 +533,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-												
+						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource;
 						if(!source.isAbstractionActive()){
 							if(callSite.equals(source.getActivationUnit()) || callSite.equals(source.getActivationUnitOnCurrentLevel()) ){
@@ -549,8 +544,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}else{
 							newSource = source.cloneUsePredAbstractionOfCG();
-						}
-						
+						}					
+
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null && interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee)){
 							return Collections.emptySet();
@@ -720,11 +715,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean passOn = true;
 							//we only can remove the taint if we step into the call/return edges
 							//otherwise we will loose taint - see ArrayTests/arrayCopyTest
-							if(!interproceduralCFG().getCalleesOfCallAt(call).isEmpty() && taintWrapper == null) {
+							if(!interproceduralCFG().getCalleesOfCallAt(call).isEmpty() || (taintWrapper != null
+									&& taintWrapper.isExclusive(iStmt, newSource.getAccessPath()))) {
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
 									if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
-											(newSource.getAccessPath().getPlainLocal()))
+											(newSource.getAccessPath().getPlainLocal())) {
 										passOn = false;
+									}
 									if (passOn)
 										for (int i = 0; i < callArgs.size(); i++)
 											if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {

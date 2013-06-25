@@ -10,7 +10,11 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
-
+/**
+ * We are subclassing the JimpleIFDSSolver because we need the same executor for both the forward and the backward analysis
+ * Also we need to be able to insert edges containing new taint information
+ * 
+ */
 public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
 
 	public InfoflowSolver(IFDSTabulationProblem<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>> problem, boolean dumpResults, CountingThreadPoolExecutor executor) {
@@ -27,13 +31,10 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 		// We are generating a fact out of thin air here. If we have an
 		// edge <d1,n,d2>, there need not necessarily be a jump function
 		// to <n,d2>.
-		boolean prop = false;
-		if (!jumpFn.forwardLookup(edge.factAtSource(), edge.getTarget()).containsKey(edge.factAtTarget()))
-			prop = true;
-		if (jumpFn.forwardLookup(edge.factAtSource(), edge.getTarget()).isEmpty())
-			jumpFn.addFunction(edge.factAtSource(), edge.getTarget(), edge.factAtSource(),
+		if (!jumpFn.forwardLookup(edge.factAtSource(), edge.getTarget()).containsKey(edge.factAtTarget())) {
+			jumpFn.addFunction(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(),
 					EdgeIdentity.<IFDSSolver.BinaryDomain>v());
-		if (prop)
 			scheduleEdgeProcessing(edge);
+		}
 	}
 }

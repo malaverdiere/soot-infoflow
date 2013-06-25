@@ -20,7 +20,13 @@ import soot.jimple.infoflow.Infoflow;
 public class AccessPath implements Cloneable {
 	
 	// ATTENTION: This class *must* be immutable!
+	/*
+	 * tainted value, is not null for non-static values
+	 */
 	private final Value value;
+	/**
+	 * list of fields, either they are based on a concrete @value or they indicate a static field
+	 */
 	private final List<SootField> fields;
 	private int hashCode = 0;
 

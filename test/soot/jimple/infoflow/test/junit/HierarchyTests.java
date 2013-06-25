@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * covers taint propagation of fields with classes from a class hierarchy
+ */
 public class HierarchyTests extends JUnitTests {
 
 	   @Test

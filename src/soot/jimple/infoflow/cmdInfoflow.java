@@ -4,7 +4,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import soot.jimple.infoflow.util.ArgParser;
-
+/**
+ * cmdInfoflow offers a command-line interface to start the analysis.
+ * However, it is not efficiently usable for large amounts of entry points, sources and sinks.
+ * Therefore, most use-cases access the java classes directly.
+ *
+ */
 public class cmdInfoflow {
 
 	public static void main(String[] args) {

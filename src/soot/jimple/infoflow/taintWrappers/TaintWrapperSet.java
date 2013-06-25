@@ -3,8 +3,6 @@ package soot.jimple.infoflow.taintWrappers;
 import java.util.HashSet;
 import java.util.Set;
 
-import soot.SootClass;
-import soot.Value;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.AccessPath;
 
@@ -25,14 +23,6 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 	 */
 	public void addWrapper(ITaintPropagationWrapper wrapper) {
 		this.wrappers.add(wrapper);
-	}
-	
-	@Override
-	public boolean supportsTaintWrappingForClass(SootClass c) {
-		for (ITaintPropagationWrapper w : this.wrappers)
-			if (w.supportsTaintWrappingForClass(c))
-				return true;
-		return false;
 	}
 
 	@Override

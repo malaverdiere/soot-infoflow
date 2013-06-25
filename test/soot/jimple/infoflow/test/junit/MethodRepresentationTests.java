@@ -6,7 +6,9 @@ import org.junit.Test;
 
 import soot.jimple.infoflow.data.SootMethodAndClass;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
-
+/**
+ * check the conversion of Soot's String representation into our internal data format. 
+ */
 public class MethodRepresentationTests {
 
 	@Test

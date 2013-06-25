@@ -11,7 +11,9 @@ import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
-
+/**
+ * contain tests for Taintwrapper and parameters as sources and sinks
+ */
 public class InFunctionTests extends JUnitTests {
 
 	private static final String SOURCE_STRING_PARAMETER = "@parameter0: java.lang.String";

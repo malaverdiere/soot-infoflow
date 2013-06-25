@@ -17,10 +17,12 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 	
 	PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	
+	@Override
 	public void setPathTracking(PathTrackingMethod method) {
 		this.pathTracking = method;
 	}
 
+	@Override
 	public Set<Abstraction> getTaintedValues(Stmt call, Abstraction source, List<Value> params){
 		HashSet<Abstraction> set = new HashSet<Abstraction>();
 		
@@ -41,7 +43,6 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 			//generic case: add taint to all non-primitive datatypes:
 			for (int i = 0; i < params.size(); i++) {
 				Value argValue = params.get(i);
-				//if (!(argValue.getType() instanceof PrimType)) {
 				if (DataTypeHandler.isFieldRefOrArrayRef(argValue) && !(argValue instanceof Constant)) {
 					if (pathTracking == PathTrackingMethod.ForwardTracking)
 						set.add(new AbstractionWithPath(argValue,

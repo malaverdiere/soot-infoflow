@@ -90,11 +90,11 @@ public class Infoflow implements IInfoflow {
 		taintWrapper = wrapper;
 	}
 
-
 	public static void setDebug(boolean debugflag) {
 		debug = debugflag;
 	}
-	
+
+	@Override
 	public void setInspectSinks(boolean inspect){
 		inspectSinks = inspect;
 	}
@@ -181,9 +181,7 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
 		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
-		//for benchmark/comparison:
-		//soot.options.Options.v().setPhaseOption("cg.spark", "vta:true");
-//		soot.options.Options.v().setPhaseOption("cg.spark", "rta:true");
+
 		if (extraSeed == null || extraSeed.isEmpty())
 			Options.v().setPhaseOption("cg.spark", "on");
 		else
@@ -469,10 +467,12 @@ public class Infoflow implements IInfoflow {
 		return true;
 	}
 
+	
 	public static int getAccessPathLength() {
 		return accessPathLength;
 	}
-
+	
+	@Override
 	public void setAccessPathLength(int accessPathLength) {
 		Infoflow.accessPathLength = accessPathLength;
 	}

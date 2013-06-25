@@ -27,8 +27,7 @@ public class OtherTestCode {
 		String alsoTainted = c0.getString();
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(alsoTainted);
-		
+		cm.publish(alsoTainted);	
 	}
 
 	private String deviceId = "";
@@ -379,6 +378,31 @@ public class OtherTestCode {
 		public String getField1(){
 			return field1;
 		}
+	}
+	
+	class MyLinkedList {
+		Object element;
+		MyLinkedList nextElement;
+	}
+	
+	public void accessPathTest() {
+		MyLinkedList ll1 = new MyLinkedList();
+		ll1.nextElement = new MyLinkedList();
+		ll1.nextElement.nextElement = new MyLinkedList();
+		ll1.nextElement.nextElement.nextElement = new MyLinkedList();
+		ll1.nextElement.nextElement.nextElement.nextElement = new MyLinkedList();
+		
+		String tainted = TelephonyManager.getDeviceId();
+
+		MyLinkedList taintedList = new MyLinkedList();
+		taintedList.element = tainted;
+		taintedList.nextElement = new MyLinkedList();
+		ll1.nextElement.nextElement.nextElement.nextElement.nextElement = taintedList;
+		ll1.nextElement.nextElement.nextElement.nextElement.nextElement.nextElement.nextElement = null;
+
+		ConnectionManager cm = new ConnectionManager();
+		
+		cm.publish((String) ll1.nextElement.nextElement.nextElement.nextElement.nextElement.element);
 	}
 	
 }

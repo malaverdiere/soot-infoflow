@@ -198,4 +198,15 @@ public class OtherTests extends JUnitTests{
 		negativeCheckInfoflow(infoflow);
 		
     }
+
+    @Test
+    public void accessPathTest(){
+    	taintWrapper = false;
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void accessPathTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);
+		Assert.assertEquals(1, infoflow.getResults().size());
+    }
 }

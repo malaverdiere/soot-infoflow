@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * test taint propagation of fields. A certain length of the access paths is required to distinguish the tainted fields.
+ */
 public class LengthTests extends JUnitTests {
 
 	@Test

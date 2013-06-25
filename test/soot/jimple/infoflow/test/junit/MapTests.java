@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * contain test cases for taint propagation in Maps.
+ */
 public class MapTests extends JUnitTests {
 
     @Test

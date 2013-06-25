@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * cover taint propagation within inherited classes
+ */
 public class InheritanceTests extends JUnitTests {
 	
 	@Test

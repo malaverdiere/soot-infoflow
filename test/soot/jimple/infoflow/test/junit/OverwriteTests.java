@@ -8,7 +8,9 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-
+/**
+ * test the overwrite behavior of tainted variables, fields and static variables 
+ */
 public class OverwriteTests extends JUnitTests {
 
 	  @Test

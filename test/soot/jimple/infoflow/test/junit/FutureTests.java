@@ -10,7 +10,7 @@ import org.junit.Test;
 import soot.jimple.infoflow.Infoflow;
 
 /**
- * Diese Klasse enthält Tests für Funktionen, die FlowDroid momentan noch nicht unterstützt.
+ * ontains test for functionality which is currently not supported by FlowDroid.
  * 
  */
 public class FutureTests extends JUnitTests {

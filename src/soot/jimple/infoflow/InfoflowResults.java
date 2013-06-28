@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.InvokeExpr;
@@ -20,6 +22,8 @@ import soot.tagkit.Tag;
  * @author Steven Arzt
  */
 public class InfoflowResults {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	/**
 	 * Class for modeling information flowing out of a specific source
@@ -63,7 +67,7 @@ public class InfoflowResults {
             StringBuilder sb = new StringBuilder(context.toString());
 
             if (context.hasTag("LineNumberTag"))
-                sb.append(" on line ").append(((LineNumberTag)context.getTag("LineNumberTag")).getLineNumber());
+                sb.append(" on line ").append(((LineNumberTag) context.getTag("LineNumberTag")).getLineNumber());
 
             return sb.toString();
         }
@@ -308,9 +312,9 @@ public class InfoflowResults {
 	 */
 	public void printResults() {
 		for (SinkInfo sink : this.results.keySet()) {
-			System.out.println("Found a flow to sink " + sink + " from the following sources:");
+			logger.info("Found a flow to sink {}, from the following sources:", sink);
 			for (SourceInfo source : this.results.get(sink))
-				System.out.println("\t- " + source.getSource());
+				logger.info("\t- {}", source.getSource());
 		}
 	}
 

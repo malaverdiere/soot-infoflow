@@ -2,10 +2,7 @@ package soot.jimple.infoflow;
 
 import java.util.List;
 
-import soot.SootMethod;
 import soot.Transform;
-import soot.Transformer;
-import soot.Unit;
 import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.source.ISourceSinkManager;

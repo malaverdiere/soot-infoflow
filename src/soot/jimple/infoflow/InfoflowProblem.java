@@ -88,7 +88,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				// backwards as there might be aliases for the base object
 				if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-					if(newAbs.getAccessPath().getPlainValue().equals(iiExpr.getBase())
+					if(iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
 								|| newAbs.getAccessPath().isStaticFieldRef()) {
 							Abstraction bwAbs = source.deriveNewAbstraction(val,iStmt, false);
 							for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))

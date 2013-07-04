@@ -185,9 +185,10 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		}
 		else if (tp instanceof ArrayType) {
 			Value arrVal = buildArrayOfType(body, gen, (ArrayType) tp, constructionStack, parentClasses);
-			if (arrVal == null)
+			if (arrVal == null) {
+				System.err.println("Warning: Array parameter substituted by null");
 				return NullConstant.v();
-			System.err.println("Warning: Array paramater substituted by null");
+			}
 			return arrVal;
 		}
 		else {

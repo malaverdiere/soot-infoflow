@@ -181,6 +181,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					if (applicationClass != null)
 						throw new RuntimeException("Multiple application classes in app");
 					applicationClass = currentClass;
+					applicationCallbackClasses.add(applicationClass);
 					
 					// Create the application
 					applicationLocal = generateClassConstructor(applicationClass, body);
@@ -337,9 +338,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		// Add conditional calls to the application callback methods
 		if (applicationLocal != null) {
-			addApplicationCallbackMethods(applicationClass, applicationLocal);
-			for (SootClass callbackClass : applicationCallbackClasses)
-				addApplicationCallbackMethods(callbackClass, localVarsForClasses.get(callbackClass.getName()));
+			Unit beforeAppCallbacks = Jimple.v().newNopStmt();
+			body.getUnits().add(beforeAppCallbacks);			
+			addApplicationCallbackMethods();
+			createIfStmt(beforeAppCallbacks);
 		}
 		
 		createIfStmt(outerStartStmt);
@@ -677,35 +679,39 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * @param applicationLocal The local containing the instance of the
 	 * user-defined application
 	 */
-	private void addApplicationCallbackMethods(SootClass applicationClass,
-			Local applicationLocal) {
-		// There may be multiple user classes between the class registered in
-		// the manifest file and the Android system class
-		for (SootClass currentClass : Scene.v().getActiveHierarchy()
-				.getSuperclassesOfIncluding(applicationClass)) {
-			// If we have arrived at the Android system class, we can abort the
-			// search
-			if (currentClass.getName().equals(AndroidEntryPointConstants.APPLICATIONCLASS))
-				break;
-			
-			for (SootMethod method : currentClass.getMethods()) {
-				// Do not add calls to constructor methods
-				if (method.isConstructor())
-					continue;
-				
+	private void addApplicationCallbackMethods() {
+		if (!this.callbackFunctions.containsKey(applicationClass.getName()))
+			return;
+		
+		// Find all callback methods registered for the application
+		for (SootClass applicationClass : this.applicationCallbackClasses)
+			for (String methodSig : this.callbackFunctions.get(this.applicationClass.getName())) {
+				SootMethodAndClass methodAndClass = SootMethodRepresentationParser.v().parseSootMethodString(methodSig);
+		
 				// We do not consider lifecycle methods which are directly inserted
 				// at their respective positions
 				if (AndroidEntryPointConstants.getApplicationLifecycleMethods().contains
-						(method.getSubSignature()))
+						(methodAndClass.getSubSignature()))
 					continue;
-				
+					
+				SootMethod method = findMethod(applicationClass, methodAndClass.getSubSignature());
+				// If we found no implementation or if the implementation we found
+				// is in a system class, we skip it. Note that null methods may
+				// happen since all callback interfaces for application callbacks
+				// are registered under the name of the application class.
+				if (method == null)
+					continue;
+				if (method.getDeclaringClass().getName().startsWith("android.")
+						|| method.getDeclaringClass().getName().startsWith("java."))
+					continue;
+					
 				// Add a conditional call to the method
 				JNopStmt thenStmt = new JNopStmt();
 				createIfStmt(thenStmt);
-				buildMethodCall(method, body, applicationLocal, generator);	
+				buildMethodCall(method, body, this.localVarsForClasses.get
+						(applicationClass.getName()), generator);	
 				body.getUnits().add(thenStmt);
 			}
-		}
 	}
 
 	/**

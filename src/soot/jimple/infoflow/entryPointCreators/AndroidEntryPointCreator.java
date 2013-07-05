@@ -685,7 +685,16 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			return;
 		
 		// Find all callback methods registered for the application
-		for (SootClass applicationClass : this.applicationCallbackClasses)
+		for (SootClass applicationClass : this.applicationCallbackClasses) {
+			// Do not try to generate calls to methods in non-concrete classes
+			if (applicationClass.isAbstract())
+				continue;
+			if (applicationClass.isPhantom()) {
+				System.err.println("Skipping possible application callbacks in "
+						+ "phantom class " + applicationClass);
+				continue;
+			}
+
 			for (String methodSig : this.callbackFunctions.get(this.applicationClass.getName())) {
 				SootMethodAndClass methodAndClass = SootMethodRepresentationParser.v().parseSootMethodString(methodSig);
 		
@@ -705,13 +714,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				if (method.getDeclaringClass().getName().startsWith("android.")
 						|| method.getDeclaringClass().getName().startsWith("java."))
 					continue;
-				if (method.getDeclaringClass().isAbstract())
-					continue;
-				if (method.getDeclaringClass().isPhantom()) {
-					System.err.println("Skipping possible application callbacks in "
-							+ "phantom class for method " + method.getSignature());
-					continue;
-				}
 					
 				// Add a conditional call to the method
 				JNopStmt thenStmt = new JNopStmt();
@@ -720,6 +722,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 						(applicationClass.getName()), generator);	
 				body.getUnits().add(thenStmt);
 			}
+		}
 	}
 
 	/**

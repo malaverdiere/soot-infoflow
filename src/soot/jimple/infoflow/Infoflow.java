@@ -186,7 +186,7 @@ public class Infoflow implements IInfoflow {
 			Options.v().set_output_format(Options.output_format_none);
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
-		Options.v().set_process_dir(Arrays.asList(classes.toArray()));
+		Options.v().set_process_dir(new ArrayList<String>(classes));
 
 		if (extraSeed == null || extraSeed.isEmpty())
 			Options.v().setPhaseOption("cg.spark", "on");

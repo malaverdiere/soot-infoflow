@@ -191,7 +191,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			Value arrVal = buildArrayOfType(body, gen, (ArrayType) tp, constructionStack, parentClasses);
 			if (arrVal == null)
 				return NullConstant.v();
-			logger.warn("Array paramater substituted by null");
+			logger.warn("Array parameter substituted by null");
 			return arrVal;
 		}
 		else {
@@ -199,7 +199,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			return null;
 		}
 		throw new RuntimeException("Should never see me");
-	}
+    }
 	
 	/**
 	 * Constructs an array of the given type with a single element of this type

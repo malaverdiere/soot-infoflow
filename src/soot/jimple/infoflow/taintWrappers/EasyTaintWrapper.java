@@ -113,7 +113,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		
 		// If the callee is a phantom class or has no body, we pass on the taint
 		if (method.isPhantom() || !method.hasActiveBody())
-			return Collections.singleton(taintedPath);
+			taints.add(taintedPath);
 
 		// If this is not one of the supported classes, we skip it
 		boolean isSupported = false;

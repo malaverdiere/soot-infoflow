@@ -208,7 +208,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 								applicationCallbackClasses.add(theClass);
 								l = generateClassConstructor(theClass, body,
 										Collections.singleton(applicationClass));
-								localVarsForClasses.put(callbackClass, l);
+								if (l != null)
+									localVarsForClasses.put(callbackClass, l);
 							}
 							
 							body.getUnits().add(thenStmt);
@@ -704,6 +705,13 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				if (method.getDeclaringClass().getName().startsWith("android.")
 						|| method.getDeclaringClass().getName().startsWith("java."))
 					continue;
+				if (method.getDeclaringClass().isAbstract())
+					continue;
+				if (method.getDeclaringClass().isPhantom()) {
+					System.err.println("Skipping possible application callbacks in "
+							+ "phantom class for method " + method.getSignature());
+					continue;
+				}
 					
 				// Add a conditional call to the method
 				JNopStmt thenStmt = new JNopStmt();

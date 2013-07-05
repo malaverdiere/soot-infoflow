@@ -3,17 +3,26 @@ package soot.jimple.infoflow.test.junit;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.config.IInfoflowConfig;
+import soot.options.Options;
 /**
  * covers taint propagation for Strings, String functions such as concat, toUpperCase() or substring, but also StringBuilder and concatenation via '+' operato
  * @author Christian
  *
  */
 public class StringTests extends JUnitTests {
+	
+	@Before
+	public void init() {
+    	taintWrapper = false;
+	}
 	
 	@Test
     public void multipleSourcesTest(){
@@ -196,6 +205,26 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);		
     }
     
+    @Test
+    public void stringBuilderTest2_NoJDK(){
+    	taintWrapper = true;
+    	Infoflow infoflow = initInfoflow();
+    	infoflow.setSootConfig(new IInfoflowConfig() {
+			
+			@Override
+			public void setSootOptions(Options options) {
+				options.set_include(Collections.emptyList());
+				options.set_exclude(Collections.singletonList("java."));
+				options.set_prepend_classpath(false);
+			}
+			
+		});
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder2()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);		
+    }
+
     @Test
     public void stringBuilderTest3(){
     	Infoflow infoflow = initInfoflow();

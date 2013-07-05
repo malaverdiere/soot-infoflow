@@ -189,13 +189,14 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		}
 		else if (tp instanceof ArrayType) {
 			Value arrVal = buildArrayOfType(body, gen, (ArrayType) tp, constructionStack, parentClasses);
-			if (arrVal == null)
+			if (arrVal == null){
+				logger.warn("Array parameter substituted by null");
 				return NullConstant.v();
-			logger.warn("Array parameter substituted by null");
+			}
 			return arrVal;
 		}
 		else {
-			logger.warn("Unsupported parameter type: " + tp.toString());
+			logger.warn("Unsupported parameter type: {}", tp.toString());
 			return null;
 		}
 		throw new RuntimeException("Should never see me");

@@ -27,7 +27,7 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 		return executor;
 	}
 
-	public void processEdge(PathEdge<Unit, Abstraction, SootMethod> edge){
+	public void processEdge(PathEdge<Unit, Abstraction> edge){
 		// We are generating a fact out of thin air here. If we have an
 		// edge <d1,n,d2>, there need not necessarily be a jump function
 		// to <n,d2>.

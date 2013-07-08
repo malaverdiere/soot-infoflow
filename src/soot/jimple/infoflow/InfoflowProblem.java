@@ -92,7 +92,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								|| newAbs.getAccessPath().isStaticFieldRef()) {
 							Abstraction bwAbs = source.deriveNewAbstraction(val,iStmt, false);
 							for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
-								bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+								bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 					}
 				}
 			}
@@ -145,7 +145,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					// call backwards-check:
 					Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
 					for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
-						bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+						bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 					}
 				}
 			}
@@ -574,7 +574,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										if (abs.isAbstractionActive())
 											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-											bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+											bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 									}
 								}
 							}
@@ -611,7 +611,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (newSource.isAbstractionActive())
 								bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 							for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-								bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+								bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 						}
 						
 						// checks: this/params/fields
@@ -637,7 +637,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											if (abs.isAbstractionActive())
 												bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-												bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+												bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 										}
 									}
 								}
@@ -673,7 +673,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												if (abs.isAbstractionActive())
 													bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+													bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 											}
 										}
 									}
@@ -831,7 +831,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	public InfoflowProblem(ISourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds) {
 	    super(new JimpleBasedBiDiICFG());
 	    this.sourceSinkManager = mySourceSinkManager;
-	    this.initialSeeds.addAll(analysisSeeds);
+	    for (Unit u : analysisSeeds)
+	    	this.initialSeeds.put(u, Collections.singleton(zeroValue));
     }
 
     @Override

@@ -337,7 +337,7 @@ public class Infoflow implements IInfoflow {
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
 							if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
-								forwardProblem.initialSeeds.add(u);
+								forwardProblem.initialSeeds.put(u, Collections.singleton(forwardProblem.zeroValue));
 
 								if (debug)
 									System.out.println("Source found: " + u);
@@ -360,7 +360,8 @@ public class Infoflow implements IInfoflow {
 							System.err.println("Seed method " + m + " has no active body");
 							continue;
 						}
-						forwardProblem.initialSeeds.add(m.getActiveBody().getUnits().getFirst());
+						forwardProblem.initialSeeds.put(m.getActiveBody().getUnits().getFirst(),
+								Collections.singleton(forwardProblem.zeroValue));
 					}
 
 				// In Debug mode, we write the Jimple files to disk

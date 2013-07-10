@@ -42,10 +42,10 @@ import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
-	InfoflowSolver bSolver; 
+	private InfoflowSolver bSolver; 
 	private final static boolean DEBUG = false;
-	final ISourceSinkManager sourceSinkManager;
-	Abstraction zeroValue = null;
+	private final ISourceSinkManager sourceSinkManager;
+	private Abstraction zeroValue = null;
 	
 	/**
 	 * Computes the taints produced by a taint wrapper object
@@ -809,18 +809,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	}
 
 	public InfoflowProblem(List<String> sourceList, List<String> sinkList) {
-		super(new JimpleBasedBiDiICFG());
-		this.sourceSinkManager = new DefaultSourceSinkManager(sourceList, sinkList);
+		this(new JimpleBasedBiDiICFG(), new DefaultSourceSinkManager(sourceList, sinkList));
 	}
 
 	public InfoflowProblem(ISourceSinkManager sourceSinkManager) {
-		super(new JimpleBasedBiDiICFG());
-		this.sourceSinkManager = sourceSinkManager;
+		this(new JimpleBasedBiDiICFG(), sourceSinkManager);
 	}
 
 	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinkList) {
-		super(icfg);
-		this.sourceSinkManager = new DefaultSourceSinkManager(sourceList, sinkList);
+		this(icfg, new DefaultSourceSinkManager(sourceList, sinkList));
 	}
 
 	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, ISourceSinkManager sourceSinkManager) {
@@ -829,8 +826,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	}
 
 	public InfoflowProblem(ISourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds) {
-	    super(new JimpleBasedBiDiICFG());
-	    this.sourceSinkManager = mySourceSinkManager;
+	    this(new JimpleBasedBiDiICFG(), mySourceSinkManager);
 	    for (Unit u : analysisSeeds)
 	    	this.initialSeeds.put(u, Collections.singleton(zeroValue));
     }

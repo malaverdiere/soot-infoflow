@@ -37,7 +37,7 @@ import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
  * class which contains the flow functions for the backwards solver. This is required for on-demand alias analysis.
  */
 public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
-	InfoflowSolver fSolver;
+	private InfoflowSolver fSolver;
 
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper) {
 		taintWrapper = wrapper;

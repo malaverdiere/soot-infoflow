@@ -337,7 +337,7 @@ public class Infoflow implements IInfoflow {
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
 							if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
-								forwardProblem.initialSeeds.put(u, Collections.singleton(forwardProblem.zeroValue));
+								forwardProblem.initialSeeds.put(u, Collections.singleton(forwardProblem.zeroValue()));
 
 								if (debug)
 									System.out.println("Source found: " + u);
@@ -361,7 +361,7 @@ public class Infoflow implements IInfoflow {
 							continue;
 						}
 						forwardProblem.initialSeeds.put(m.getActiveBody().getUnits().getFirst(),
-								Collections.singleton(forwardProblem.zeroValue));
+								Collections.singleton(forwardProblem.zeroValue()));
 					}
 
 				// In Debug mode, we write the Jimple files to disk

@@ -39,5 +39,34 @@
 			</manifest>
 		</jar>
 	</target>
+	
+	<target name="runtests" depends="compile">
+		<mkdir dir="reports" />
+		<junit printsummary="yes">
+			<jvmarg value="-Xmx5G" />
+			<classpath>
+				<pathelement location="${soot.jar}" />
+				<pathelement location="bin" />
+				<fileset dir="lib">
+					<include name="*.jar" />
+				</fileset>
+			</classpath>
+
+			<formatter type="xml" usefile="true" />
+			<batchtest todir="reports">
+				<fileset dir="bin" includes="soot/jimple/infoflow/test/junit/*.class" />
+			</batchtest>
+		</junit>
+		<antcall target="reporttests" />
+	</target>
+
+	<target name="reporttests">
+		<junitreport tofile="TESTS-TestSuites.xml" todir="reports">
+			<fileset dir="reports">
+				<include name="TEST-*.xml" />
+			</fileset>
+			<report format="frames" todir="reports" />
+		</junitreport>
+	</target>
 
 </project>

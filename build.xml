@@ -1,4 +1,4 @@
-<project default="compile" name="Fetch or Build FlowDroid">
+<project default="compile" name="soot-infoflow">
 	  <property file="ant.settings"/>
 	    <target name="settings">
 	        <fail
@@ -65,7 +65,7 @@
 
 			<formatter type="xml" usefile="true" />
 			<batchtest todir="reports">
-				<fileset dir="bin" includes="soot/jimple/infoflow/test/junit/*.class" />
+				<fileset dir="bin" includes="soot/jimple/infoflow/test/**/*Tests.class" />
 			</batchtest>
 		</junit>
 	</target>

@@ -39,7 +39,21 @@
 		</jar>
 	</target>
 	
-	<target name="runtests" depends="compile">
+	<target name="compiletests" depends="settings,compile">
+		<mkdir dir="bin" />
+		<javac srcdir="src" includeantruntime="true" source="1.6" target="1.6" destdir="bin">
+			<sourcepath>
+				<pathelement location="src" />
+				<pathelement location="test" />
+				<pathelement location="securiBench" />
+			</sourcepath>
+			<classpath>
+				<pathelement location="${soot.jar}" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="runtests" depends="compiletests">
 		<mkdir dir="reports" />
 		<junit printsummary="yes">
 			<jvmarg value="-Xmx5G" />
@@ -53,7 +67,7 @@
 
 			<formatter type="xml" usefile="true" />
 			<batchtest todir="reports">
-				<fileset dir="test" includes="soot/jimple/infoflow/test/junit/*.java" />
+				<fileset dir="bin" includes="soot/jimple/infoflow/test/junit/*.class" />
 			</batchtest>
 		</junit>
 		<antcall target="reporttests" />

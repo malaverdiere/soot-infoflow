@@ -41,7 +41,7 @@
 	
 	<target name="compiletests" depends="settings,compile">
 		<mkdir dir="bin" />
-		<javac srcdir="src" includeantruntime="true" source="1.6" target="1.6" destdir="bin">
+		<javac includeantruntime="true" source="1.6" target="1.6" destdir="bin">
 			<sourcepath>
 				<pathelement location="src" />
 				<pathelement location="test" />

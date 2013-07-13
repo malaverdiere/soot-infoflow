@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ public class Infoflow implements IInfoflow {
     private List<Transform> preProcessors = Collections.emptyList();
     private BiDiInterproceduralCFG<Unit,SootMethod> iCfg;
     
-    private Set<ResultsAvailableHandler> onResultsAvailable = null;
+    private Set<ResultsAvailableHandler> onResultsAvailable = new HashSet<ResultsAvailableHandler>();
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.

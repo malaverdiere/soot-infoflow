@@ -53,7 +53,7 @@
 
 			<formatter type="xml" usefile="true" />
 			<batchtest todir="reports">
-				<fileset dir="bin" includes="soot/jimple/infoflow/test/junit/*.class" />
+				<fileset dir="test" includes="soot/jimple/infoflow/test/junit/*.java" />
 			</batchtest>
 		</junit>
 		<antcall target="reporttests" />

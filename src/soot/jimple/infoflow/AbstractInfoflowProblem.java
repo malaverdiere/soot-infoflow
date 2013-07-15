@@ -2,7 +2,8 @@ package soot.jimple.infoflow;
 
 import heros.InterproceduralCFG;
 
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import soot.NullType;
@@ -52,7 +53,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 
 	
 	
-	protected final Set<Unit> initialSeeds = new HashSet<Unit>();
+	protected final Map<Unit, Set<Abstraction>> initialSeeds = new HashMap<Unit, Set<Abstraction>>();
 	protected final InfoflowResults results;
 	protected ITaintPropagationWrapper taintWrapper;
 	protected PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
@@ -129,14 +130,14 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 * @return True if the given method is an entry point, otherwise false
 	 */
 	protected boolean isInitialMethod(SootMethod sm) {
-		for (Unit u : this.initialSeeds)
+		for (Unit u : this.initialSeeds.keySet())
 			if (interproceduralCFG().getMethodOf(u) == sm)
 				return true;
 		return false;
 	}
 	
 	@Override
-	public Set<Unit> initialSeeds() {
+	public Map<Unit, Set<Abstraction>> initialSeeds() {
 		return initialSeeds;
 	}
 	

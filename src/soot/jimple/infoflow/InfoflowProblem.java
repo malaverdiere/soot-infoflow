@@ -42,10 +42,10 @@ import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
-	InfoflowSolver bSolver; 
+	private InfoflowSolver bSolver; 
 	private final static boolean DEBUG = false;
-	final ISourceSinkManager sourceSinkManager;
-	Abstraction zeroValue = null;
+	private final ISourceSinkManager sourceSinkManager;
+	private Abstraction zeroValue = null;
 	
 	/**
 	 * Computes the taints produced by a taint wrapper object
@@ -92,7 +92,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								|| newAbs.getAccessPath().isStaticFieldRef()) {
 							Abstraction bwAbs = source.deriveNewAbstraction(val,iStmt, false);
 							for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
-								bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+								bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 					}
 				}
 			}
@@ -145,7 +145,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					// call backwards-check:
 					Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
 					for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
-						bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+						bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 					}
 				}
 			}
@@ -574,7 +574,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										if (abs.isAbstractionActive())
 											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-											bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+											bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 									}
 								}
 							}
@@ -611,7 +611,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (newSource.isAbstractionActive())
 								bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 							for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-								bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+								bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 						}
 						
 						// checks: this/params/fields
@@ -637,7 +637,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											if (abs.isAbstractionActive())
 												bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-												bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+												bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 										}
 									}
 								}
@@ -673,7 +673,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												if (abs.isAbstractionActive())
 													bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
+													bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 											}
 										}
 									}
@@ -809,18 +809,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	}
 
 	public InfoflowProblem(List<String> sourceList, List<String> sinkList) {
-		super(new JimpleBasedBiDiICFG());
-		this.sourceSinkManager = new DefaultSourceSinkManager(sourceList, sinkList);
+		this(new JimpleBasedBiDiICFG(), new DefaultSourceSinkManager(sourceList, sinkList));
 	}
 
 	public InfoflowProblem(ISourceSinkManager sourceSinkManager) {
-		super(new JimpleBasedBiDiICFG());
-		this.sourceSinkManager = sourceSinkManager;
+		this(new JimpleBasedBiDiICFG(), sourceSinkManager);
 	}
 
 	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinkList) {
-		super(icfg);
-		this.sourceSinkManager = new DefaultSourceSinkManager(sourceList, sinkList);
+		this(icfg, new DefaultSourceSinkManager(sourceList, sinkList));
 	}
 
 	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, ISourceSinkManager sourceSinkManager) {
@@ -829,9 +826,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	}
 
 	public InfoflowProblem(ISourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds) {
-	    super(new JimpleBasedBiDiICFG());
-	    this.sourceSinkManager = mySourceSinkManager;
-	    this.initialSeeds.addAll(analysisSeeds);
+	    this(new JimpleBasedBiDiICFG(), mySourceSinkManager);
+	    for (Unit u : analysisSeeds)
+	    	this.initialSeeds.put(u, Collections.singleton(zeroValue));
     }
 
     @Override

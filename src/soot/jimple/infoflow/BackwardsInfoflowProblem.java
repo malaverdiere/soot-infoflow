@@ -19,6 +19,7 @@ import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.FieldRef;
 import soot.jimple.IdentityStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
@@ -71,7 +72,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if(iStmt.getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
 									fSolver.processEdge(new PathEdge<Unit, Abstraction>
-										(source.getNotNullAbstractionFromCallEdge(), u, source));
+										(source.getAbstractionFromCallEdge(), u, source));
 								return Collections.emptySet();
 							}
 							return Collections.singleton(source);
@@ -105,12 +106,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							// Taints written into static fields are passed on "as is".
 							if (leftValue instanceof StaticFieldRef)
 								return Collections.singleton(source);
-
+							
 							//new Stmt -> no more backwards propagation, start forward pass:
 							if(leftValue.equals(source.getAccessPath().getPlainValue())&&
 									rightValue instanceof NewExpr){
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-									fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getNotNullAbstractionFromCallEdge(), u, source));
+									fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getAbstractionFromCallEdge(), u, source));
 								return Collections.emptySet();
 							}
 							
@@ -126,31 +127,33 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 											&& ref.getField().equals(source.getAccessPath().getFirstField())) {
 										Abstraction abs = source.deriveNewAbstraction(leftValue, true, null);
 										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction>(abs.getNotNullAbstractionFromCallEdge(), u, abs));
+											fSolver.processEdge(new PathEdge<Unit, Abstraction>(abs.getAbstractionFromCallEdge(), u, abs));
 									}
 								}
 								else if (rightValue.equals(source.getAccessPath().getPlainValue())) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue));
 									for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-										fSolver.processEdge(new PathEdge<Unit, Abstraction>(abs.getNotNullAbstractionFromCallEdge(), u, abs));
+										fSolver.processEdge(new PathEdge<Unit, Abstraction>(abs.getAbstractionFromCallEdge(), u, abs));
 								}
+								
 								// If we have an assignment to the base local of the current taint,
 								// all taint propagations must be below that point, so this is the
 								// right point to turn around.
-								else {
-									boolean leftSideMatches = leftValue.equals(source.getAccessPath().getPlainValue());
-									if (!leftSideMatches && leftValue instanceof InstanceFieldRef) {
-										InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
-										leftSideMatches = source.getAccessPath().isInstanceFieldRef()
-												&& leftRef.getBase().equals(source.getAccessPath().getPlainValue())
-												&& leftRef.getField().equals(source.getAccessPath().getFirstField());
-									}
-									if (leftSideMatches
-											&& (rightValue instanceof NewExpr
-													|| rightValue instanceof NewArrayExpr
-													|| rightValue instanceof Constant)) {
-										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getNotNullAbstractionFromCallEdge(), u, source));
+								boolean leftSideMatches = leftValue.equals(source.getAccessPath().getPlainValue());
+								if (!leftSideMatches && leftValue instanceof InstanceFieldRef) {
+									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
+									leftSideMatches = source.getAccessPath().isInstanceFieldRef()
+											&& leftRef.getBase().equals(source.getAccessPath().getPlainValue())
+											&& leftRef.getField().equals(source.getAccessPath().getFirstField());
+								}
+								if (leftSideMatches
+										&& (rightValue instanceof NewExpr
+												|| rightValue instanceof NewArrayExpr
+												|| rightValue instanceof Constant
+												|| rightValue instanceof FieldRef)) {
+									for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src)) {
+										Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue));
+										fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getAbstractionFromCallEdge(), u, abs));
 									}
 								}
 							}
@@ -215,7 +218,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								for (Abstraction a : res)
 									if (a.getAccessPath().isStaticFieldRef() || triggerInaktiveTaintOrReverseFlow(a.getAccessPath().getPlainValue(), a)) {
 										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src)){
-											fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getNotNullAbstractionFromCallEdge(), u, a));
+											fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getAbstractionFromCallEdge(), u, a));
 										}
 									}
 								return res;
@@ -334,7 +337,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals(source.getAccessPath().getPlainValue())){
 								//terminates here, but we have to start a forward pass to consider all method calls:
 								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(iStmt))
-									fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getNotNullAbstractionFromCallEdge(), u, source));
+									fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getAbstractionFromCallEdge(), u, source));
 							}else{
 								res.add(source);
 							}

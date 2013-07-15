@@ -459,7 +459,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-					
+						
 						//if we do not have to look into sinks:
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
@@ -533,6 +533,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
+
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource;
 						if(!source.isAbstractionActive()){
@@ -748,13 +749,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (sourceSinkManager.isSource(stmt, interproceduralCFG())) {
 									if (DEBUG)
 										System.out.println("Found source: " + stmt.getInvokeExpr().getMethod());
+									Abstraction abs; 
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										res.add(new AbstractionWithPath(stmt.getLeftOp(),
+										abs = new AbstractionWithPath(stmt.getLeftOp(),
 												stmt.getInvokeExpr(),
-												stmt, false, true, iStmt).addPathElement(call));
+												stmt, false, true, iStmt).addPathElement(call);
 									else
-										res.add(new Abstraction(stmt.getLeftOp(),
-												stmt.getInvokeExpr(), stmt, false, true, iStmt));
+										abs = new Abstraction(stmt.getLeftOp(),
+												stmt.getInvokeExpr(), stmt, false, true, iStmt);
+									abs.setZeroAbstraction(source.getZeroAbstraction());
+									res.add(abs);
 									res.remove(zeroValue);
 								}
 							}
@@ -831,16 +835,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	    	this.initialSeeds.put(u, Collections.singleton(zeroValue));
     }
 
-    @Override
-	public Abstraction createZeroValue() {
-		if (zeroValue == null) {
-			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false, true, null) :
-				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, null, false, true, null);
-		}
-		return zeroValue;
-	}
-	
 	public void setBackwardSolver(InfoflowSolver backwardSolver){
 		bSolver = backwardSolver;
 	}

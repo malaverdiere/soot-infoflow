@@ -54,7 +54,7 @@
 	<target name="runtests" depends="compiletests">
 		<mkdir dir="reports" />
 		<junit printsummary="yes">
-			<jvmarg value="-Xmx5G" />
+			<jvmarg value="-Xmx10G" />
 			<classpath>
 				<pathelement location="${soot.jar}" />
 				<pathelement location="bin" />

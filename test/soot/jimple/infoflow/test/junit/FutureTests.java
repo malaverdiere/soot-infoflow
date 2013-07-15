@@ -5,6 +5,7 @@ import java.util.List;
 
 import junit.framework.Assert;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
@@ -13,6 +14,7 @@ import soot.jimple.infoflow.Infoflow;
  * ontains test for functionality which is currently not supported by FlowDroid.
  * 
  */
+@Ignore
 public class FutureTests extends JUnitTests {
 
 	// Subtraktions-Operator wird von soot nicht ausgewertet

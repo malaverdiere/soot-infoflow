@@ -14,7 +14,6 @@ import soot.Value;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 import soot.tagkit.LineNumberTag;
-import soot.tagkit.Tag;
 
 /**
  * Class for collecting information flow results

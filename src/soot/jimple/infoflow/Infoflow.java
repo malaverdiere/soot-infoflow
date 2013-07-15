@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,7 @@ import soot.jimple.infoflow.config.IInfoflowConfig;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
+import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
@@ -71,6 +73,8 @@ public class Infoflow implements IInfoflow {
     private BiDirICFGFactory icfgFactory = new DefaultBiDiICFGFactory();
     private List<Transform> preProcessors = Collections.emptyList();
     private BiDiInterproceduralCFG<Unit,SootMethod> iCfg;
+    
+    private Set<ResultsAvailableHandler> onResultsAvailable = new HashSet<ResultsAvailableHandler>();
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
@@ -341,7 +345,7 @@ public class Infoflow implements IInfoflow {
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
 							if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
-								forwardProblem.initialSeeds.add(u);
+								forwardProblem.initialSeeds.put(u, Collections.singleton(forwardProblem.zeroValue()));
 								logger.debug("Source found: {}", u);
 							}
 							if (sourcesSinks.isSink(s, forwardProblem.interproceduralCFG())) {
@@ -361,7 +365,8 @@ public class Infoflow implements IInfoflow {
 							logger.warn("Seed method {} has no active body", m);
 							continue;
 						}
-						forwardProblem.initialSeeds.add(m.getActiveBody().getUnits().getFirst());
+						forwardProblem.initialSeeds.put(m.getActiveBody().getUnits().getFirst(),
+								Collections.singleton(forwardProblem.zeroValue()));
 					}
 
 				// In Debug mode, we write the Jimple files to disk
@@ -421,8 +426,7 @@ public class Infoflow implements IInfoflow {
 				results = forwardProblem.results;
 				if (results.getResults().isEmpty())
 					logger.warn("No results found.");
-
-				for (Entry<SinkInfo, Set<SourceInfo>> entry : results.getResults().entrySet()) {
+				else for (Entry<SinkInfo, Set<SourceInfo>> entry : results.getResults().entrySet()) {
 					logger.info("The sink {} in method {} was called with values from the following sources:",
                             entry.getKey(), iCfg.getMethodOf(entry.getKey().getContext()).getSignature() );
 					for (SourceInfo source : entry.getValue()) {
@@ -435,6 +439,9 @@ public class Infoflow implements IInfoflow {
 						}
 					}
 				}
+				
+				for (ResultsAvailableHandler handler : onResultsAvailable)
+					handler.onResultsAvailable(iCfg, results);
 			}
 
 			
@@ -481,4 +488,21 @@ public class Infoflow implements IInfoflow {
 	public void setAccessPathLength(int accessPathLength) {
 		Infoflow.accessPathLength = accessPathLength;
 	}
+	
+	/**
+	 * Adds a handler that is called when information flow results are available
+	 * @param handler The handler to add
+	 */
+	public void addResultsAvailableHandler(ResultsAvailableHandler handler) {
+		onResultsAvailable.add(handler);
+	}
+	
+	/**
+	 * Removes a handler that is called when information flow results are available
+	 * @param handler The handler to remove
+	 */
+	public void removeResultsAvailableHandler(ResultsAvailableHandler handler) {
+		onResultsAvailable.remove(handler);
+	}
+
 }

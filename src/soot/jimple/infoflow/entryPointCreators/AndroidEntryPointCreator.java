@@ -352,6 +352,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			searchAndBuildMethod(AndroidEntryPointConstants.APPLICATION_ONTERMINATE,
 					applicationClass, classMap.get(applicationClass.getName()), applicationLocal);
 
+		body.getUnits().add(Jimple.v().newReturnVoidStmt());
 		if (DEBUG)
 			mainMethod.getActiveBody().validate();
 		System.out.println("Generated main method:\n" + body);

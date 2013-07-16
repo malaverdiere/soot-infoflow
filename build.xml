@@ -9,7 +9,6 @@
 	
 	
 	<target name="clean">
-		<delete quiet="true" dir="bin" />
 		<delete quiet="true" dir="build" />
 	</target>
 
@@ -61,7 +60,7 @@
 
 			<formatter type="xml" usefile="true" />
 			<batchtest todir="reports">
-				<fileset dir="build/classes" includes="soot/jimple/infoflow/test/**/*Tests.class" />
+				<fileset dir="build/classes" includes="soot/jimple/infoflow/test/**/*Tests.class" excludes="soot/jimple/infoflow/test/junit/JUnitTests.class" />
 			</batchtest>
 		</junit>
 	</target>

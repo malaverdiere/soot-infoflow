@@ -33,33 +33,28 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
         //Copies an array from the specified source array, beginning at the specified position, to the specified position of the destination array.
 		if(call.getInvokeExpr().getMethod().toString().contains("arraycopy")){
 			if(params.get(0).equals(source.getAccessPath().getPlainValue())){
+				Abstraction abs = source.deriveNewAbstraction(params.get(2), call);
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
-					set.add(new AbstractionWithPath(params.get(2),
-							(AbstractionWithPath) source));
-				else
-					set.add(source.deriveNewAbstraction(params.get(2), call));
+					((AbstractionWithPath) abs).addPathElement(call);
+				set.add(abs);
 			}
 		}else{
 			//generic case: add taint to all non-primitive datatypes:
 			for (int i = 0; i < params.size(); i++) {
 				Value argValue = params.get(i);
 				if (DataTypeHandler.isFieldRefOrArrayRef(argValue) && !(argValue instanceof Constant)) {
+					Abstraction abs = source.deriveNewAbstraction(argValue, call);
 					if (pathTracking == PathTrackingMethod.ForwardTracking)
-						set.add(new AbstractionWithPath(argValue,
-								(AbstractionWithPath) source));
-					else
-						set.add(source.deriveNewAbstraction(argValue, call));
+						((AbstractionWithPath) abs).addPathElement(call);
 				}
 			}	
 		}
 		//add the  returnvalue:
 		if(call instanceof DefinitionStmt){
 			DefinitionStmt dStmt = (DefinitionStmt) call;
+			Abstraction abs = source.deriveNewAbstraction(dStmt.getLeftOp(), call);
 			if (pathTracking == PathTrackingMethod.ForwardTracking)
-				set.add(new AbstractionWithPath(dStmt.getLeftOp(),
-						(AbstractionWithPath) source));
-			else
-				set.add(source.deriveNewAbstraction(dStmt.getLeftOp(), call));
+				((AbstractionWithPath) abs).addPathElement(call);
 		}
 		
 		return set;

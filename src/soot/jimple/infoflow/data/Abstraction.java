@@ -71,7 +71,7 @@ public class Abstraction implements Cloneable {
 	 * @param p The value to be used as the new access path
 	 * @param original The original abstraction to copy
 	 */
-	public Abstraction(Value p, Abstraction original){
+	protected Abstraction(Value p, Abstraction original){
 		this(new AccessPath(p), original);
 	}
 
@@ -226,10 +226,12 @@ public class Abstraction implements Cloneable {
 	public Abstraction getAbstractionFromCallEdge(){
 		Abstraction abs = abstractionFromCallEdge;
 		if (abs == null && zeroAbstraction != null)
-			abs = zeroAbstraction.clone();
+			abs = zeroAbstraction;
 		if (abs != null)
 			if (abs.zeroAbstraction == null)
 				abs.zeroAbstraction = zeroAbstraction;
+		if (abs == null)
+			throw new RuntimeException("No call edge or zero abstraction");
 		return abs;
 	}
 	
@@ -238,6 +240,7 @@ public class Abstraction implements Cloneable {
 	}
 	
 	public void setAbstractionFromCallEdge(Abstraction abs){
+		assert abs != null;
 		abstractionFromCallEdge = abs;
 	}
 	
@@ -278,6 +281,8 @@ public class Abstraction implements Cloneable {
 	}
 	
 	public void setZeroAbstraction(Abstraction zeroAbstraction) {
+		if (zeroAbstraction == null)
+			throw new RuntimeException("Zero abstraction may not be null");
 		this.zeroAbstraction = zeroAbstraction;
 	}
 	

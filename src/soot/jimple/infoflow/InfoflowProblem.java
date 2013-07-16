@@ -176,13 +176,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								res.add(source);
 							
 							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
+								Abstraction abs;
 								if (pathTracking != PathTrackingMethod.NoTracking)
-									res.add(new AbstractionWithPath(is.getLeftOp(),
+									abs = new AbstractionWithPath(is.getLeftOp(),
 										is.getRightOp(),
-										is, false, true, is).addPathElement(is));
+										is, false, true, is).addPathElement(is);
 								else
-									res.add(new Abstraction(is.getLeftOp(),
-										is.getRightOp(), is, false, true, is));
+									abs = new Abstraction(is.getLeftOp(),
+										is.getRightOp(), is, false, true, is);
+								abs.setZeroAbstraction(source.getZeroAbstraction());
+								res.add(abs);
 							}
 							
 							return res;

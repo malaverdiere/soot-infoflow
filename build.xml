@@ -34,7 +34,7 @@
 	
 	<target name="compiletests" depends="settings,compile">
 		<mkdir dir="build/tests" />
-		<javac srcdir="src:test:securiBench" includeantruntime="true" source="1.6" target="1.6" destdir="bin" debug="true">
+		<javac srcdir="src:test:securiBench" includeantruntime="true" source="1.6" target="1.6" destdir="build/tests" debug="true">
 			<classpath>
 				<pathelement location="${soot.jar}" />
 				<pathelement location="${heros.jar}" />

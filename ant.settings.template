@@ -3,6 +3,7 @@
 #Location of soot.jar
 soot.jar=
 
-
+# Target JAR file
+infoflow.jar=
 
 # TODO: compile with projects checked out and recompile them with build.xml

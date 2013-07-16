@@ -80,8 +80,9 @@ public abstract class JUnitTests {
     {
     	 File f = new File(".");
     	 path = //System.getProperty("java.home")+ File.separator + "lib"+File.separator + "jce.jar" + System.getProperty("path.separator") +
-    	 		System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar"+ System.getProperty("path.separator") +
+    			 System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar"+ System.getProperty("path.separator") +
     			 f.getCanonicalPath() + File.separator + "bin"+ System.getProperty("path.separator") + 
+    			 f.getCanonicalPath() + File.separator + "build" + File.separator + "classes" + System.getProperty("path.separator") + 
     			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "j2ee.jar" +
     			 System.getProperty("path.separator") + 
     			 f.getCanonicalPath()+ File.separator+ "lib"+ File.separator+ "cos.jar";

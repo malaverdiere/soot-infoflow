@@ -33,8 +33,8 @@
 	</target>
 	
 	<target name="compiletests" depends="settings,compile">
-		<mkdir dir="build/tests" />
-		<javac srcdir="src:test:securiBench" includeantruntime="true" source="1.6" target="1.6" destdir="build/tests" debug="true">
+		<mkdir dir="build/classes" />
+		<javac srcdir="src:test:securiBench" includeantruntime="true" source="1.6" target="1.6" destdir="build/classes" debug="true">
 			<classpath>
 				<pathelement location="${soot.jar}" />
 				<pathelement location="${heros.jar}" />
@@ -54,7 +54,6 @@
 				<pathelement location="${soot.jar}" />
 				<pathelement location="${heros.jar}" />
 				<pathelement location="build/classes" />
-				<pathelement location="build/tests" />
 				<fileset dir="lib">
 					<include name="*.jar" />
 				</fileset>
@@ -62,7 +61,7 @@
 
 			<formatter type="xml" usefile="true" />
 			<batchtest todir="reports">
-				<fileset dir="build/tests" includes="soot/jimple/infoflow/test/**/*Tests.class" />
+				<fileset dir="build/classes" includes="soot/jimple/infoflow/test/**/*Tests.class" />
 			</batchtest>
 		</junit>
 	</target>

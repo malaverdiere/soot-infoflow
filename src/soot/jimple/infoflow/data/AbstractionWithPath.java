@@ -23,7 +23,7 @@ public class AbstractionWithPath extends Abstraction {
 	}
 	
 
-	public AbstractionWithPath(Value taint, AbstractionWithPath src){
+	protected AbstractionWithPath(Value taint, AbstractionWithPath src){
 		super(taint, src);
 		if (src == null)
 			propagationPath = new ArrayList<Unit>();

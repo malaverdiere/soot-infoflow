@@ -93,6 +93,7 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 		JGotoStmt gotoStart = new JGotoStmt(startStmt);
 		body.getUnits().add(gotoStart);
 		
+		body.getUnits().add(Jimple.v().newReturnVoidStmt());
 		return mainMethod;
 	}
 

@@ -82,7 +82,7 @@ public class ListTests extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
-    
+
     @Test
     public void writeReadLinkedListTest(){
     	Infoflow infoflow = initInfoflow();

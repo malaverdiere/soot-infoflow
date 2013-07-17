@@ -44,8 +44,9 @@ public abstract class JUnitTests {
     public static void setUp() throws IOException
     {
     	File f = new File(".");
-    	path = System.getProperty("java.home")+ File.separator + "lib"+File.separator + "rt.jar"+ System.getProperty("path.separator") +
-    			f.getCanonicalPath() + File.separator + "bin";
+    	path = System.getProperty("java.home") + File.separator + "lib" +File.separator + "rt.jar"
+    			+ System.getProperty("path.separator") + f.getCanonicalPath() + File.separator + "bin"
+    			+ System.getProperty("path.separator") + f.getCanonicalPath() + File.separator + "build" + File.separator + "classes";
     	
         sources = new ArrayList<String>();
         sources.add(sourcePwd);

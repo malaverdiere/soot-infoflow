@@ -48,7 +48,6 @@ import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
 import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
-import soot.jimple.toolkits.scalar.ConstantPropagatorAndFolder;
 import soot.options.Options;
 /**
  * main infoflow class which triggers the analysis and offers method to customize it.
@@ -300,22 +299,12 @@ public class Infoflow implements IInfoflow {
 	private void addSceneTransformer(final ISourceSinkManager sourcesSinks, final Set<String> additionalSeeds) {
 		Transform transform = new Transform("wjtp.ifds", new SceneTransformer() {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
-				// Perform a constant propagation to make it easier subsequent steps to
-				// find e.g. layout IDs
-				logger.info("Running constant propagation...");
-				for (SootClass sc : Scene.v().getClasses())
-					for (SootMethod sm : sc.getMethods())
-						if (sm.isConcrete())
-							ConstantPropagatorAndFolder.v().transform(sm.retrieveActiveBody());
-                logger.info("Constant propagation done.");
-
                 logger.info("Callgraph has {} edges", Scene.v().getCallGraph().size());
                 iCfg = icfgFactory.buildBiDirICFG();
 				InfoflowProblem forwardProblem  = new InfoflowProblem(iCfg, sourcesSinks);
 				forwardProblem.setTaintWrapper(taintWrapper);
 				forwardProblem.setPathTracking(pathTracking);
 				forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
-
 
 				// We have to look through the complete program to find sources
 				// which are then taken as seeds.

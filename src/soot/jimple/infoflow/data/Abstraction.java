@@ -45,6 +45,7 @@ public class Abstraction implements Cloneable {
 	 * technically required to pass taint from backward to forward solver
 	 */
 	private Abstraction abstractionFromCallEdge;
+	private Abstraction zeroAbstraction;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
 		this.source = src;
@@ -70,7 +71,7 @@ public class Abstraction implements Cloneable {
 	 * @param p The value to be used as the new access path
 	 * @param original The original abstraction to copy
 	 */
-	public Abstraction(Value p, Abstraction original){
+	protected Abstraction(Value p, Abstraction original){
 		this(new AccessPath(p), original);
 	}
 
@@ -80,7 +81,7 @@ public class Abstraction implements Cloneable {
 	 * @param p The access path for the new abstraction
 	 * @param original The original abstraction to copy
 	 */
-	public Abstraction(AccessPath p, Abstraction original){
+	protected Abstraction(AccessPath p, Abstraction original){
 		if (original == null) {
 			source = null;
 			sourceContext = null;
@@ -88,6 +89,7 @@ public class Abstraction implements Cloneable {
 			activationUnit = null;
 			activationUnitOnCurrentLevel = null;
 			abstractionFromCallEdge = null;
+			zeroAbstraction = null;
 		}
 		else {
 			source = original.source;
@@ -96,6 +98,7 @@ public class Abstraction implements Cloneable {
 			activationUnit = original.activationUnit;
 			activationUnitOnCurrentLevel = original.activationUnitOnCurrentLevel;
 			abstractionFromCallEdge = original.abstractionFromCallEdge;
+			zeroAbstraction = original.zeroAbstraction;
 			isActive = original.isActive;
 		}
 		accessPath = p.clone();
@@ -119,11 +122,9 @@ public class Abstraction implements Cloneable {
 		return a;
 	}
 	
-	public final Abstraction deriveNewAbstraction(AccessPath p, Unit srcUnit, boolean isActive){
+	public final Abstraction deriveNewAbstraction(AccessPath p, boolean isActive){
 		Abstraction a = deriveNewAbstraction(p);
 		a.isActive = isActive;
-		if (isActive)
-			a.activationUnit = srcUnit;
 		return a;
 	}
 	
@@ -221,32 +222,23 @@ public class Abstraction implements Cloneable {
 	}
 	
 	public Abstraction getAbstractionFromCallEdge(){
-		return abstractionFromCallEdge;
-	}
-	/**
-	 * best-effort approach: if we are at level 0 and have not seen a call edge, we just take the abstraction which is imprecise
-	 * null is not allowed
-	 * @return
-	 */
-	public Abstraction getNotNullAbstractionFromCallEdge(){
-		if(abstractionFromCallEdge == null)
-			return this;
-		/*
-		Abstraction abs = abstractionFromCallEdge.clone();
-		abs.abstractionFromCallEdge = abs.clone();
+		Abstraction abs = abstractionFromCallEdge;
+		if (abs == null && zeroAbstraction != null)
+			abs = zeroAbstraction;
+		if (abs != null)
+			if (abs.zeroAbstraction == null)
+				abs.zeroAbstraction = zeroAbstraction;
+		if (abs == null)
+			throw new RuntimeException("No call edge or zero abstraction");
 		return abs;
-		*/
-		return abstractionFromCallEdge;
 	}
 	
 	public void usePredAbstractionOfCG(){
-		if(abstractionFromCallEdge == null)
-			return;
-		abstractionFromCallEdge = abstractionFromCallEdge.abstractionFromCallEdge;
-		
+		abstractionFromCallEdge = abstractionFromCallEdge.getAbstractionFromCallEdge();
 	}
 	
 	public void setAbstractionFromCallEdge(Abstraction abs){
+		assert abs != null;
 		abstractionFromCallEdge = abs;
 	}
 	
@@ -258,11 +250,9 @@ public class Abstraction implements Cloneable {
 		// aliases originally became active.
 //		a.activationUnit = null;
 		a.activationUnitOnCurrentLevel = null;
-		if(dropAbstractionFromCallEdge){
-			if(a.abstractionFromCallEdge != null){
-				a.abstractionFromCallEdge = a.abstractionFromCallEdge.abstractionFromCallEdge;
-			}
-		}
+		if(dropAbstractionFromCallEdge)
+			if(a.abstractionFromCallEdge != null)
+				a.abstractionFromCallEdge = a.abstractionFromCallEdge.getAbstractionFromCallEdge();
 		
 		return a;
 	}
@@ -283,10 +273,19 @@ public class Abstraction implements Cloneable {
 	
 	public Abstraction cloneUsePredAbstractionOfCG(){
 		Abstraction a = clone();
-		if(a.abstractionFromCallEdge != null){
-			a.abstractionFromCallEdge = a.abstractionFromCallEdge.abstractionFromCallEdge;
-		}
+		if(a.abstractionFromCallEdge != null)
+			a.abstractionFromCallEdge = a.abstractionFromCallEdge.getAbstractionFromCallEdge();
 		return a;
+	}
+	
+	public void setZeroAbstraction(Abstraction zeroAbstraction) {
+		if (zeroAbstraction == null)
+			throw new RuntimeException("Zero abstraction may not be null");
+		this.zeroAbstraction = zeroAbstraction;
+	}
+	
+	public Abstraction getZeroAbstraction() {
+		return this.zeroAbstraction;
 	}
 
 	@Override
@@ -323,6 +322,11 @@ public class Abstraction implements Cloneable {
 			return false;
 		if (this.exceptionThrown != other.exceptionThrown)
 			return false;
+		if (zeroAbstraction == null) {
+			if (other.zeroAbstraction != null)
+				return false;
+		} else if (!zeroAbstraction.equals(other.zeroAbstraction))
+			return false;
 		if(this.isActive != other.isActive)
 			return false;
 		return true;
@@ -339,6 +343,7 @@ public class Abstraction implements Cloneable {
 			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
 			this.hashCode = prime * this.hashCode + ((activationUnitOnCurrentLevel == null) ? 0 : activationUnitOnCurrentLevel.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
+			this.hashCode = prime * this.hashCode + ((zeroAbstraction == null) ? 0 : zeroAbstraction.hashCode());
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
 		}
 		return hashCode;

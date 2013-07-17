@@ -15,7 +15,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import soot.Local;
-import soot.NullType;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -39,7 +38,6 @@ import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
-import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
@@ -94,31 +92,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 					if(iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
 								|| newAbs.getAccessPath().isStaticFieldRef()) {
-							Abstraction bwAbs = source.deriveNewAbstraction(val,iStmt, false);
-							for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
-								bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+						Abstraction bwAbs = source.deriveNewAbstraction(val, false);
+						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
+							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 					}
 				}
 			}
 		}
 
 		return res;
-	}
-
-	/**
-	 * Checks whether a taint wrapper is exclusive for a specific invocation statement
-	 * @param iStmt The call statement the taint wrapper shall check for well-
-	 * known methods that introduce black-box taint propagation 
-	 * @param callArgs The actual parameters with which the method in invoked
-	 * @param source The taint source
-	 * @return True if the wrapper is exclusive, otherwise false
-	 */
-	private boolean isWrapperExclusive
-			(final Stmt iStmt,
-			Abstraction source) {
-		if(taintWrapper == null)
-			return false;
-		return taintWrapper.isExclusive(iStmt, source.getAccessPath());
 	}
 	
 	@Override
@@ -180,13 +162,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								res.add(source);
 							
 							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
+								Abstraction abs;
 								if (pathTracking != PathTrackingMethod.NoTracking)
-									res.add(new AbstractionWithPath(is.getLeftOp(),
+									abs = new AbstractionWithPath(is.getLeftOp(),
 										is.getRightOp(),
-										is, false, true, is).addPathElement(is));
+										is, false, true, is).addPathElement(is);
 								else
-									res.add(new Abstraction(is.getLeftOp(),
-										is.getRightOp(), is, false, true, is));
+									abs = new Abstraction(is.getLeftOp(),
+										is.getRightOp(), is, false, true, is);
+								abs.setZeroAbstraction(source.getZeroAbstraction());
+								res.add(abs);
 							}
 							
 							return res;
@@ -459,11 +444,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
-						if(isWrapperExclusive(stmt, source)) {
+						if(taintWrapper != null && taintWrapper.isExclusive(stmt, source.getAccessPath())) {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-					
+						if (!dest.isConcrete())
+							return Collections.emptySet();
+						
 						//if we do not have to look into sinks:
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
@@ -537,10 +524,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
+						
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource;
 						if(!source.isAbstractionActive()){
-							if(callSite.equals(source.getActivationUnit()) || callSite.equals(source.getActivationUnitOnCurrentLevel()) ){
+							if(callSite != null
+									&& (callSite.equals(source.getActivationUnit()) || callSite.equals(source.getActivationUnitOnCurrentLevel())) ){
 								newSource = source.getActiveCopy(true);
 							}else{
 								newSource = source.cloneUsePredAbstractionOfCG();
@@ -548,43 +537,18 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}else{
 							newSource = source.cloneUsePredAbstractionOfCG();
-						}					
-
-						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
-						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null && interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee)){
-							return Collections.emptySet();
 						}
+						
+						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
+						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null
+								&& interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee))
+							return Collections.emptySet();
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
-						// if we have a returnStmt we have to look at the returned value:
+						// Check whether this return is treated as a sink
 						if (exitStmt instanceof ReturnStmt) {
 							ReturnStmt returnStmt = (ReturnStmt) exitStmt;
-							Value retLocal = returnStmt.getOp();
-
-							if (callSite instanceof DefinitionStmt) {
-								DefinitionStmt defnStmt = (DefinitionStmt) callSite;
-								Value leftOp = defnStmt.getLeftOp();
-								if (retLocal.equals(newSource.getAccessPath().getPlainLocal()) &&
-										(triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive())) {
-									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
-									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										((AbstractionWithPath) abs).addPathElement(exitStmt);
-									assert abs != newSource;		// our source abstraction must be immutable
-									res.add(abs);
-									 //call backwards-solver:
-									if(triggerInaktiveTaintOrReverseFlow(leftOp, abs)){
-										Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite, false);
-										if (abs.isAbstractionActive())
-											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
-										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-											bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
-									}
-								}
-							}
-								
-
-							// Check whether this return is treated as a sink
 							assert returnStmt.getOp() == null
 									|| returnStmt.getOp() instanceof Local
 									|| returnStmt.getOp() instanceof Constant;
@@ -604,12 +568,46 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											newSource.getSource(), newSource.getSourceContext());
 							}
 						}
+						
+						// If we have no caller, we have nowhere to propagate. This
+						// can happen when leaving the main method.
+						if (callSite == null)
+							return Collections.emptySet();
+
+						// if we have a returnStmt we have to look at the returned value:
+						if (exitStmt instanceof ReturnStmt) {
+							ReturnStmt returnStmt = (ReturnStmt) exitStmt;
+							Value retLocal = returnStmt.getOp();
+
+							if (callSite instanceof DefinitionStmt) {
+								DefinitionStmt defnStmt = (DefinitionStmt) callSite;
+								Value leftOp = defnStmt.getLeftOp();
+								if (retLocal.equals(newSource.getAccessPath().getPlainLocal()) &&
+										(triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive())) {
+									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
+									if (pathTracking == PathTrackingMethod.ForwardTracking)
+										((AbstractionWithPath) abs).addPathElement(exitStmt);
+									assert abs != newSource;		// our source abstraction must be immutable
+									res.add(abs);
+									
+									 //call backwards-solver:
+									if(triggerInaktiveTaintOrReverseFlow(leftOp, abs)){
+										Abstraction bwAbs = newSource.deriveNewAbstraction
+												(newSource.getAccessPath().copyWithNewValue(leftOp), false);
+										if (abs.isAbstractionActive())
+											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
+										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
+											bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+									}
+								}
+							}
+						}
 
 						// easy: static
 						if (newSource.getAccessPath().isStaticFieldRef()) {
-							Abstraction abs = newSource.clone();
-							assert (abs.equals(newSource) && abs.hashCode() == newSource.hashCode());
-							res.add(abs);
+							// Simply pass on the taint
+							res.add(newSource);
+							
 							// call backwards-check:
 							Abstraction bwAbs = newSource.deriveInactiveAbstraction();
 							if (newSource.isAbstractionActive())
@@ -719,7 +717,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean passOn = true;
 							//we only can remove the taint if we step into the call/return edges
 							//otherwise we will loose taint - see ArrayTests/arrayCopyTest
-							if(!interproceduralCFG().getCalleesOfCallAt(call).isEmpty() || (taintWrapper != null
+							if(hasValidCallees(call) || (taintWrapper != null
 									&& taintWrapper.isExclusive(iStmt, newSource.getAccessPath()))) {
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
 									if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
@@ -751,13 +749,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								final AssignStmt stmt = (AssignStmt) iStmt;
 								if (sourceSinkManager.isSource(stmt, interproceduralCFG())) {
 									logger.debug("Found source: " + stmt.getInvokeExpr().getMethod());
+									Abstraction abs; 
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										res.add(new AbstractionWithPath(stmt.getLeftOp(),
+										abs = new AbstractionWithPath(stmt.getLeftOp(),
 												stmt.getInvokeExpr(),
-												stmt, false, true, iStmt).addPathElement(call));
+												stmt, false, true, iStmt).addPathElement(call);
 									else
-										res.add(new Abstraction(stmt.getLeftOp(),
-												stmt.getInvokeExpr(), stmt, false, true, iStmt));
+										abs = new Abstraction(stmt.getLeftOp(),
+												stmt.getInvokeExpr(), stmt, false, true, iStmt);
+									abs.setZeroAbstraction(source.getZeroAbstraction());
+									res.add(abs);
 									res.remove(zeroValue);
 								}
 							}
@@ -803,6 +804,21 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return res;
 						}
 
+						/**
+						 * Checks whether the given call has at least one valid target,
+						 * i.e. a callee with a body.
+						 * @param call The call site to check
+						 * @return True if there is at least one callee implementation
+						 * for the given call, otherwise false
+						 */
+						private boolean hasValidCallees(Unit call) {
+							Set<SootMethod> callees = interproceduralCFG().getCalleesOfCallAt(call);
+							for (SootMethod callee : callees)
+								if (callee.isConcrete())
+										return true;
+							return false;
+						}
+
 
 					};
 				}
@@ -834,16 +850,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	    	this.initialSeeds.put(u, Collections.singleton(zeroValue));
     }
 
-    @Override
-	public Abstraction createZeroValue() {
-		if (zeroValue == null) {
-			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false, true, null) :
-				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, null, false, true, null);
-		}
-		return zeroValue;
-	}
-	
 	public void setBackwardSolver(InfoflowSolver backwardSolver){
 		bSolver = backwardSolver;
 	}

@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
+import org.junit.Ignore;
 
 import soot.jimple.infoflow.Infoflow;
 /**
  * test taint propagation in queues
  */
+@Ignore
 public class QueueTests extends JUnitTests {
 
 	@Test

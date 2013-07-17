@@ -9,41 +9,35 @@
 	
 	
 	<target name="clean">
-		<delete quiet="true" dir="bin" />
+		<delete quiet="true" dir="build" />
 	</target>
 
 
 	<target name="compile" depends="settings">
-		<mkdir dir="bin" />
-		<javac srcdir="src" includeantruntime="true" source="1.6" target="1.6" destdir="bin" debug="true">
+		<mkdir dir="build/classes" />
+		<javac srcdir="src" includeantruntime="true" source="1.6" target="1.6" destdir="build/classes" debug="true">
 			<classpath>
 				<pathelement location="${soot.jar}" />
+				<pathelement location="${heros.jar}" />
 			</classpath>
 		</javac>
 	</target>
 	
-	<target name="classesjar" depends="settings,compile">
+	<target name="jar" depends="settings,compile">
 
-	    	<jar destfile="$flowDroidClasses.jar" manifest="META-INF/MANIFEST.MF">
-	            <fileset dir="classes"/>
+	    	<jar destfile="${infoflow.jar}" manifest="META-INF/MANIFEST.MF">
+	            <fileset dir="build/classes"/>
 	        </jar>
-			<delete dir="META-INF"/>
-	    </target>
 
-	<target name="jar" depends="compile">
-		<mkdir dir="build/jar" />
-		<jar destfile="build/jar/flowDroid.jar" basedir="build/classes">
-			<manifest>
-				<!-- <attribute name="Main-Class" value="?"/>-->
-			</manifest>
-		</jar>
 	</target>
 	
 	<target name="compiletests" depends="settings,compile">
-		<mkdir dir="bin" />
-		<javac srcdir="src:test:securiBench" includeantruntime="true" source="1.6" target="1.6" destdir="bin" debug="true">
+		<mkdir dir="build/classes" />
+		<javac srcdir="src:test:securiBench" includeantruntime="true" source="1.6" target="1.6" destdir="build/classes" debug="true">
 			<classpath>
 				<pathelement location="${soot.jar}" />
+				<pathelement location="${heros.jar}" />
+				<pathelement location="build/classes" />
 				<fileset dir="lib">
 					<include name="*.jar" />
 				</fileset>
@@ -53,11 +47,11 @@
 
 	<target name="runtests" depends="compiletests">
 		<mkdir dir="reports" />
-		<junit printsummary="yes">
-			<jvmarg value="-Xmx10G" />
+		<junit printsummary="yes" fork="true" maxmemory="8G">
 			<classpath>
 				<pathelement location="${soot.jar}" />
-				<pathelement location="bin" />
+				<pathelement location="${heros.jar}" />
+				<pathelement location="build/classes" />
 				<fileset dir="lib">
 					<include name="*.jar" />
 				</fileset>
@@ -65,7 +59,11 @@
 
 			<formatter type="xml" usefile="true" />
 			<batchtest todir="reports">
-				<fileset dir="bin" includes="soot/jimple/infoflow/test/**/*Tests.class" />
+				<!--
+					We only run our own tests. SecuriBench Micro relies on too much stuff
+					we exclude.
+				-->
+				<fileset dir="build/classes" includes="soot/jimple/infoflow/test/junit/**/*Tests.class" excludes="soot/jimple/infoflow/test/junit/JUnitTests.class" />
 			</batchtest>
 		</junit>
 	</target>

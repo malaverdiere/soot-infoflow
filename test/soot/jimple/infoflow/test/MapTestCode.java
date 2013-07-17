@@ -3,6 +3,7 @@ package soot.jimple.infoflow.test;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -27,9 +28,19 @@ public class MapTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement2);
-		
 	}
 	
+	public void concreteLinkedWriteReadPos0Test(){
+		String tainted = TelephonyManager.getDeviceId();
+		HashMap<String, String> map = new LinkedHashMap<String, String>();
+		map.put("neutral", "neutral");
+		map.put("tainted", tainted);
+		String taintedElement2 = map.get("tainted");
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(taintedElement2);
+	}
+
 	public void concreteWriteReadPos1Test(){
 		String tainted = TelephonyManager.getDeviceId();
 		HashMap<String, String> map = new HashMap<String, String>();

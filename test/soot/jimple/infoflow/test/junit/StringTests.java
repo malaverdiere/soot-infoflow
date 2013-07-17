@@ -254,6 +254,7 @@ public class StringTests extends JUnitTests {
 
     @Test
     public void stringBuilderTest6(){
+    	taintWrapper = true;	// Implicit flow, does not run without taint wrapper
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder6()>");

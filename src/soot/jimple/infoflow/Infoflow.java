@@ -46,7 +46,6 @@ import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
 import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
-import soot.jimple.toolkits.scalar.ConstantPropagatorAndFolder;
 import soot.options.Options;
 /**
  * main infoflow class which triggers the analysis and offers method to customize it.

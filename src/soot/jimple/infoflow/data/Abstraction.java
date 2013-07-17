@@ -122,11 +122,9 @@ public class Abstraction implements Cloneable {
 		return a;
 	}
 	
-	public final Abstraction deriveNewAbstraction(AccessPath p, Unit srcUnit, boolean isActive){
+	public final Abstraction deriveNewAbstraction(AccessPath p, boolean isActive){
 		Abstraction a = deriveNewAbstraction(p);
 		a.isActive = isActive;
-		if (isActive)
-			a.activationUnit = srcUnit;
 		return a;
 	}
 	

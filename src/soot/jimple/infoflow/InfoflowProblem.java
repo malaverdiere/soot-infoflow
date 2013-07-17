@@ -88,9 +88,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 					if(iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
 								|| newAbs.getAccessPath().isStaticFieldRef()) {
-							Abstraction bwAbs = source.deriveNewAbstraction(val,iStmt, false);
-							for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
-								bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+						Abstraction bwAbs = source.deriveNewAbstraction(val, false);
+						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
+							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 					}
 				}
 			}
@@ -533,8 +533,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}else{
 							newSource = source.cloneUsePredAbstractionOfCG();
-						}					
-
+						}
+						
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null
 								&& interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee))
@@ -585,9 +585,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										((AbstractionWithPath) abs).addPathElement(exitStmt);
 									assert abs != newSource;		// our source abstraction must be immutable
 									res.add(abs);
+									
 									 //call backwards-solver:
 									if(triggerInaktiveTaintOrReverseFlow(leftOp, abs)){
-										Abstraction bwAbs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite, false);
+										Abstraction bwAbs = newSource.deriveNewAbstraction
+												(newSource.getAccessPath().copyWithNewValue(leftOp), false);
 										if (abs.isAbstractionActive())
 											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
@@ -599,9 +601,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						// easy: static
 						if (newSource.getAccessPath().isStaticFieldRef()) {
-							Abstraction abs = newSource.clone();
-							assert (abs.equals(newSource) && abs.hashCode() == newSource.hashCode());
-							res.add(abs);
+							// Simply pass on the taint
+							res.add(newSource);
+							
 							// call backwards-check:
 							Abstraction bwAbs = newSource.deriveInactiveAbstraction();
 							if (newSource.isAbstractionActive())

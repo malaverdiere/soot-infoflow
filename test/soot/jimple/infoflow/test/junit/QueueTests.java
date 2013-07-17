@@ -9,6 +9,7 @@ import soot.jimple.infoflow.Infoflow;
 /**
  * test taint propagation in queues
  */
+@Ignore
 public class QueueTests extends JUnitTests {
 
 	@Test

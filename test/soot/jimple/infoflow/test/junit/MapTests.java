@@ -42,7 +42,7 @@ public class MapTests extends JUnitTests {
     public void concreteLinkedMapPos0Test(){
     	Infoflow infoflow = initInfoflow();
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(2);
+    	infoflow.setAccessPathLength(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteLinkedWriteReadPos0Test()>");

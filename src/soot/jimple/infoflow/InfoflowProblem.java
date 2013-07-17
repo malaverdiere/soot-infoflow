@@ -521,15 +521,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 						
-						// If we have no caller, we have nowhere to propagate. This
-						// can happen when leaving the main method.
-						if (callSite == null)
-							return Collections.emptySet();
-
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource;
 						if(!source.isAbstractionActive()){
-							if(callSite.equals(source.getActivationUnit()) || callSite.equals(source.getActivationUnitOnCurrentLevel()) ){
+							if(callSite != null
+									&& (callSite.equals(source.getActivationUnit()) || callSite.equals(source.getActivationUnitOnCurrentLevel())) ){
 								newSource = source.getActiveCopy(true);
 							}else{
 								newSource = source.cloneUsePredAbstractionOfCG();
@@ -545,6 +541,34 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
+
+						// Check whether this return is treated as a sink
+						if (exitStmt instanceof ReturnStmt) {
+							ReturnStmt returnStmt = (ReturnStmt) exitStmt;
+							assert returnStmt.getOp() == null
+									|| returnStmt.getOp() instanceof Local
+									|| returnStmt.getOp() instanceof Constant;
+							if (returnStmt.getOp() != null
+									&& newSource.getAccessPath().isLocal()
+									&& newSource.getAccessPath().getPlainValue().equals(returnStmt.getOp())
+									&& sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
+
+								if (pathTracking != PathTrackingMethod.NoTracking)
+									results.addResult(returnStmt.getOp(), returnStmt,
+											newSource.getSource(),
+											newSource.getSourceContext(),
+											((AbstractionWithPath) newSource).getPropagationPath(),
+											returnStmt);
+								else
+									results.addResult(returnStmt.getOp(), returnStmt,
+											newSource.getSource(), newSource.getSourceContext());
+							}
+						}
+						
+						// If we have no caller, we have nowhere to propagate. This
+						// can happen when leaving the main method.
+						if (callSite == null)
+							return Collections.emptySet();
 
 						// if we have a returnStmt we have to look at the returned value:
 						if (exitStmt instanceof ReturnStmt) {
@@ -570,27 +594,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 									}
 								}
-							}
-								
-
-							// Check whether this return is treated as a sink
-							assert returnStmt.getOp() == null
-									|| returnStmt.getOp() instanceof Local
-									|| returnStmt.getOp() instanceof Constant;
-							if (returnStmt.getOp() != null
-									&& newSource.getAccessPath().isLocal()
-									&& newSource.getAccessPath().getPlainValue().equals(returnStmt.getOp())
-									&& sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
-
-								if (pathTracking != PathTrackingMethod.NoTracking)
-									results.addResult(returnStmt.getOp(), returnStmt,
-											newSource.getSource(),
-											newSource.getSourceContext(),
-											((AbstractionWithPath) newSource).getPropagationPath(),
-											returnStmt);
-								else
-									results.addResult(returnStmt.getOp(), returnStmt,
-											newSource.getSource(), newSource.getSourceContext());
 							}
 						}
 

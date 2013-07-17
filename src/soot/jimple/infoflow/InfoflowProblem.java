@@ -520,6 +520,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
+						
+						// If we have no caller, we have nowhere to propagate. This
+						// can happen when leaving the main method.
+						if (callSite == null)
+							return Collections.emptySet();
 
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource;
@@ -535,9 +540,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}					
 
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
-						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null && interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee)){
+						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null
+								&& interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee))
 							return Collections.emptySet();
-						}
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 

@@ -444,6 +444,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
+						if (!dest.isConcrete())
+							return Collections.emptySet();
 						
 						//if we do not have to look into sinks:
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
@@ -701,7 +703,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean passOn = true;
 							//we only can remove the taint if we step into the call/return edges
 							//otherwise we will loose taint - see ArrayTests/arrayCopyTest
-							if(!interproceduralCFG().getCalleesOfCallAt(call).isEmpty() || (taintWrapper != null
+							if(hasValidCallees(call) || (taintWrapper != null
 									&& taintWrapper.isExclusive(iStmt, newSource.getAccessPath()))) {
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
 									if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
@@ -787,6 +789,21 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 							return res;
+						}
+
+						/**
+						 * Checks whether the given call has at least one valid target,
+						 * i.e. a callee with a body.
+						 * @param call The call site to check
+						 * @return True if there is at least one callee implementation
+						 * for the given call, otherwise false
+						 */
+						private boolean hasValidCallees(Unit call) {
+							Set<SootMethod> callees = interproceduralCFG().getCalleesOfCallAt(call);
+							for (SootMethod callee : callees)
+								if (callee.isConcrete())
+										return true;
+							return false;
 						}
 
 

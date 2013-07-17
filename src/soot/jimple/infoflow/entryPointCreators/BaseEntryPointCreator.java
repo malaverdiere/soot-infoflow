@@ -1,5 +1,6 @@
 package soot.jimple.infoflow.entryPointCreators;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -86,6 +87,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		// as addClass contains a call to "setLibraryClass" 
 		Scene.v().addClass(mainClass);
 		mainClass.setApplicationClass();
+		mainMethod.setModifiers(Modifier.PUBLIC | Modifier.STATIC);
 		return mainMethod;
 	}
 	

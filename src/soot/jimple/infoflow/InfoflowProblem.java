@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Set;
 
 import soot.Local;
-import soot.NullType;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -37,7 +36,6 @@ import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
-import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
@@ -99,22 +97,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		}
 
 		return res;
-	}
-
-	/**
-	 * Checks whether a taint wrapper is exclusive for a specific invocation statement
-	 * @param iStmt The call statement the taint wrapper shall check for well-
-	 * known methods that introduce black-box taint propagation 
-	 * @param callArgs The actual parameters with which the method in invoked
-	 * @param source The taint source
-	 * @return True if the wrapper is exclusive, otherwise false
-	 */
-	private boolean isWrapperExclusive
-			(final Stmt iStmt,
-			Abstraction source) {
-		if(taintWrapper == null)
-			return false;
-		return taintWrapper.isExclusive(iStmt, source.getAccessPath());
 	}
 	
 	@Override
@@ -458,7 +440,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.singleton(source);
 						}
-						if(isWrapperExclusive(stmt, source)) {
+						if(taintWrapper != null && taintWrapper.isExclusive(stmt, source.getAccessPath())) {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}

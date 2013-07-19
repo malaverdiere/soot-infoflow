@@ -520,7 +520,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-						
+
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource;
 						if(!source.isAbstractionActive()){
@@ -709,29 +709,32 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							res.addAll(computeWrapperTaints(iStmt, newSource));
 
 							// We can only pass on a taint if it is neither a parameter nor the
-							// base object of the current call
-							boolean passOn = true;
+							// base object of the current call. If this call overwrites the left
+							// side, the taint is never passed on.
+							boolean passOn = !(call instanceof AssignStmt && ((AssignStmt) call).getLeftOp().equals
+									(newSource.getAccessPath().getPlainLocal()));
 							//we only can remove the taint if we step into the call/return edges
 							//otherwise we will loose taint - see ArrayTests/arrayCopyTest
-							if(hasValidCallees(call) || (taintWrapper != null
-									&& taintWrapper.isExclusive(iStmt, newSource.getAccessPath()))) {
-								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
-									if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
-											(newSource.getAccessPath().getPlainLocal())) {
-										passOn = false;
+							if (passOn)
+								if(hasValidCallees(call) || (taintWrapper != null
+										&& taintWrapper.isExclusive(iStmt, newSource.getAccessPath()))) {
+									if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
+										if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
+												(newSource.getAccessPath().getPlainLocal())) {
+											passOn = false;
+										}
+										if (passOn)
+											for (int i = 0; i < callArgs.size(); i++)
+												if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
+													passOn = false;
+													break;
+												}
+										//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
+										//we can be sure that the value does not get "lost" if we do not pass it on:
+										if(newSource.getAccessPath().isStaticFieldRef()){
+											passOn = false;
+										}
 									}
-									if (passOn)
-										for (int i = 0; i < callArgs.size(); i++)
-											if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
-												passOn = false;
-												break;
-											}
-									//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
-									//we can be sure that the value does not get "lost" if we do not pass it on:
-									if(newSource.getAccessPath().isStaticFieldRef()){
-										passOn = false;
-									}
-								}
 							if (passOn)
 								res.add(newSource);
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {

@@ -102,8 +102,8 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		assert gen != null : "Local generator was null";
 		
 		InvokeExpr invokeExpr;
+		List<Object> args = new LinkedList<Object>();
 		if(currentMethod.getParameterCount()>0){
-			List<Object> args = new LinkedList<Object>();
 			for(Type tp :currentMethod.getParameterTypes()){
 				args.add(getValueForType(body, gen, tp, new HashSet<SootClass>(), parentClasses));
 			}
@@ -137,6 +137,12 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			stmt = Jimple.v().newInvokeStmt(invokeExpr);
 		}
 		body.getUnits().add(stmt);
+		
+		// Clean up
+		for (Object val : args)
+			if (((Value) val).getType() instanceof RefType)
+				body.getUnits().add(Jimple.v().newAssignStmt((Value) val, NullConstant.v()));
+		
 		return stmt;
 	}
 

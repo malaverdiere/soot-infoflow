@@ -28,6 +28,7 @@ import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JEqExpr;
 import soot.jimple.internal.JIfStmt;
 import soot.jimple.internal.JNopStmt;
+import soot.jimple.toolkits.scalar.NopEliminator;
 
 /**
  * class which creates a dummy main method with the entry points according to the Android lifecycles
@@ -355,6 +356,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		body.getUnits().add(Jimple.v().newReturnVoidStmt());
 		if (DEBUG)
 			mainMethod.getActiveBody().validate();
+		NopEliminator.v().transform(body);
 		System.out.println("Generated main method:\n" + body);
 		return mainMethod;
 	}

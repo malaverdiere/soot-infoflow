@@ -140,7 +140,7 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		
 		// Clean up
 		for (Object val : args)
-			if (((Value) val).getType() instanceof RefType)
+			if (val instanceof Local && ((Value) val).getType() instanceof RefType)
 				body.getUnits().add(Jimple.v().newAssignStmt((Value) val, NullConstant.v()));
 		
 		return stmt;

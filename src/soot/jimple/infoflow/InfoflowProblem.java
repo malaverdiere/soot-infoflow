@@ -4,6 +4,7 @@ import heros.FlowFunction;
 import heros.FlowFunctions;
 import heros.InterproceduralCFG;
 import heros.flowfunc.Identity;
+import heros.flowfunc.KillAll;
 import heros.solver.PathEdge;
 
 import java.util.ArrayList;
@@ -14,7 +15,11 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import soot.*;
+
+import soot.Local;
+import soot.SootMethod;
+import soot.Unit;
+import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.CaughtExceptionRef;
@@ -36,9 +41,6 @@ import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
-import soot.tagkit.LineNumberTag;
-import soot.tagkit.SourceFileTag;
-import soot.util.SootAnnotationUtils;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
@@ -425,9 +427,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 			@Override
 			public FlowFunction<Abstraction> getCallFlowFunction(final Unit src, final SootMethod dest) {
-                if (! dest.hasActiveBody()){
+                if (!dest.isConcrete()){
                     logger.debug("Call skipped because target has no body: {} -> {}", src, dest);
-                    return Identity.v();
+                    return KillAll.v();
                 }
 
 				final Stmt stmt = (Stmt) src;
@@ -451,8 +453,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-						if (!dest.isConcrete())
-							return Collections.emptySet();
 						
 						//if we do not have to look into sinks:
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {

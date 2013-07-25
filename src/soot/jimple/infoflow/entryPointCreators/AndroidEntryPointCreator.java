@@ -611,24 +611,34 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		searchAndBuildMethod
 				(AndroidEntryPointConstants.ACTIVITY_ONPOSTRESUME, currentClass, entryPoints, classLocal);
 		
-		//all other entryPoints of this class:
-		JNopStmt startWhileStmt = new JNopStmt();
-		JNopStmt endWhileStmt = new JNopStmt();
-		body.getUnits().add(startWhileStmt);
-		for(SootMethod currentMethod : currentClass.getMethods()){
+		// Scan for other entryPoints of this class:
+		Set<SootMethod> methodsToInvoke = new HashSet<SootMethod>();
+		for(SootMethod currentMethod : currentClass.getMethods())
 			if(entryPoints.contains(currentMethod.toString())
-					&& !AndroidEntryPointConstants.getActivityLifecycleMethods().contains(currentMethod.getSubSignature())) {
+					&& !AndroidEntryPointConstants.getActivityLifecycleMethods().contains(currentMethod.getSubSignature()))
+				methodsToInvoke.add(currentMethod);
+		boolean hasCallbacks = this.callbackFunctions.containsKey(currentClass.getName());
+	
+		if (!methodsToInvoke.isEmpty() || hasCallbacks) {
+			JNopStmt startWhileStmt = new JNopStmt();
+			JNopStmt endWhileStmt = new JNopStmt();
+			body.getUnits().add(startWhileStmt);
+
+			// Add the callbacks
+			addCallbackMethods(currentClass);
+
+			// Add the other entry points
+			for (SootMethod currentMethod : methodsToInvoke) {
 				JNopStmt thenStmt = new JNopStmt();
 				createIfStmt(thenStmt);
 				buildMethodCall(currentMethod, body, classLocal, generator);
 				body.getUnits().add(thenStmt);
 			}
-		}		
-		addCallbackMethods(currentClass);
-		
-		body.getUnits().add(endWhileStmt);
-		createIfStmt(startWhileStmt);
-		
+
+			body.getUnits().add(endWhileStmt);
+			createIfStmt(startWhileStmt);
+		}
+				
 		//4. onPause:
 		Stmt onPause = searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONPAUSE, currentClass, entryPoints, classLocal);
 		boolean hasAppOnPause = addCallbackMethods(applicationClass, referenceClasses,
@@ -852,6 +862,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		// If the method is in one of the predefined Android classes, it cannot
 		// contain custom code, so we do not need to call it
 		if (AndroidEntryPointConstants.isLifecycleClass(method.getDeclaringClass().getName()))
+			return null;
+		
+		// If this method is part of the Android framework, we don't need to call it
+		if (method.getDeclaringClass().getName().startsWith("android."))
 			return null;
 		
 		assert method.isStatic() || classLocal != null : "Class local was null for non-static method "

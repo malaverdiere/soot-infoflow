@@ -19,6 +19,9 @@
 			<classpath>
 				<pathelement location="${soot.jar}" />
 				<pathelement location="${heros.jar}" />
+				<fileset dir="lib">
+					<include name="*.jar" />
+				</fileset>
 			</classpath>
 		</javac>
 	</target>

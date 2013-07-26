@@ -3,6 +3,8 @@ package soot.jimple.infoflow.test.junit;
 import java.util.ArrayList;
 import java.util.List;
 
+import junit.framework.Assert;
+
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
@@ -11,7 +13,6 @@ import soot.jimple.infoflow.test.utilclasses.TestWrapper;
  * tests aliasing of heap references
  */
 public class HeapTests extends JUnitTests {
-	
 	
 	@Test
 	public void testForEarlyTermination(){
@@ -129,6 +130,28 @@ public class HeapTests extends JUnitTests {
 	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void twoLevelTest()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			negativeCheckInfoflow(infoflow);
+	    }
+	    
+	    @Test
+	    public void multiAliasTest(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void multiAliasTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+
+	    @Test
+	    public void overwriteAliasTest(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void overwriteAliasTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);
+			Assert.assertEquals(0, infoflow.getResults().size());
 	    }
 	    
 }

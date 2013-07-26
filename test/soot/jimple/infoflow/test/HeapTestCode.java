@@ -260,6 +260,42 @@ public class HeapTestCode {
 		}
 	}
 	
+	private class DataClass {
+		public String data;
+		public DataClass next;
+	}
 	
+	public void multiAliasTest() {
+		DataClass dc = new DataClass();
+		DataClass dc2 = null;
+		DataClass dc3 = new DataClass();
+		
+		dc2 = dc3;
+		
+		dc2.next = dc;
+		
+		String a = TelephonyManager.getDeviceId();
+		dc.data = a;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(dc3.next.data);
+	}	
 	
+	public void overwriteAliasTest() {
+		DataClass dc = new DataClass();
+		DataClass dc2 = null;
+		DataClass dc3 = new DataClass();
+		
+		dc2 = dc3;
+		
+		dc2.next = dc;
+		dc3.next = null;
+		
+		String a = TelephonyManager.getDeviceId();
+		dc.data = a;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(dc3.next.data);
+	}	
+
 }

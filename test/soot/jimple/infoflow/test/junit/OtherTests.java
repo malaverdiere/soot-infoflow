@@ -211,4 +211,5 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
+
 }

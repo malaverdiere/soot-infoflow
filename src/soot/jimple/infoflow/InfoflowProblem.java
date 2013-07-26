@@ -46,7 +46,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 	private InfoflowSolver bSolver; 
 	private final ISourceSinkManager sourceSinkManager;
-	private Abstraction zeroValue = null;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -121,18 +120,25 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					Abstraction source,
 					Set<Abstraction> taintSet,
 					boolean cutFirstField) {
+				// Keep the original taint
 				taintSet.add(source);
+				
+				// also taint the target of the assignment
 				Abstraction newAbs = source.deriveNewAbstraction(targetValue, cutFirstField, src);
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					((AbstractionWithPath) newAbs).addPathElement(src);
 				taintSet.add(newAbs);
-				//only heap-objects
-				if (triggerInaktiveTaintOrReverseFlow(targetValue, source)) {
-					// call backwards-check:
-					Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-					for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
-						bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
-					}
+				
+				// call backwards-check for heap-objects only
+				if (triggerInaktiveTaintOrReverseFlow(targetValue, source))
+					// If we overwrite the complete local, there is no need for
+					// a backwards analysis
+					if (!(targetValue.equals(source.getAccessPath().getPlainValue())
+							&& source.getAccessPath().isLocal())) {
+						Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
+						for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
+							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+						}
 				}
 			}
 
@@ -215,74 +221,63 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							for (Value rightValue : rightVals) {
 								// check if static variable is tainted (same name, same class)
 								//y = X.f && X.f tainted --> y, X.f tainted
-								if (newSource.getAccessPath().isStaticFieldRef()) {
-									if (rightValue instanceof StaticFieldRef) {
-										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-										if (newSource.getAccessPath().getFirstField().equals(rightRef.getField())) {
-											addLeftValue = true;
-											cutFirstField = true;
-										}
-									}
-								} else {
-									// if both are fields, we have to compare their fieldName via equals and their bases
-									//y = x.f && x tainted --> y, x tainted
-									//y = x.f && x.f tainted --> y, x tainted
-									if (rightValue instanceof InstanceFieldRef) {
-										InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
-										Local rightBase = (Local) rightRef.getBase();
-										Local sourceBase =  newSource.getAccessPath().getPlainLocal();
-										if (rightBase.equals(sourceBase)) {
-											if (newSource.getAccessPath().isInstanceFieldRef()) {
-												if (rightRef.getField().equals(newSource.getAccessPath().getFirstField())) {
-													addLeftValue = true;
-													cutFirstField = true;
-												}
-											} else {
-												addLeftValue = true;
-											}
-										}
-									}
-
-									// indirect taint propagation:
-									// if rightvalue is local and source is instancefield of this local:
-									// y = x && x.f tainted --> y.f, x.f tainted
-									// y.g = x && x.f tainted --> y.g.f, x.f tainted
-									if (rightValue instanceof Local && newSource.getAccessPath().isInstanceFieldRef()) {
-										Local base = newSource.getAccessPath().getPlainLocal();
-										if (rightValue.equals(base)) {
-											if (leftValue instanceof Local) {
-												if (pathTracking == PathTrackingMethod.ForwardTracking)
-													res.add(((AbstractionWithPath) newSource.deriveNewAbstraction
-															(newSource.getAccessPath().copyWithNewValue(leftValue), assignStmt)).addPathElement(src));
-												else
-													res.add(newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftValue), assignStmt));												
-
-											} else {
-												// access path length = 1 - taint entire value if left is field reference
-												if (pathTracking == PathTrackingMethod.ForwardTracking)
-													res.add(((AbstractionWithPath) newSource.deriveNewAbstraction(leftValue, assignStmt))
-															.addPathElement(src));
-												else
-													res.add(newSource.deriveNewAbstraction(leftValue, assignStmt));
-											}
-										}
-									}
-	
-									if (rightValue instanceof ArrayRef) {
-										//y = x[i] && x tainted -> x, y tainted
-										Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
-										if (rightBase.equals(newSource.getAccessPath().getPlainValue())) {
-											addLeftValue = true;
-										}
-									}
-	
-									// generic case, is true for Locals, ArrayRefs that are equal etc..
-									//y = x && x tainted --> y, x tainted
-									if (rightValue.equals(newSource.getAccessPath().getPlainValue())) {
+								if (newSource.getAccessPath().isStaticFieldRef() && rightValue instanceof StaticFieldRef) {
+									StaticFieldRef rightRef = (StaticFieldRef) rightValue;
+									if (newSource.getAccessPath().getFirstField().equals(rightRef.getField())) {
 										addLeftValue = true;
+										cutFirstField = true;
 									}
 								}
+								// if both are fields, we have to compare their fieldName via equals and their bases
+								//y = x.f && x tainted --> y, x tainted
+								//y = x.f && x.f tainted --> y, x tainted
+								else if (rightValue instanceof InstanceFieldRef) {								
+									InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
+									Local rightBase = (Local) rightRef.getBase();
+									Local sourceBase =  newSource.getAccessPath().getPlainLocal();
+									if (rightBase.equals(sourceBase)) {
+										if (newSource.getAccessPath().isInstanceFieldRef()) {
+											if (rightRef.getField().equals(newSource.getAccessPath().getFirstField())) {
+												addLeftValue = true;
+												cutFirstField = true;
+											}
+										}
+										else
+											addLeftValue = true;
+									}
+								}
+								// indirect taint propagation:
+								// if rightvalue is local and source is instancefield of this local:
+								// y = x && x.f tainted --> y.f, x.f tainted
+								// y.g = x && x.f tainted --> y.g.f, x.f tainted
+								else if (rightValue instanceof Local && newSource.getAccessPath().isInstanceFieldRef()) {
+									Local base = newSource.getAccessPath().getPlainLocal();
+									if (rightValue.equals(base)) {
+										if (leftValue instanceof Local) {
+											if (pathTracking == PathTrackingMethod.ForwardTracking)
+												res.add(((AbstractionWithPath) newSource.deriveNewAbstraction
+														(newSource.getAccessPath().copyWithNewValue(leftValue), assignStmt)).addPathElement(src));
+											else
+												res.add(newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftValue), assignStmt));												
+											}
+										else {
+											addLeftValue = true;
+										}
+									}
+								}
+								//y = x[i] && x tainted -> x, y tainted
+								else if (rightValue instanceof ArrayRef) {
+									Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
+									if (rightBase.equals(newSource.getAccessPath().getPlainValue()))
+										addLeftValue = true;
+								}
+								// generic case, is true for Locals, ArrayRefs that are equal etc..
+								//y = x && x tainted --> y, x tainted
+								else if (rightValue.equals(newSource.getAccessPath().getPlainValue())) {
+									addLeftValue = true;
+								}
 							}
+
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
 								if (sourceSinkManager.isSink(assignStmt, interproceduralCFG())) {
@@ -300,82 +295,58 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									addTaintViaStmt(src, leftValue, newSource, res, cutFirstField);
 								return res; 
 							}
+							
+							// If we have propagated taint, we have returned from this method by now
+							
 							//if leftvalue contains the tainted value -> it is overwritten - remove taint:
 							//but not for arrayRefs:
 							// x[i] = y --> taint is preserved since we do not distinguish between elements of collections 
 							//because we do not use a MUST-Alias analysis, we cannot delete aliases of taints 
-							if(((AssignStmt)src).getLeftOp() instanceof ArrayRef){
+							if (assignStmt.getLeftOp() instanceof ArrayRef)
 								return Collections.singleton(newSource);
-							}
-							if(newSource.getAccessPath().isInstanceFieldRef()){
-
+							
+							if(newSource.getAccessPath().isInstanceFieldRef()) {
 								//x.f = y && x.f tainted --> no taint propagated
 								if (leftValue instanceof InstanceFieldRef) {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 									if (leftRef.getBase().equals(newSource.getAccessPath().getPlainValue())) {
 										if (leftRef.getField().equals(newSource.getAccessPath().getFirstField())) {
-											if(newSource.isAbstractionActive()){
+//											if(newSource.isAbstractionActive()){
 												return Collections.emptySet();
-											}else{
-												//start backward:
-												for (Value rightValue : rightVals) {
-													Abstraction newAbs = newSource.deriveNewAbstraction(rightValue, true, src);
-													if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs)) {
-														Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-//														for (Unit predUnit : interproceduralCFG().getPredsOf(src))
-//															bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
-													}
-												}
-											}
+//											}
 										}
 										
 									}
-									//x = y && x.f tainted -> no taint propagated
-								}else if (leftValue instanceof Local){
+								}
+								//x = y && x.f tainted -> no taint propagated
+								else if (leftValue instanceof Local){
 									if (leftValue.equals(newSource.getAccessPath().getPlainValue())) {
-										if(newSource.isAbstractionActive()){
+//										if(newSource.isAbstractionActive()){
 											return Collections.emptySet();
-										}else{
-											//start backward:
-											for (Value rightValue : rightVals) {
-												Abstraction newAbs = newSource.deriveNewAbstraction(rightValue, false, src);
-												if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs)) {
-													Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-//													for (Unit predUnit : interproceduralCFG().getPredsOf(src))
-//														bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
-												}
-											}
-										}
+//										}
 									}
 								}	
-							}else if(newSource.getAccessPath().isStaticFieldRef()){
-								//X.f = y && X.f tainted -> no taint propagated
+							}
+							//X.f = y && X.f tainted -> no taint propagated
+							else if(newSource.getAccessPath().isStaticFieldRef()){
 								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(newSource.getAccessPath().getFirstField())){
-									if(newSource.isAbstractionActive()){
+//									if(newSource.isAbstractionActive()){
 										return Collections.emptySet();
-									}else{
-										//start backward:
-										for (Value rightValue : rightVals) {
-											Abstraction newAbs = newSource.deriveNewAbstraction(rightValue, false, src);
-											if (triggerInaktiveTaintOrReverseFlow(rightValue, newAbs)) {
-												Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-//												for (Unit predUnit : interproceduralCFG().getPredsOf(src))
-//													bSolver.processEdge(new PathEdge<Unit, Abstraction, SootMethod>(bwAbs, predUnit, bwAbs));
-											}
-										}
-									}
+//									}
 								}
 								
 							}
-							//when the fields of an object are tainted, but the base object is overwritten then the fields should not be tainted any more
+							//when the fields of an object are tainted, but the base object is overwritten
+							// then the fields should not be tainted any more
 							//x = y && x.f tainted -> no taint propagated
-							if(newSource.getAccessPath().isLocal() && leftValue.equals(newSource.getAccessPath().getPlainValue())){
-								if(newSource.isAbstractionActive()){
+							else if(newSource.getAccessPath().isLocal() && leftValue.equals(newSource.getAccessPath().getPlainValue())){
+//								if(newSource.isAbstractionActive()){
 									return Collections.emptySet();
-								}
+//								}
 							}
 							//nothing applies: z = y && x tainted -> taint is preserved
-							return Collections.singleton(newSource);
+							res.add(newSource);
+							return res;
 						}
 					};
 				}

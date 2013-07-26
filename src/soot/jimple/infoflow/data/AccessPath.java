@@ -1,5 +1,6 @@
 package soot.jimple.infoflow.data;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -27,7 +28,7 @@ public class AccessPath implements Cloneable {
 	/**
 	 * list of fields, either they are based on a concrete @value or they indicate a static field
 	 */
-	private final List<SootField> fields;
+	private final SootField[] fields;
 	private int hashCode = 0;
 
 	public AccessPath(Value val){
@@ -61,11 +62,11 @@ public class AccessPath implements Cloneable {
 			}
 			else
 				break;
-		this.fields = Collections.unmodifiableList(fields);
+		this.fields = fields.toArray(new SootField[fields.size()]);
 	}
 	
 	public AccessPath(SootField staticfield){
-		this.fields = Collections.singletonList(staticfield);
+		this.fields = new SootField[] { staticfield };
 		value = null;
 	}
 	
@@ -74,13 +75,10 @@ public class AccessPath implements Cloneable {
 		List<SootField> fields = new LinkedList<SootField>();
 		if(fields.size() < Infoflow.getAccessPathLength())
 			fields.add(field);
-		this.fields = Collections.unmodifiableList(fields);
+		this.fields = fields.toArray(new SootField[fields.size()]);
 	}
 		
 	public Value getPlainValue() {
-		if(value == null){
-			return null;
-		}
 		return value;
 	}
 	
@@ -92,18 +90,18 @@ public class AccessPath implements Cloneable {
 	}
 	
 	public SootField getLastField() {
-		if (fields.isEmpty())
+		if (fields == null || fields.length == 0)
 			return null;
-		return fields.get(fields.size() - 1);
+		return fields[fields.length - 1];
 	}
 	
 	public SootField getFirstField(){
-		if (fields.isEmpty())
+		if (fields == null || fields.length == 0)
 			return null;
-		return fields.get(0);
+		return fields[0];
 	}
 	
-	protected Collection<SootField> getFields(){
+	protected SootField[] getFields(){
 		return fields;
 	}
 	
@@ -112,7 +110,7 @@ public class AccessPath implements Cloneable {
 		if (hashCode == 0) {
 			final int prime = 31;
 			this.hashCode = 1;
-			this.hashCode = prime * this.hashCode + ((fields == null) ? 0 : fields.hashCode());
+			this.hashCode = prime * this.hashCode + ((fields == null) ? 0 : Arrays.hashCode(fields));
 			this.hashCode = prime * this.hashCode + ((value == null) ? 0 : value.hashCode());
 		}
 		return this.hashCode;
@@ -125,7 +123,7 @@ public class AccessPath implements Cloneable {
 		if (obj == null || !(obj instanceof AccessPath))
 			return false;
 		AccessPath other = (AccessPath) obj;
-		if (!fields.equals(other.fields))
+		if (!Arrays.equals(fields, other.fields))
 			return false;
 		if (value == null) {
 			if (other.value != null)
@@ -137,7 +135,7 @@ public class AccessPath implements Cloneable {
 	}
 	
 	public boolean isStaticFieldRef(){
-		if(value == null && !fields.isEmpty()){
+		if(value == null && fields != null && fields.length > 0){
 			assert (getFirstField().makeRef() instanceof StaticFieldRef || getFirstField().makeRef().isStatic()) : "Assertion failed for fields: " + fields.toString();
 			return true;
 		}
@@ -145,29 +143,25 @@ public class AccessPath implements Cloneable {
 	}
 	
 	public boolean isInstanceFieldRef(){
-		if(value != null && !fields.isEmpty()){
-			return true;
-		}
-		return false;
+		return value != null && fields != null && fields.length > 0;
 	}
 	
 	
 	public boolean isLocal(){
-		if(value != null && value instanceof Local && fields.isEmpty()){
-			return true;
-		}
-		return false;
+		return value != null && value instanceof Local && (fields == null || fields.length == 0);
 	}
 	
 	@Override
 	public String toString(){
 		String str = "";
-		if(value != null){
-			str += value.toString() +"(" + value.getType() +")" + " ";
-		}
-		if(!fields.isEmpty()){
-			str += fields.toString();
-		}
+		if(value != null)
+			str += value.toString() +"(" + value.getType() +")";
+		if (fields != null)
+			for (int i = 0; i < fields.length; i++) {
+				if (!str.isEmpty())
+					str += " ";
+				str += fields[i].toString();
+			}
 		return str;
 	}
 	
@@ -177,12 +171,12 @@ public class AccessPath implements Cloneable {
 	 * @return
 	 */
 	public AccessPath copyWithNewValue(Value val){
-		return new AccessPath(val, this.fields);
+		return new AccessPath(val, Arrays.asList(this.fields));
 	}
 	
 	@Override
 	public AccessPath clone(){
-		AccessPath a = new AccessPath(value, new LinkedList<SootField>(fields));
+		AccessPath a = new AccessPath(value, Arrays.asList(fields));
 		return a;
 	}
 

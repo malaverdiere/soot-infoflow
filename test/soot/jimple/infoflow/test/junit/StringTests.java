@@ -215,6 +215,7 @@ public class StringTests extends JUnitTests {
 			public void setSootOptions(Options options) {
 				options.set_include(Collections.emptyList());
 				options.set_exclude(Collections.singletonList("java."));
+				options.set_exclude(Collections.singletonList("javax."));
 				options.set_prepend_classpath(false);
 			}
 			

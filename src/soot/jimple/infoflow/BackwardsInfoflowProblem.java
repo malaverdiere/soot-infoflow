@@ -106,15 +106,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							// Taints written into static fields are passed on "as is".
 							if (leftValue instanceof StaticFieldRef)
 								return Collections.singleton(source);
-							
-							//new Stmt -> no more backwards propagation, start forward pass:
-							if(leftValue.equals(source.getAccessPath().getPlainValue())&&
-									rightValue instanceof NewExpr){
-								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-									fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getAbstractionFromCallEdge(), u, source));
-								return Collections.emptySet();
-							}
-							
+														
 							// Check whether the left side of the assignment matches our
 							// current taint abstraction
 							boolean leftSideMatches = leftValue instanceof Local
@@ -123,6 +115,11 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								InstanceFieldRef ifr = (InstanceFieldRef) leftValue;
 								if (ifr.getBase().equals(source.getAccessPath().getPlainValue())
 										&& ifr.getField().equals(source.getAccessPath().getFirstField()))
+									leftSideMatches = true;
+							}
+							if (!leftSideMatches && leftValue instanceof StaticFieldRef) {
+								StaticFieldRef sfr = (StaticFieldRef) leftValue;
+								if (sfr.getField().equals(source.getAccessPath().getFirstField()))
 									leftSideMatches = true;
 							}
 

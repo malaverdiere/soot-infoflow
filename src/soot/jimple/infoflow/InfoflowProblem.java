@@ -137,6 +137,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							&& source.getAccessPath().isLocal())) {
 						Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
 						for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
+//							if (interproceduralCFG().getMethodOf(src).getName().contains("staticLinkedList"))
+//								System.out.println(interproceduralCFG().getMethodOf(src).getActiveBody());
 							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 						}
 				}

@@ -137,8 +137,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							&& source.getAccessPath().isLocal())) {
 						Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
 						for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
-//							if (interproceduralCFG().getMethodOf(src).getName().contains("staticLinkedList"))
-//								System.out.println(interproceduralCFG().getMethodOf(src).getActiveBody());
 							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 						}
 				}
@@ -255,16 +253,21 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								else if (rightValue instanceof Local && newSource.getAccessPath().isInstanceFieldRef()) {
 									Local base = newSource.getAccessPath().getPlainLocal();
 									if (rightValue.equals(base)) {
+										addLeftValue = true;
+										/*
 										if (leftValue instanceof Local) {
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
 												res.add(((AbstractionWithPath) newSource.deriveNewAbstraction
 														(newSource.getAccessPath().copyWithNewValue(leftValue), assignStmt)).addPathElement(src));
 											else
 												res.add(newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftValue), assignStmt));												
-											}
+											res.add(newSource);
+											return res;
+										}
 										else {
 											addLeftValue = true;
 										}
+										*/
 									}
 								}
 								//y = x[i] && x tainted -> x, y tainted
@@ -295,7 +298,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 								if(triggerInaktiveTaintOrReverseFlow(leftValue, newSource) || newSource.isAbstractionActive())
 									addTaintViaStmt(src, leftValue, newSource, res, cutFirstField);
-								return res; 
+								res.add(newSource);
+								return res;
 							}
 							
 							// If we have propagated taint, we have returned from this method by now
@@ -500,7 +504,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-
+						
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource;
 						if(!source.isAbstractionActive()){

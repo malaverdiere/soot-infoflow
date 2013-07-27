@@ -164,46 +164,49 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 							}
-							
-							boolean addRightValue = false;
-							
-							// if we have the tainted value on the left side of the assignment,
-							// we also have to track the right side of the assignment
-							boolean cutFirstField = false;
-							// if both are fields, we have to compare their fieldName via equals and their bases via PTS
-							if (leftValue instanceof InstanceFieldRef) {
-								InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
-								if (leftRef.getBase().equals(source.getAccessPath().getPlainLocal())) {
-									if (source.getAccessPath().isInstanceFieldRef()) {
-										if (leftRef.getField().equals(source.getAccessPath().getFirstField())) {
+														
+							if (!(rightValue instanceof NewExpr || rightValue instanceof NewArrayExpr
+									|| rightValue instanceof Constant)) {
+								// if we have the tainted value on the left side of the assignment,
+								// we also have to track the right side of the assignment
+								boolean addRightValue = false;
+								boolean cutFirstField = false;
+
+								// if both are fields, we have to compare their fieldName via equals and their bases via PTS
+								if (leftValue instanceof InstanceFieldRef) {
+									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
+									if (leftRef.getBase().equals(source.getAccessPath().getPlainLocal())) {
+										if (source.getAccessPath().isInstanceFieldRef()) {
+											if (leftRef.getField().equals(source.getAccessPath().getFirstField())) {
+												addRightValue = true;
+												cutFirstField = true;
+											}
+										} else {
 											addRightValue = true;
-											cutFirstField = true;
 										}
-									} else {
+									}
+									// indirect taint propagation:
+									// if leftValue is local and source is instancefield of this local:
+								} else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
+									Local base = source.getAccessPath().getPlainLocal(); // ?
+									if (leftValue.equals(base)) {
+										res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
+									}
+								} else if (leftValue instanceof ArrayRef) {
+									Local leftBase = (Local) ((ArrayRef) leftValue).getBase();
+									if (leftBase.equals(source.getAccessPath().getPlainValue())) {
 										addRightValue = true;
 									}
-								}
-								// indirect taint propagation:
-								// if leftValue is local and source is instancefield of this local:
-							} else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
-								Local base = source.getAccessPath().getPlainLocal(); // ?
-								if (leftValue.equals(base)) {
-									res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
-								}
-							} else if (leftValue instanceof ArrayRef) {
-								Local leftBase = (Local) ((ArrayRef) leftValue).getBase();
-								if (leftBase.equals(source.getAccessPath().getPlainValue())) {
+									// generic case, is true for Locals, ArrayRefs that are equal etc..
+								} else if (leftValue.equals(source.getAccessPath().getPlainValue())) {
 									addRightValue = true;
 								}
-								// generic case, is true for Locals, ArrayRefs that are equal etc..
-							} else if (leftValue.equals(source.getAccessPath().getPlainValue())) {
-								addRightValue = true;
-							}
-							
-							// if one of them is true -> add rightValue
-							if (addRightValue) {
-								Abstraction newAbs = source.deriveNewAbstraction(rightValue, cutFirstField, null);
-								res.add(newAbs);
+								
+								// if one of them is true -> add rightValue
+								if (addRightValue) {
+									Abstraction newAbs = source.deriveNewAbstraction(rightValue, cutFirstField, null);
+									res.add(newAbs);
+								}
 							}
 							
 							for (Abstraction newAbs : res) {

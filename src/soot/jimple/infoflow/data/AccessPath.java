@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import soot.EquivalentValue;
 import soot.Local;
 import soot.SootField;
 import soot.Value;
@@ -36,7 +35,10 @@ public class AccessPath implements Cloneable {
 	}
 	
 	protected AccessPath(Value val, Collection<SootField> appendingFields){
-		assert !(val instanceof EquivalentValue);
+		assert (val == null && appendingFields != null && !appendingFields.isEmpty())
+		 	|| val instanceof Local
+			|| val instanceof InstanceFieldRef
+			|| val instanceof StaticFieldRef;
 
 		List<SootField> fields = new LinkedList<SootField>();
 		if(val instanceof StaticFieldRef){
@@ -71,6 +73,8 @@ public class AccessPath implements Cloneable {
 	}
 	
 	public AccessPath(Value base, SootField field){
+		assert base instanceof Local;
+		
 		value = base;
 		List<SootField> fields = new LinkedList<SootField>();
 		if(fields.size() < Infoflow.getAccessPathLength())
@@ -177,6 +181,7 @@ public class AccessPath implements Cloneable {
 	@Override
 	public AccessPath clone(){
 		AccessPath a = new AccessPath(value, Arrays.asList(fields));
+		assert a.equals(this);
 		return a;
 	}
 

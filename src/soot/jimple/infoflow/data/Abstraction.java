@@ -270,7 +270,9 @@ public class Abstraction implements Cloneable {
 	
 	@Override
 	public Abstraction clone() {
-		return new Abstraction(accessPath, this);
+		Abstraction abs = new Abstraction(accessPath, this);
+		assert abs.equals(this);
+		return abs;
 	}
 	
 	public Abstraction cloneUsePredAbstractionOfCG(){

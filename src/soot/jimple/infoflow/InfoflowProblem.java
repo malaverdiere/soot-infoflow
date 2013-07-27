@@ -133,12 +133,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				if (triggerInaktiveTaintOrReverseFlow(targetValue, source))
 					// If we overwrite the complete local, there is no need for
 					// a backwards analysis
-					if (!(targetValue.equals(source.getAccessPath().getPlainValue())
-							&& source.getAccessPath().isLocal())) {
+					if (!(targetValue.equals(newAbs.getAccessPath().getPlainValue())
+							&& newAbs.getAccessPath().isLocal())) {
 						Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-						for (Unit predUnit : interproceduralCFG().getPredsOf(src)){
-							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+						for (Unit predUnit : interproceduralCFG().getPredsOf(src)){ {
+							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs.getAbstractionFromCallEdge(), predUnit, bwAbs));
 						}
+					}
 				}
 			}
 

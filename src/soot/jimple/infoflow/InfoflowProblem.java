@@ -123,8 +123,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				// Keep the original taint
 				taintSet.add(source);
 				
+				// Strip array references to their respective base
+				Value baseTarget = targetValue;
+				if (targetValue instanceof ArrayRef)
+					baseTarget = ((ArrayRef) targetValue).getBase();
+
 				// also taint the target of the assignment
-				Abstraction newAbs = source.deriveNewAbstraction(targetValue, cutFirstField, src);
+				Abstraction newAbs = source.deriveNewAbstraction(baseTarget, cutFirstField, src);
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					((AbstractionWithPath) newAbs).addPathElement(src);
 				taintSet.add(newAbs);
@@ -193,7 +198,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					Value right = assignStmt.getRightOp();
 					Value left = assignStmt.getLeftOp();
 
-					final Value leftValue = BaseSelector.selectBase(left, false);
+					final Value leftValue = BaseSelector.selectBase(left, true);
 					final Set<Value> rightVals = BaseSelector.selectBaseList(right, true);
 
 					return new FlowFunction<Abstraction>() {

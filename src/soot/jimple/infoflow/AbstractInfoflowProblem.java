@@ -12,6 +12,7 @@ import soot.RefType;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
+import soot.jimple.ArrayRef;
 import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
@@ -202,7 +203,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 			return false;
 		}
 		//no string
-		if(!(val instanceof InstanceFieldRef) && val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
+		if(!(val instanceof InstanceFieldRef) && !(val instanceof ArrayRef) 
+				&& val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
 			return false;
 		}
 		if(val instanceof InstanceFieldRef && ((InstanceFieldRef)val).getBase().getType() instanceof RefType &&

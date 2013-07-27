@@ -3,6 +3,7 @@ package soot.jimple.infoflow.util;
 import soot.ArrayType;
 import soot.Local;
 import soot.Value;
+import soot.jimple.ArrayRef;
 import soot.jimple.FieldRef;
 
 public class DataTypeHandler {
@@ -16,7 +17,8 @@ public class DataTypeHandler {
 		if(val == null){
 			return false;
 		}
-		if(val instanceof FieldRef || (val instanceof Local && ((Local)val).getType() instanceof ArrayType)){
+		if(val instanceof FieldRef || val instanceof ArrayRef
+				|| (val instanceof Local && ((Local)val).getType() instanceof ArrayType)){
 			return true;
 		}
 		return false;

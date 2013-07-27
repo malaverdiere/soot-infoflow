@@ -95,7 +95,6 @@ public class SetTestCode {
 
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement);
-		
 	}
 	
 	public void iteratorTest(){

@@ -123,9 +123,33 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									leftSideMatches = true;
 							}
 
+							// Is the left side overwritten completely?
+							if (leftSideMatches) {
+								// If we have an assignment to the base local of the current taint,
+								// all taint propagations must be below that point, so this is the
+								// right point to turn around.
+								if (triggerInaktiveTaintOrReverseFlow(leftValue, source))
+									for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
+										fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getAbstractionFromCallEdge(), u, source));
+
+								// Termination shortcut: If the right side is a value we do not track,
+								// we can stop here.
+								if (rightValue instanceof NewExpr
+											|| rightValue instanceof NewArrayExpr
+											|| rightValue instanceof Constant) {
+									return Collections.emptySet();
+								}
+							}
+
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							if (!leftSideMatches)
 								res.add(source);
+
+							// If we assign a constant, there is no need to track the right side
+							// any further or do any forward propagation since constants cannot
+							// carry taint.
+							if (rightValue instanceof Constant)
+								return res;
 
 							// Check whether we need to start a forward search for taints.
 							if (triggerInaktiveTaintOrReverseFlow(leftValue, source)) {
@@ -148,20 +172,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
 										fSolver.processEdge(new PathEdge<Unit, Abstraction>(abs.getAbstractionFromCallEdge(), u, abs));
 									res.add(abs);
-								}
-
-								// Is the left side overwritten completely?
-								if (leftSideMatches) {
-									// If we have an assignment to the base local of the current taint,
-									// all taint propagations must be below that point, so this is the
-									// right point to turn around.
-									if (rightValue instanceof NewExpr
-												|| rightValue instanceof NewArrayExpr
-												|| rightValue instanceof Constant
-												|| rightValue instanceof FieldRef) {	// FieldRef?
-										for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(src))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction>(source.getAbstractionFromCallEdge(), u, source));
-									}
 								}
 							}
 														

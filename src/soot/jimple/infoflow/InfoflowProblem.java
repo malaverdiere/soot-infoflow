@@ -135,16 +135,17 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				taintSet.add(newAbs);
 				
 				// call backwards-check for heap-objects only
-				if (triggerInaktiveTaintOrReverseFlow(targetValue, source))
+				if (triggerInaktiveTaintOrReverseFlow(targetValue, source) && source.isAbstractionActive())
 					// If we overwrite the complete local, there is no need for
 					// a backwards analysis
 					if (!(targetValue.equals(newAbs.getAccessPath().getPlainValue())
 							&& newAbs.getAccessPath().isLocal())) {
 						Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-						for (Unit predUnit : interproceduralCFG().getPredsOf(src)){ {
+						for (Unit predUnit : interproceduralCFG().getPredsOf(src)) {
 							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs.getAbstractionFromCallEdge(), predUnit, bwAbs));
+//							if (bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs.getAbstractionFromCallEdge(), predUnit, bwAbs)))
+//								System.out.println(interproceduralCFG().getMethodOf(src).getActiveBody());
 						}
-					}
 				}
 			}
 

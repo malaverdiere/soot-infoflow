@@ -130,10 +130,16 @@ public class SetTests extends JUnitTests {
     public void setIteratorTest(){
     	System.out.println("Running test case setIteratorTest...");
     	Infoflow infoflow = initInfoflow();
+    	
+    	int oldAPLength = Infoflow.getAccessPathLength();
+    	infoflow.setAccessPathLength(1);
+
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void iteratorTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);		
+
+		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case setIteratorTest done.");
     }
     

@@ -267,11 +267,13 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								for (Unit u : dest.getActiveBody().getUnits()) {
 									if (u instanceof ReturnStmt) {
 										ReturnStmt rStmt = (ReturnStmt) u;
-										Abstraction abs;
-										abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()));
-										abs.setAbstractionFromCallEdge(abs.clone());
-										assert abs != source;		// our source abstraction must be immutable
-										res.add(abs);
+										if (!(rStmt.getOp() instanceof Constant)) {
+											Abstraction abs;
+											abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()));
+											abs.setAbstractionFromCallEdge(abs.clone());
+											assert abs != source;		// our source abstraction must be immutable
+											res.add(abs);
+										}
 									}
 								}
 							}

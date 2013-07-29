@@ -316,7 +316,8 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		
 		// Make sure that we don't run into loops
 		if (!constructionStack.add(createdClass)) {
-			logger.warn("Ran into a constructor generation loop, substituting with null...");
+			logger.warn("Ran into a constructor generation loop for class " + createdClass
+					+ ", substituting with null...");
 			Local tempLocal = generator.generateLocal(RefType.v(createdClass));			
 			AssignStmt assignStmt = Jimple.v().newAssignStmt(tempLocal, NullConstant.v());
 			body.getUnits().add(assignStmt);

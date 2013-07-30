@@ -1,10 +1,6 @@
 package soot.jimple.infoflow.data;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 
 import soot.Local;
 import soot.SootField;
@@ -31,40 +27,40 @@ public class AccessPath implements Cloneable {
 	private int hashCode = 0;
 
 	public AccessPath(Value val){
-		this(val, Collections.<SootField>emptyList());
+		this(val, (SootField[]) null);
 	}
 	
-	protected AccessPath(Value val, Collection<SootField> appendingFields){
-		assert (val == null && appendingFields != null && !appendingFields.isEmpty())
+	protected AccessPath(Value val, SootField[] appendingFields){
+		assert (val == null && appendingFields != null && appendingFields.length > 0)
 		 	|| val instanceof Local
 			|| val instanceof InstanceFieldRef
 			|| val instanceof StaticFieldRef;
 
-		List<SootField> fields = new LinkedList<SootField>();
+		SootField baseField = null;
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
-			if(fields.size()< Infoflow.getAccessPathLength())
-				fields.add(ref.getField());
 			value = null;
+			baseField = ref.getField();
 		}
 		else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
 			value = ref.getBase();
-			if(fields.size() < Infoflow.getAccessPathLength())
-				fields.add(ref.getField());
+			baseField = ref.getField();
 		}
-		else
+		else {
 			value = val;
+		}
 
-		int cnt = fields.size();
-		for (SootField field : appendingFields)
-			if (cnt < Infoflow.getAccessPathLength()) {
-				fields.add(field);
-				cnt++;
-			}
-			else
-				break;
-		this.fields = fields.toArray(new SootField[fields.size()]);
+		int fieldNum = (baseField == null ? 0 : 1)
+				+ (appendingFields == null ? 0 : appendingFields.length);
+		this.fields = new SootField[Math.min(Infoflow.getAccessPathLength(), fieldNum)];
+		
+		if (baseField != null)
+			this.fields[0] = baseField;
+
+		if (appendingFields != null)
+			for (int i = (baseField == null ? 0 : 1); i < this.fields.length; i++)
+				this.fields[i] = appendingFields[i - (baseField == null ? 0 : 1)];
 	}
 	
 	public AccessPath(SootField staticfield){
@@ -73,13 +69,8 @@ public class AccessPath implements Cloneable {
 	}
 	
 	public AccessPath(Value base, SootField field){
+		this(base, new SootField[] { field });
 		assert base instanceof Local;
-		
-		value = base;
-		List<SootField> fields = new LinkedList<SootField>();
-		if(fields.size() < Infoflow.getAccessPathLength())
-			fields.add(field);
-		this.fields = fields.toArray(new SootField[fields.size()]);
 	}
 		
 	public Value getPlainValue() {
@@ -161,11 +152,12 @@ public class AccessPath implements Cloneable {
 		if(value != null)
 			str += value.toString() +"(" + value.getType() +")";
 		if (fields != null)
-			for (int i = 0; i < fields.length; i++) {
-				if (!str.isEmpty())
-					str += " ";
-				str += fields[i].toString();
-			}
+			for (int i = 0; i < fields.length; i++)
+				if (fields[i] != null) {
+					if (!str.isEmpty())
+						str += " ";
+					str += fields[i].toString();
+				}
 		return str;
 	}
 	
@@ -175,12 +167,12 @@ public class AccessPath implements Cloneable {
 	 * @return
 	 */
 	public AccessPath copyWithNewValue(Value val){
-		return new AccessPath(val, Arrays.asList(this.fields));
+		return new AccessPath(val, this.fields);
 	}
 	
 	@Override
 	public AccessPath clone(){
-		AccessPath a = new AccessPath(value, Arrays.asList(fields));
+		AccessPath a = new AccessPath(value, fields);
 		assert a.equals(this);
 		return a;
 	}

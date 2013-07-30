@@ -1,10 +1,6 @@
 package soot.jimple.infoflow.data;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import soot.SootField;
 import soot.Unit;
 import soot.Value;
@@ -148,7 +144,7 @@ public class Abstraction implements Cloneable {
 		SootField[] fields = new SootField[cutFirstField ? orgFields.length - 1 : orgFields.length];
 		for (int i = cutFirstField ? 1 : 0; i < orgFields.length; i++)
 			fields[cutFirstField ? i - 1 : i] = orgFields[i];
-		a = deriveNewAbstraction(new AccessPath(taint, Arrays.asList(fields)));
+		a = deriveNewAbstraction(new AccessPath(taint, fields));
 		a.isActive = isActive;
 		if (isActive)
 			a.activationUnit = newActUnit;

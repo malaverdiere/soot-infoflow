@@ -1,5 +1,7 @@
 package soot.jimple.infoflow;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -312,8 +314,27 @@ public class InfoflowResults {
 	public void printResults() {
 		for (SinkInfo sink : this.results.keySet()) {
 			logger.info("Found a flow to sink {}, from the following sources:", sink);
-			for (SourceInfo source : this.results.get(sink))
+			for (SourceInfo source : this.results.get(sink)) {
 				logger.info("\t- {}", source.getSource());
+				if (source.getPath() != null && !source.getPath().isEmpty())
+					logger.info("\t\ton Path {}", source.getPath());
+			}
+		}
+	}
+
+	/**
+	 * Prints all results stored in this object to the given writer
+	 * @param wr The writer to which to print the results
+	 * @throws IOException Thrown when data writing fails
+	 */
+	public void printResults(Writer wr) throws IOException {
+		for (SinkInfo sink : this.results.keySet()) {
+			wr.write("Found a flow to sink " + sink + ", from the following sources:\n");
+			for (SourceInfo source : this.results.get(sink)) {
+				wr.write("\t- " + source.getSource() + "\n");
+				if (source.getPath() != null && !source.getPath().isEmpty())
+					wr.write("\t\ton Path " + source.getPath() + "\n");
+			}
 		}
 	}
 

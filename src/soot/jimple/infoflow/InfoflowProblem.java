@@ -261,20 +261,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									Local base = newSource.getAccessPath().getPlainLocal();
 									if (rightValue.equals(base)) {
 										addLeftValue = true;
-										/*
-										if (leftValue instanceof Local) {
-											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												res.add(((AbstractionWithPath) newSource.deriveNewAbstraction
-														(newSource.getAccessPath().copyWithNewValue(leftValue), assignStmt)).addPathElement(src));
-											else
-												res.add(newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftValue), assignStmt));												
-											res.add(newSource);
-											return res;
-										}
-										else {
-											addLeftValue = true;
-										}
-										*/
 									}
 								}
 								//y = x[i] && x tainted -> x, y tainted
@@ -324,9 +310,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 									if (leftRef.getBase().equals(newSource.getAccessPath().getPlainValue())) {
 										if (leftRef.getField().equals(newSource.getAccessPath().getFirstField())) {
-//											if(newSource.isAbstractionActive()){
-												return Collections.emptySet();
-//											}
+											return Collections.emptySet();
 										}
 										
 									}
@@ -334,18 +318,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								//x = y && x.f tainted -> no taint propagated
 								else if (leftValue instanceof Local){
 									if (leftValue.equals(newSource.getAccessPath().getPlainValue())) {
-//										if(newSource.isAbstractionActive()){
-											return Collections.emptySet();
-//										}
+										return Collections.emptySet();
 									}
 								}	
 							}
 							//X.f = y && X.f tainted -> no taint propagated
 							else if(newSource.getAccessPath().isStaticFieldRef()){
 								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(newSource.getAccessPath().getFirstField())){
-//									if(newSource.isAbstractionActive()){
-										return Collections.emptySet();
-//									}
+									return Collections.emptySet();
 								}
 								
 							}
@@ -353,9 +333,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// then the fields should not be tainted any more
 							//x = y && x.f tainted -> no taint propagated
 							else if(newSource.getAccessPath().isLocal() && leftValue.equals(newSource.getAccessPath().getPlainValue())){
-//								if(newSource.isAbstractionActive()){
-									return Collections.emptySet();
-//								}
+								return Collections.emptySet();
 							}
 							//nothing applies: z = y && x tainted -> taint is preserved
 							res.add(newSource);
@@ -461,7 +439,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									((AbstractionWithPath) abs).addPathElement(stmt);
 								//add new callArgs:
 								assert abs != newSource; 		// our source abstraction must be immutable
-								abs.setAbstractionFromCallEdge(abs.clone());
+								abs.setAbstractionFromCallEdge(abs);
 								res.add(abs);
 							}
 						}
@@ -478,7 +456,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										((AbstractionWithPath) abs).addPathElement(stmt);
 									assert abs != newSource;		// our source abstraction must be immutable
-									abs.setAbstractionFromCallEdge(abs.clone());
+									abs.setAbstractionFromCallEdge(abs);
 									res.add(abs);
 								}
 							}
@@ -490,7 +468,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							abs = newSource.clone();
 							assert (abs.equals(newSource) && abs.hashCode() == newSource.hashCode());
 							assert abs != newSource;		// our source abstraction must be immutable
-							abs.setAbstractionFromCallEdge(abs.clone());
+							abs.setAbstractionFromCallEdge(abs);
 							res.add(abs);
 						}
 						

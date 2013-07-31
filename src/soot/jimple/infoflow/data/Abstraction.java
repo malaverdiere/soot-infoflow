@@ -129,11 +129,7 @@ public class Abstraction implements Cloneable {
 	public final Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
 		return this.deriveNewAbstraction(taint, false, activationUnit);
 	}
-	
-	public final Abstraction deriveNewAbstraction(Value taint, Unit srcUnit, boolean isActive){
-		return this.deriveNewAbstraction(taint, false, srcUnit, isActive);
-	}
-	
+		
 	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit){
 		return deriveNewAbstraction(taint, cutFirstField, newActUnit, isActive);
 	}

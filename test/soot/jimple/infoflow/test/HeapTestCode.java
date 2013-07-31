@@ -298,4 +298,13 @@ public class HeapTestCode {
 		cm.publish(dc3.next.data);
 	}	
 
+	public void arrayAliasTest() {
+		String[] a = new String[1];
+		String[] b = a;
+		a[0] = TelephonyManager.getDeviceId();
+		String[] c = b;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(c[0]);		
+	}
+
 }

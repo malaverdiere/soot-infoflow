@@ -5,6 +5,7 @@ import java.util.Arrays;
 import soot.Local;
 import soot.SootField;
 import soot.Value;
+import soot.jimple.ArrayRef;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.infoflow.Infoflow;
@@ -34,7 +35,8 @@ public class AccessPath implements Cloneable {
 		assert (val == null && appendingFields != null && appendingFields.length > 0)
 		 	|| val instanceof Local
 			|| val instanceof InstanceFieldRef
-			|| val instanceof StaticFieldRef;
+			|| val instanceof StaticFieldRef
+			|| val instanceof ArrayRef;
 
 		SootField baseField = null;
 		if(val instanceof StaticFieldRef){
@@ -46,6 +48,10 @@ public class AccessPath implements Cloneable {
 			InstanceFieldRef ref = (InstanceFieldRef) val;
 			value = ref.getBase();
 			baseField = ref.getField();
+		}
+		else if (val instanceof ArrayRef) {
+			ArrayRef ref = (ArrayRef) val;
+			value = ref.getBase();
 		}
 		else {
 			value = val;

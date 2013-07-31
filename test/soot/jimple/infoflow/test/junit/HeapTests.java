@@ -154,4 +154,15 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(0, infoflow.getResults().size());
 	    }
 	    
+	    @Test
+	    public void arrayAliasTest(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void arrayAliasTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+
 }

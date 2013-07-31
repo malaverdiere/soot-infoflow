@@ -184,6 +184,8 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 	}
 	
 	private List<String> getMethodsForClass(SootClass c){
+		assert c != null;
+		
 		List<String> methodList = new LinkedList<String>();
 		if(classList.containsKey(c.getName())){
 			methodList.addAll(classList.get(c.getName()));

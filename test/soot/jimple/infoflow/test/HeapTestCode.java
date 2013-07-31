@@ -307,4 +307,32 @@ public class HeapTestCode {
 		cm.publish(c[0]);		
 	}
 
+	public void functionAliasTest() {
+		String tainted = TelephonyManager.getDeviceId();
+		DataClass dc1 = new DataClass();
+		DataClass dc2 = new DataClass();
+		dc1.data = tainted;
+		copy(dc1, dc2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(dc2.data);		
+	}
+
+	private void copy(DataClass dc1, DataClass dc2) {
+		dc2.data = dc1.data;
+	}
+
+	public void functionAliasTest2() {
+		DataClass dc1 = new DataClass();
+		DataClass dc2 = new DataClass();
+		taintMe(dc1);
+		copy(dc1, dc2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(dc2.data);		
+	}
+	
+	public void taintMe(DataClass dc) {
+		String tainted = TelephonyManager.getDeviceId();
+		dc.data = tainted;
+	}
+
 }

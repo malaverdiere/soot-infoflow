@@ -268,7 +268,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 										if (rStmt.getOp() instanceof Local
 												|| rStmt.getOp() instanceof FieldRef) {
 											Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()));
-											abs.setAbstractionFromCallEdge(abs);
+											abs.setAbstractionFromCallEdge(abs.clone());
 											assert abs != source;		// our source abstraction must be immutable
 											res.add(abs);
 										}
@@ -280,7 +280,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						// easy: static
 						if (source.getAccessPath().isStaticFieldRef()) {
 							Abstraction abs = source.clone();
-							abs.setAbstractionFromCallEdge(abs);
+							abs.setAbstractionFromCallEdge(abs.clone());
 							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
 							assert abs != source;		// our source abstraction must be immutable
 							res.add(abs);
@@ -307,7 +307,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								if (!param) {
 									if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 										Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL));
-										abs.setAbstractionFromCallEdge(abs);
+										abs.setAbstractionFromCallEdge(abs.clone());
 										assert abs != source;		// our source abstraction must be immutable
 										res.add(abs);
 									}

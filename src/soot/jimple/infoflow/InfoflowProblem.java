@@ -143,8 +143,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
 						for (Unit predUnit : interproceduralCFG().getPredsOf(src)) {
 							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs.getAbstractionFromCallEdge(), predUnit, bwAbs));
-//							if (bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs.getAbstractionFromCallEdge(), predUnit, bwAbs)))
-//								System.out.println(interproceduralCFG().getMethodOf(src).getActiveBody());
 						}
 				}
 			}
@@ -439,7 +437,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									((AbstractionWithPath) abs).addPathElement(stmt);
 								//add new callArgs:
 								assert abs != newSource; 		// our source abstraction must be immutable
-								abs.setAbstractionFromCallEdge(abs);
+								abs.setAbstractionFromCallEdge(abs.clone());
 								res.add(abs);
 							}
 						}
@@ -456,7 +454,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										((AbstractionWithPath) abs).addPathElement(stmt);
 									assert abs != newSource;		// our source abstraction must be immutable
-									abs.setAbstractionFromCallEdge(abs);
+									abs.setAbstractionFromCallEdge(abs.clone());
 									res.add(abs);
 								}
 							}
@@ -468,7 +466,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							abs = newSource.clone();
 							assert (abs.equals(newSource) && abs.hashCode() == newSource.hashCode());
 							assert abs != newSource;		// our source abstraction must be immutable
-							abs.setAbstractionFromCallEdge(abs);
+							abs.setAbstractionFromCallEdge(abs.clone());
 							res.add(abs);
 						}
 						
@@ -611,12 +609,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}
 
-
-						Local thisL = null;
 						if (!callee.isStatic()) {
-							thisL = callee.getActiveBody().getThisLocal();
-						}
-						if (thisL != null) {
+							Local thisL = callee.getActiveBody().getThisLocal();
 							if (thisL.equals(sourceBase)) {
 								boolean param = false;
 								// check if it is not one of the params (then we have already fixed it)

@@ -26,11 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import soot.Local;
+import soot.*;
 import soot.SootField;
-import soot.SootMethod;
-import soot.Unit;
-import soot.Value;
 import soot.ValueBox;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
@@ -63,6 +60,9 @@ import soot.jimple.infoflow.heros.IInfoflowCFG.UnitContainer;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
+import soot.tagkit.LineNumberTag;
+import soot.tagkit.SourceFileTag;
+import soot.util.SootAnnotationUtils;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
@@ -744,7 +744,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			@Override
 			public FlowFunction<Abstraction> getCallFlowFunction(final Unit src, final SootMethod dest) {
                 if (!dest.isConcrete()){
-                    logger.debug("Call skipped because target has no body: {} -> {}", src, dest);
+                    SootClass sc = interproceduralCFG().getMethodOf(src).getDeclaringClass();
+                    String srcFile = sc.hasTag("SourceFileTag")? ((SourceFileTag)sc.getTag("SourceFileTag")).getAbsolutePath() : "???";
+                    String lineNumber = src.hasTag("LineNumberTag") ? Integer.toString(((LineNumberTag)src.getTag("LineNumberTag")).getLineNumber()) : "???";
+                    logger.warn("Call skipped because target has no body: {} -> {} (File {} line {})", src, dest, srcFile, lineNumber);
                     return KillAll.v();
                 }
                 

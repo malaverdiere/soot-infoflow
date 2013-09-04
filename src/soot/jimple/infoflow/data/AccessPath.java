@@ -43,10 +43,7 @@ public class AccessPath implements Cloneable {
 	
 	protected AccessPath(Value val, SootField[] appendingFields){
 		assert (val == null && appendingFields != null && appendingFields.length > 0)
-		 	|| val instanceof Local
-			|| val instanceof InstanceFieldRef
-			|| val instanceof StaticFieldRef
-			|| val instanceof ArrayRef;
+		 	|| canContainValue(val);
 
 		SootField baseField = null;
 		if(val instanceof StaticFieldRef){
@@ -87,6 +84,20 @@ public class AccessPath implements Cloneable {
 	public AccessPath(Value base, SootField field){
 		this(base, new SootField[] { field });
 		assert base instanceof Local;
+	}
+	
+	/**
+	 * Checks whether the given value can be the base value value of an access
+	 * path
+	 * @param val The value to check
+	 * @return True if the given value can be the base value value of an access
+	 * path
+	 */
+	public static boolean canContainValue(Value val) {
+		return val instanceof Local
+				|| val instanceof InstanceFieldRef
+				|| val instanceof StaticFieldRef
+				|| val instanceof ArrayRef;
 	}
 		
 	public Value getPlainValue() {

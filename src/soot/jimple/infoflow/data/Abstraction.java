@@ -109,7 +109,7 @@ public class Abstraction implements Cloneable {
 			zeroAbstraction = original.zeroAbstraction;
 			isActive = original.isActive;
 		}
-		accessPath = p.clone();
+		accessPath = p;
 	}
 	
 	public final Abstraction deriveInactiveAbstraction(){

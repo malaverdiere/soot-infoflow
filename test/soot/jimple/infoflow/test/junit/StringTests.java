@@ -10,10 +10,12 @@
  ******************************************************************************/
 package soot.jimple.infoflow.test.junit;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Before;
@@ -290,6 +292,23 @@ public class StringTests extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);
 		assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourcePwd));
+    }
+
+    @Test
+    public void testStringConstructor(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringConstructor()>");
+    	
+    	List<String> sources = new LinkedList<String>();
+    	sources.add("<java.lang.String: void <init>(java.lang.String)>");
+    	
+    	List<String> sinks = new LinkedList<String>();
+    	sinks.add("<java.lang.Runtime: java.lang.Process exec(java.lang.String)>");
+
+    	infoflow.computeInfoflow(path, epoints, sources, sinks);
+    	assertNotNull(infoflow.getResults());
+		assertTrue(infoflow.getResults().isPathBetweenMethods(sinks.get(0), sources.get(0)));
     }
 
 }

@@ -39,6 +39,7 @@ import soot.jimple.IdentityStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
+import soot.jimple.InvokeStmt;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -663,6 +664,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				// special treatment for native methods:
 				if (call instanceof Stmt) {
 					final Stmt iStmt = (Stmt) call;
+					final InvokeExpr invExpr = iStmt.getInvokeExpr();
 					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
 
 					return new FlowFunction<Abstraction>() {
@@ -717,18 +719,26 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 
-							if (iStmt instanceof AssignStmt) {
-								final AssignStmt stmt = (AssignStmt) iStmt;
-								if (sourceSinkManager.isSource(stmt, interproceduralCFG())) {
-									logger.debug("Found source: " + stmt.getInvokeExpr().getMethod());
-									Abstraction abs; 
+							// Sources can either be assignments like x = getSecret() or
+							// instance method calls like constructor invocations
+							if (source == zeroValue && (iStmt instanceof AssignStmt || invExpr instanceof InstanceInvokeExpr)) {
+								if (sourceSinkManager.isSource(iStmt, interproceduralCFG())) {
+									final Value target;
+									if (iStmt instanceof AssignStmt)
+										target = ((AssignStmt) iStmt).getLeftOp();
+									else {
+										target = ((InstanceInvokeExpr) invExpr).getBase();
+									}
+									
+									final Abstraction abs;
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										abs = new AbstractionWithPath(stmt.getLeftOp(),
-												stmt.getInvokeExpr(),
-												stmt, false, true, iStmt).addPathElement(call);
+										abs = new AbstractionWithPath(target,
+												iStmt.getInvokeExpr(),
+												iStmt, false, true, iStmt).addPathElement(call);
 									else
-										abs = new Abstraction(stmt.getLeftOp(),
-												stmt.getInvokeExpr(), stmt, false, true, iStmt);
+										abs = new Abstraction(target,
+												iStmt.getInvokeExpr(), iStmt, false, true, iStmt);
+									
 									abs.setZeroAbstraction(source.getZeroAbstraction());
 									res.add(abs);
 									res.remove(zeroValue);

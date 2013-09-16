@@ -39,4 +39,13 @@ public class StaticTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 	    }
 	  
+	    @Test
+	    public void static3Test(){
+	    	Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void static3Test()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+	    }
+
 }

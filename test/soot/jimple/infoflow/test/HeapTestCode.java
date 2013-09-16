@@ -383,4 +383,15 @@ public class HeapTestCode {
 		taintLevel2(data, b.attr);
 	}
 
+	public void multiLevelTaint2() {
+		String tainted = TelephonyManager.getDeviceId();
+		B b = new B();
+		taintLevel1c(tainted, b);
+	}
+
+	private void taintLevel1c(String data, B b) {
+		taintLevel2(data, b.attr);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+	}
 }

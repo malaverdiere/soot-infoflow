@@ -209,6 +209,17 @@ public class HeapTests extends JUnitTests {
 	    }
 
 	    @Test
+	    public void multiLevelTest2(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void multiLevelTaint2()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+
+	    @Test
 	    public void negativeMultiLevelTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();

@@ -429,12 +429,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
 						}
+						/*
 						Abstraction newSource;
 						if (!source.isAbstractionActive() && (src.equals(source.getActivationUnit()) || src.equals(source.getActivationUnitOnCurrentLevel()))){
 							newSource = source.getActiveCopy(false);
 						}else{
 							newSource = source;
-						}
+						}*/
+						Abstraction newSource = source;
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)

@@ -454,7 +454,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) &&
 										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
-											(paramLocals.get(i)), stmt);
+											(paramLocals.get(i)));
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										((AbstractionWithPath) abs).addPathElement(stmt);
 									assert abs != source;		// our source abstraction must be immutable

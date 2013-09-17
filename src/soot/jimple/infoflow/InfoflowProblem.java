@@ -505,7 +505,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}else{
 							newSource = source.cloneUsePredAbstractionOfCG();
 						}
-						
+												
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null
 								&& interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee))
@@ -597,6 +597,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									//either the param is a fieldref (not possible in jimple?) or an array Or one of its fields is tainted/all fields are tainted
 									if (triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)) {
 										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
+//										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg));
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											abs = ((AbstractionWithPath) abs).addPathElement(exitStmt);
 										res.add(abs);

@@ -101,7 +101,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 					if(iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
 								|| newAbs.getAccessPath().isStaticFieldRef()) {
-						Abstraction bwAbs = source.deriveNewAbstraction(val, false);
+						Abstraction bwAbs = source.deriveInactiveAbstraction(val);
 						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
 							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 					}
@@ -454,7 +454,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) &&
 										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
-											(paramLocals.get(i)));
+											(paramLocals.get(i)), stmt);
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										((AbstractionWithPath) abs).addPathElement(stmt);
 									assert abs != source;		// our source abstraction must be immutable
@@ -559,8 +559,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									
 									 //call backwards-solver:
 									if(triggerInaktiveTaintOrReverseFlow(leftOp, abs)){
-										Abstraction bwAbs = newSource.deriveNewAbstraction
-												(newSource.getAccessPath().copyWithNewValue(leftOp), false);
+										Abstraction bwAbs = newSource.deriveInactiveAbstraction
+												(newSource.getAccessPath().copyWithNewValue(leftOp));
 										if (abs.isAbstractionActive())
 											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))

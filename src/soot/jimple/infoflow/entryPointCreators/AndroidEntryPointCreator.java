@@ -116,6 +116,16 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	}
 	
 	/**
+	 * Returns the list of callback functions of the Android lifecycle. 
+	 * @return callbackFunctions The list of callback functions of the Android lifecycle. 
+	 * This is a mapping from the Android element class (activity, service, etc.) to the list 
+	 * of callback methods for that element.
+	 */
+	public Map<String, List<String>> getCallbackFunctions() {
+		return callbackFunctions;
+	}
+
+	/**
 	 * Creates a new dummy main method based only on the Android classes and
 	 * the automatic detection of the Android lifecycle methods
 	 * @return The generated dummy main method

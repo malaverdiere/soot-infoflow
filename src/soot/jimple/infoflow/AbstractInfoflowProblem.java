@@ -126,7 +126,6 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
 				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false, true, null) :
 				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, null, false, true, null);
-			zeroValue.setZeroAbstraction(zeroValue);
 		}
 		return zeroValue;
 	}

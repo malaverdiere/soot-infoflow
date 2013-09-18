@@ -394,4 +394,21 @@ public class HeapTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(b.attr.b);
 	}
+	
+	public void threeLevelTest() {
+		B b = new B();
+		A a = b.attr;
+		taintOnNextLevel(b, a);
+	}
+	
+	private void taintMe(B b) {
+		b.attr.b = TelephonyManager.getDeviceId();
+	}
+	
+	private void taintOnNextLevel(B b, A a) {
+		taintMe(b);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.b);		
+	}
+
 }

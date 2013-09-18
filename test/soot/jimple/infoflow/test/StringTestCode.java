@@ -156,7 +156,7 @@ public class StringTestCode {
 	
 	public void methodStringBuffer1(){
 		StringBuffer sb = new StringBuffer(TelephonyManager.getDeviceId());
-		sb.append("123");
+//		sb.append("123");
 		String test = sb.toString();
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(test);

@@ -47,6 +47,8 @@ import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.heros.InfoflowSolver;
+import soot.jimple.infoflow.heros.SolverNormalFlowFunction;
+import soot.jimple.infoflow.heros.SolverReturnFlowFunction;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
@@ -125,7 +127,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			 * taints
 			 */
 			private void addTaintViaStmt
-					(final Unit src,
+					(final Abstraction d1,
+					final Unit src,
 					final Value targetValue,
 					Abstraction source,
 					Set<Abstraction> taintSet,
@@ -152,7 +155,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							&& newAbs.getAccessPath().isLocal())) {
 						Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
 						for (Unit predUnit : interproceduralCFG().getPredsOf(src)) {
-							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs.getAbstractionFromCallEdge(), predUnit, bwAbs));
+							bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 						}
 				}
 			}
@@ -191,7 +194,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								else
 									abs = new Abstraction(is.getLeftOp(),
 										is.getRightOp(), is, false, true, is);
-								abs.setZeroAbstraction(source.getZeroAbstraction());
 								res.add(abs);
 							}
 							
@@ -210,10 +212,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					final Value leftValue = BaseSelector.selectBase(left, true);
 					final Set<Value> rightVals = BaseSelector.selectBaseList(right, true);
 
-					return new FlowFunction<Abstraction>() {
+					return new SolverNormalFlowFunction() {
 
 						 @Override
-						public Set<Abstraction> computeTargets(Abstraction source) {
+						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
@@ -227,8 +229,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							}
 							Abstraction newSource;
-							if (!source.isAbstractionActive() && (src.equals(source.getActivationUnit()) || src.equals(source.getActivationUnitOnCurrentLevel()))){
-								newSource = source.getActiveCopy(false);
+							if (!source.isAbstractionActive() && (src.equals(source.getActivationUnit()) || source.getActivationUnitOnCurrentLevel().contains(src))){
+								newSource = source.getActiveCopy();
 							}else{
 								newSource = source;
 							}
@@ -298,7 +300,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												newSource.getSource(), newSource.getSourceContext());
 								}
 								if(triggerInaktiveTaintOrReverseFlow(leftValue, newSource) || newSource.isAbstractionActive())
-									addTaintViaStmt(src, leftValue, newSource, res, cutFirstField);
+									addTaintViaStmt(d1, src, leftValue, newSource, res, cutFirstField);
 								res.add(newSource);
 								return res;
 							}
@@ -428,7 +430,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
 						}
-						
+												
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
 						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
@@ -441,7 +443,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									((AbstractionWithPath) abs).addPathElement(stmt);
 								//add new callArgs:
 								assert abs != source; 		// our source abstraction must be immutable
-								abs.setAbstractionFromCallEdge(abs.clone());
 								res.add(abs);
 							}
 						}
@@ -454,11 +455,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) &&
 										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+											(paramLocals.get(i)));
+									/*
+									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
 											(paramLocals.get(i)), stmt);
+									*/
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										((AbstractionWithPath) abs).addPathElement(stmt);
 									assert abs != source;		// our source abstraction must be immutable
-									abs.setAbstractionFromCallEdge(abs.clone());
 									res.add(abs);
 								}
 							}
@@ -470,7 +474,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							abs = source.clone();
 							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
 							assert abs != source;		// our source abstraction must be immutable
-							abs.setAbstractionFromCallEdge(abs.clone());
 							res.add(abs);
 						}
 						
@@ -482,35 +485,31 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			@Override
 			public FlowFunction<Abstraction> getReturnFlowFunction(final Unit callSite, final SootMethod callee, final Unit exitStmt, final Unit retSite) {
 
-				return new FlowFunction<Abstraction>() {
+				return new SolverReturnFlowFunction() {
 
 					@Override
-					public Set<Abstraction> computeTargets(Abstraction source) {
+					public Set<Abstraction> computeTargets(Abstraction source, Set<Abstraction> callerD1s) {
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-						
+												
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
-						Abstraction newSource;
-						if(!source.isAbstractionActive()){
+						Abstraction newSource = source.clone();
+						if(!source.isAbstractionActive())
 							if(callSite != null
-									&& (callSite.equals(source.getActivationUnit()) || callSite.equals(source.getActivationUnitOnCurrentLevel())) ){
-								newSource = source.getActiveCopy(true);
-							}else{
-								newSource = source.cloneUsePredAbstractionOfCG();
-								
-							}
-						}else{
-							newSource = source.cloneUsePredAbstractionOfCG();
-						}
+									&& (callSite.equals(source.getActivationUnit()) || source.getActivationUnitOnCurrentLevel().contains(callSite)) )
+								newSource = source.getActiveCopy();
 												
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null
 								&& interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee))
 							return Collections.emptySet();
 						
+						if (callee.getName().contains("taintOnNextLevel"))
+							System.out.println("x");
+
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
 						// Check whether this return is treated as a sink
@@ -563,8 +562,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												(newSource.getAccessPath().copyWithNewValue(leftOp));
 										if (abs.isAbstractionActive())
 											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
-										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-											bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
+											if (callerD1s.isEmpty())
+												bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
+											else
+												for (Abstraction d1 : callerD1s)
+													bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
+										}
 									}
 								}
 							}
@@ -579,8 +583,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Abstraction bwAbs = newSource.deriveInactiveAbstraction();
 							if (newSource.isAbstractionActive())
 								bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
-							for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-								bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+							for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
+								if (callerD1s.isEmpty())
+									bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
+								else
+									for (Abstraction d1 : callerD1s)
+										bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
+							}
 						}
 						
 						// checks: this/params/fields
@@ -597,7 +606,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									//either the param is a fieldref (not possible in jimple?) or an array Or one of its fields is tainted/all fields are tainted
 									if (triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)) {
 										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
-//										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg));
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											abs = ((AbstractionWithPath) abs).addPathElement(exitStmt);
 										res.add(abs);
@@ -606,8 +614,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											Abstraction bwAbs = abs.deriveInactiveAbstraction();
 											if (abs.isAbstractionActive())
 												bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
-											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-												bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
+												if (callerD1s.isEmpty())
+													bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
+												else
+													for (Abstraction d1 : callerD1s)
+														bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
+											}
 										}
 									}
 								}
@@ -638,8 +651,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												Abstraction bwAbs = abs.deriveInactiveAbstraction();
 												if (abs.isAbstractionActive())
 													bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
-												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
-													bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
+													if (callerD1s.isEmpty())
+														bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
+													else
+														for (Abstraction d1 : callerD1s)
+															bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
+												}
 											}
 										}
 									}
@@ -669,8 +687,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							Abstraction newSource;
 							//check inactive elements:
-							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit()))|| call.equals(source.getActivationUnitOnCurrentLevel())){
-								newSource = source.getActiveCopy(false);
+							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit()))|| source.getActivationUnitOnCurrentLevel().contains(call)){
+								newSource = source.getActiveCopy();
 							}else{
 								newSource = source;
 							}
@@ -733,7 +751,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										abs = new Abstraction(target,
 												iStmt.getInvokeExpr(), iStmt, false, true, iStmt);
 									
-									abs.setZeroAbstraction(source.getZeroAbstraction());
 									res.add(abs);
 									res.remove(zeroValue);
 								}

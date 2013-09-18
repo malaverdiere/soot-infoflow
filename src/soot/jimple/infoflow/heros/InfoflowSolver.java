@@ -10,6 +10,9 @@
  ******************************************************************************/
 package soot.jimple.infoflow.heros;
 
+import java.util.Set;
+
+import heros.FlowFunction;
 import heros.IFDSTabulationProblem;
 import heros.InterproceduralCFG;
 import heros.edgefunc.EdgeIdentity;
@@ -49,4 +52,31 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 		}
 		return false;
 	}
+	
+	@Override
+	protected Set<Abstraction> computeReturnFlowFunction
+			(FlowFunction<Abstraction> retFunction, Abstraction d2, Set<Abstraction> callerSideD1s) {
+		if (retFunction instanceof SolverReturnFlowFunction)
+			return ((SolverReturnFlowFunction) retFunction).computeTargets(d2, callerSideD1s);
+		else
+			return retFunction.computeTargets(d2);
+	}
+
+	@Override
+	protected Set<Abstraction> computeNormalFlowFunction
+			(FlowFunction<Abstraction> flowFunction, Abstraction d1, Abstraction d2) {
+		if (flowFunction instanceof SolverNormalFlowFunction)
+			return ((SolverNormalFlowFunction) flowFunction).computeTargets(d1, d2);
+		else
+			return flowFunction.computeTargets(d2);
+	}
+	
+	protected Set<Abstraction> computeCallToReturnFlowFunction
+			(FlowFunction<Abstraction> flowFunction, Abstraction d1, Abstraction d2) {
+		if (flowFunction instanceof SolverCallToReturnFlowFunction)
+			return ((SolverCallToReturnFlowFunction) flowFunction).computeTargets(d1, d2);
+		else
+			return flowFunction.computeTargets(d2);		
+	}
+
 }

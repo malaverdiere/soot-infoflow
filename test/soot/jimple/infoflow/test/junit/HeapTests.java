@@ -239,4 +239,16 @@ public class HeapTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 
+	    @Test
+	    public void threeLevelTest(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void threeLevelTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+
 }

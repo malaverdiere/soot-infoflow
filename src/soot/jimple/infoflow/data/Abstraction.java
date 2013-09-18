@@ -11,6 +11,10 @@
 package soot.jimple.infoflow.data;
 
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import soot.SootField;
 import soot.Unit;
 import soot.Value;
@@ -37,7 +41,7 @@ public class Abstraction implements Cloneable {
 	 * Unit/Stmt which activates the taint when the abstraction passes it,
 	 * adapts to the current level
 	 */
-	private Unit activationUnitOnCurrentLevel;
+	private final Set<Unit> activationUnitOnCurrentLevel = new HashSet<Unit>();
 	/**
 	 * active abstraction is tainted value,
 	 * inactive abstraction is an alias to a tainted value that
@@ -49,11 +53,6 @@ public class Abstraction implements Cloneable {
 	 */
 	private boolean exceptionThrown;
 	private int hashCode;
-	/**
-	 * technically required to pass taint from backward to forward solver
-	 */
-	private Abstraction abstractionFromCallEdge;
-	private Abstraction zeroAbstraction;
 
 	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
 		this.source = src;
@@ -95,18 +94,13 @@ public class Abstraction implements Cloneable {
 			sourceContext = null;
 			exceptionThrown = false;
 			activationUnit = null;
-			activationUnitOnCurrentLevel = null;
-			abstractionFromCallEdge = null;
-			zeroAbstraction = null;
 		}
 		else {
 			source = original.source;
 			sourceContext = original.sourceContext;
 			exceptionThrown = original.exceptionThrown;
 			activationUnit = original.activationUnit;
-			activationUnitOnCurrentLevel = original.activationUnitOnCurrentLevel;
-			abstractionFromCallEdge = original.abstractionFromCallEdge;
-			zeroAbstraction = original.zeroAbstraction;
+			activationUnitOnCurrentLevel.addAll(original.activationUnitOnCurrentLevel);
 			isActive = original.isActive;
 		}
 		accessPath = p;
@@ -129,7 +123,7 @@ public class Abstraction implements Cloneable {
 	public final Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
 		Abstraction a = deriveNewAbstraction(p);
 		if(isActive)
-			a.activationUnitOnCurrentLevel = newActUnit;
+			a.activationUnitOnCurrentLevel.add(newActUnit);
 		return a;
 	}
 		
@@ -138,17 +132,12 @@ public class Abstraction implements Cloneable {
 	}
 		
 	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit){
-		return deriveNewAbstraction(taint, cutFirstField, newActUnit, isActive);
-	}
-	
-	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit, boolean isActive){
 		Abstraction a;
 		SootField[] orgFields = accessPath.getFields();
 		SootField[] fields = new SootField[cutFirstField ? orgFields.length - 1 : orgFields.length];
 		for (int i = cutFirstField ? 1 : 0; i < orgFields.length; i++)
 			fields[cutFirstField ? i - 1 : i] = orgFields[i];
 		a = deriveNewAbstraction(new AccessPath(taint, fields));
-		a.isActive = isActive;
 		if (isActive)
 			a.activationUnit = newActUnit;
 		return a;
@@ -208,47 +197,22 @@ public class Abstraction implements Cloneable {
 	
 	public Abstraction getAbstractionWithNewActivationUnitOnCurrentLevel(Unit u){
 		Abstraction a = this.clone();
-		a.activationUnitOnCurrentLevel = u;
+		a.activationUnitOnCurrentLevel.add(u);
 		return a;
 	}
 	
-	public Unit getActivationUnitOnCurrentLevel(){
-		return activationUnitOnCurrentLevel;
+	public Set<Unit> getActivationUnitOnCurrentLevel(){
+		return Collections.unmodifiableSet(activationUnitOnCurrentLevel);
 	}
-	
-	public Abstraction getAbstractionFromCallEdge(){
-		Abstraction abs = abstractionFromCallEdge;
-		if (abs == null && zeroAbstraction != null)
-			abs = zeroAbstraction;
-		if (abs != null)
-			if (abs.zeroAbstraction == null)
-				abs.zeroAbstraction = zeroAbstraction;
-		if (abs == null)
-			throw new RuntimeException("No call edge or zero abstraction");
-		return abs;
-	}
-	
-	public void usePredAbstractionOfCG(){
-		abstractionFromCallEdge = abstractionFromCallEdge.getAbstractionFromCallEdge();
-	}
-	
-	public void setAbstractionFromCallEdge(Abstraction abs){
-		assert abs != null;
-		abstractionFromCallEdge = abs;
-	}
-	
-	public Abstraction getActiveCopy(boolean dropAbstractionFromCallEdge){
+		
+	public Abstraction getActiveCopy(){
 		Abstraction a = clone();
 		a.isActive = true;
 		// do not kill the original activation point since we might return into
 		// a caller, find a new alias there and then need to know where both
 		// aliases originally became active.
 //		a.activationUnit = null;
-		a.activationUnitOnCurrentLevel = null;
-		if(dropAbstractionFromCallEdge)
-			if(a.abstractionFromCallEdge != null)
-				a.abstractionFromCallEdge = a.abstractionFromCallEdge.getAbstractionFromCallEdge();
-		
+		a.activationUnitOnCurrentLevel.clear();
 		return a;
 	}
 	
@@ -268,23 +232,6 @@ public class Abstraction implements Cloneable {
 		return abs;
 	}
 	
-	public Abstraction cloneUsePredAbstractionOfCG(){
-		Abstraction a = clone();
-		if(a.abstractionFromCallEdge != null)
-			a.abstractionFromCallEdge = a.abstractionFromCallEdge.getAbstractionFromCallEdge();
-		return a;
-	}
-	
-	public void setZeroAbstraction(Abstraction zeroAbstraction) {
-		if (zeroAbstraction == null)
-			throw new RuntimeException("Zero abstraction may not be null");
-		this.zeroAbstraction = zeroAbstraction;
-	}
-	
-	public Abstraction getZeroAbstraction() {
-		return this.zeroAbstraction;
-	}
-
 	@Override
 	public boolean equals(Object obj) {
 		if (super.equals(obj))
@@ -319,11 +266,6 @@ public class Abstraction implements Cloneable {
 			return false;
 		if (this.exceptionThrown != other.exceptionThrown)
 			return false;
-		if (zeroAbstraction == null) {
-			if (other.zeroAbstraction != null)
-				return false;
-		} else if (!zeroAbstraction.equals(other.zeroAbstraction))
-			return false;
 		if(this.isActive != other.isActive)
 			return false;
 		return true;
@@ -340,7 +282,6 @@ public class Abstraction implements Cloneable {
 			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
 			this.hashCode = prime * this.hashCode + ((activationUnitOnCurrentLevel == null) ? 0 : activationUnitOnCurrentLevel.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
-			this.hashCode = prime * this.hashCode + ((zeroAbstraction == null) ? 0 : zeroAbstraction.hashCode());
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
 		}
 		return hashCode;

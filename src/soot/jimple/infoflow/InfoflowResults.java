@@ -347,5 +347,17 @@ public class InfoflowResults {
 			}
 		}
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for (SinkInfo sink : this.results.keySet())
+			for (SourceInfo source : this.results.get(sink)) {
+				sb.append(source);
+				sb.append(" -> ");
+				sb.append(sink);
+			}
+		return sb.toString();
+	}
 
 }

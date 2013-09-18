@@ -344,5 +344,54 @@ public class HeapTestCode {
 		String tainted = TelephonyManager.getDeviceId();
 		dc.data = tainted;
 	}
+	
+	public void multiLevelTaint() {
+		String tainted = TelephonyManager.getDeviceId();
+		B b = new B();
+		A a = b.attr;
+		taintLevel1(tainted, b);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.b);
+	}
+	
+	private void taintLevel1(String data, B b) {
+		taintLevel2(data, b.attr);
+	}
 
+	private void taintLevel2(String data, A a) {
+		a.b = data;
+	}
+
+	public void negativeMultiLevelTaint() {
+		String tainted = TelephonyManager.getDeviceId();
+		B b = new B();
+		A a = b.attr;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.b);
+		taintLevel1(tainted, b);
+	}
+
+	public void negativeMultiLevelTaint2() {
+		String tainted = TelephonyManager.getDeviceId();
+		B b = new B();
+		taintLevel1b(tainted, b);
+	}
+
+	private void taintLevel1b(String data, B b) {
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+		taintLevel2(data, b.attr);
+	}
+
+	public void multiLevelTaint2() {
+		String tainted = TelephonyManager.getDeviceId();
+		B b = new B();
+		taintLevel1c(tainted, b);
+	}
+
+	private void taintLevel1c(String data, B b) {
+		taintLevel2(data, b.attr);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+	}
 }

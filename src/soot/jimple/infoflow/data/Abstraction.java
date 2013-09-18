@@ -109,16 +109,19 @@ public class Abstraction implements Cloneable {
 			zeroAbstraction = original.zeroAbstraction;
 			isActive = original.isActive;
 		}
-		accessPath = p.clone();
+		accessPath = p;
 	}
 	
 	public final Abstraction deriveInactiveAbstraction(){
-		Abstraction a = clone();
+		return deriveInactiveAbstraction(accessPath);
+	}
+	
+	public final Abstraction deriveInactiveAbstraction(AccessPath p){
+		Abstraction a = deriveNewAbstraction(p);
 		a.isActive = false;
 		return a;
 	}
-	
-	//should be only called by call-/returnFunctions!
+
 	public Abstraction deriveNewAbstraction(AccessPath p){
 		return new Abstraction(p, this);
 	}
@@ -129,13 +132,7 @@ public class Abstraction implements Cloneable {
 			a.activationUnit = newActUnit;
 		return a;
 	}
-	
-	public final Abstraction deriveNewAbstraction(AccessPath p, boolean isActive){
-		Abstraction a = deriveNewAbstraction(p);
-		a.isActive = isActive;
-		return a;
-	}
-	
+		
 	public final Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
 		return this.deriveNewAbstraction(taint, false, activationUnit);
 	}
@@ -198,13 +195,7 @@ public class Abstraction implements Cloneable {
 	
 	@Override
 	public String toString(){
-		if(accessPath != null && source != null){
-			return (isActive?"":"_")+accessPath.toString() + " | "+(activationUnit==null?"":activationUnit.toString()) + ">>"+ (activationUnitOnCurrentLevel==null?"":activationUnitOnCurrentLevel.toString());
-		}
-		if(accessPath != null){
-			return accessPath.toString();
-		}
-		return "Abstraction (null)";
+		return (isActive?"":"_")+accessPath.toString() + " | "+(activationUnit==null?"":activationUnit.toString()) + ">>"+ (activationUnitOnCurrentLevel==null?"":activationUnitOnCurrentLevel.toString());
 	}
 	
 	public AccessPath getAccessPath(){

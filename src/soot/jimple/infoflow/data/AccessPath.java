@@ -99,7 +99,7 @@ public class AccessPath implements Cloneable {
 				|| val instanceof StaticFieldRef
 				|| val instanceof ArrayRef;
 	}
-		
+	
 	public Value getPlainValue() {
 		return value;
 	}

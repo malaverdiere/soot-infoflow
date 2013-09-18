@@ -57,5 +57,26 @@ public class StaticTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(alsoTainted);
-		}
+	}
+	
+	private static final StaticDataClass staticDataClass = new StaticDataClass();
+	
+	private static class StaticDataClass {
+		public final StaticDataClass2 data = new StaticDataClass2();
+	}
+	
+	private static class StaticDataClass2 {
+		public String data;
+	}
+	
+	private static void staticClassAccess(String secret) {
+		StaticTestCode.staticDataClass.data.data = secret;
+	}
+
+	public void static3Test() {
+		String secret = TelephonyManager.getDeviceId();
+		staticClassAccess(secret);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(StaticTestCode.staticDataClass.data.data);
+	}
 }

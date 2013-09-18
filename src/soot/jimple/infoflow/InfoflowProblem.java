@@ -101,7 +101,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 					if(iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
 								|| newAbs.getAccessPath().isStaticFieldRef()) {
-						Abstraction bwAbs = source.deriveNewAbstraction(val, false);
+						Abstraction bwAbs = source.deriveInactiveAbstraction(val);
 						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
 							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
 					}
@@ -428,25 +428,19 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
 						}
-						Abstraction newSource;
-						if (!source.isAbstractionActive() && (src.equals(source.getActivationUnit()) || src.equals(source.getActivationUnitOnCurrentLevel()))){
-							newSource = source.getActiveCopy(false);
-						}else{
-							newSource = source;
-						}
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
 						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
 							InstanceInvokeExpr vie = (InstanceInvokeExpr) ie;
 							// this might be enough because every call must happen with a local variable which is tainted itself:
-							if (vie.getBase().equals(newSource.getAccessPath().getPlainValue())) {
-								Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
+							if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
+								Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
 										(dest.getActiveBody().getThisLocal()));
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
 									((AbstractionWithPath) abs).addPathElement(stmt);
 								//add new callArgs:
-								assert abs != newSource; 		// our source abstraction must be immutable
+								assert abs != source; 		// our source abstraction must be immutable
 								abs.setAbstractionFromCallEdge(abs.clone());
 								res.add(abs);
 							}
@@ -457,13 +451,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							assert dest.getParameterCount() == callArgs.size();
 							// check if param is tainted:
 							for (int i = 0; i < callArgs.size(); i++) {
-								if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) &&
-										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), newSource) || newSource.isAbstractionActive())) {
-									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue
+								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) &&
+										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())) {
+									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
 											(paramLocals.get(i)), stmt);
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										((AbstractionWithPath) abs).addPathElement(stmt);
-									assert abs != newSource;		// our source abstraction must be immutable
+									assert abs != source;		// our source abstraction must be immutable
 									abs.setAbstractionFromCallEdge(abs.clone());
 									res.add(abs);
 								}
@@ -471,11 +465,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// staticfieldRefs must be analyzed even if they are not part of the params:
-						if (newSource.getAccessPath().isStaticFieldRef()) {
+						if (source.getAccessPath().isStaticFieldRef()) {
 							Abstraction abs;
-							abs = newSource.clone();
-							assert (abs.equals(newSource) && abs.hashCode() == newSource.hashCode());
-							assert abs != newSource;		// our source abstraction must be immutable
+							abs = source.clone();
+							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
+							assert abs != source;		// our source abstraction must be immutable
 							abs.setAbstractionFromCallEdge(abs.clone());
 							res.add(abs);
 						}
@@ -565,8 +559,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									
 									 //call backwards-solver:
 									if(triggerInaktiveTaintOrReverseFlow(leftOp, abs)){
-										Abstraction bwAbs = newSource.deriveNewAbstraction
-												(newSource.getAccessPath().copyWithNewValue(leftOp), false);
+										Abstraction bwAbs = newSource.deriveInactiveAbstraction
+												(newSource.getAccessPath().copyWithNewValue(leftOp));
 										if (abs.isAbstractionActive())
 											bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 										for (Unit predUnit : interproceduralCFG().getPredsOf(callSite))
@@ -663,6 +657,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				// special treatment for native methods:
 				if (call instanceof Stmt) {
 					final Stmt iStmt = (Stmt) call;
+					final InvokeExpr invExpr = iStmt.getInvokeExpr();
 					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
 
 					return new FlowFunction<Abstraction>() {
@@ -717,18 +712,26 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 
-							if (iStmt instanceof AssignStmt) {
-								final AssignStmt stmt = (AssignStmt) iStmt;
-								if (sourceSinkManager.isSource(stmt, interproceduralCFG())) {
-									logger.debug("Found source: " + stmt.getInvokeExpr().getMethod());
-									Abstraction abs; 
+							// Sources can either be assignments like x = getSecret() or
+							// instance method calls like constructor invocations
+							if (source == zeroValue && (iStmt instanceof AssignStmt || invExpr instanceof InstanceInvokeExpr)) {
+								if (sourceSinkManager.isSource(iStmt, interproceduralCFG())) {
+									final Value target;
+									if (iStmt instanceof AssignStmt)
+										target = ((AssignStmt) iStmt).getLeftOp();
+									else {
+										target = ((InstanceInvokeExpr) invExpr).getBase();
+									}
+									
+									final Abstraction abs;
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										abs = new AbstractionWithPath(stmt.getLeftOp(),
-												stmt.getInvokeExpr(),
-												stmt, false, true, iStmt).addPathElement(call);
+										abs = new AbstractionWithPath(target,
+												iStmt.getInvokeExpr(),
+												iStmt, false, true, iStmt).addPathElement(call);
 									else
-										abs = new Abstraction(stmt.getLeftOp(),
-												stmt.getInvokeExpr(), stmt, false, true, iStmt);
+										abs = new Abstraction(target,
+												iStmt.getInvokeExpr(), iStmt, false, true, iStmt);
+									
 									abs.setZeroAbstraction(source.getZeroAbstraction());
 									res.add(abs);
 									res.remove(zeroValue);

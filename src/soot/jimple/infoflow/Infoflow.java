@@ -390,7 +390,8 @@ public class Infoflow implements IInfoflow {
 				}
 
 				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> forwardSolver;
-				logger.info("Source lookup done, found {} sources.", forwardProblem.initialSeeds.size());
+				logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.initialSeeds.size(),
+						sinkCount);
 
 				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 				forwardSolver = new InfoflowSolver(forwardProblem, debug, executor);

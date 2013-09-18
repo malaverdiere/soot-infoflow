@@ -10,6 +10,8 @@
  ******************************************************************************/
 package soot.jimple.infoflow.test;
 
+import java.io.IOException;
+
 import soot.jimple.infoflow.test.android.AccountManager;
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
@@ -256,5 +258,9 @@ public class StringTestCode {
 		cm.publish(String.valueOf(i1));
 	}
 
-
+	public void methodStringConstructor() throws IOException {
+		String s1 = new String("string1");
+		Runtime.getRuntime().exec(s1);
+	}
+	
 }

@@ -410,5 +410,133 @@ public class HeapTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(a.b);		
 	}
+	
+	private class RecursiveDataClass {
+		RecursiveDataClass child;
+		String data;
+
+		public void leakIt() {
+			ConnectionManager cm = new ConnectionManager();
+			cm.publish(data);
+			if (child != null)
+				child.leakIt();
+		}
+	}
+	
+	public void recursionTest() {
+		RecursiveDataClass rdc = new RecursiveDataClass();
+		rdc.data = TelephonyManager.getDeviceId();
+		rdc.leakIt();
+	}
+
+	public void activationUnitTest1() {
+		B b = new B();
+		b.attr = new A();
+		
+		A a = b.attr;
+		String tainted = TelephonyManager.getDeviceId();
+		a.b = tainted;
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+	}
+	
+	public void activationUnitTest2() {
+		B b = new B();
+		b.attr = new A();
+		
+		A a = b.attr;
+		String tainted = TelephonyManager.getDeviceId();
+
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+
+		a.b = tainted;
+	}
+
+	public void activationUnitTest3() {
+		B b = new B();
+		b.attr = new A();
+		
+		B b2 = new B();
+		b2.attr = new A();
+
+		String tainted = TelephonyManager.getDeviceId();
+		
+		b.attr.b = tainted;	
+		b2.attr.b = b.attr.b;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b2.attr.b);
+	}
+
+	public void activationUnitTest4() {
+		B b = new B();
+		b.attr = new A();
+		
+		B b2 = new B();
+		b2.attr = new A();
+
+		String tainted = TelephonyManager.getDeviceId();
+		
+		b2.attr.b = tainted;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+
+		b.attr.b = tainted;
+	}
+
+	public void activationUnitTest4b() {
+		B b = new B();
+		b.attr = new A();
+		
+		B b2 = new B();
+		b2.attr = new A();
+
+		String tainted = TelephonyManager.getDeviceId();
+		
+		b2.attr.b = tainted;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+
+		b.attr = b2.attr;
+	}
+
+	public void activationUnitTest5() {
+		B b = new B();
+		b.attr = new A();
+		
+		B b2 = new B();
+		b2.attr = new A();
+
+		ConnectionManager cm = new ConnectionManager();
+		String tainted = TelephonyManager.getDeviceId();
+		
+		cm.publish(b.attr.b);
+		cm.publish(b2.attr.b);
+
+		b.attr = b2.attr;
+		
+		cm.publish(b.attr.b);
+		cm.publish(b2.attr.b);
+
+		b.attr.b = tainted;
+	}
+	
+	public void returnAliasTest() {
+		String tainted = TelephonyManager.getDeviceId();
+		B b = new B();
+		B c = b;
+		A a = alias(c);
+		c.attr.b = tainted;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.b);
+	}
+	
+	private A alias(B b) {
+		return b.attr;
+	}
 
 }

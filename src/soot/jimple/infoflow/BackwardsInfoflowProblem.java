@@ -112,6 +112,11 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							final Set<Abstraction> res = new HashSet<Abstraction>();
 							final Value leftValue = BaseSelector.selectBase(defStmt.getLeftOp(), true);
 
+							// A backward analysis looks for aliases of existing taints and thus
+							// cannot create new taints out of thin air
+							if (source.equals(zeroValue))
+								return Collections.emptySet();
+
 							// Check whether the left side of the assignment matches our
 							// current taint abstraction
 							final boolean leftSideMatches = baseMatches(leftValue, source);
@@ -129,11 +134,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							}
 							
 							if (defStmt instanceof AssignStmt) {
-								// A backward analysis looks for aliases of existing taints and thus
-								// cannot create new taints out of thin air
-								if (source.equals(zeroValue))
-									return Collections.emptySet();
-
 								// Get the right side of the assignment
 								final AssignStmt assignStmt = (AssignStmt) defStmt;
 								final Value rightValue = BaseSelector.selectBase(assignStmt.getRightOp(), false);
@@ -372,17 +372,15 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 					return new SolverCallToReturnFlowFunction() {
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
-							Set<Abstraction> res = new HashSet<Abstraction>();
 							// only pass source if the source is not created by this methodcall
 							if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals
 									(source.getAccessPath().getPlainValue())){
 								//terminates here, but we have to start a forward pass to consider all method calls:
-								for (Unit u : ((BackwardsInterproceduralCFG) interproceduralCFG()).getPredsOf(iStmt))
+								for (Unit u : interproceduralCFG().getPredsOf(iStmt))
 									fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, source));
-							}else{
-								res.add(source);
-							}
-							return res;
+								return Collections.emptySet();
+							}else
+								return Collections.singleton(source);
 						}
 					};
 				}

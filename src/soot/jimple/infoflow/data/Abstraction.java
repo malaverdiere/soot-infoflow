@@ -19,6 +19,7 @@ import soot.SootField;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.Infoflow;
 /**
  * the abstraction class contains all information that is necessary to track the taint.
  *
@@ -120,17 +121,19 @@ public class Abstraction implements Cloneable {
 		return new Abstraction(p, this);
 	}
 	
-	public final Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
+	protected final Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
 		Abstraction a = deriveNewAbstraction(p);
-		if(isActive)
-			a.activationUnitOnCurrentLevel.add(newActUnit);
+		if(isActive) {
+			if (a.activationUnitOnCurrentLevel.size() < Infoflow.getAccessPathLength())
+				a.activationUnitOnCurrentLevel.add(newActUnit);
+		}
 		return a;
 	}
 		
 	public final Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
 		return this.deriveNewAbstraction(taint, false, activationUnit);
 	}
-		
+	
 	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit){
 		Abstraction a;
 		SootField[] orgFields = accessPath.getFields();
@@ -197,7 +200,8 @@ public class Abstraction implements Cloneable {
 	
 	public Abstraction getAbstractionWithNewActivationUnitOnCurrentLevel(Unit u){
 		Abstraction a = this.clone();
-		a.activationUnitOnCurrentLevel.add(u);
+//		if (a.activationUnitOnCurrentLevel.size() < Infoflow.getAccessPathLength())
+			a.activationUnitOnCurrentLevel.add(u);
 		return a;
 	}
 	
@@ -214,6 +218,16 @@ public class Abstraction implements Cloneable {
 //		a.activationUnit = null;
 		a.activationUnitOnCurrentLevel.clear();
 		return a;
+	}
+	
+	public Abstraction removeActivationUnit(Unit callSite) {
+		if (activationUnitOnCurrentLevel.contains(callSite)) {
+			Abstraction a = clone();
+			a.activationUnitOnCurrentLevel.remove(callSite);
+			return a;
+		}
+		else
+			return this;
 	}
 	
 	/**

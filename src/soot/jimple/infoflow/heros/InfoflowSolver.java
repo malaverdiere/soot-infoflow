@@ -59,7 +59,7 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 			(FlowFunction<Abstraction> retFunction, Abstraction d2, Unit callSite, Set<Abstraction> callerSideDs) {
 		if (retFunction instanceof SolverReturnFlowFunction) {
 			// Get the d1s at the start points of the caller
-			Set<Abstraction> d1s = new HashSet<Abstraction>();
+			Set<Abstraction> d1s = new HashSet<Abstraction>(callerSideDs.size() * 5);
 			for (Abstraction d4 : callerSideDs)
 				d1s.addAll(jumpFn.reverseLookup(callSite, d4).keySet());
 			

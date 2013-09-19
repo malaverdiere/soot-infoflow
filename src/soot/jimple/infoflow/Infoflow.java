@@ -69,6 +69,7 @@ public class Infoflow implements IInfoflow {
 
 	private static boolean debug = true;
 	private static int accessPathLength = 5;
+	
 	private InfoflowResults results;
 
 	private final String androidPath;

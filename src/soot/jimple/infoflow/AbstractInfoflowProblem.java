@@ -70,6 +70,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	protected NativeCallHandler ncHandler = new DefaultNativeCallHandler();
 	protected boolean debug = false;
+	
+	protected boolean inspectSources = true;
 	protected boolean inspectSinks = true;
 
 	Abstraction zeroValue = null;
@@ -161,6 +163,16 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		return false;
 	}
 	
+	/**
+	 * default: inspectSources is set to true, this means sources are analyzed as well.
+	 * If inspectSources is set to false, then the analysis does not propagate values into 
+	 * the source method. 
+	 * @param inspect boolean that determines the inspectSource option
+	 */
+	public void setInspectSources(boolean inspect){
+		inspectSources = inspect;
+	}
+
 	/**
 	 * default: inspectSinks is set to true, this means sinks are analyzed as well.
 	 * If inspectSinks is set to false, then the analysis does not propagate values into 

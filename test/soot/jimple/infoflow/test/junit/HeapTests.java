@@ -251,4 +251,100 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
+	    @Test
+	    public void recursionTest(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void recursionTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+
+	    @Test
+	    public void activationUnitTest1(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest1()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+
+	    @Test
+	    public void activationUnitTest2(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest2()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);
+			Assert.assertEquals(0, infoflow.getResults().size());
+	    }
+
+	    @Test
+	    public void activationUnitTest3(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest3()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+
+	    @Test
+	    public void activationUnitTest4(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest4()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);
+			Assert.assertEquals(0, infoflow.getResults().size());
+	    }
+
+	    @Test
+	    public void activationUnitTest4b(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest4b()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);
+			Assert.assertEquals(0, infoflow.getResults().size());
+	    }
+
+	    @Test
+	    public void activationUnitTest5(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest5()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);
+			Assert.assertEquals(0, infoflow.getResults().size());
+	    }
+
+	    @Test
+	    public void returnAliasTest(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void returnAliasTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+
 }

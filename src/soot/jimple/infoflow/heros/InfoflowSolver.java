@@ -10,6 +10,7 @@
  ******************************************************************************/
 package soot.jimple.infoflow.heros;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import heros.FlowFunction;
@@ -55,9 +56,15 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 	
 	@Override
 	protected Set<Abstraction> computeReturnFlowFunction
-			(FlowFunction<Abstraction> retFunction, Abstraction d2, Set<Abstraction> callerSideD1s) {
-		if (retFunction instanceof SolverReturnFlowFunction)
-			return ((SolverReturnFlowFunction) retFunction).computeTargets(d2, callerSideD1s);
+			(FlowFunction<Abstraction> retFunction, Abstraction d2, Unit callSite, Set<Abstraction> callerSideDs) {
+		if (retFunction instanceof SolverReturnFlowFunction) {
+			// Get the d1s at the start points of the caller
+			Set<Abstraction> d1s = new HashSet<Abstraction>();
+			for (Abstraction d4 : callerSideDs)
+				d1s.addAll(jumpFn.reverseLookup(callSite, d4).keySet());
+			
+			return ((SolverReturnFlowFunction) retFunction).computeTargets(d2, d1s);
+		}
 		else
 			return retFunction.computeTargets(d2);
 	}

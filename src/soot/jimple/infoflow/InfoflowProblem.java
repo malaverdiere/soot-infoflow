@@ -47,6 +47,7 @@ import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.heros.InfoflowSolver;
+import soot.jimple.infoflow.heros.SolverCallToReturnFlowFunction;
 import soot.jimple.infoflow.heros.SolverNormalFlowFunction;
 import soot.jimple.infoflow.heros.SolverReturnFlowFunction;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
@@ -63,13 +64,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 	/**
 	 * Computes the taints produced by a taint wrapper object
+	 * @param d1 The context (abstraction at the method's start node)
 	 * @param iStmt The call statement the taint wrapper shall check for well-
 	 * known methods that introduce black-box taint propagation
 	 * @param source The taint source
 	 * @return The taints computed by the wrapper
 	 */
 	private Set<Abstraction> computeWrapperTaints
-			(final Stmt iStmt,
+			(Abstraction d1,
+			final Stmt iStmt,
 			Abstraction source) {
 		Set<Abstraction> res = new HashSet<Abstraction>();
 		if(taintWrapper == null)
@@ -105,7 +108,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								|| newAbs.getAccessPath().isStaticFieldRef()) {
 						Abstraction bwAbs = source.deriveInactiveAbstraction(val);
 						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
-							bSolver.processEdge(new PathEdge<Unit, Abstraction>(bwAbs, predUnit, bwAbs));
+							bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 					}
 				}
 			}
@@ -430,7 +433,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (!inspectSinks && sourceSinkManager.isSink(stmt, interproceduralCFG())) {
 							return Collections.emptySet();
 						}
-												
+																		
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
 						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
@@ -494,7 +497,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-												
+
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource = source.clone();
 						if(!source.isAbstractionActive())
@@ -507,9 +510,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								&& interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee))
 							return Collections.emptySet();
 						
-						if (callee.getName().contains("taintOnNextLevel"))
-							System.out.println("x");
-
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
 						// Check whether this return is treated as a sink
@@ -679,10 +679,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					final InvokeExpr invExpr = iStmt.getInvokeExpr();
 					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
 
-					return new FlowFunction<Abstraction>() {
+					return new SolverCallToReturnFlowFunction() {
 
 						@Override
-						public Set<Abstraction> computeTargets(Abstraction source) {
+						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							Abstraction newSource;
@@ -693,7 +693,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								newSource = source;
 							}
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							res.addAll(computeWrapperTaints(iStmt, newSource));
+							res.addAll(computeWrapperTaints(d1, iStmt, newSource));
 
 							// We can only pass on a taint if it is neither a parameter nor the
 							// base object of the current call. If this call overwrites the left

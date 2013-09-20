@@ -227,7 +227,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
-							SootMethod sm = interproceduralCFG().getMethodOf(src);
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							
 							// shortcuts:
@@ -564,16 +563,7 @@ if (!res.isEmpty())
 											newSource.getSource(), newSource.getSourceContext());
 							}
 						}
-						
-						// Did the callee produce the taint? If so, it must contain the activation statement
-						boolean calleeProducedTaint = callee.getActiveBody().getUnits().contains(newSource.getActivationUnit());
-						if (!calleeProducedTaint)
-							for (Unit u : newSource.getActivationUnitOnCurrentLevel())
-								if (callee.getActiveBody().getUnits().contains(u)) {
-									calleeProducedTaint = true;
-									break;
-								}
-						
+												
 						// If we have no caller, we have nowhere to propagate. This
 						// can happen when leaving the main method.
 						if (callSite == null)
@@ -588,10 +578,7 @@ if (!res.isEmpty())
 								Value leftOp = defnStmt.getLeftOp();
 								if (retLocal.equals(newSource.getAccessPath().getPlainLocal()) &&
 										(triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive())) {
-									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp));
-									if (calleeProducedTaint)
-										abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
-
+									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										((AbstractionWithPath) abs).addPathElement(exitStmt);
 									assert abs != newSource;		// our source abstraction must be immutable
@@ -644,9 +631,7 @@ if (!res.isEmpty())
 									originalCallArg = iStmt.getInvokeExpr().getArg(i);
 									//either the param is a fieldref (not possible in jimple?) or an array Or one of its fields is tainted/all fields are tainted
 									if (triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)) {
-										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg));
-										if (calleeProducedTaint)
-											abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
+										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
 										
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											abs = ((AbstractionWithPath) abs).addPathElement(exitStmt);
@@ -683,9 +668,7 @@ if (!res.isEmpty())
 										Stmt stmt = (Stmt) callSite;
 										if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 											InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
-											Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()));
-											if (calleeProducedTaint)
-												abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
+											Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()), callSite);
 
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
 												((AbstractionWithPath) abs).addPathElement(stmt);
@@ -705,11 +688,6 @@ if (!res.isEmpty())
 								}
 							}
 						}
-
-if (!res.isEmpty() && callee.toString().equals("<java.util.TreeMap: void rotateRight(java.util.TreeMap$Entry)>"))  {
-	SootMethod sm = interproceduralCFG().getMethodOf(callSite);
-	res.size();
-}
 
 						return res; 
 					} 

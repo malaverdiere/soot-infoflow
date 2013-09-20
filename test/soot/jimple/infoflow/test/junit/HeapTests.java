@@ -346,5 +346,17 @@ public class HeapTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
-
+	    
+	    @Test
+	    public void callPerformanceTest(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void callPerformanceTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+	    
 }

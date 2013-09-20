@@ -446,10 +446,7 @@ res.size();
 							return Collections.emptySet();
 						if (!inspectSinks && isSink)
 							return Collections.emptySet();
-						
-						// Remove activation units we pass by
-						source = source.removeActivationUnit(src);
-						
+												
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
 						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
@@ -460,6 +457,10 @@ res.size();
 										(dest.getActiveBody().getThisLocal()));
 								if (pathTracking == PathTrackingMethod.ForwardTracking)
 									((AbstractionWithPath) abs).addPathElement(stmt);
+
+								// Remove activation units we pass by
+								abs = abs.removeActivationUnit(src);
+
 								//add new callArgs:
 								assert abs != source; 		// our source abstraction must be immutable
 								res.add(abs);
@@ -477,6 +478,10 @@ res.size();
 											(paramLocals.get(i)));
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										((AbstractionWithPath) abs).addPathElement(stmt);
+
+									// Remove activation units we pass by
+									abs = abs.removeActivationUnit(src);
+
 									assert abs != source;		// our source abstraction must be immutable
 									res.add(abs);
 								}
@@ -487,6 +492,10 @@ res.size();
 						if (source.getAccessPath().isStaticFieldRef()) {
 							Abstraction abs;
 							abs = source.clone();
+							
+							// Remove activation units we pass by
+							abs = abs.removeActivationUnit(src);
+
 							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
 							assert abs != source;		// our source abstraction must be immutable
 							res.add(abs);
@@ -515,7 +524,7 @@ if (!res.isEmpty())
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-
+						
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource = source.clone();
 						if(!source.isAbstractionActive())
@@ -557,14 +566,13 @@ if (!res.isEmpty())
 						}
 						
 						// Did the callee produce the taint? If so, it must contain the activation statement
-						boolean calleeProducedTaint = true; /*callee.getActiveBody().getUnits().contains(newSource.getActivationUnit());
+						boolean calleeProducedTaint = callee.getActiveBody().getUnits().contains(newSource.getActivationUnit());
 						if (!calleeProducedTaint)
 							for (Unit u : newSource.getActivationUnitOnCurrentLevel())
 								if (callee.getActiveBody().getUnits().contains(u)) {
 									calleeProducedTaint = true;
 									break;
 								}
-								*/
 						
 						// If we have no caller, we have nowhere to propagate. This
 						// can happen when leaving the main method.
@@ -580,7 +588,6 @@ if (!res.isEmpty())
 								Value leftOp = defnStmt.getLeftOp();
 								if (retLocal.equals(newSource.getAccessPath().getPlainLocal()) &&
 										(triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive())) {
-//									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
 									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp));
 									if (calleeProducedTaint)
 										abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
@@ -637,7 +644,6 @@ if (!res.isEmpty())
 									originalCallArg = iStmt.getInvokeExpr().getArg(i);
 									//either the param is a fieldref (not possible in jimple?) or an array Or one of its fields is tainted/all fields are tainted
 									if (triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)) {
-//										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
 										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg));
 										if (calleeProducedTaint)
 											abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
@@ -677,7 +683,6 @@ if (!res.isEmpty())
 										Stmt stmt = (Stmt) callSite;
 										if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 											InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
-//											Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()), callSite);
 											Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()));
 											if (calleeProducedTaint)
 												abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
@@ -700,7 +705,7 @@ if (!res.isEmpty())
 								}
 							}
 						}
-						
+
 if (!res.isEmpty() && callee.toString().equals("<java.util.TreeMap: void rotateRight(java.util.TreeMap$Entry)>"))  {
 	SootMethod sm = interproceduralCFG().getMethodOf(callSite);
 	res.size();

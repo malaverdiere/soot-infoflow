@@ -121,12 +121,10 @@ public class Abstraction implements Cloneable {
 		return new Abstraction(p, this);
 	}
 	
-	protected final Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
+	public final Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
 		Abstraction a = deriveNewAbstraction(p);
-		if(isActive) {
-			if (a.activationUnitOnCurrentLevel.size() < Infoflow.getAccessPathLength())
-				a.activationUnitOnCurrentLevel.add(newActUnit);
-		}
+		if(isActive)
+			a.activationUnitOnCurrentLevel.add(newActUnit);
 		return a;
 	}
 		
@@ -199,9 +197,10 @@ public class Abstraction implements Cloneable {
 	}
 	
 	public Abstraction getAbstractionWithNewActivationUnitOnCurrentLevel(Unit u){
+		if (!isActive)
+			return this;
 		Abstraction a = this.clone();
-//		if (a.activationUnitOnCurrentLevel.size() < Infoflow.getAccessPathLength())
-			a.activationUnitOnCurrentLevel.add(u);
+		a.activationUnitOnCurrentLevel.add(u);
 		return a;
 	}
 	

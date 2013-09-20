@@ -538,5 +538,29 @@ public class HeapTestCode {
 	private A alias(B b) {
 		return b.attr;
 	}
+	
+	public void callPerformanceTest() {
+		A a = new A();
+		a.b = getDeviceId();
+		B b = new B();
+		b.attr = a;
+		
+		throwAround(b);
+		System.out.println(b.attr.b);
+	}
+
+	private String getDeviceId() {
+		String tainted = TelephonyManager.getDeviceId();
+		return tainted;
+	}
+
+	private void throwAround(B b) {
+		throwAround2(b.attr);
+	}
+	
+	private void throwAround2(A a) {
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.b);
+	}
 
 }

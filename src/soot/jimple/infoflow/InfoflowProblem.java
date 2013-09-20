@@ -228,7 +228,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							
+														
 							// shortcuts:
 							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {
@@ -523,7 +523,7 @@ if (!res.isEmpty())
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-						
+												
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource = source.clone();
 						if(!source.isAbstractionActive())
@@ -632,7 +632,6 @@ if (!res.isEmpty())
 									//either the param is a fieldref (not possible in jimple?) or an array Or one of its fields is tainted/all fields are tainted
 									if (triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)) {
 										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
-										
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											abs = ((AbstractionWithPath) abs).addPathElement(exitStmt);
 										res.add(abs);

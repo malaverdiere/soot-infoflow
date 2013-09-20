@@ -35,6 +35,22 @@ public class ConstantTestCode {
 		cm.publish(e);
 	}
 	
+	public void constantArrayTest(){
+		String tainted =  TelephonyManager.getDeviceId();
+		fieldArray[0] = tainted;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(fieldArray[0]);
+	}
+
+	public void constantStaticArrayTest(){
+		String tainted =  TelephonyManager.getDeviceId();
+		staticArray[0] = tainted;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(staticArray[0]);
+	}
+
 	public void constantFieldArrayTest(){
 		String tainted =  TelephonyManager.getDeviceId();
 		staticArray[0] = tainted;
@@ -43,7 +59,6 @@ public class ConstantTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(staticArray[0]);
 		cm.publish(fieldArray[0]);
-		
 	}
 	
 	public void constantFieldTest(){

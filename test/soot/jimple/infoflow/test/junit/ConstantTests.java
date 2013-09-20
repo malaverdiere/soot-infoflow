@@ -40,6 +40,24 @@ public class ConstantTests extends JUnitTests {
 	    }
 	  
 	  @Test
+	    public void constantArrayTest(){
+		  Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantArrayTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);	
+	    }
+
+	  @Test
+	    public void constantStaticArrayTest(){
+		  Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantStaticArrayTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);	
+	    }
+
+	  @Test
 	    public void constantFieldArrayTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();

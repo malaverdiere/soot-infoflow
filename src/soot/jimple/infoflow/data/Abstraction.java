@@ -19,7 +19,6 @@ import soot.SootField;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.Infoflow;
 /**
  * the abstraction class contains all information that is necessary to track the taint.
  *

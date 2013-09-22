@@ -232,11 +232,19 @@ public class HeapTests extends JUnitTests {
 	    @Test
 	    public void negativeMultiLevelTest2(){
 	    	taintWrapper = false;
+
 	    	Infoflow infoflow = initInfoflow();
+	    	int oldDepth = Infoflow.getAbstractionDepth();
+	    	infoflow.setAbstractionDepth(1);
+
+	    	infoflow.setAbstractionDepth(20);
+	    	
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void negativeMultiLevelTaint2()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			negativeCheckInfoflow(infoflow);
+			
+			infoflow.setAbstractionDepth(oldDepth);
 	    }
 
 	    @Test

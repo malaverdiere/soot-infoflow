@@ -440,6 +440,12 @@ res.size();
 							return Collections.emptySet();
 						}
 						
+						if (!source.isAbstractionActive()
+								&& !source.getActivationUnitOnCurrentLevel().isEmpty()
+								&& !dest.getActiveBody().getUnits().contains(source.getActivationUnit())
+								&& source.getActivationUnitOnCurrentLevel().get(0).equals(src))
+							source = source.getActiveCopy();
+						
 						//if we do not have to look into sources or sinks:
 						if (!inspectSources && isSource)
 							return Collections.emptySet();

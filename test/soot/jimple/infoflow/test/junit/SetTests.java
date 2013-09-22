@@ -30,7 +30,7 @@ public class SetTests extends JUnitTests {
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
     	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(2);
+    	infoflow.setAbstractionDepth(1);
     	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadHashTest()>");
@@ -98,7 +98,7 @@ public class SetTests extends JUnitTests {
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
     	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(2);
+    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadLinkedPos0Test()>");
@@ -118,7 +118,7 @@ public class SetTests extends JUnitTests {
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
     	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(2);
+    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadLinkedPos1Test()>");
@@ -138,7 +138,7 @@ public class SetTests extends JUnitTests {
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
     	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(2);
+    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void writeReadTest()>");
@@ -158,7 +158,7 @@ public class SetTests extends JUnitTests {
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
     	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(2);
+    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void iteratorTest()>");
@@ -179,7 +179,7 @@ public class SetTests extends JUnitTests {
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
     	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(2);
+    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadNegativeTest()>");

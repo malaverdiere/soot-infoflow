@@ -87,10 +87,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				final Set<Abstraction> res = new HashSet<Abstraction>();
 				final Value leftValue = BaseSelector.selectBase(defStmt.getLeftOp(), true);
 				
-				if (/*defStmt.toString().equals("this := @this: soot.jimple.infoflow.test.ConstantTestCode")
-						|| */defStmt.toString().equals("$r0 = this.<soot.jimple.infoflow.test.ConstantTestCode: java.lang.String[] fieldArray>"))
-					System.out.println("x");
-
 				// A backward analysis looks for aliases of existing taints and thus
 				// cannot create new taints out of thin air
 				if (source.equals(zeroValue))
@@ -260,6 +256,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
+							if (source.equals(zeroValue))
+								return Collections.emptySet();
+
+							if (dest.toString().equals("this := @this: soot.jimple.infoflow.test.CallbackTestCode$MyLocationListener"))
+								System.out.println();
+							
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
 							// If the next statement assigns the base of the tainted value,

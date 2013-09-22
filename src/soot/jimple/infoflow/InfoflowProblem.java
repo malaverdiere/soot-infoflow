@@ -234,7 +234,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue)) {
 								return Collections.emptySet();
 							}
-							
+														
 							Abstraction newSource;
 							if (!source.isAbstractionActive() && src.equals(source.getActivationUnit())){
 								newSource = source.getActiveCopy();
@@ -499,9 +499,7 @@ res.size();
 							assert abs != source;		// our source abstraction must be immutable
 							res.add(abs);
 						}
-						
-if (!res.isEmpty())
-	res.size();
+
 						return res;
 					}
 				};
@@ -523,7 +521,7 @@ if (!res.isEmpty())
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-												
+						
 						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
 						Abstraction newSource = source.clone();
 						if(!source.isAbstractionActive())
@@ -539,6 +537,25 @@ if (!res.isEmpty())
 								if (interproceduralCFG().getMethodOf(u).equals(callee))
 									return Collections.emptySet();
 						}
+						
+						// Do not add an activation unit if we return into the method that
+						// originally produced the taint
+						boolean addActivationUnit = !interproceduralCFG().getMethodOf(callSite).getActiveBody()
+								.getUnits().contains(source.getActivationUnit());
+						addActivationUnit &= !source.getActivationUnitOnCurrentLevel().contains(callSite);
+						
+						if (callee.getActiveBody().getUnits().contains(source.getActivationUnit()))
+							source = source.clearActivationUnits();
+
+						// Did the callee produce the taint? If so, it must contain the activation statement
+						boolean calleeProducedTaint = callee.getActiveBody().getUnits().contains(newSource.getActivationUnit());
+						if (!calleeProducedTaint)
+							for (Unit u : newSource.getActivationUnitOnCurrentLevel())
+								if (callee.getActiveBody().getUnits().contains(u)) {
+									calleeProducedTaint = true;
+									break;
+								}
+						addActivationUnit &= calleeProducedTaint;
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 
@@ -578,7 +595,10 @@ if (!res.isEmpty())
 								Value leftOp = defnStmt.getLeftOp();
 								if (retLocal.equals(newSource.getAccessPath().getPlainLocal()) &&
 										(triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive())) {
-									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp), callSite);
+									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp));
+									if (addActivationUnit)
+										abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
+
 									if (pathTracking == PathTrackingMethod.ForwardTracking)
 										((AbstractionWithPath) abs).addPathElement(exitStmt);
 									assert abs != newSource;		// our source abstraction must be immutable
@@ -603,12 +623,13 @@ if (!res.isEmpty())
 						// easy: static
 						if (newSource.getAccessPath().isStaticFieldRef()) {
 							// Simply pass on the taint
-							res.add(newSource);
+							Abstraction abs = newSource;
+							if (addActivationUnit)
+								abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
+							res.add(abs);
 							
 							// call backwards-check:
-							Abstraction bwAbs = newSource.deriveInactiveAbstraction();
-							if (newSource.isAbstractionActive())
-								bwAbs = bwAbs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
+							Abstraction bwAbs = abs.deriveInactiveAbstraction();
 							for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
 								if (callerD1s.isEmpty())
 									bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
@@ -631,7 +652,10 @@ if (!res.isEmpty())
 									originalCallArg = iStmt.getInvokeExpr().getArg(i);
 									//either the param is a fieldref (not possible in jimple?) or an array Or one of its fields is tainted/all fields are tainted
 									if (triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)) {
-										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg), callSite);
+										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg));
+										if (addActivationUnit)
+											abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
+										
 										if (pathTracking == PathTrackingMethod.ForwardTracking)
 											abs = ((AbstractionWithPath) abs).addPathElement(exitStmt);
 										res.add(abs);
@@ -667,7 +691,9 @@ if (!res.isEmpty())
 										Stmt stmt = (Stmt) callSite;
 										if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 											InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
-											Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()), callSite);
+											Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()));
+											if (addActivationUnit)
+												abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
 
 											if (pathTracking == PathTrackingMethod.ForwardTracking)
 												((AbstractionWithPath) abs).addPathElement(stmt);
@@ -687,7 +713,7 @@ if (!res.isEmpty())
 								}
 							}
 						}
-
+						
 						return res; 
 					} 
 
@@ -714,6 +740,7 @@ if (!res.isEmpty())
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							Abstraction newSource;
+							
 							//check inactive elements:
 							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit()))
 									|| source.getActivationUnitOnCurrentLevel().contains(call)){
@@ -723,7 +750,7 @@ if (!res.isEmpty())
 							}
 							
 							// Remove activation units we pass by
-							newSource = newSource.removeActivationUnit(call);
+//							newSource = newSource.removeActivationUnit(call);
 
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.addAll(computeWrapperTaints(d1, iStmt, newSource));

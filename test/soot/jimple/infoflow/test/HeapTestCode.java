@@ -544,7 +544,11 @@ public class HeapTestCode {
 		a.b = getDeviceId();
 		B b = new B();
 		b.attr = a;
-		
+
+		doIt(b);
+	}
+	
+	private void doIt(B b) {
 		throwAround(b);
 		System.out.println(b.attr.b);
 	}

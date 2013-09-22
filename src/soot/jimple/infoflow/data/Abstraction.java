@@ -11,14 +11,15 @@
 package soot.jimple.infoflow.data;
 
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 import soot.SootField;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.Infoflow;
 /**
  * the abstraction class contains all information that is necessary to track the taint.
  *
@@ -41,7 +42,7 @@ public class Abstraction implements Cloneable {
 	 * Unit/Stmt which activates the taint when the abstraction passes it,
 	 * adapts to the current level
 	 */
-	private final Set<Unit> activationUnitOnCurrentLevel = new HashSet<Unit>();
+	private final List<Unit> activationUnitOnCurrentLevel = new ArrayList<Unit>();
 	/**
 	 * active abstraction is tainted value,
 	 * inactive abstraction is an alias to a tainted value that
@@ -122,8 +123,11 @@ public class Abstraction implements Cloneable {
 	
 	public final Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
 		Abstraction a = deriveNewAbstraction(p);
-		if(isActive)
+		if(isActive) {
 			a.activationUnitOnCurrentLevel.add(newActUnit);
+			if (activationUnitOnCurrentLevel.size() > Infoflow.getAbstractionDepth())
+				a.activationUnitOnCurrentLevel.remove(0);
+		}
 		return a;
 	}
 		
@@ -200,11 +204,13 @@ public class Abstraction implements Cloneable {
 			return this;
 		Abstraction a = this.clone();
 		a.activationUnitOnCurrentLevel.add(u);
+		if (activationUnitOnCurrentLevel.size() > Infoflow.getAbstractionDepth())
+			a.activationUnitOnCurrentLevel.remove(0);
 		return a;
 	}
 	
-	public Set<Unit> getActivationUnitOnCurrentLevel(){
-		return Collections.unmodifiableSet(activationUnitOnCurrentLevel);
+	public List<Unit> getActivationUnitOnCurrentLevel(){
+		return Collections.unmodifiableList(activationUnitOnCurrentLevel);
 	}
 		
 	public Abstraction getActiveCopy(){
@@ -214,7 +220,7 @@ public class Abstraction implements Cloneable {
 		// a caller, find a new alias there and then need to know where both
 		// aliases originally became active.
 //		a.activationUnit = null;
-		a.activationUnitOnCurrentLevel.clear();
+//		a.activationUnitOnCurrentLevel.clear();
 		return a;
 	}
 	
@@ -228,6 +234,16 @@ public class Abstraction implements Cloneable {
 			return this;
 	}
 	
+	public Abstraction clearActivationUnits() {
+		if (activationUnitOnCurrentLevel.isEmpty())
+			return this;
+		else {
+			Abstraction a = clone();
+			a.activationUnitOnCurrentLevel.clear();
+			return a;
+		}
+	}
+
 	/**
 	 * Gets whether this value has been thrown as an exception
 	 * @return True if this value has been thrown as an exception, otherwise

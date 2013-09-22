@@ -69,6 +69,7 @@ public class Infoflow implements IInfoflow {
 
 	private static boolean debug = true;
 	private static int accessPathLength = 5;
+	private static int abstractionDepth = 3;
 	
 	private InfoflowResults results;
 
@@ -490,6 +491,15 @@ public class Infoflow implements IInfoflow {
 		Infoflow.accessPathLength = accessPathLength;
 	}
 	
+	public static int getAbstractionDepth() {
+		return abstractionDepth;
+	}
+	
+	@Override
+	public void setAbstractionDepth(int abstractionDepth) {
+		Infoflow.abstractionDepth = abstractionDepth;
+	}
+
 	/**
 	 * Adds a handler that is called when information flow results are available
 	 * @param handler The handler to add

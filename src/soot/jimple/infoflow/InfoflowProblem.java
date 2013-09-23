@@ -546,8 +546,9 @@ res.size();
 						
 						// Do not add an activation unit if we return into the method that
 						// originally produced the taint
-						boolean addActivationUnit = !interproceduralCFG().getMethodOf(callSite).getActiveBody()
-								.getUnits().contains(source.getActivationUnit());
+						boolean addActivationUnit = callSite != null 
+								&& !interproceduralCFG().getMethodOf(callSite).getActiveBody()
+									.getUnits().contains(source.getActivationUnit());
 						addActivationUnit &= !source.getActivationUnitOnCurrentLevel().contains(callSite);
 						
 						if (callee.getActiveBody().getUnits().contains(source.getActivationUnit()))

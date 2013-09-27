@@ -138,13 +138,28 @@ public interface IInfoflow {
 	public boolean isResultAvailable();
 	
 	/**
+	 * default: inspectSources is set to true, this means sources are analyzed as well.
+	 * If inspectSources is set to false, then the analysis does not propagate values into 
+	 * the source method.
+	 * @param inspect boolean that determines the inspectSource option
+	 */
+	public void setInspectSources(boolean inspect);
+
+	/**
 	 * default: inspectSinks is set to true, this means sinks are analyzed as well.
 	 * If inspectSinks is set to false, then the analysis does not propagate values into 
-	 * the sink method. 
+	 * the sink method.
 	 * @param inspect boolean that determines the inspectSink option
 	 */
 	public void setInspectSinks(boolean inspect);
 	
+	/**
+	 * Sets whether the solver shall consider implicit flows.
+	 * @param enableImplicitFlows True if implicit flows shall be considered,
+	 * otherwise false.
+	 */
+	public void setEnableImplicitFlows(boolean enableImplicitFlows);
+
 	/**
 	 * sets the depth of the access path that are tracked
 	 * @param accessPathLength the maximum value of an access path. If it gets longer than

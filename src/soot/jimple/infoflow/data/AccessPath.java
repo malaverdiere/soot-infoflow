@@ -37,6 +37,19 @@ public class AccessPath implements Cloneable {
 	private final SootField[] fields;
 	private int hashCode = 0;
 
+	/**
+	 * The empty access path denotes a code region depending on a tainted
+	 * conditional. If a function is called inside the region, there is no
+	 * tainted value inside the callee, but there is taint - modeled by
+	 * the empty access path.
+	 */
+	private static final AccessPath emptyAccessPath = new AccessPath();
+
+	private AccessPath() {
+		this.value = null;
+		this.fields = null;
+	}
+
 	public AccessPath(Value val){
 		this(val, (SootField[]) null);
 	}
@@ -199,9 +212,21 @@ public class AccessPath implements Cloneable {
 	
 	@Override
 	public AccessPath clone(){
+		// The empty access path is a singleton
+		if (this == emptyAccessPath)
+			return this;
+
 		AccessPath a = new AccessPath(value, fields);
 		assert a.equals(this);
 		return a;
+	}
+
+	public static AccessPath getEmptyAccessPath() {
+		return emptyAccessPath;
+	}
+	
+	public boolean isEmpty() {
+		return value == null && (fields == null || fields.length == 0);
 	}
 
 }

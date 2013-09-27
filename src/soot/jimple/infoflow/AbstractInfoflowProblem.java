@@ -27,13 +27,13 @@ import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
+import soot.jimple.infoflow.heros.InfoflowCFG;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
-import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
 /**
  * abstract super class which 
  * 	- concentrates functionality used by InfoflowProblem and BackwardsInfoflowProblem
@@ -70,7 +70,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	protected NativeCallHandler ncHandler = new DefaultNativeCallHandler();
 	protected boolean debug = false;
-	
+	protected boolean enableImplicitFlows = false;
+
 	protected boolean inspectSources = true;
 	protected boolean inspectSinks = true;
 
@@ -121,6 +122,14 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		this.ncHandler.setPathTracking(method);
 	}
 	
+	/**
+	 * Sets whether the solver shall consider implicit flows.
+	 * @param enableImplicitFlows True if implicit flows shall be considered,
+	 * otherwise false.
+	 */
+	public void setEnableImplicitFlows(boolean enableImplicitFlows) {
+		this.enableImplicitFlows = enableImplicitFlows;
+	}
 
 	@Override
 	public Abstraction createZeroValue() {
@@ -247,8 +256,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 	@Override
-	public BiDiInterproceduralCFG<Unit, SootMethod> interproceduralCFG() {
-		return (BiDiInterproceduralCFG<Unit, SootMethod>) super.interproceduralCFG();
+	public InfoflowCFG interproceduralCFG() {
+		return (InfoflowCFG) super.interproceduralCFG();
 	}
 
 }

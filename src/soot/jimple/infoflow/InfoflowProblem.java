@@ -30,22 +30,28 @@ import soot.Local;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
+import soot.ValueBox;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
 import soot.jimple.CaughtExceptionRef;
 import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.FieldRef;
 import soot.jimple.IdentityStmt;
+import soot.jimple.IfStmt;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.InvokeExpr;
+import soot.jimple.LookupSwitchStmt;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
+import soot.jimple.TableSwitchStmt;
 import soot.jimple.ThrowStmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.heros.SolverCallToReturnFlowFunction;
 import soot.jimple.infoflow.heros.SolverNormalFlowFunction;
@@ -145,7 +151,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					baseTarget = ((ArrayRef) targetValue).getBase();
 
 				// also taint the target of the assignment
-				Abstraction newAbs = source.deriveNewAbstraction(baseTarget, cutFirstField, src);
+				Abstraction newAbs;
+				if (source.getTopPostdominator() == null)
+					newAbs = source.deriveNewAbstraction(baseTarget, cutFirstField, src);
+				else
+					newAbs = source.deriveNewAbstraction(new AccessPath(targetValue), src);
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					((AbstractionWithPath) newAbs).addPathElement(src);
 				taintSet.add(newAbs);
@@ -176,6 +186,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
+							// Check whether we must leave a conditional branch
+							if (source.isTopPostdominator(is))
+								source = source.dropTopPostdominator();
+
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							boolean addOriginal = true;
 							if (is.getRightOp() instanceof CaughtExceptionRef) {
@@ -235,6 +249,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							}
 														
+							// Check whether we must leave a conditional branch
+							if (source.isTopPostdominator(assignStmt))
+								source = source.dropTopPostdominator();
+
 							Abstraction newSource;
 							if (!source.isAbstractionActive() && src.equals(source.getActivationUnit())){
 								newSource = source.getActiveCopy();
@@ -242,54 +260,76 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								newSource = source;
 							}
 							
-							for (Value rightValue : rightVals) {
-								// check if static variable is tainted (same name, same class)
-								//y = X.f && X.f tainted --> y, X.f tainted
-								if (newSource.getAccessPath().isStaticFieldRef() && rightValue instanceof StaticFieldRef) {
-									StaticFieldRef rightRef = (StaticFieldRef) rightValue;
-									if (newSource.getAccessPath().getFirstField().equals(rightRef.getField())) {
-										addLeftValue = true;
-										cutFirstField = true;
-									}
-								}
-								// if both are fields, we have to compare their fieldName via equals and their bases
-								//y = x.f && x tainted --> y, x tainted
-								//y = x.f && x.f tainted --> y, x tainted
-								else if (rightValue instanceof InstanceFieldRef) {								
-									InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
-									Local rightBase = (Local) rightRef.getBase();
-									Local sourceBase =  newSource.getAccessPath().getPlainLocal();
-									if (rightBase.equals(sourceBase)) {
-										if (newSource.getAccessPath().isInstanceFieldRef()) {
-											if (rightRef.getField().equals(newSource.getAccessPath().getFirstField())) {
-												addLeftValue = true;
-												cutFirstField = true;
-											}
+							// If we have a non-empty postdominator stack, we taint
+							// every assignment target
+							if (newSource.getTopPostdominator() != null) {
+								// We can skip over all local assignments inside conditionally-
+								// called functions since they are not visible in the caller
+								// anyway
+								if (newSource.getConditionalCallSite() != null && !(leftValue instanceof FieldRef))
+									return Collections.singleton(newSource);
+								// Only allow "taint alls" to be done on the special-purpose
+								// abstraction in conditionally-called methods to make sure
+								// that it's done once and not over and over again
+								if (newSource.getConditionalCallSite() != null && !newSource.getAccessPath().isEmpty())
+									return Collections.singleton(newSource);
+								// For static targets, disregard static initializers since
+								// they always get the same value on every first access to
+								// the class, so they are not really conditional
+//								if (leftValue instanceof StaticFieldRef && interproceduralCFG().getMethodOf(src).getName().equals("<clinit>"))
+//									return Collections.singleton(newSource);
+								addLeftValue = true;
+							}
+							else {
+								for (Value rightValue : rightVals) {
+									// check if static variable is tainted (same name, same class)
+									//y = X.f && X.f tainted --> y, X.f tainted
+									if (newSource.getAccessPath().isStaticFieldRef() && rightValue instanceof StaticFieldRef) {
+										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
+										if (newSource.getAccessPath().getFirstField().equals(rightRef.getField())) {
+											addLeftValue = true;
+											cutFirstField = true;
 										}
-										else
+									}
+									// if both are fields, we have to compare their fieldName via equals and their bases
+									//y = x.f && x tainted --> y, x tainted
+									//y = x.f && x.f tainted --> y, x tainted
+									else if (rightValue instanceof InstanceFieldRef) {								
+										InstanceFieldRef rightRef = (InstanceFieldRef) rightValue;
+										Local rightBase = (Local) rightRef.getBase();
+										Local sourceBase =  newSource.getAccessPath().getPlainLocal();
+										if (rightBase.equals(sourceBase)) {
+											if (newSource.getAccessPath().isInstanceFieldRef()) {
+												if (rightRef.getField().equals(newSource.getAccessPath().getFirstField())) {
+													addLeftValue = true;
+													cutFirstField = true;
+												}
+											}
+											else
+												addLeftValue = true;
+										}
+									}
+									// indirect taint propagation:
+									// if rightvalue is local and source is instancefield of this local:
+									// y = x && x.f tainted --> y.f, x.f tainted
+									// y.g = x && x.f tainted --> y.g.f, x.f tainted
+									else if (rightValue instanceof Local && newSource.getAccessPath().isInstanceFieldRef()) {
+										Local base = newSource.getAccessPath().getPlainLocal();
+										if (rightValue.equals(base)) {
+											addLeftValue = true;
+										}
+									}
+									//y = x[i] && x tainted -> x, y tainted
+									else if (rightValue instanceof ArrayRef) {
+										Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
+										if (rightBase.equals(newSource.getAccessPath().getPlainValue()))
 											addLeftValue = true;
 									}
-								}
-								// indirect taint propagation:
-								// if rightvalue is local and source is instancefield of this local:
-								// y = x && x.f tainted --> y.f, x.f tainted
-								// y.g = x && x.f tainted --> y.g.f, x.f tainted
-								else if (rightValue instanceof Local && newSource.getAccessPath().isInstanceFieldRef()) {
-									Local base = newSource.getAccessPath().getPlainLocal();
-									if (rightValue.equals(base)) {
+									// generic case, is true for Locals, ArrayRefs that are equal etc..
+									//y = x && x tainted --> y, x tainted
+									else if (rightValue.equals(newSource.getAccessPath().getPlainValue())) {
 										addLeftValue = true;
 									}
-								}
-								//y = x[i] && x tainted -> x, y tainted
-								else if (rightValue instanceof ArrayRef) {
-									Local rightBase = (Local) ((ArrayRef) rightValue).getBase();
-									if (rightBase.equals(newSource.getAccessPath().getPlainValue()))
-										addLeftValue = true;
-								}
-								// generic case, is true for Locals, ArrayRefs that are equal etc..
-								//y = x && x tainted --> y, x tainted
-								else if (rightValue.equals(newSource.getAccessPath().getPlainValue())) {
-									addLeftValue = true;
 								}
 							}
 
@@ -372,6 +412,10 @@ res.size();
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 
+							// Check whether we must leave a conditional branch
+							if (source.isTopPostdominator(returnStmt))
+								source = source.dropTopPostdominator();
+
 							if (returnStmt.getOp().equals(source.getAccessPath().getPlainValue()) && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.getOp(), returnStmt,
@@ -397,9 +441,60 @@ res.size();
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
+							// Check whether we must leave a conditional branch
+							if (source.isTopPostdominator(throwStmt))
+								source = source.dropTopPostdominator();
+
 							if (throwStmt.getOp().equals(source.getAccessPath().getPlainLocal()))
 								return Collections.singleton(source.deriveNewAbstractionOnThrow());
 							return Collections.singleton(source);
+						}
+					};
+				}
+				// IF statements can lead to implicit flows
+				else if (enableImplicitFlows && (src instanceof IfStmt || src instanceof LookupSwitchStmt
+						|| src instanceof TableSwitchStmt)) {
+					final Value condition = src instanceof IfStmt ? ((IfStmt) src).getCondition()
+							: src instanceof LookupSwitchStmt ? ((LookupSwitchStmt) src).getKey()
+							: ((TableSwitchStmt) src).getKey();
+					return new FlowFunction<Abstraction>() {
+
+						@Override
+						public Set<Abstraction> computeTargets(Abstraction source) {
+							// Check whether we must leave a conditional branch
+							if (source.isTopPostdominator(src))
+								source = source.dropTopPostdominator();
+							
+							Set<Abstraction> res = new HashSet<Abstraction>();
+							res.add(source);
+
+							// If we are in a conditionally-called method, there is no
+							// need to care about further conditionals, since all
+							// assignment targets will be tainted anyway
+							if (source.getAccessPath().isEmpty())
+								return res;
+							
+							Set<Value> values = new HashSet<Value>();
+							if (condition instanceof Local)
+								values.add(condition);
+							else
+								for (ValueBox box : condition.getUseBoxes())
+									values.add(box.getValue());
+														
+							for (Value val : values)
+								if (val.equals(source.getAccessPath().getPlainValue())) {
+									// ok, we are now in a branch that depends on a secret value.
+									// We now need the postdominator to know when we leave the
+									// branch again.
+									UnitContainer postdom = interproceduralCFG().getPostdominatorOf(src);
+									if (!(postdom.getMethod() == null
+											&& source.getTopPostdominator() != null
+											&& interproceduralCFG().getMethodOf(postdom.getUnit()) == source.getTopPostdominator().getMethod())) {
+										Abstraction newAbs = source.deriveConditionalAbstractionEnter(postdom);
+										res.add(newAbs);
+									}
+								}
+							return res;
 						}
 					};
 				}
@@ -452,6 +547,20 @@ res.size();
 						if (!inspectSinks && isSink)
 							return Collections.emptySet();
 												
+						// Check whether we must leave a conditional branch
+						if (source.isTopPostdominator(stmt))
+							source = source.dropTopPostdominator();
+
+						// If no parameter is tainted, but we are in a conditional, we create a
+						// pseudo abstraction. We do not map parameters if we are handling an
+						// implicit flow anyway.
+						if (source.getTopPostdominator() != null && !source.getAccessPath().isEmpty()) {
+							Abstraction abs = source.deriveConditionalAbstractionCall(src);
+							return Collections.singleton(abs);
+						}
+						if (source.getAccessPath().isEmpty())
+							return Collections.singleton(source);
+
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
 						if (!dest.isStatic() && ie instanceof InstanceInvokeExpr) {
@@ -497,12 +606,12 @@ res.size();
 						if (source.getAccessPath().isStaticFieldRef()) {
 							Abstraction abs;
 							abs = source.clone();
-							
-							// Remove activation units we pass by
-							abs = abs.removeActivationUnit(src);
-
 							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
 							assert abs != source;		// our source abstraction must be immutable
+
+							// Remove activation units we pass by
+							abs = abs.removeActivationUnit(src);
+							
 							res.add(abs);
 						}
 
@@ -528,13 +637,32 @@ res.size();
 							return Collections.emptySet();
 						}
 						
-						//activate taint if necessary, but in any case we have to take the previous call edge abstraction
+						// Activate taint if necessary
 						Abstraction newSource = source.clone();
 						if(!source.isAbstractionActive())
 							if(callSite != null
 									&& (callSite.equals(source.getActivationUnit()) || source.getActivationUnitOnCurrentLevel().contains(callSite)) )
 								newSource = source.getActiveCopy();
-												
+						
+						// Check whether we must leave a conditional branch
+						boolean insideConditional = false;
+						if (newSource.isTopPostdominator(exitStmt) || newSource.isTopPostdominator(callee)) {
+							newSource = newSource.dropTopPostdominator();
+							// Have we dropped the last postdominator for an empty taint?
+							if (newSource.getAccessPath().isEmpty() && newSource.getTopPostdominator() == null)
+								return Collections.emptySet();
+							// Shortcut: The conditional call abstraction can only taint
+							// right hand sides of assignments
+							if (newSource.getAccessPath().isEmpty() && !(exitStmt instanceof ReturnStmt))
+								return Collections.emptySet();
+							insideConditional = true;
+						}
+
+						// Check whether we are leaving a conditional call
+						boolean leavingConditionalCall = newSource.getConditionalCallSite() == callSite;
+						if (leavingConditionalCall)
+							newSource = newSource.leaveConditionalCall();
+
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null) {
 							if (interproceduralCFG().getMethodOf(newSource.getActivationUnit()).equals(callee))
@@ -571,11 +699,12 @@ res.size();
 							assert returnStmt.getOp() == null
 									|| returnStmt.getOp() instanceof Local
 									|| returnStmt.getOp() instanceof Constant;
-							if (returnStmt.getOp() != null
+							
+							boolean mustTaintSink = insideConditional;
+							mustTaintSink |= returnStmt.getOp() != null
 									&& newSource.getAccessPath().isLocal()
-									&& newSource.getAccessPath().getPlainValue().equals(returnStmt.getOp())
-									&& isSink) {
-
+									&& newSource.getAccessPath().getPlainValue().equals(returnStmt.getOp());
+							if (mustTaintSink && isSink) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.getOp(), returnStmt,
 											newSource.getSource(),
@@ -600,8 +729,11 @@ res.size();
 							if (callSite instanceof DefinitionStmt) {
 								DefinitionStmt defnStmt = (DefinitionStmt) callSite;
 								Value leftOp = defnStmt.getLeftOp();
-								if (retLocal.equals(newSource.getAccessPath().getPlainLocal()) &&
-										(triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive())) {
+								
+								boolean taintReturnValue = insideConditional;
+								taintReturnValue |= retLocal.equals(newSource.getAccessPath().getPlainLocal());
+								taintReturnValue &= (triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive());
+								if (taintReturnValue) {
 									Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp));
 									if (addActivationUnit)
 										abs = abs.getAbstractionWithNewActivationUnitOnCurrentLevel(callSite);
@@ -636,13 +768,15 @@ res.size();
 							res.add(abs);
 							
 							// call backwards-check:
-							Abstraction bwAbs = abs.deriveInactiveAbstraction();
-							for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
-								if (callerD1s.isEmpty())
-									bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
-								else
-									for (Abstraction d1 : callerD1s)
-										bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
+							if (newSource.getConditionalCallSite() == null) {
+								Abstraction bwAbs = abs.deriveInactiveAbstraction();
+								for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
+									if (callerD1s.isEmpty())
+										bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
+									else
+										for (Abstraction d1 : callerD1s)
+											bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
+								}
 							}
 						}
 						
@@ -748,6 +882,10 @@ res.size();
 								return Collections.emptySet();
 							Abstraction newSource;
 							
+							// Check whether we must leave a conditional branch
+							if (source.isTopPostdominator(iStmt))
+								source = source.dropTopPostdominator();
+
 							//check inactive elements:
 							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit()))
 									|| source.getActivationUnitOnCurrentLevel().contains(call)){
@@ -789,6 +927,9 @@ res.size();
 											passOn = false;
 										}
 									}
+							// Implicit taints are always passed over
+							// conditionally called methods
+							passOn |= source.getTopPostdominator() != null;
 							if (passOn)
 								res.add(newSource);
 							if (iStmt.getInvokeExpr().getMethod().isNative()) {
@@ -825,11 +966,16 @@ res.size();
 
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
 							if (isSink) {
-								boolean taintedParam = false;
-								for (int i = 0; i < callArgs.size(); i++) {
-									if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal())) {
-										taintedParam = true;
-										break;
+								// If we are inside a conditional branch, we consider every sink call a leak
+								boolean taintedParam = source.getTopPostdominator() != null;
+								// If the base object is tainted, we also consider the "code" associated
+								// with the object's class as tainted.
+								if (!taintedParam) {
+									for (int i = 0; i < callArgs.size(); i++) {
+										if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal())) {
+											taintedParam = true;
+											break;
+										}
 									}
 								}
 

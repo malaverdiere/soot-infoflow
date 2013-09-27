@@ -7,13 +7,13 @@ package soot.jimple.infoflow;
 
 import soot.SootMethod;
 import soot.Unit;
+import soot.jimple.infoflow.heros.InfoflowCFG;
 import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
-import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 
 public class DefaultBiDiICFGFactory implements BiDirICFGFactory {
 
     @Override
     public BiDiInterproceduralCFG<Unit,SootMethod> buildBiDirICFG(){
-        return new JimpleBasedBiDiICFG();
+        return new InfoflowCFG();
     }
 }

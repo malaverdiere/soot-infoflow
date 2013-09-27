@@ -1,5 +1,4 @@
 /*******************************************************************************
- * Copyright (c) 2012 Secure Software Engineering Group at EC SPRIDE.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the GNU Lesser Public License v2.1
  * which accompanies this distribution, and is available at
@@ -79,6 +78,9 @@ public class Infoflow implements IInfoflow {
 	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	private IInfoflowConfig sootConfig;
 	private boolean stopAfterFirstFlow = false;
+	private boolean enableImplicitFlows = false;
+	
+	private boolean inspectSources = true;
 	private boolean inspectSinks = true;
 
     private BiDirICFGFactory icfgFactory = new DefaultBiDiICFGFactory();
@@ -116,6 +118,11 @@ public class Infoflow implements IInfoflow {
 	}
 
 	@Override
+	public void setInspectSources(boolean inspect){
+		inspectSources = inspect;
+	}
+
+	@Override
 	public void setInspectSinks(boolean inspect){
 		inspectSinks = inspect;
 	}
@@ -125,6 +132,11 @@ public class Infoflow implements IInfoflow {
 		this.pathTracking = method;
 	}
 	
+	@Override
+	public void setEnableImplicitFlows(boolean enableImplicitFlows) {
+		this.enableImplicitFlows = enableImplicitFlows;
+	}
+
 	public void setSootConfig(IInfoflowConfig config){
 		sootConfig = config;
 	}
@@ -400,12 +412,12 @@ public class Infoflow implements IInfoflow {
 				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem();
 				InfoflowSolver backSolver = new InfoflowSolver(backProblem, debug, executor);
 				forwardProblem.setBackwardSolver(backSolver);
-				forwardProblem.setDebug(debug);
+				forwardProblem.setInspectSources(inspectSources);
 				forwardProblem.setInspectSinks(inspectSinks);
+				forwardProblem.setEnableImplicitFlows(enableImplicitFlows);
 				
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);
-				backProblem.setDebug(debug);
 
 				forwardSolver.solve();
 

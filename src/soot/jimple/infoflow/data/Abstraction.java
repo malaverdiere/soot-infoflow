@@ -138,19 +138,7 @@ public class Abstraction implements Cloneable {
 	public Abstraction deriveNewAbstraction(AccessPath p){
 		return new Abstraction(p, this);
 	}
-	
-	public final Abstraction deriveNewAbstraction(AccessPath p, Unit newActUnit){
-		Abstraction a = deriveNewAbstraction(p);
-		/*
-		if(isActive && !accessPath.isEmpty() && conditionalCallSite == null) {
-			a.activationUnitOnCurrentLevel.add(newActUnit);
-			if (activationUnitOnCurrentLevel.size() > Infoflow.getAbstractionDepth())
-				a.activationUnitOnCurrentLevel.remove(0);
-		}
-		*/
-		return a;
-	}
-		
+			
 	public final Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
 		return this.deriveNewAbstraction(taint, false, activationUnit);
 	}

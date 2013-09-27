@@ -155,7 +155,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				if (source.getTopPostdominator() == null)
 					newAbs = source.deriveNewAbstraction(baseTarget, cutFirstField, src);
 				else
-					newAbs = source.deriveNewAbstraction(new AccessPath(targetValue), src);
+					newAbs = source.deriveNewAbstraction(new AccessPath(targetValue));
 				if (pathTracking == PathTrackingMethod.ForwardTracking)
 					((AbstractionWithPath) newAbs).addPathElement(src);
 				taintSet.add(newAbs);

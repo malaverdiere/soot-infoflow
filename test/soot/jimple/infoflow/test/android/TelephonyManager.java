@@ -15,4 +15,9 @@ public class TelephonyManager {
 	public static String getDeviceId(){
 		return "I1t359-f";
 	}
+
+	public static int getIMEI() {
+		return 123;
+	}
+
 }

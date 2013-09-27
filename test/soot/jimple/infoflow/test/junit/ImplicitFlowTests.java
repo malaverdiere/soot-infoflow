@@ -292,6 +292,8 @@ public class ImplicitFlowTests extends JUnitTests {
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
+    	int oldAPDepth = Infoflow.getAbstractionDepth();
+    	infoflow.setAbstractionDepth(1);
 		infoflow.setInspectSinks(false);
 		infoflow.setEnableImplicitFlows(true);
 
@@ -301,6 +303,7 @@ public class ImplicitFlowTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		infoflow.setAbstractionDepth(oldAPDepth);	// this is a global setting! Restore it when we're done
 		System.out.println("stringClassTest took " + (System.nanoTime() - timeBefore) / 1E9 + " seconds");
 	}
 

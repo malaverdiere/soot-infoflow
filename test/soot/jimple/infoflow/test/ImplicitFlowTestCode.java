@@ -325,4 +325,17 @@ public class ImplicitFlowTestCode {
 		cm.publish(secret);		
 	}
 	
+	public void callToReturnTest() {
+		String secret = TelephonyManager.getDeviceId();
+		String s1 = "foo";
+		String s2 = "bar";
+		String res = "";
+		if (secret.equals("test"))
+			res = String.valueOf(s1);
+		else
+			res = String.valueOf(s2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(res);
+	}
+	
 }

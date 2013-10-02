@@ -10,13 +10,18 @@
  ******************************************************************************/
 package soot.jimple.infoflow.test.junit;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.config.IInfoflowConfig;
+import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
+import soot.options.Options;
 
 /**
  * Test class for implicit flows
@@ -332,6 +337,31 @@ public class ImplicitFlowTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 	    epoints.add("<soot.jimple.infoflow.test.ImplicitFlowTestCode: void passOverTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);	
+	}
+
+	@Test
+	public void callToReturnTest() throws IOException{
+		// not yet supported
+		Infoflow infoflow = initInfoflow();
+		infoflow.setInspectSinks(false);
+		infoflow.setEnableImplicitFlows(true);
+		infoflow.setTaintWrapper(new EasyTaintWrapper("EasyTaintWrapperSource.txt"));
+    	infoflow.setSootConfig(new IInfoflowConfig() {
+			
+			@Override
+			public void setSootOptions(Options options) {
+				options.set_include(Collections.emptyList());
+				options.set_exclude(Collections.singletonList("java."));
+				options.set_exclude(Collections.singletonList("javax."));
+				options.set_prepend_classpath(false);
+			}
+			
+		});
+
+		List<String> epoints = new ArrayList<String>();
+	    epoints.add("<soot.jimple.infoflow.test.ImplicitFlowTestCode: void callToReturnTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}

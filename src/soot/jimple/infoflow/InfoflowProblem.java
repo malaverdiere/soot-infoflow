@@ -175,6 +175,20 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				}
 			}
 
+			private boolean isFieldReadByCallee(
+					final Set<?> fieldsReadByCallee, Abstraction source) {
+				boolean isFieldRead = fieldsReadByCallee == null;
+				if (!isFieldRead) {
+					for (Object oField : fieldsReadByCallee)
+						if (oField instanceof SootField)
+							if (source.getAccessPath().getFirstField() == oField) {
+								isFieldRead = true;
+								break;
+							}
+				}
+				return isFieldRead;
+			}
+
 			@Override
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, final Unit dest) {
 				// If we compute flows on parameters, we create the initial
@@ -517,9 +531,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				final boolean isSink = sourceSinkManager != null
 						? sourceSinkManager.isSink(stmt, interproceduralCFG()) : false;
 				
-				final RWSet calleeReads = interproceduralCFG().getReadVariables
+				final Set<?> fieldsReadByCallee = interproceduralCFG().getReadVariables
 						(interproceduralCFG().getMethodOf(stmt), stmt);
-				final Set<?> fieldsReadByCallee = calleeReads == null ? null : calleeReads.getFields();
 
 				return new FlowFunction<Abstraction>() {
 
@@ -562,20 +575,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.singleton(source);
 
 						// Only propagate the taint if the target field is actually read
-						if (source.getAccessPath().isInstanceFieldRef()
-								|| source.getAccessPath().isStaticFieldRef()) {
-							boolean isFieldRead = fieldsReadByCallee == null;
-							if (!isFieldRead) {
-								for (Object oField : fieldsReadByCallee)
-									if (oField instanceof SootField)
-										if (source.getAccessPath().getFirstField() == oField) {
-											isFieldRead = true;
-											break;
-										}
-							}
-							if (!isFieldRead)
+						if (source.getAccessPath().isInstanceFieldRef() || source.getAccessPath().isStaticFieldRef())
+							if (!isFieldReadByCallee(fieldsReadByCallee, source))
 								return Collections.emptySet();
-						}
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						// check if whole object is tainted (happens with strings, for example:)
@@ -888,6 +890,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					final boolean isSink = (sourceSinkManager != null)
 							? sourceSinkManager.isSink(iStmt, interproceduralCFG()) : false;
 
+					final Set<?> fieldsReadByCallee = interproceduralCFG().getReadVariables
+							(interproceduralCFG().getMethodOf(call), (Stmt) call);
+
 					return new SolverCallToReturnFlowFunction() {
 
 						@Override
@@ -949,6 +954,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											passOn = false;
 										}
 									}
+							// If the callee does not read the given value, we also need to pass it on
+							// since we do not propagate it into the callee.
+							if (source.getAccessPath().isInstanceFieldRef() || source.getAccessPath().isStaticFieldRef())
+								if (!isFieldReadByCallee(fieldsReadByCallee, source))
+									passOn = true;
 							// Implicit taints are always passed over
 							// conditionally called methods
 							passOn |= source.getTopPostdominator() != null

@@ -1,6 +1,11 @@
 package soot.jimple.infoflow.heros;
 
 import heros.solver.IDESolver;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import soot.Scene;
 import soot.SootMethod;
 import soot.Unit;
@@ -126,8 +131,13 @@ public class InfoflowCFG extends JimpleBasedBiDiICFG {
 		return unitToPostdominator.getUnchecked(u);
 	}
 	
-	public RWSet getReadVariables(SootMethod caller, Stmt inv) {
-		return sideEffectAnalysis.readSet(caller, inv);
+	public Set<?> getReadVariables(SootMethod caller, Stmt inv) {
+		RWSet rwSet = sideEffectAnalysis.readSet(caller, inv);
+		if (rwSet == null)
+			return null;
+		HashSet<Object> objSet = new HashSet<Object>(rwSet.getFields());
+		objSet.addAll(rwSet.getGlobals());
+		return objSet;
 	}
 	
 }

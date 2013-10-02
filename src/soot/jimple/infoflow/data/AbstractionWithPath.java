@@ -49,12 +49,6 @@ public class AbstractionWithPath extends Abstraction {
 			propagationPath = new ArrayList<Unit>(src.getPropagationPath());		
 	}
 	
-	public AbstractionWithPath(AccessPath p, Value src, Stmt srcContext, boolean exceptionThrown,
-			boolean isActive, List<Unit> path){
-		super(p, src, srcContext, exceptionThrown, isActive);
-		propagationPath = new ArrayList<Unit>(path);
-	}
-
 	public List<Unit> getPropagationPath() {
 		return this.propagationPath;
 	}

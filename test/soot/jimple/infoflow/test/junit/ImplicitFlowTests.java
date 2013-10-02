@@ -323,4 +323,17 @@ public class ImplicitFlowTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
 	}
 
+	@Test
+	public void passOverTest(){
+		// not yet supported
+		Infoflow infoflow = initInfoflow();
+		infoflow.setInspectSinks(false);
+		infoflow.setEnableImplicitFlows(true);
+
+		List<String> epoints = new ArrayList<String>();
+	    epoints.add("<soot.jimple.infoflow.test.ImplicitFlowTestCode: void passOverTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);	
+	}
+
 }

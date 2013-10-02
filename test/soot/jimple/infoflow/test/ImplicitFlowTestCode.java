@@ -292,5 +292,37 @@ public class ImplicitFlowTestCode {
 			cm.publish(ImplicitFlowTestCode.staticDataClass.data.data);
 		}
 	}
-
+	
+	private class A {
+		String data;
+	}
+	
+	private class B {
+		A a;
+	}
+	
+	private void taint(B b) {
+		b.a.data = TelephonyManager.getDeviceId();
+	}
+	
+	public void aliasingTest() {
+		B b = new B();
+		b.a = new A();
+		A a = b.a;
+		taint(b);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+	}
+	
+	private void throwAround(String secret) {
+		System.out.println(secret);
+	}
+	
+	public void passOverTest() {
+		String secret = TelephonyManager.getDeviceId();
+		throwAround(secret);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(secret);		
+	}
+	
 }

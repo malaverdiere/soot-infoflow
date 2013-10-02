@@ -1,9 +1,13 @@
 package soot.jimple.infoflow.heros;
 
 import heros.solver.IDESolver;
+import soot.Scene;
 import soot.SootMethod;
 import soot.Unit;
+import soot.jimple.Stmt;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
+import soot.jimple.toolkits.pointer.RWSet;
+import soot.jimple.toolkits.pointer.SideEffectAnalysis;
 import soot.toolkits.graph.DirectedGraph;
 import soot.toolkits.graph.MHGPostDominatorsFinder;
 
@@ -102,9 +106,28 @@ public class InfoflowCFG extends JimpleBasedBiDiICFG {
 						return new UnitContainer(postdom);
 				}
 			});
+	
+	protected final SideEffectAnalysis sideEffectAnalysis;
+	
+	public InfoflowCFG() {
+		super();
+		
+		this.sideEffectAnalysis = new SideEffectAnalysis
+				(Scene.v().getPointsToAnalysis(), Scene.v().getCallGraph());
+	}
 
+	/**
+	 * Gets the postdominator of the given unit. If this unit is a conditional,
+	 * the postdominator is the join point behind both branches of the conditional.
+	 * @param u The unit for which to get the postdominator.
+	 * @return The postdominator of the given unit
+	 */
 	public UnitContainer getPostdominatorOf(Unit u) {
 		return unitToPostdominator.getUnchecked(u);
+	}
+	
+	public RWSet getReadVariables(SootMethod caller, Stmt inv) {
+		return sideEffectAnalysis.readSet(caller, inv);
 	}
 	
 }

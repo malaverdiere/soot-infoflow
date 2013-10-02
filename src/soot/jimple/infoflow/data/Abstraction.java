@@ -77,16 +77,7 @@ public class Abstraction implements Cloneable {
 		this.exceptionThrown = exceptionThrown;
 		this.isActive = isActive;
 	}
-		
-	protected Abstraction(AccessPath p, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive){
-		this.source = src;
-		this.sourceContext = srcContext;
-		this.accessPath = p.clone();
-		this.activationUnit = null;
-		this.exceptionThrown = exceptionThrown;
-		this.isActive = isActive;
-	}
-
+	
 	/**
 	 * Creates an abstraction as a copy of an existing abstraction,
 	 * only exchanging the access path.
@@ -117,6 +108,7 @@ public class Abstraction implements Cloneable {
 			exceptionThrown = original.exceptionThrown;
 			activationUnit = original.activationUnit;
 			activationUnitOnCurrentLevel.addAll(original.activationUnitOnCurrentLevel);
+			assert activationUnitOnCurrentLevel.size() <= Infoflow.getAbstractionDepth();
 			isActive = original.isActive;
 			postdominators.addAll(original.postdominators);
 			assert this.postdominators.equals(original.postdominators);
@@ -150,8 +142,10 @@ public class Abstraction implements Cloneable {
 		for (int i = cutFirstField ? 1 : 0; i < orgFields.length; i++)
 			fields[cutFirstField ? i - 1 : i] = orgFields[i];
 		a = deriveNewAbstraction(new AccessPath(taint, fields));
-		if (isActive)
+		if (isActive) {
+			assert newActUnit != null;
 			a.activationUnit = newActUnit;
+		}
 		return a;
 	}
 
@@ -177,8 +171,10 @@ public class Abstraction implements Cloneable {
 		assert this.exceptionThrown;
 		Abstraction abs = deriveNewAbstraction(new AccessPath(taint));
 		abs.exceptionThrown = false;
-		if(isActive)
+		if(isActive) {
+			assert newActivationUnit != null;
 			abs.activationUnit = newActivationUnit;
+		}
 		return abs;
 	}
 
@@ -207,12 +203,14 @@ public class Abstraction implements Cloneable {
 		return activationUnit;
 	}
 	
-	public Abstraction getAbstractionWithNewActivationUnitOnCurrentLevel(Unit u){
+	public Abstraction getAbstractionWithNewActivationUnitOnCurrentLevel(Stmt u){
 		if (!isActive || this.getAccessPath().isEmpty() || this.conditionalCallSite != null)
 			return this;
+
+		assert u.containsInvokeExpr();
 		Abstraction a = this.clone();
 		a.activationUnitOnCurrentLevel.add(u);
-		if (activationUnitOnCurrentLevel.size() > Infoflow.getAbstractionDepth())
+		while (a.activationUnitOnCurrentLevel.size() > Infoflow.getAbstractionDepth())
 			a.activationUnitOnCurrentLevel.remove(0);
 		return a;
 	}
@@ -272,10 +270,12 @@ public class Abstraction implements Cloneable {
 	
 	public final Abstraction deriveConditionalAbstractionCall(Unit conditionalCallSite) {
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath());
-		if (abs.conditionalCallSite == null)
+		if (conditionalCallSite != null)
 			abs.conditionalCallSite = conditionalCallSite;
-		abs.activationUnit = null;
-		abs.activationUnitOnCurrentLevel.clear();
+		abs.isActive = true;
+
+//		abs.activationUnit = conditionalCallSite;
+//		abs.activationUnitOnCurrentLevel.clear();
 		return abs;
 	}
 	

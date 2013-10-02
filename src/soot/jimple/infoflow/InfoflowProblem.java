@@ -86,7 +86,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		if(taintWrapper == null)
 			return Collections.emptySet();
 		
-		if (!source.getAccessPath().isStaticFieldRef())
+		if (!source.getAccessPath().isStaticFieldRef() && !source.getAccessPath().isEmpty())
 			if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 				InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 				boolean found = iiExpr.getBase().equals(source.getAccessPath().getPlainValue());
@@ -261,7 +261,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}else{
 								newSource = source;
 							}
-							
+														
 							// If we have a non-empty postdominator stack, we taint
 							// every assignment target
 							if (newSource.getTopPostdominator() != null
@@ -913,6 +913,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.addAll(computeWrapperTaints(d1, iStmt, newSource));
+							
+							// Implicit flows: taint return value
+							if (call instanceof DefinitionStmt && (newSource.getTopPostdominator() != null
+									|| newSource.getConditionalCallSite() != null)) {
+								Value leftVal = ((DefinitionStmt) call).getLeftOp();
+								Abstraction abs = newSource.deriveNewAbstraction(new AccessPath(leftVal));
+								res.add(abs);
+							}
 
 							// We can only pass on a taint if it is neither a parameter nor the
 							// base object of the current call. If this call overwrites the left

@@ -179,6 +179,7 @@
 
 <java.lang.Character: void <init>(char)>
 <java.lang.Character: java.lang.Boolean valueOf(char)>
+<java.lang.Character: char forDigit(int,int)>
 
 <java.lang.Error: void <init>(java.lang.String)>
 

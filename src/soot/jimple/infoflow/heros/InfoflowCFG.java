@@ -2,7 +2,6 @@ package soot.jimple.infoflow.heros;
 
 import heros.solver.IDESolver;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -140,4 +139,13 @@ public class InfoflowCFG extends JimpleBasedBiDiICFG {
 		return objSet;
 	}
 	
+	public Set<?> getWriteVariables(SootMethod caller, Stmt inv) {
+		RWSet rwSet = sideEffectAnalysis.writeSet(caller, inv);
+		if (rwSet == null)
+			return null;
+		HashSet<Object> objSet = new HashSet<Object>(rwSet.getFields());
+		objSet.addAll(rwSet.getGlobals());
+		return objSet;
+	}
+
 }

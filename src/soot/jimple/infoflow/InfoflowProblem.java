@@ -61,7 +61,6 @@ import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
-import soot.jimple.toolkits.pointer.RWSet;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
@@ -175,6 +174,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				}
 			}
 
+			
 			private boolean isFieldReadByCallee(
 					final Set<?> fieldsReadByCallee, Abstraction source) {
 				boolean isFieldRead = fieldsReadByCallee == null;
@@ -575,8 +575,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.singleton(source);
 
 						// Only propagate the taint if the target field is actually read
-						if (source.getAccessPath().isInstanceFieldRef() || source.getAccessPath().isStaticFieldRef())
-							if (!isFieldReadByCallee(fieldsReadByCallee, source))
+						if (source.getAccessPath().isStaticFieldRef())
+							if (fieldsReadByCallee != null && !isFieldReadByCallee(fieldsReadByCallee, source))
 								return Collections.emptySet();
 						
 						Set<Abstraction> res = new HashSet<Abstraction>();
@@ -892,6 +892,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					final Set<?> fieldsReadByCallee = interproceduralCFG().getReadVariables
 							(interproceduralCFG().getMethodOf(call), (Stmt) call);
+					final Set<?> fieldsWrittenbByCallee = interproceduralCFG().getWriteVariables
+							(interproceduralCFG().getMethodOf(call), (Stmt) call);
 
 					return new SolverCallToReturnFlowFunction() {
 
@@ -956,8 +958,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 							// If the callee does not read the given value, we also need to pass it on
 							// since we do not propagate it into the callee.
-							if (source.getAccessPath().isInstanceFieldRef() || source.getAccessPath().isStaticFieldRef())
-								if (!isFieldReadByCallee(fieldsReadByCallee, source))
+							if (source.getAccessPath().isStaticFieldRef())
+								if (fieldsReadByCallee != null && !isFieldReadByCallee(fieldsReadByCallee, source)
+										&& !isFieldReadByCallee(fieldsWrittenbByCallee, source))
 									passOn = true;
 							// Implicit taints are always passed over
 							// conditionally called methods

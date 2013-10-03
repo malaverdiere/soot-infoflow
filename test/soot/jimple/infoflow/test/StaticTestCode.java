@@ -79,4 +79,29 @@ public class StaticTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(StaticTestCode.staticDataClass.data.data);
 	}
+		
+	public void static4Test(){
+		setIM(TelephonyManager.getDeviceId());
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(im);
+	}
+
+	public void staticOverwriteTest() {
+		im = TelephonyManager.getDeviceId();
+		im = "";
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(im);
+	}
+	
+	private void setIM(String data) {
+		im = data;
+	}
+
+	public void staticOverwriteTest2() {
+		setIM(TelephonyManager.getDeviceId());
+		setIM("");
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(im);
+	}
+	
 }

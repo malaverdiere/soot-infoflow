@@ -48,4 +48,31 @@ public class StaticTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 	    }
 
+	    @Test
+	    public void static4Test(){
+	    	Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void static4Test()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+	    }
+
+	    @Test
+	    public void staticOverwriteTest(){
+	    	Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void staticOverwriteTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);
+	    }
+
+	    @Test
+	    public void staticOverwriteTest2(){
+	    	Infoflow infoflow = initInfoflow();
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void staticOverwriteTest2()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);
+	    }
+
 }

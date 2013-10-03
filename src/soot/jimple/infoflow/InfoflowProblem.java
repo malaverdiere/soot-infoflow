@@ -347,7 +347,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
-								if (isSink) {
+								if (isSink && (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty())) {
 									if (pathTracking != PathTrackingMethod.NoTracking)
 										results.addResult(leftValue, assignStmt,
 												newSource.getSource(),
@@ -425,8 +425,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(returnStmt))
 								source = source.dropTopPostdominator();
-
-							if (returnStmt.getOp().equals(source.getAccessPath().getPlainValue()) && sourceSinkManager.isSink(returnStmt, interproceduralCFG())) {
+							if (returnStmt.getOp().equals(source.getAccessPath().getPlainValue())
+									&& sourceSinkManager.isSink(returnStmt, interproceduralCFG())
+									&& (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.getOp(), returnStmt,
 											source.getSource(),
@@ -722,7 +723,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							mustTaintSink |= returnStmt.getOp() != null
 									&& newSource.getAccessPath().isLocal()
 									&& newSource.getAccessPath().getPlainValue().equals(returnStmt.getOp());
-							if (mustTaintSink && isSink) {
+							if (mustTaintSink && isSink
+									&& (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty())) {
 								if (pathTracking != PathTrackingMethod.NoTracking)
 									results.addResult(returnStmt.getOp(), returnStmt,
 											newSource.getSource(),
@@ -1001,7 +1003,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
-							if (isSink) {
+							if (isSink && (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty())) {
 								// If we are inside a conditional branch, we consider every sink call a leak
 								boolean taintedParam = source.getTopPostdominator() != null;
 								// If the base object is tainted, we also consider the "code" associated

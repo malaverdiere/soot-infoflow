@@ -262,8 +262,9 @@ public class Abstraction implements Cloneable {
 	public final Abstraction deriveConditionalAbstractionEnter(UnitContainer postdom) {
 		if (!postdominators.isEmpty() && postdominators.contains(postdom))
 			return this;
+		assert this.conditionalCallSite == null;
 		
-		Abstraction abs = clone();
+		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath());
 		abs.postdominators.push(postdom);
 		return abs;
 	}

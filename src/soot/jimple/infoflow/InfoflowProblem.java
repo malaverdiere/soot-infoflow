@@ -674,7 +674,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (newSource.isTopPostdominator(exitStmt) || newSource.isTopPostdominator(callee)) {
 							newSource = newSource.dropTopPostdominator();
 							// Have we dropped the last postdominator for an empty taint?
-							if (newSource.getAccessPath().isEmpty() && newSource.getTopPostdominator() == null)
+							if (!insideConditional && newSource.getAccessPath().isEmpty() && newSource.getTopPostdominator() == null)
 								return Collections.emptySet();
 						}
 

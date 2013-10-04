@@ -352,9 +352,11 @@ public class ImplicitFlowTests extends JUnitTests {
 			
 			@Override
 			public void setSootOptions(Options options) {
-				options.set_include(Collections.emptyList());
-				options.set_exclude(Collections.singletonList("java."));
-				options.set_exclude(Collections.singletonList("javax."));
+				options.set_include(Collections.<String>emptyList());
+				List<String> excludeList = new ArrayList<String>();
+				excludeList.add("java.");
+				excludeList.add("javax.");
+				options.set_exclude(excludeList);
 				options.set_prepend_classpath(false);
 			}
 			

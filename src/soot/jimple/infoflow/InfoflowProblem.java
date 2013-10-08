@@ -107,16 +107,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					((AbstractionWithPath) newAbs).addPathElement(iStmt);
 				res.add(newAbs);
 
-				// If the taint wrapper taints the base object (new taint), this must be propagated
+				// If the taint wrapper creates a new taint, this must be propagated
 				// backwards as there might be aliases for the base object
-				if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
-					InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-					if(iiExpr.getBase().equals(newAbs.getAccessPath().getPlainValue())
-								|| newAbs.getAccessPath().isStaticFieldRef()) {
-						Abstraction bwAbs = source.deriveInactiveAbstraction(val);
-						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
-							bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
-					}
+				if (newAbs.getAccessPath().isStaticFieldRef()
+						|| triggerInaktiveTaintOrReverseFlow(val.getPlainValue(), newAbs)) {
+					Abstraction bwAbs = source.deriveInactiveAbstraction(val);
+					for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
+						bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 				}
 			}
 		}
@@ -258,7 +255,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
-														
+							
 							// shortcuts:
 							// on NormalFlow taint cannot be created
 							if (source.equals(zeroValue)) {

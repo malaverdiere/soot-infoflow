@@ -566,5 +566,52 @@ public class HeapTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(a.b);
 	}
+	
+	private B b1;
+	private B b2;
+	
+	private void foo(B b1, B b2) {
+		this.b1 = b1;
+		this.b2 = b2;
+	}
+
+	private void foo2(B b1, B b2) {
+		//
+	}
+	
+	private A bar(A a) {
+		this.b1.attr = a;
+		return this.b2.attr;
+	}
+
+	private A bar2(A a) {
+		return null;
+	}
+	
+	public void testAliases() {
+		B b = new B();
+		A a = new A();
+		a.b = TelephonyManager.getDeviceId();
+		
+		// Create the alias
+		foo(b, b);
+		String tainted = bar(a).b;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(tainted);
+	}
+
+	public void testWrapperAliases() {
+		B b = new B();
+		A a = new A();
+		a.b = TelephonyManager.getDeviceId();
+		
+		// Create the alias
+		foo2(b, b);
+		String tainted = bar2(a).b;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(tainted);
+	}
 
 }

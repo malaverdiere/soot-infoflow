@@ -207,7 +207,9 @@ public class Abstraction implements Cloneable {
 		if (!isActive || this.getAccessPath().isEmpty() || this.conditionalCallSite != null)
 			return this;
 
+		assert u != null;
 		assert u.containsInvokeExpr();
+		
 		Abstraction a = this.clone();
 		a.activationUnitOnCurrentLevel.add(u);
 		while (a.activationUnitOnCurrentLevel.size() > Infoflow.getAbstractionDepth())

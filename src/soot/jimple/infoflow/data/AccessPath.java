@@ -54,7 +54,7 @@ public class AccessPath implements Cloneable {
 		this(val, (SootField[]) null);
 	}
 	
-	protected AccessPath(Value val, SootField[] appendingFields){
+	public AccessPath(Value val, SootField[] appendingFields){
 		assert (val == null && appendingFields != null && appendingFields.length > 0)
 		 	|| canContainValue(val);
 

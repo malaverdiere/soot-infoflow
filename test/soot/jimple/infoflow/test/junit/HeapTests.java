@@ -11,13 +11,24 @@
 package soot.jimple.infoflow.test.junit;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
 
+import soot.RefType;
+import soot.Scene;
+import soot.SootField;
+import soot.jimple.DefinitionStmt;
+import soot.jimple.InstanceInvokeExpr;
+import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
+import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.test.utilclasses.TestWrapper;
 /**
  * tests aliasing of heap references
@@ -367,4 +378,107 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 	    
+	    @Test
+	    public void aliasesTest(){
+	    	taintWrapper = false;
+	    	
+	    	Infoflow infoflow = initInfoflow();
+	    	int oldLength = Infoflow.getAccessPathLength();
+	    	infoflow.setAccessPathLength(2);
+
+	    	infoflow.setInspectSources(false);
+	    	infoflow.setInspectSinks(false);
+	    	infoflow.setEnableImplicitFlows(false);
+	    	
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testAliases()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+
+			infoflow.setAccessPathLength(oldLength);
+	    }
+
+	    @Test
+	    public void wrapperAliasesTest(){
+	    	taintWrapper = false;
+	    	
+	    	Infoflow infoflow = initInfoflow();
+	    	int oldLength = Infoflow.getAccessPathLength();
+	    	infoflow.setAccessPathLength(3);
+	    	
+	    	infoflow.setTaintWrapper(new ITaintPropagationWrapper() {
+				
+				@Override
+				public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
+					return stmt.containsInvokeExpr()
+							&& (stmt.getInvokeExpr().getMethod().getName().equals("foo2")
+									|| stmt.getInvokeExpr().getMethod().getName().equals("bar2"));
+				}
+				
+				@Override
+				public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
+					if (!stmt.containsInvokeExpr())
+						return Collections.singleton(taintedPath);
+					
+					Set<AccessPath> res = new HashSet<AccessPath>();
+					res.add(taintedPath);
+
+					// We use a path length of 1, i.e. do not work with member fields,
+					// hence the commented-out code
+					if (stmt.getInvokeExpr().getMethod().getName().equals("foo2")) {
+						InstanceInvokeExpr iinv = (InstanceInvokeExpr) stmt.getInvokeExpr();
+						if (taintedPath.getPlainLocal() == iinv.getArg(0)) {
+							RefType rt = (RefType) iinv.getBase().getType();
+							AccessPath ap = new AccessPath(iinv.getBase(), new SootField[] { rt.getSootClass().getFieldByName("b1")/*,
+								Scene.v().getSootClass("soot.jimple.infoflow.test.HeapTestCode$B").getFieldByName("attr"),
+								Scene.v().getSootClass("soot.jimple.infoflow.test.HeapTestCode$A").getFieldByName("b")*/ });
+							res.add(ap);
+						}
+						if (taintedPath.getPlainLocal() == iinv.getArg(1)) {
+							RefType rt = (RefType) iinv.getBase().getType();
+							AccessPath ap = new AccessPath(iinv.getBase(), new SootField[] { rt.getSootClass().getFieldByName("b2")/*,
+								Scene.v().getSootClass("soot.jimple.infoflow.test.HeapTestCode$B").getFieldByName("attr"),
+								Scene.v().getSootClass("soot.jimple.infoflow.test.HeapTestCode$A").getFieldByName("b")*/ });
+							res.add(ap);
+						}
+					}
+					else if (stmt.getInvokeExpr().getMethod().getName().equals("bar2")) {
+						InstanceInvokeExpr iinv = (InstanceInvokeExpr) stmt.getInvokeExpr();
+						if (taintedPath.getPlainLocal() == iinv.getArg(0)) {	
+							RefType rt = (RefType) iinv.getBase().getType();
+							AccessPath ap = new AccessPath(iinv.getBase(), new SootField[] { rt.getSootClass().getFieldByName("b1")/*,
+									Scene.v().getSootClass("soot.jimple.infoflow.test.HeapTestCode$B").getFieldByName("attr"),
+									Scene.v().getSootClass("soot.jimple.infoflow.test.HeapTestCode$A").getFieldByName("b")*/} );
+							res.add(ap);
+						}
+						else if (taintedPath.getPlainValue() == iinv.getBase()
+								/*
+								&& taintedPath.getFirstField().getName().equals("b2")
+								// .attr
+								&& taintedPath.getLastField().getName().equals("b")*/) {
+							DefinitionStmt def = (DefinitionStmt) stmt;
+							AccessPath ap = new AccessPath(def.getLeftOp(),
+									Scene.v().getSootClass("soot.jimple.infoflow.test.HeapTestCode$A").getFieldByName("b"));
+							res.add(ap);
+						}
+					}
+					
+					return res;
+				}
+			});
+
+	    	infoflow.setInspectSources(false);
+	    	infoflow.setInspectSinks(false);
+	    	infoflow.setEnableImplicitFlows(false);
+	    	
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testWrapperAliases()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
+
+			infoflow.setAccessPathLength(oldLength);
+	    }
+
 }

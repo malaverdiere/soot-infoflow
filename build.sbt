@@ -2,21 +2,24 @@ name := "soot-infoflow"
 
 organization := "sable"
 
-version := "20131004"
+version := "20131010"
 
-scalaVersion := "2.10.2"
+sbtVersion := "0.13"
 
 javacOptions ++= Seq("-source", "1.6")
-
-retrieveManaged := true
 
 ideaExcludeFolders += ".idea"
 
 ideaExcludeFolders += ".idea_modules"
 
-libraryDependencies += "sable" %% "heros" % "20130920"
+resolvers += Resolver.mavenLocal
 
-libraryDependencies += "sable" %% "soot-javaee" % "20130923"
+libraryDependencies += "sable" %% "heros" % "20131010"
+
+libraryDependencies += "sable" %% "soot" % "20131009"
+
+//Temporary - until Scala extensions are split off
+libraryDependencies += "soot.plugins" % "soot.plugins.entry-points" % "0.0.1-SNAPSHOT"
 
 //Logging
 libraryDependencies ++= Seq(
@@ -25,11 +28,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.0.13"
 )
 
-libraryDependencies += "junit" % "junit" % "4.11"
-
-javacOptions ++= Seq("-source", "1.6")
-
-compileOrder in Compile := CompileOrder.Mixed
+libraryDependencies += "junit" % "junit" % "4.11" % "test"
 
 unmanagedSourceDirectories in Compile := Seq(file("src"))
 

@@ -340,6 +340,18 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!accessPath.equals(other.accessPath))
 			return false;
+		
+		return localEquals(other);
+	}
+	
+	/**
+	 * Checks whether this object locally equals the given object, i.e. the both
+	 * are equal modulo the access path
+	 * @param other The object to compare this object with
+	 * @return True if this object is locally equal to the given one, otherwise
+	 * false
+	 */
+	private boolean localEquals(Abstraction other) {
 		if (source == null) {
 			if (other.source != null)
 				return false;
@@ -390,6 +402,22 @@ public class Abstraction implements Cloneable {
 			this.hashCode = prime * this.hashCode + ((conditionalCallSite == null) ? 0 : conditionalCallSite.hashCode());
 		}
 		return hashCode;
+	}
+	
+	/**
+	 * Checks whether this abstraction entails the given abstraction, i.e. this
+	 * taint also taints everything that is tainted by the given taint.
+	 * @param other The other taint abstraction
+	 * @return True if this object at least taints everything that is also tainted
+	 * by the given object
+	 */
+	public boolean entails(Abstraction other) {
+		if (accessPath == null) {
+			if (other.accessPath != null)
+				return false;
+		} else if (!accessPath.entails(other.accessPath))
+			return false;
+		return localEquals(other);
 	}
 		
 }

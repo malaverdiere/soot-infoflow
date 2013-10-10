@@ -13,6 +13,7 @@ package soot.jimple.infoflow.heros;
 import java.util.HashSet;
 import java.util.Set;
 
+import heros.EdgeFunction;
 import heros.FlowFunction;
 import heros.IFDSTabulationProblem;
 import heros.InterproceduralCFG;
@@ -61,7 +62,10 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 			// Get the d1s at the start points of the caller
 			Set<Abstraction> d1s = new HashSet<Abstraction>(callerSideDs.size() * 5);
 			for (Abstraction d4 : callerSideDs)
-				d1s.addAll(jumpFn.reverseLookup(callSite, d4).keySet());
+				if (d4 == zeroValue)
+					d1s.add(d4);
+				else
+					d1s.addAll(jumpFn.reverseLookup(callSite, d4).keySet());
 			
 			return ((SolverReturnFlowFunction) retFunction).computeTargets(d2, d1s);
 		}
@@ -77,13 +81,35 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 		else
 			return flowFunction.computeTargets(d2);
 	}
-	
+
+	@Override
 	protected Set<Abstraction> computeCallToReturnFlowFunction
 			(FlowFunction<Abstraction> flowFunction, Abstraction d1, Abstraction d2) {
 		if (flowFunction instanceof SolverCallToReturnFlowFunction)
 			return ((SolverCallToReturnFlowFunction) flowFunction).computeTargets(d1, d2);
 		else
 			return flowFunction.computeTargets(d2);		
+	}
+
+	@Override
+	protected void propagate(Abstraction sourceVal, Unit target, Abstraction targetVal, EdgeFunction<BinaryDomain> f,
+			/* deliberately exposed to clients */ Unit relatedCallSite,
+			/* deliberately exposed to clients */ boolean isUnbalancedReturn) {
+		// Check whether we already have an abstraction that entails the new one.
+		// In such a case, we can simply ignore the new abstraction.
+		boolean noProp = false;
+		for (Abstraction abs : new HashSet<Abstraction>(jumpFn.forwardLookup(sourceVal, target).keySet()))
+			if (abs != targetVal) {
+				if (abs.entails(targetVal)) {
+					noProp = true;
+					break;
+				}
+				if (targetVal.entails(abs)) {
+					jumpFn.removeFunction(sourceVal, target, abs);
+				}
+			}
+		if (!noProp)
+			super.propagate(sourceVal, target, targetVal, f, relatedCallSite, isUnbalancedReturn);
 	}
 
 }

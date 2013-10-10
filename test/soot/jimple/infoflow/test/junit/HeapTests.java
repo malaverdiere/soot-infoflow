@@ -481,4 +481,24 @@ public class HeapTests extends JUnitTests {
 			infoflow.setAccessPathLength(oldLength);
 	    }
 
+	    @Test
+	    public void negativeAliasesTest(){
+	    	taintWrapper = false;
+	    	
+	    	Infoflow infoflow = initInfoflow();
+	    	int oldLength = Infoflow.getAccessPathLength();
+	    	infoflow.setAccessPathLength(3);
+
+	    	infoflow.setInspectSources(false);
+	    	infoflow.setInspectSinks(false);
+	    	infoflow.setEnableImplicitFlows(false);
+	    	
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void negativeTestAliases()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			negativeCheckInfoflow(infoflow);
+
+			infoflow.setAccessPathLength(oldLength);
+	    }
+
 }

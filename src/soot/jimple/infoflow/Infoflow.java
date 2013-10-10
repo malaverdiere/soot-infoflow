@@ -418,6 +418,7 @@ public class Infoflow implements IInfoflow {
 				
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);
+				backProblem.setZeroValue(forwardProblem.createZeroValue());
 
 				forwardSolver.solve();
 

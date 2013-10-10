@@ -229,4 +229,29 @@ public class AccessPath implements Cloneable {
 		return value == null && (fields == null || fields.length == 0);
 	}
 
+	/**
+	 * Checks whether this access path entails the given one, i.e. refers to all
+	 * objects the other access path also refers to.
+	 * @param a2 The other access path
+	 * @return True if this access path refers to all objects the other access
+	 * path also refers to
+	 */
+	public boolean entails(AccessPath a2) {
+		if (this.isEmpty() || a2.isEmpty())
+			return false;
+		
+		if ((this.value != null && a2.value == null)
+				|| (this.value == null && a2.value != null))
+			return false;
+		if (this.value != null && !this.value.equals(a2.value))
+			return false;
+		
+		if (this.fields.length > a2.fields.length)
+			return false;
+		for (int i = 0; i < this.fields.length; i++)
+			if (!this.fields[i].equals(a2.fields[i]))
+				return false;
+		return true;
+	}
+
 }

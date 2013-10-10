@@ -68,7 +68,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 	public void setForwardSolver(InfoflowSolver forwardSolver) {
 		fSolver = forwardSolver;
 	}
-
+	
 	@Override
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit, Abstraction, SootMethod>() {
@@ -258,10 +258,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
-
-							if (dest.toString().equals("this := @this: soot.jimple.infoflow.test.CallbackTestCode$MyLocationListener"))
-								System.out.println();
-							
+														
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
 							// If the next statement assigns the base of the tainted value,

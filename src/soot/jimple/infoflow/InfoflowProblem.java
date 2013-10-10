@@ -261,7 +261,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue)) {
 								return Collections.emptySet();
 							}
-														
+							
 							// Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(assignStmt))
 								source = source.dropTopPostdominator();
@@ -545,7 +545,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-						
+												
 						if (!source.isAbstractionActive()
 								&& !source.getActivationUnitOnCurrentLevel().isEmpty()
 								&& !dest.getActiveBody().getUnits().contains(source.getActivationUnit())
@@ -557,7 +557,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						if (!inspectSinks && isSink)
 							return Collections.emptySet();
-												
+						
 						// Check whether we must leave a conditional branch
 						if (source.isTopPostdominator(stmt))
 							source = source.dropTopPostdominator();
@@ -764,9 +764,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									Abstraction bwAbs = newSource.deriveInactiveAbstraction
 											(newSource.getAccessPath().copyWithNewValue(leftOp));
 									for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
-										if (callerD1s.isEmpty())
-											bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
-										else
+//										if (callerD1s.isEmpty())
+//											bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
+//										else
 											for (Abstraction d1 : callerD1s)
 												bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 									}
@@ -786,9 +786,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (newSource.getConditionalCallSite() == null) {
 								Abstraction bwAbs = abs.deriveInactiveAbstraction();
 								for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
-									if (callerD1s.isEmpty())
-										bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
-									else
+//									if (callerD1s.isEmpty())
+//										bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
+//									else
 										for (Abstraction d1 : callerD1s)
 											bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 								}
@@ -819,9 +819,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											// call backwards-check:
 											Abstraction bwAbs = abs.deriveInactiveAbstraction();
 											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
-												if (callerD1s.isEmpty())
-													bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
-												else
+//												if (callerD1s.isEmpty())
+//													bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
+//												else
 													for (Abstraction d1 : callerD1s)
 														bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 											}
@@ -857,9 +857,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											if(triggerInaktiveTaintOrReverseFlow(iIExpr.getBase(), abs)){
 												Abstraction bwAbs = abs.deriveInactiveAbstraction();
 												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
-													if (callerD1s.isEmpty())
-														bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
-													else
+//													if (callerD1s.isEmpty())
+//														bSolver.processEdge(new PathEdge<Unit, Abstraction>(zeroValue, predUnit, bwAbs));
+//													else
 														for (Abstraction d1 : callerD1s)
 															bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 												}
@@ -869,7 +869,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 						}
-						
+
 						return res;
 					} 
 

@@ -83,6 +83,10 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		results = new InfoflowResults();
 	}
 	
+	public void setZeroValue(Abstraction zeroValue) {
+		this.zeroValue = zeroValue;
+	}
+
 	/**
 	 * we need this option as we start directly at the sources, but need to go 
 	 * backward in the call stack

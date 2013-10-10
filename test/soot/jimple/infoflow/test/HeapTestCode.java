@@ -108,6 +108,7 @@ public class HeapTestCode {
 	
 	class A{
 		public String b;
+		public String c;
 	}
 	
 	class X{
@@ -612,6 +613,19 @@ public class HeapTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(tainted);
+	}
+
+	public void negativeTestAliases() {
+		B b = new B();
+		A a = new A();
+		a.b = TelephonyManager.getDeviceId();
+		
+		// Create the alias
+		foo(b, b);
+		String untainted = bar(a).c;
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(untainted);
 	}
 
 }

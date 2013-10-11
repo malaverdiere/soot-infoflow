@@ -22,7 +22,9 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
-import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
+import soot.jimple.infoflow.heros.PDomICFG;
+import soot.jimple.infoflow.heros.PDomICFG.UnitContainer;
+
 /**
  * the abstraction class contains all information that is necessary to track the taint.
  *

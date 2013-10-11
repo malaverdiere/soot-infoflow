@@ -28,6 +28,7 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.heros.PDomICFG;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
@@ -260,8 +261,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 	@Override
-	public InfoflowCFG interproceduralCFG() {
-		return (InfoflowCFG) super.interproceduralCFG();
+	public PDomICFG interproceduralCFG() {
+		return (PDomICFG) super.interproceduralCFG();
 	}
 
 }

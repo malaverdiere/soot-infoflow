@@ -2,7 +2,7 @@ name := "soot-infoflow"
 
 organization := "sable"
 
-version := "20131010"
+version := "20131015"
 
 sbtVersion := "0.13"
 
@@ -14,9 +14,9 @@ ideaExcludeFolders += ".idea_modules"
 
 resolvers += Resolver.mavenLocal
 
-libraryDependencies += "sable" %% "heros" % "20131010"
+//libraryDependencies += "sable" %% "heros" % "20131010"
 
-libraryDependencies += "sable" %% "soot" % "20131009"
+libraryDependencies += "sable" %% "soot" % "20131015"
 
 //Temporary - until Scala extensions are split off
 libraryDependencies += "soot.plugins" % "soot.plugins.entry-points" % "0.0.1-SNAPSHOT"

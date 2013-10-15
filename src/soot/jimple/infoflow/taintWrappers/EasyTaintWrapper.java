@@ -24,11 +24,13 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Value;
 import soot.jimple.AssignStmt;
+import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
@@ -137,6 +139,18 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			}
 		if (!isSupported)
 			return Collections.emptySet();
+
+		// For implicit flows, we always taint the return value and the base
+		// object on the empty abstraction.
+		if (taintedPath.isEmpty()) {
+			taints.add(taintedPath);
+			if (stmt instanceof DefinitionStmt)
+				taints.add(new AccessPath(((DefinitionStmt) stmt).getLeftOp()));
+			if (stmt.containsInvokeExpr())
+				if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr)
+					taints.add(new AccessPath(((InstanceInvokeExpr) stmt.getInvokeExpr()).getBase()));
+			return taints;
+		}
 
 		// For the moment, we don't implement static taints on wrappers. Pass it on
 		// not to break anything

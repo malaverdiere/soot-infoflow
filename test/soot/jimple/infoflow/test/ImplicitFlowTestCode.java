@@ -354,4 +354,14 @@ public class ImplicitFlowTestCode {
 		cm.publish(b2.a.data);
 	}
 	
+	public void implicitFlowTaintWrapperTest() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("foo");
+		int tainted = TelephonyManager.getIMEI();
+		if (tainted == 42)
+			builder.append("bar");
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(builder.toString());
+	}
+	
 }

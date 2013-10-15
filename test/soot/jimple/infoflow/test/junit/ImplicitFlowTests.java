@@ -367,13 +367,39 @@ public class ImplicitFlowTests extends JUnitTests {
 
 	@Test
 	public void createAliasInFunctionTest(){
-		// not yet supported
 		Infoflow infoflow = initInfoflow();
 		infoflow.setInspectSinks(false);
 		infoflow.setEnableImplicitFlows(true);
 
 		List<String> epoints = new ArrayList<String>();
 	    epoints.add("<soot.jimple.infoflow.test.ImplicitFlowTestCode: void createAliasInFunctionTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);	
+	}
+
+	@Test
+	public void implicitFlowTaintWrapperTest() throws IOException{
+		// not yet supported
+		Infoflow infoflow = initInfoflow();
+		infoflow.setInspectSinks(false);
+		infoflow.setEnableImplicitFlows(true);
+		infoflow.setTaintWrapper(new EasyTaintWrapper("EasyTaintWrapperSource.txt"));
+    	infoflow.setSootConfig(new IInfoflowConfig() {
+			
+			@Override
+			public void setSootOptions(Options options) {
+				options.set_include(Collections.<String>emptyList());
+				List<String> excludeList = new ArrayList<String>();
+				excludeList.add("java.");
+				excludeList.add("javax.");
+				options.set_exclude(excludeList);
+				options.set_prepend_classpath(false);
+			}
+			
+		});
+
+		List<String> epoints = new ArrayList<String>();
+	    epoints.add("<soot.jimple.infoflow.test.ImplicitFlowTestCode: void implicitFlowTaintWrapperTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}

@@ -41,7 +41,6 @@ import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.InfoflowResults.SinkInfo;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
 import soot.jimple.infoflow.config.IInfoflowConfig;
@@ -50,6 +49,9 @@ import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.heros.InfoflowSolver;
+import soot.jimple.infoflow.problems.BackwardsInfoflowProblem;
+import soot.jimple.infoflow.problems.InfoflowProblem;
+import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
@@ -357,7 +359,7 @@ public class Infoflow implements IInfoflow {
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
 							if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
-								forwardProblem.initialSeeds.put(u, Collections.singleton(forwardProblem.zeroValue()));
+								forwardProblem.addInitialSeeds(u, Collections.singleton(forwardProblem.zeroValue()));
 								logger.debug("Source found: {}", u);
 							}
 							if (sourcesSinks.isSink(s, forwardProblem.interproceduralCFG())) {
@@ -377,7 +379,7 @@ public class Infoflow implements IInfoflow {
 							logger.warn("Seed method {} has no active body", m);
 							continue;
 						}
-						forwardProblem.initialSeeds.put(m.getActiveBody().getUnits().getFirst(),
+						forwardProblem.addInitialSeeds(m.getActiveBody().getUnits().getFirst(),
 								Collections.singleton(forwardProblem.zeroValue()));
 					}
 
@@ -397,16 +399,17 @@ public class Infoflow implements IInfoflow {
 					}
 				}
 
-				if (forwardProblem.initialSeeds.isEmpty() || sinkCount == 0){
+				if (!forwardProblem.hasInitialSeeds() || sinkCount == 0){
 					logger.error("No sources or sinks found, aborting analysis");
 					return;
 				}
 
 				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> forwardSolver;
-				logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.initialSeeds.size(),
+				logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.getInitialSeeds().size(),
 						sinkCount);
 
-				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor
+						(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 				forwardSolver = new InfoflowSolver(forwardProblem, debug, executor);
 				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem();
 				InfoflowSolver backSolver = new InfoflowSolver(backProblem, debug, executor);
@@ -421,23 +424,7 @@ public class Infoflow implements IInfoflow {
 
 				forwardSolver.solve();
 
-				for (SootMethod ep : Scene.v().getEntryPoints()) {
-					Unit ret = ep.getActiveBody().getUnits().getLast();
-
-					logger.info("----------------------------------------------\n"+
-                                "At end of: {}\n"+
-                                "{} Variables (with {} source-to-sink connections):\n"+
-                                "----------------------------------------------",
-                            ep.getSignature(), forwardSolver.ifdsResultsAt(ret).size(), forwardProblem.results.size());
-
-					for (Abstraction l : forwardSolver.ifdsResultsAt(ret)) {
-						logger.info("{} contains value from {}",l.getAccessPath(), l.getSource());
-					}
-					logger.info("---");
-				}
-
-
-				results = forwardProblem.results;
+				results = forwardProblem.getResults();
 				if (results.getResults().isEmpty())
 					logger.warn("No results found.");
 				else for (Entry<SinkInfo, Set<SourceInfo>> entry : results.getResults().entrySet()) {

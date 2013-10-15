@@ -15,8 +15,8 @@ import java.util.Set;
 
 import soot.Value;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 
 /**
  * The NativeCallHandler defines the taint propagation behavior for native code,

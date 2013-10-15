@@ -13,8 +13,8 @@ package soot.jimple.infoflow;
 import java.util.List;
 
 import soot.Transform;
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
+import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 /**

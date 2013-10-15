@@ -8,7 +8,7 @@
  * Contributors: Christian Fritz, Steven Arzt, Siegfried Rasthofer, Eric
  * Bodden, and others.
  ******************************************************************************/
-package soot.jimple.infoflow;
+package soot.jimple.infoflow.problems;
 
 import heros.FlowFunction;
 import heros.FlowFunctions;
@@ -921,7 +921,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										}
 										if (passOn)
 											for (int i = 0; i < callArgs.size(); i++)
-												if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal()) && isTransferableValue(callArgs.get(i))) {
+												if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal())) {
 													passOn = false;
 													break;
 												}

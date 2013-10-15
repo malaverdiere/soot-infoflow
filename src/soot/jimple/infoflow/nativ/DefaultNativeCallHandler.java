@@ -18,9 +18,9 @@ import soot.Value;
 import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
+import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.util.DataTypeHandler;
 
 public class DefaultNativeCallHandler extends NativeCallHandler {

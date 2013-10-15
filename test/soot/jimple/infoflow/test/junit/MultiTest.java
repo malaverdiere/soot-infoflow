@@ -17,7 +17,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
+import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 /**
  * contain various tests with more than one source, conditional statements, loops and java-internal functions on tainted objects
  */

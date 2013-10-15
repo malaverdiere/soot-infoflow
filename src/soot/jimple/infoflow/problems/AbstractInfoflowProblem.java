@@ -8,11 +8,12 @@
  * Contributors: Christian Fritz, Steven Arzt, Siegfried Rasthofer, Eric
  * Bodden, and others.
  ******************************************************************************/
-package soot.jimple.infoflow;
+package soot.jimple.infoflow.problems;
 
 import heros.InterproceduralCFG;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +26,7 @@ import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
+import soot.jimple.infoflow.InfoflowResults;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.heros.InfoflowCFG;
@@ -204,36 +206,6 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 	/**
-	 * returns if the value is transferable (= no primitive datatype / immutable datatype / Constant)
-	 * @param val the value which should be analyzed
-	 * @return
-	 */
-	public boolean isTransferableValue(Value val){
-		if(val == null){
-			return false;
-		}
-		//no string
-		if(!(val instanceof InstanceFieldRef) && val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
-			return false;
-		}
-		if(val instanceof InstanceFieldRef && ((InstanceFieldRef)val).getBase().getType() instanceof RefType &&
-				 ((RefType)((InstanceFieldRef)val).getBase().getType()).getClassName().equals("java.lang.String")){
-			return false;
-		}
-		if(val.getType() instanceof PrimType){
-			return false;
-		}
-		if(val instanceof Constant)
-			return false;
-		
-		if(DataTypeHandler.isFieldRefOrArrayRef(val))
-			return true;
-		
-		return false;
-	}
-	
-	
-	/**
 	 * we cannot rely just on "real" heap objects, but must also inspect locals because of Jimple's representation ($r0 =... )
 	 * @param val the value which gets tainted
 	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
@@ -270,5 +242,36 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public InfoflowCFG interproceduralCFG() {
 		return (InfoflowCFG) super.interproceduralCFG();
 	}
+	
+	/**
+	 * Adds the given initial seeds to the information flow problem
+	 * @param unit The unit to be considered as a seed
+	 * @param seeds The abstractions with which to start at the given seed
+	 */
+	public void addInitialSeeds(Unit unit, Set<Abstraction> seeds) {
+		if (this.initialSeeds.containsKey(unit))
+			this.initialSeeds.get(unit).addAll(seeds);
+		else
+			this.initialSeeds.put(unit, new HashSet<Abstraction>(seeds));
+	}
+	
+	/**
+	 * Gets whether this information flow problem has initial seeds
+	 * @return True if this information flow problem has initial seeds,
+	 * otherwise false
+	 */
+	public boolean hasInitialSeeds() {
+		return !this.initialSeeds.isEmpty();
+	}
 
+	/**
+	 * Gets the initial seeds with which this information flow problem has been
+	 * configured
+	 * @return The initial seeds with which this information flow problem has
+	 * been configured.
+	 */
+	public Map<Unit, Set<Abstraction>> getInitialSeeds() {
+		return this.initialSeeds;
+	}
+	
 }

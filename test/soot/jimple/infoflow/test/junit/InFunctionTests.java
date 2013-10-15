@@ -17,9 +17,9 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
+import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 /**
  * contain tests for Taintwrapper and parameters as sources and sinks

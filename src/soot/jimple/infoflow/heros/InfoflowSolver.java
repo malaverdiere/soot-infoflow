@@ -23,8 +23,8 @@ import java.util.Set;
 
 import soot.SootMethod;
 import soot.Unit;
-import soot.jimple.infoflow.AbstractInfoflowProblem;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.problems.AbstractInfoflowProblem;
 import soot.jimple.toolkits.ide.JimpleIFDSSolver;
 /**
  * We are subclassing the JimpleIFDSSolver because we need the same executor for both the forward and the backward analysis

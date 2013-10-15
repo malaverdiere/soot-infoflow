@@ -11,9 +11,6 @@
 package soot.jimple.infoflow.data;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Stack;
 
 import soot.SootField;
@@ -21,7 +18,6 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
 /**
  * the abstraction class contains all information that is necessary to track the taint.
@@ -41,11 +37,6 @@ public class Abstraction implements Cloneable {
 	 * Unit/Stmt which activates the taint when the abstraction passes it
 	 */
 	private Unit activationUnit;
-	/**
-	 * Unit/Stmt which activates the taint when the abstraction passes it,
-	 * adapts to the current level
-	 */
-	private final List<Unit> activationUnitOnCurrentLevel = new ArrayList<Unit>();
 	/**
 	 * active abstraction is tainted value,
 	 * inactive abstraction is an alias to a tainted value that
@@ -107,8 +98,6 @@ public class Abstraction implements Cloneable {
 			sourceContext = original.sourceContext;
 			exceptionThrown = original.exceptionThrown;
 			activationUnit = original.activationUnit;
-			activationUnitOnCurrentLevel.addAll(original.activationUnitOnCurrentLevel);
-			assert activationUnitOnCurrentLevel.size() <= Infoflow.getAbstractionDepth();
 			isActive = original.isActive;
 			postdominators.addAll(original.postdominators);
 			assert this.postdominators.equals(original.postdominators);
@@ -192,7 +181,7 @@ public class Abstraction implements Cloneable {
 	
 	@Override
 	public String toString(){
-		return (isActive?"":"_")+accessPath.toString() + " | "+(activationUnit==null?"":activationUnit.toString()) + ">>"+ (activationUnitOnCurrentLevel==null?"":activationUnitOnCurrentLevel.toString());
+		return (isActive?"":"_")+accessPath.toString() + " | "+(activationUnit==null?"":activationUnit.toString()) + ">>";
 	}
 	
 	public AccessPath getAccessPath(){
@@ -203,24 +192,6 @@ public class Abstraction implements Cloneable {
 		return activationUnit;
 	}
 	
-	public Abstraction getAbstractionWithNewActivationUnitOnCurrentLevel(Stmt u){
-		if (!isActive || this.getAccessPath().isEmpty() || this.conditionalCallSite != null)
-			return this;
-
-		assert u != null;
-		assert u.containsInvokeExpr();
-		
-		Abstraction a = this.clone();
-		a.activationUnitOnCurrentLevel.add(u);
-		while (a.activationUnitOnCurrentLevel.size() > Infoflow.getAbstractionDepth())
-			a.activationUnitOnCurrentLevel.remove(0);
-		return a;
-	}
-	
-	public List<Unit> getActivationUnitOnCurrentLevel(){
-		return Collections.unmodifiableList(activationUnitOnCurrentLevel);
-	}
-		
 	public Abstraction getActiveCopy(){
 		Abstraction a = clone();
 		a.isActive = true;
@@ -232,26 +203,6 @@ public class Abstraction implements Cloneable {
 		return a;
 	}
 	
-	public Abstraction removeActivationUnit(Unit callSite) {
-		if (activationUnitOnCurrentLevel.contains(callSite)) {
-			Abstraction a = clone();
-			a.activationUnitOnCurrentLevel.remove(callSite);
-			return a;
-		}
-		else
-			return this;
-	}
-	
-	public Abstraction clearActivationUnits() {
-		if (activationUnitOnCurrentLevel.isEmpty())
-			return this;
-		else {
-			Abstraction a = clone();
-			a.activationUnitOnCurrentLevel.clear();
-			return a;
-		}
-	}
-
 	/**
 	 * Gets whether this value has been thrown as an exception
 	 * @return True if this value has been thrown as an exception, otherwise
@@ -367,11 +318,6 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!activationUnit.equals(other.activationUnit))
 			return false;
-		if (activationUnitOnCurrentLevel == null) {
-			if (other.activationUnitOnCurrentLevel != null)
-				return false;
-		} else if (!activationUnitOnCurrentLevel.equals(other.activationUnitOnCurrentLevel))
-			return false;
 		if (this.exceptionThrown != other.exceptionThrown)
 			return false;
 		if(this.isActive != other.isActive)
@@ -395,7 +341,6 @@ public class Abstraction implements Cloneable {
 			this.hashCode = prime * this.hashCode + ((source == null) ? 0 : source.hashCode());
 			this.hashCode = prime * this.hashCode + ((sourceContext == null) ? 0 : sourceContext.hashCode());
 			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
-			this.hashCode = prime * this.hashCode + ((activationUnitOnCurrentLevel == null) ? 0 : activationUnitOnCurrentLevel.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + postdominators.hashCode();

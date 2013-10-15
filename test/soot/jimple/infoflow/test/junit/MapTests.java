@@ -27,8 +27,6 @@ public class MapTests extends JUnitTests {
 
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void writeReadPos0Test()>");
@@ -36,7 +34,6 @@ public class MapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);		
 		
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
     
     @Test
@@ -45,8 +42,6 @@ public class MapTests extends JUnitTests {
 
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
     	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void writeReadPos1Test()>");
@@ -54,7 +49,6 @@ public class MapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
 
     @Test
@@ -63,8 +57,6 @@ public class MapTests extends JUnitTests {
 
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
     	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadPos0Test()>");
@@ -72,7 +64,6 @@ public class MapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
     
     @Test
@@ -81,8 +72,6 @@ public class MapTests extends JUnitTests {
 
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteLinkedWriteReadPos0Test()>");
@@ -90,7 +79,6 @@ public class MapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
 
     @Test
@@ -99,8 +87,6 @@ public class MapTests extends JUnitTests {
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadPos1Test()>");
@@ -108,7 +94,6 @@ public class MapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
     
     @Test
@@ -117,8 +102,6 @@ public class MapTests extends JUnitTests {
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteRead2Test()>");
@@ -126,7 +109,6 @@ public class MapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
     
     @Test
@@ -135,8 +117,6 @@ public class MapTests extends JUnitTests {
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void iteratorTest()>");
@@ -144,7 +124,6 @@ public class MapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);		
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
     
     @Test
@@ -153,8 +132,6 @@ public class MapTests extends JUnitTests {
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void entryTest()>");
@@ -162,7 +139,6 @@ public class MapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
     
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
     
     @Test
@@ -171,8 +147,6 @@ public class MapTests extends JUnitTests {
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadTableTest()>");
@@ -180,7 +154,6 @@ public class MapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 		
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
     
     @Test
@@ -189,8 +162,6 @@ public class MapTests extends JUnitTests {
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadNegativeTest()>");
@@ -198,7 +169,6 @@ public class MapTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
     
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldDepth);
     }
 
 }

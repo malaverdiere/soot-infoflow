@@ -299,8 +299,6 @@ public class ImplicitFlowTests extends JUnitTests {
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
     	infoflow.setAccessPathLength(1);
-    	int oldAPDepth = Infoflow.getAbstractionDepth();
-    	infoflow.setAbstractionDepth(1);
 		infoflow.setInspectSinks(false);
 		infoflow.setEnableImplicitFlows(true);
 
@@ -310,7 +308,6 @@ public class ImplicitFlowTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
-		infoflow.setAbstractionDepth(oldAPDepth);	// this is a global setting! Restore it when we're done
 		System.out.println("stringClassTest took " + (System.nanoTime() - timeBefore) / 1E9 + " seconds");
 	}
 
@@ -364,6 +361,19 @@ public class ImplicitFlowTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 	    epoints.add("<soot.jimple.infoflow.test.ImplicitFlowTestCode: void callToReturnTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);	
+	}
+
+	@Test
+	public void createAliasInFunctionTest(){
+		// not yet supported
+		Infoflow infoflow = initInfoflow();
+		infoflow.setInspectSinks(false);
+		infoflow.setEnableImplicitFlows(true);
+
+		List<String> epoints = new ArrayList<String>();
+	    epoints.add("<soot.jimple.infoflow.test.ImplicitFlowTestCode: void createAliasInFunctionTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}

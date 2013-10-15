@@ -169,13 +169,4 @@ public interface IInfoflow {
 	 */
 	public void setAccessPathLength(int accessPathLength);
 	
-	/**
-	 * Sets the maximum depth over which activation statements (i.e. aliases) will be
-	 * tracked.
-	 * @param abstractionDepth The maximum depth over which aliases are tracked. If
-	 * deeper call hierarchies are created, the activation of the respective alias
-	 * is overapproximated. 
-	 */
-	public void setAbstractionDepth(int abstractionDepth);
-
 }

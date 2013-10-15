@@ -102,12 +102,6 @@ public class HeapTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
     }
 	
-	//TODO: this test fails and describes the problem discussed earlier,
-	//similar to the following one:
-	// a = x;
-	// sink(a.f);
-	// x.f= taint();
-	// 
 	@Test
     public void heapTest0(){
 	  Infoflow infoflow = initInfoflow();
@@ -245,17 +239,10 @@ public class HeapTests extends JUnitTests {
 	    	taintWrapper = false;
 
 	    	Infoflow infoflow = initInfoflow();
-	    	int oldDepth = Infoflow.getAbstractionDepth();
-	    	infoflow.setAbstractionDepth(1);
-
-	    	infoflow.setAbstractionDepth(20);
-	    	
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void negativeMultiLevelTaint2()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			negativeCheckInfoflow(infoflow);
-			
-			infoflow.setAbstractionDepth(oldDepth);
 	    }
 
 	    @Test
@@ -384,7 +371,7 @@ public class HeapTests extends JUnitTests {
 	    	
 	    	Infoflow infoflow = initInfoflow();
 	    	int oldLength = Infoflow.getAccessPathLength();
-	    	infoflow.setAccessPathLength(2);
+	    	infoflow.setAccessPathLength(3);
 
 	    	infoflow.setInspectSources(false);
 	    	infoflow.setInspectSinks(false);

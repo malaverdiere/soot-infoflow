@@ -28,6 +28,7 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
@@ -77,10 +78,16 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 
 	Abstraction zeroValue = null;
 	
+	protected InfoflowSolver solver = null;
+	
 	protected boolean stopAfterFirstFlow = false;
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
 		results = new InfoflowResults();
+	}
+	
+	public void setSolver(InfoflowSolver solver) {
+		this.solver = solver;
 	}
 	
 	public void setZeroValue(Abstraction zeroValue) {

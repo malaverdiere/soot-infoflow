@@ -338,4 +338,20 @@ public class ImplicitFlowTestCode {
 		cm.publish(res);
 	}
 	
+	private void alias(B b1, B b2) {
+		b2.a = b1.a;
+	}
+	
+	public void createAliasInFunctionTest() {
+		B b1 = new B();
+		b1.a = new A();
+		B b2 = new B();
+		alias(b1, b2);
+		int tainted = TelephonyManager.getIMEI();
+		if (tainted == 42)
+			b1.a.data = "Hello World";
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b2.a.data);
+	}
+	
 }

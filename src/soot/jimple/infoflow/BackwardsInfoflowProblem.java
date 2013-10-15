@@ -258,7 +258,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
-														
+							
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
 							// If the next statement assigns the base of the tainted value,
@@ -298,7 +298,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}
 						*/
-
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						
 						// if the returned value is tainted - taint values from return statements
@@ -358,6 +357,10 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							// TODO: add testcase which requires params to be propagated
 
 						}
+
+						for (Abstraction abs : res)
+							if (!abs.getAccessPath().isEmpty())
+								fSolver.injectContext(solver, dest, abs, src, source);
 					
 						return res;
 					}
@@ -365,12 +368,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 			}
 
 			@Override
-			public FlowFunction<Abstraction> getReturnFlowFunction(final Unit callSite, final SootMethod callee, Unit exitStmt, final Unit retSite) {					
+			public FlowFunction<Abstraction> getReturnFlowFunction(final Unit callSite, final SootMethod callee, Unit exitStmt, final Unit retSite) {
 				return KillAll.v();
 			}
 
 			@Override
-			public FlowFunction<Abstraction> getCallToReturnFlowFunction(Unit call, final Unit returnSite) {
+			public FlowFunction<Abstraction> getCallToReturnFlowFunction(final Unit call, final Unit returnSite) {
 				// special treatment for native methods:
 				if (call instanceof Stmt) {
 					final Stmt iStmt = (Stmt) call;

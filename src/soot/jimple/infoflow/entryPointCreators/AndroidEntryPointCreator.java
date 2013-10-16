@@ -57,7 +57,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 	
 	private JimpleBody body;
 	private LocalGenerator generator;

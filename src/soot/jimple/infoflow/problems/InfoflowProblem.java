@@ -52,8 +52,8 @@ import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
 import soot.jimple.ThrowStmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.data.Abstraction.SourceContext;
 import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.heros.SolverCallToReturnFlowFunction;
@@ -106,9 +106,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		Set<AccessPath> vals = taintWrapper.getTaintsForMethod(iStmt, source.getAccessPath());
 		if(vals != null) {
 			for (AccessPath val : vals) {
-				Abstraction newAbs = source.deriveNewAbstraction(val);
-				if (pathTracking == PathTrackingMethod.ForwardTracking)
-					((AbstractionWithPath) newAbs).addPathElement(iStmt);
+				Abstraction newAbs = source.deriveNewAbstraction(val, iStmt);
 				res.add(newAbs);
 
 				// If the taint wrapper creates a new taint, this must be propagated
@@ -140,7 +138,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			 */
 			private void addTaintViaStmt
 					(final Abstraction d1,
-					final Unit src,
+					final Stmt src,
 					final Value targetValue,
 					Abstraction source,
 					Set<Abstraction> taintSet,
@@ -158,9 +156,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				if (!source.getAccessPath().isEmpty())
 					newAbs = source.deriveNewAbstraction(baseTarget, cutFirstField, src);
 				else
-					newAbs = source.deriveNewAbstraction(new AccessPath(targetValue));
-				if (pathTracking == PathTrackingMethod.ForwardTracking)
-					((AbstractionWithPath) newAbs).addPathElement(src);
+					newAbs = source.deriveNewAbstraction(new AccessPath(targetValue), src);
 				taintSet.add(newAbs);
 				
 				// call backwards-check for heap-objects only
@@ -227,8 +223,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 
 							// Check whether we must leave a conditional branch
-							if (source.isTopPostdominator(is))
+							if (source.isTopPostdominator(is)) {
 								source = source.dropTopPostdominator();
+								// Have we dropped the last postdominator for an empty taint?
+								if (source.getAccessPath().isEmpty() && source.getTopPostdominator() == null)
+									return Collections.emptySet();
+							}
 
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							boolean addOriginal = true;
@@ -243,14 +243,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								res.add(source);
 							
 							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
-								Abstraction abs;
-								if (pathTracking != PathTrackingMethod.NoTracking)
-									abs = new AbstractionWithPath(is.getLeftOp(),
-										is.getRightOp(),
-										is, false, true, is).addPathElement(is);
-								else
-									abs = new Abstraction(is.getLeftOp(),
-										is.getRightOp(), is, false, true, is);
+								Abstraction abs = new Abstraction(is.getLeftOp(), is.getRightOp(), is, false, true, is);
 								res.add(abs);
 							}
 							
@@ -290,8 +283,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							
 							// Check whether we must leave a conditional branch
-							if (source.isTopPostdominator(assignStmt))
+							if (source.isTopPostdominator(assignStmt)) {
 								source = source.dropTopPostdominator();
+								// Have we dropped the last postdominator for an empty taint?
+								if (source.getAccessPath().isEmpty() && source.getTopPostdominator() == null)
+									return Collections.emptySet();
+							}
 							
 							Abstraction newSource;
 							if (!source.isAbstractionActive() && src.equals(source.getActivationUnit())){
@@ -371,19 +368,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
-								if (isSink && (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty())) {
-									if (pathTracking != PathTrackingMethod.NoTracking)
-										results.addResult(leftValue, assignStmt,
-												newSource.getSource(),
-												newSource.getSourceContext(),
-												((AbstractionWithPath) newSource).getPropagationPath(),
-												assignStmt);
-									else
-										results.addResult(leftValue, assignStmt,
-												newSource.getSource(), newSource.getSourceContext());
+								if (isSink && newSource.isAbstractionActive()
+										&& (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty())) {
+									for (SourceContext context : newSource.getSources())
+										results.addResult(leftValue, assignStmt, context.getValue(), context.getStmt(),
+												newSource.getPath(), (Stmt) src);
 								}
 								if(triggerInaktiveTaintOrReverseFlow(leftValue, newSource) || newSource.isAbstractionActive())
-									addTaintViaStmt(d1, src, leftValue, newSource, res, cutFirstField);
+									addTaintViaStmt(d1, (Stmt) src, leftValue, newSource, res, cutFirstField);
 								res.add(newSource);
 								return res;
 							}
@@ -447,20 +439,21 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 
 							// Check whether we must leave a conditional branch
-							if (source.isTopPostdominator(returnStmt))
+							if (source.isTopPostdominator(returnStmt)) {
 								source = source.dropTopPostdominator();
+								// Have we dropped the last postdominator for an empty taint?
+								if (source.getAccessPath().isEmpty() && source.getTopPostdominator() == null)
+									return Collections.emptySet();
+							}
+							
+							// Check whether we have reached a sink
 							if (returnStmt.getOp().equals(source.getAccessPath().getPlainValue())
+									&& source.isAbstractionActive()
 									&& sourceSinkManager.isSink(returnStmt, interproceduralCFG())
 									&& (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty())) {
-								if (pathTracking != PathTrackingMethod.NoTracking)
-									results.addResult(returnStmt.getOp(), returnStmt,
-											source.getSource(),
-											source.getSourceContext(),
-											((AbstractionWithPath) source).getPropagationPath(),
-											returnStmt);
-								else
-									results.addResult(returnStmt.getOp(), returnStmt,
-											source.getSource(), source.getSourceContext());
+								for (SourceContext context : source.getSources())
+									results.addResult(returnStmt.getOp(), returnStmt, context.getValue(),
+											context.getStmt(), source.getPath(), (Stmt) src);
 							}
 
 							return Collections.singleton(source);
@@ -477,8 +470,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							
 							// Check whether we must leave a conditional branch
-							if (source.isTopPostdominator(throwStmt))
+							if (source.isTopPostdominator(throwStmt)) {
 								source = source.dropTopPostdominator();
+								// Have we dropped the last postdominator for an empty taint?
+								if (source.getAccessPath().isEmpty() && source.getTopPostdominator() == null)
+									return Collections.emptySet();
+							}
 
 							if (throwStmt.getOp().equals(source.getAccessPath().getPlainLocal()))
 								return Collections.singleton(source.deriveNewAbstractionOnThrow());
@@ -497,8 +494,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							// Check whether we must leave a conditional branch
-							if (source.isTopPostdominator(src))
+							if (source.isTopPostdominator(src)) {
 								source = source.dropTopPostdominator();
+								// Have we dropped the last postdominator for an empty taint?
+								if (source.getAccessPath().isEmpty() && source.getTopPostdominator() == null)
+									return Collections.emptySet();
+							}
 							
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.add(source);
@@ -526,7 +527,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (!(postdom.getMethod() == null
 											&& source.getTopPostdominator() != null
 											&& interproceduralCFG().getMethodOf(postdom.getUnit()) == source.getTopPostdominator().getMethod())) {
-										Abstraction newAbs = source.deriveConditionalAbstractionEnter(postdom);
+										Abstraction newAbs = source.deriveConditionalAbstractionEnter(postdom, (Stmt) src);
 										res.add(newAbs);
 									}
 								}
@@ -581,8 +582,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						
 						// Check whether we must leave a conditional branch
-						if (source.isTopPostdominator(stmt))
+						if (source.isTopPostdominator(stmt)) {
 							source = source.dropTopPostdominator();
+							// Have we dropped the last postdominator for an empty taint?
+							if (source.getAccessPath().isEmpty() && source.getTopPostdominator() == null)
+								return Collections.emptySet();
+						}
 						
 						// If no parameter is tainted, but we are in a conditional, we create a
 						// pseudo abstraction. We do not map parameters if we are handling an
@@ -606,9 +611,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// this might be enough because every call must happen with a local variable which is tainted itself:
 							if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
 								Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
-										(dest.getActiveBody().getThisLocal()));
-								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									((AbstractionWithPath) abs).addPathElement(stmt);
+										(dest.getActiveBody().getThisLocal()), stmt);
 
 								//add new callArgs:
 								assert abs != source; 		// our source abstraction must be immutable
@@ -624,9 +627,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) &&
 										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
-											(paramLocals.get(i)));
-									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										((AbstractionWithPath) abs).addPathElement(stmt);
+											(paramLocals.get(i)), stmt);
 
 									assert abs != source;		// our source abstraction must be immutable
 									res.add(abs);
@@ -665,7 +666,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
-						
+
 						boolean callerD1sConditional = false;
 						for (Abstraction d1 : callerD1s)
 							if (d1.getConditionalCallSite() != null) {
@@ -674,7 +675,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 						
 						// Activate taint if necessary
-						Abstraction newSource = source.clone();
+						Abstraction newSource = source;
 						if(!source.isAbstractionActive())
 							if(callSite != null)
 								if (callSite.equals(source.getActivationUnit()) || isCallSiteActivatingTaint(callSite, source.getActivationUnit()))
@@ -695,8 +696,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// Check whether we are leaving a conditional call
-						if (newSource.getConditionalCallSite() == callSite)
+						if (newSource.getConditionalCallSite() == callSite) {
 							newSource = newSource.leaveConditionalCall();
+							if (newSource.getAccessPath().isEmpty())
+								return Collections.emptySet();
+						}
 
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null)
@@ -716,16 +720,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									&& newSource.getAccessPath().isLocal()
 									&& newSource.getAccessPath().getPlainValue().equals(returnStmt.getOp());
 							if (mustTaintSink && isSink
+									&& newSource.isAbstractionActive()
 									&& (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty())) {
-								if (pathTracking != PathTrackingMethod.NoTracking)
-									results.addResult(returnStmt.getOp(), returnStmt,
-											newSource.getSource(),
-											newSource.getSourceContext(),
-											((AbstractionWithPath) newSource).getPropagationPath(),
-											returnStmt);
-								else
-									results.addResult(returnStmt.getOp(), returnStmt,
-											newSource.getSource(), newSource.getSourceContext());
+								for (SourceContext context : newSource.getSources())
+									results.addResult(returnStmt.getOp(), returnStmt, context.getValue(),
+											context.getStmt(), source.getPath(), (Stmt) exitStmt);
 							}
 						}
 												
@@ -745,11 +744,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							taintReturnValue |= retLocal.equals(newSource.getAccessPath().getPlainLocal());
 							taintReturnValue &= (triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive());
 							if (taintReturnValue) {
-								Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(leftOp));
+								Abstraction abs = newSource.deriveNewAbstraction
+										(newSource.getAccessPath().copyWithNewValue(leftOp), (Stmt) exitStmt);
 								registerActivationCallSite(callSite, abs);
 
-								if (pathTracking == PathTrackingMethod.ForwardTracking)
-									((AbstractionWithPath) abs).addPathElement(exitStmt);
 								assert abs != newSource;		// our source abstraction must be immutable
 								res.add(abs);
 									
@@ -795,11 +793,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									originalCallArg = iStmt.getInvokeExpr().getArg(i);
 									//either the param is a fieldref (not possible in jimple?) or an array Or one of its fields is tainted/all fields are tainted
 									if (triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)) {
-										Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(originalCallArg));
+										Abstraction abs = newSource.deriveNewAbstraction
+												(newSource.getAccessPath().copyWithNewValue(originalCallArg), (Stmt) exitStmt);
 										registerActivationCallSite(callSite, abs);
-										
-										if (pathTracking == PathTrackingMethod.ForwardTracking)
-											abs = ((AbstractionWithPath) abs).addPathElement(exitStmt);
+
 										res.add(abs);
 										if(triggerInaktiveTaintOrReverseFlow(originalCallArg, abs) && !callerD1sConditional){
 											// call backwards-check:
@@ -830,11 +827,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										Stmt stmt = (Stmt) callSite;
 										if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 											InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
-											Abstraction abs = newSource.deriveNewAbstraction(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()));
+											Abstraction abs = newSource.deriveNewAbstraction
+													(newSource.getAccessPath().copyWithNewValue(iIExpr.getBase()), stmt);
 											registerActivationCallSite(callSite, abs);
 
-											if (pathTracking == PathTrackingMethod.ForwardTracking)
-												((AbstractionWithPath) abs).addPathElement(stmt);
 											res.add(abs);
 											if(triggerInaktiveTaintOrReverseFlow(iIExpr.getBase(), abs) && !callerD1sConditional){
 												Abstraction bwAbs = abs.deriveInactiveAbstraction();
@@ -880,10 +876,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							Abstraction newSource;
-							
+
 							// Check whether we must leave a conditional branch
-							if (source.isTopPostdominator(iStmt))
+							if (source.isTopPostdominator(iStmt)) {
 								source = source.dropTopPostdominator();
+								// Have we dropped the last postdominator for an empty taint?
+								if (source.getAccessPath().isEmpty() && source.getTopPostdominator() == null)
+									return Collections.emptySet();
+							}
 
 							//check inactive elements:
 							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit()))
@@ -900,36 +900,37 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (call instanceof DefinitionStmt && (newSource.getTopPostdominator() != null
 									|| newSource.getConditionalCallSite() != null)) {
 								Value leftVal = ((DefinitionStmt) call).getLeftOp();
-								Abstraction abs = newSource.deriveNewAbstraction(new AccessPath(leftVal));
+								Abstraction abs = newSource.deriveNewAbstraction(new AccessPath(leftVal), (Stmt) call);
 								res.add(abs);
 							}
 
 							// We can only pass on a taint if it is neither a parameter nor the
 							// base object of the current call. If this call overwrites the left
 							// side, the taint is never passed on.
-							boolean passOn = !(call instanceof AssignStmt && ((AssignStmt) call).getLeftOp().equals
-									(newSource.getAccessPath().getPlainLocal()));
+							boolean passOn = !(call instanceof DefinitionStmt && ((DefinitionStmt) call).getLeftOp().equals
+											(newSource.getAccessPath().getPlainLocal()));
 							//we only can remove the taint if we step into the call/return edges
 							//otherwise we will loose taint - see ArrayTests/arrayCopyTest
-							if (passOn)
-								if(hasValidCallees(call) || (taintWrapper != null
-										&& taintWrapper.isExclusive(iStmt, newSource.getAccessPath()))) {
-									if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
-										if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
-												(newSource.getAccessPath().getPlainLocal())) {
-											passOn = false;
+							if (passOn && newSource.getAccessPath().isInstanceFieldRef())
+								if (inspectSinks || !isSink)
+									if(hasValidCallees(call) || (taintWrapper != null
+											&& taintWrapper.isExclusive(iStmt, newSource.getAccessPath()))) {
+										if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr)
+											if (((InstanceInvokeExpr) iStmt.getInvokeExpr()).getBase().equals
+													(newSource.getAccessPath().getPlainLocal())) {
+												passOn = false;
+											}
+											if (passOn)
+												for (int i = 0; i < callArgs.size(); i++)
+													if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal())) {
+														passOn = false;
+														break;
+													}
+											//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
+											//we can be sure that the value does not get "lost" if we do not pass it on:
+											if(newSource.getAccessPath().isStaticFieldRef())
+												passOn = false;
 										}
-										if (passOn)
-											for (int i = 0; i < callArgs.size(); i++)
-												if (callArgs.get(i).equals(newSource.getAccessPath().getPlainLocal())) {
-													passOn = false;
-													break;
-												}
-										//static variables are always propagated if they are not overwritten. So if we have at least one call/return edge pair,
-										//we can be sure that the value does not get "lost" if we do not pass it on:
-										if(newSource.getAccessPath().isStaticFieldRef())
-											passOn = false;
-									}
 							// If the callee does not read the given value, we also need to pass it on
 							// since we do not propagate it into the callee.
 							if (source.getAccessPath().isStaticFieldRef())
@@ -959,14 +960,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										target = ((InstanceInvokeExpr) invExpr).getBase();
 									}
 									
-									final Abstraction abs;
-									if (pathTracking == PathTrackingMethod.ForwardTracking)
-										abs = new AbstractionWithPath(target,
-												iStmt.getInvokeExpr(),
-												iStmt, false, true, iStmt).addPathElement(call);
-									else
-										abs = new Abstraction(target,
-												iStmt.getInvokeExpr(), iStmt, false, true, iStmt);
+									final Abstraction abs = new Abstraction(target, iStmt.getInvokeExpr(), iStmt, false, true, iStmt);
 									
 									res.add(abs);
 									res.remove(zeroValue);
@@ -976,7 +970,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
 							if (isSink && (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty())) {
 								// If we are inside a conditional branch, we consider every sink call a leak
-								boolean taintedParam = source.getTopPostdominator() != null;
+								boolean taintedParam = newSource.getTopPostdominator() != null
+										&& newSource.isAbstractionActive();
 								// If the base object is tainted, we also consider the "code" associated
 								// with the object's class as tainted.
 								if (!taintedParam) {
@@ -988,31 +983,18 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 
-								if (taintedParam) {
-									if (pathTracking != PathTrackingMethod.NoTracking)
-										results.addResult(iStmt.getInvokeExpr(), iStmt,
-												newSource.getSource(),
-												newSource.getSourceContext(),
-												((AbstractionWithPath) newSource).getPropagationPath(),
-												call);
-									else
-										results.addResult(iStmt.getInvokeExpr(), iStmt,
-												newSource.getSource(), newSource.getSourceContext());
+								if (newSource.isAbstractionActive() && taintedParam) {
+									for (SourceContext context : newSource.getSources())
+										results.addResult(iStmt.getInvokeExpr(), iStmt, context.getValue(),
+												context.getStmt(), newSource.getPath(), (Stmt) call);
 								}
 								// if the base object which executes the method is tainted the sink is reached, too.
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 									InstanceInvokeExpr vie = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-									if (vie.getBase().equals(newSource.getAccessPath().getPlainValue())) {
-										if (pathTracking != PathTrackingMethod.NoTracking)
-											results.addResult(iStmt.getInvokeExpr(), iStmt,
-													newSource.getSource(),
-													newSource.getSourceContext(),
-													((AbstractionWithPath) newSource).getPropagationPath(),
-													call);
-
-										else
-											results.addResult(iStmt.getInvokeExpr(), iStmt,
-													newSource.getSource(), newSource.getSourceContext());
+									if (newSource.isAbstractionActive() && vie.getBase().equals(newSource.getAccessPath().getPlainValue())) {
+										for (SourceContext context : newSource.getSources())
+											results.addResult(iStmt.getInvokeExpr(), iStmt, context.getValue(),
+													context.getStmt(), newSource.getPath(), (Stmt) call);
 									}
 								}
 							}

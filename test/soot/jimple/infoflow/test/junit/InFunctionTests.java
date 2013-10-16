@@ -19,7 +19,6 @@ import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
-import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 /**
  * contain tests for Taintwrapper and parameters as sources and sinks
@@ -45,7 +44,6 @@ public class InFunctionTests extends JUnitTests {
     @Test
     public void inFunctionTest1(){
     	Infoflow infoflow = initInfoflow();
-    	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode1(java.lang.String)>";
 
     	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
@@ -59,7 +57,6 @@ public class InFunctionTests extends JUnitTests {
     @Test
     public void inFunctionTest2(){
     	Infoflow infoflow = initInfoflow();
-    	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode2(java.lang.String)>";
 
     	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
@@ -73,7 +70,6 @@ public class InFunctionTests extends JUnitTests {
     @Test
     public void inFunctionTest3(){
     	Infoflow infoflow = initInfoflow();
-    	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode3(java.lang.String)>";
 
     	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
@@ -87,7 +83,6 @@ public class InFunctionTests extends JUnitTests {
     @Test
     public void inFunctionTest4(){
     	Infoflow infoflow = initInfoflow();
-    	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
     	List<String> epoint = new ArrayList<String>();
     	epoint.add("<soot.jimple.infoflow.test.InFunctionCode: void setTmp(java.lang.String)>");
     	epoint.add("<soot.jimple.infoflow.test.InFunctionCode: java.lang.String foo(java.lang.String,java.lang.String)>");
@@ -104,7 +99,6 @@ public class InFunctionTests extends JUnitTests {
     @Test
     public void parameterFlowTest(){
     	Infoflow infoflow = initInfoflow();
-    	infoflow.setPathTracking(PathTrackingMethod.ForwardTracking);
     	List<String> epoint = new ArrayList<String>();
     	epoint.add("<soot.jimple.infoflow.test.InFunctionCode: int paraToParaFlow(int,int,"
     			+ "soot.jimple.infoflow.test.InFunctionCode$DataClass,"

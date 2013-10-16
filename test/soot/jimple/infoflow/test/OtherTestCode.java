@@ -74,10 +74,40 @@ public class OtherTestCode {
 		String data = annotate(deviceId);
 		cm.publish(data);
 
-		String data2 = annotate(deviceId);
+		String did = deviceId;
+		String data2 = annotate(did);
 		cm.publish(data2);
 	}
 	
+	public void passOverTest() {
+		ConnectionManager cm = new ConnectionManager();
+		String deviceId = TelephonyManager.getDeviceId();
+
+		C1 c = new C1(deviceId);
+		
+		annotate(c);
+		cm.publish(c.field1);
+	}
+	
+	private void annotate(C1 c) {
+		System.out.println(c.field1);
+		c = new C1("Hello World");
+	}
+	
+	public void overwriteTest() {
+		ConnectionManager cm = new ConnectionManager();
+		String deviceId = TelephonyManager.getDeviceId();
+
+		C1 c = new C1(deviceId);
+		
+		overwrite(c);
+		cm.publish(c.field1);
+	}
+
+	private void overwrite(C1 c) {
+		c.field1 = "Hello World";
+	}
+
 	public void loopTest() {
 		String imei = TelephonyManager.getDeviceId();
 		for (int i = 0; i < 10; i++) {

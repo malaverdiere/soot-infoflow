@@ -11,6 +11,10 @@
 package soot.jimple.infoflow.data;
 
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 
 import soot.SootField;
@@ -24,15 +28,75 @@ import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
  *
  */
 public class Abstraction implements Cloneable {
+
+	/**
+	 * Class representing a source value together with the statement that created it
+	 * 
+	 * @author Steven Arzt
+	 */
+	public class SourceContext {
+		private final Value value;
+		private final Stmt stmt;
+		
+		public SourceContext(Value value, Stmt stmt) {
+			this.value = value;
+			this.stmt = stmt;
+		}
+		
+		public Value getValue() {
+			return this.value;
+		}
+		
+		public Stmt getStmt() {
+			return this.stmt;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getOuterType().hashCode();
+			result = prime * result + ((stmt == null) ? 0 : stmt.hashCode());
+			result = prime * result + ((value == null) ? 0 : value.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null || !(obj instanceof SourceContext))
+				return false;
+			SourceContext other = (SourceContext) obj;
+			if (!getOuterType().equals(other.getOuterType()))
+				return false;
+			if (stmt == null) {
+				if (other.stmt != null)
+					return false;
+			} else if (!stmt.equals(other.stmt))
+				return false;
+			if (value == null) {
+				if (other.value != null)
+					return false;
+			} else if (!value.equals(other.value))
+				return false;
+			return true;
+		}
+
+		private Abstraction getOuterType() {
+			return Abstraction.this;
+		}
+	}
+	
 	/**
 	 * the access path contains the currently tainted variable or field
 	 */
 	private final AccessPath accessPath;
-	private final Value source;
-	/**
-	 * the statement which contains the source
-	 */
-	private final Stmt sourceContext;
+	
+	private final Set<Abstraction> predecessors = new HashSet<Abstraction>();
+	private Value currentVal = null;
+	private Stmt currentStmt = null;
+	
 	/**
 	 * Unit/Stmt which activates the taint when the abstraction passes it
 	 */
@@ -60,23 +124,15 @@ public class Abstraction implements Cloneable {
 	 */
 	private Unit conditionalCallSite = null;
 
-	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
-		this.source = src;
+	public Abstraction(Value taint, Value currentVal, Stmt currentStmt,
+			boolean exceptionThrown, boolean isActive, Unit activationUnit){
+		this.currentVal = currentVal;
+		this.currentStmt = currentStmt;
+
 		this.accessPath = new AccessPath(taint);
 		this.activationUnit = activationUnit;
-		this.sourceContext = srcContext;
 		this.exceptionThrown = exceptionThrown;
 		this.isActive = isActive;
-	}
-	
-	/**
-	 * Creates an abstraction as a copy of an existing abstraction,
-	 * only exchanging the access path.
-	 * @param p The value to be used as the new access path
-	 * @param original The original abstraction to copy
-	 */
-	protected Abstraction(Value p, Abstraction original){
-		this(new AccessPath(p), original);
 	}
 
 	/**
@@ -87,15 +143,17 @@ public class Abstraction implements Cloneable {
 	 */
 	protected Abstraction(AccessPath p, Abstraction original){
 		if (original == null) {
-			source = null;
-			sourceContext = null;
+			currentVal = null;
+			currentStmt = null;
+			
 			exceptionThrown = false;
 			activationUnit = null;
 			conditionalCallSite = null;
 		}
 		else {
-			source = original.source;
-			sourceContext = original.sourceContext;
+			currentVal = original.currentVal;
+			currentStmt = original.currentStmt;
+			
 			exceptionThrown = original.exceptionThrown;
 			activationUnit = original.activationUnit;
 			isActive = original.isActive;
@@ -111,13 +169,17 @@ public class Abstraction implements Cloneable {
 	}
 	
 	public final Abstraction deriveInactiveAbstraction(AccessPath p){
-		Abstraction a = deriveNewAbstraction(p);
+		Abstraction a = deriveNewAbstraction(p, null);
 		a.isActive = false;
 		return a;
 	}
 
-	public Abstraction deriveNewAbstraction(AccessPath p){
-		return new Abstraction(p, this);
+	public Abstraction deriveNewAbstraction(AccessPath p, Stmt currentStmt){
+		Abstraction abs = new Abstraction(p, this);
+		abs.predecessors.add(this);
+		abs.currentVal = null;
+		abs.currentStmt = currentStmt;
+		return abs;
 	}
 			
 	public final Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
@@ -130,7 +192,7 @@ public class Abstraction implements Cloneable {
 		SootField[] fields = new SootField[cutFirstField ? orgFields.length - 1 : orgFields.length];
 		for (int i = cutFirstField ? 1 : 0; i < orgFields.length; i++)
 			fields[cutFirstField ? i - 1 : i] = orgFields[i];
-		a = deriveNewAbstraction(new AccessPath(taint, fields));
+		a = deriveNewAbstraction(new AccessPath(taint, fields), (Stmt) newActUnit);
 		if (isActive) {
 			assert newActUnit != null;
 			a.activationUnit = newActUnit;
@@ -146,6 +208,8 @@ public class Abstraction implements Cloneable {
 	public final Abstraction deriveNewAbstractionOnThrow(){
 		assert !this.exceptionThrown;
 		Abstraction abs = clone();
+		abs.currentVal = null;
+		abs.currentStmt = null;
 		abs.exceptionThrown = true;
 		return abs;
 	}
@@ -158,7 +222,7 @@ public class Abstraction implements Cloneable {
 	 */
 	public final Abstraction deriveNewAbstractionOnCatch(Value taint, Unit newActivationUnit){
 		assert this.exceptionThrown;
-		Abstraction abs = deriveNewAbstraction(new AccessPath(taint));
+		Abstraction abs = deriveNewAbstraction(new AccessPath(taint), (Stmt) newActivationUnit);
 		abs.exceptionThrown = false;
 		if(isActive) {
 			assert newActivationUnit != null;
@@ -166,13 +230,60 @@ public class Abstraction implements Cloneable {
 		}
 		return abs;
 	}
-
-	public Value getSource() {
-		return source;
+	
+	private Set<Abstraction> getRootAbstractions() {
+		List<Abstraction> workList = new LinkedList<Abstraction>();
+		Set<Abstraction> doneSet = new HashSet<Abstraction>();
+		Set<Abstraction> rootAbstractions = new HashSet<Abstraction>();
+		workList.add(this);
+		
+		while (!workList.isEmpty()) {
+			Abstraction curAbs = workList.remove(0);
+			
+			// Schedule further predecessors
+			for (Abstraction prev : curAbs.predecessors)
+				if (doneSet.add(prev))
+					workList.add(prev);
+			
+			// Evaluate tree roots
+			if (curAbs.predecessors.isEmpty())
+				rootAbstractions.add(curAbs);
+		}
+		
+		return rootAbstractions;		
 	}
+	
 
-	public Stmt getSourceContext() {
-		return this.sourceContext;
+	public Set<SourceContext> getSources() {
+		Set<SourceContext> rootSources = new HashSet<SourceContext>();
+		for (Abstraction abs : getRootAbstractions())
+			rootSources.add(new SourceContext(abs.currentVal, abs.currentStmt));
+		return rootSources;
+	}
+	
+	/**
+	 * Gets the path of statements from the source to the current statement
+	 * with which this abstraction is associated. If this path is ambiguous,
+	 * a single path is selected randomly.
+	 * @return The path from the source to the current statement
+	 */
+	public List<Stmt> getPath() {
+		// Get a path from a random predecessor
+		List<Stmt> pathList = null;
+		for (Abstraction prevAbs : predecessors) {
+			pathList = prevAbs.getPath();
+			break;
+		}
+		
+		// If we are at the source, we have to generate the list
+		if (pathList == null)
+			pathList = new LinkedList<Stmt>();
+		
+		// Add the current statement
+		if (currentStmt != null)
+			pathList.add(currentStmt);
+		
+		return pathList;
 	}
 	
 	public boolean isAbstractionActive(){
@@ -194,6 +305,8 @@ public class Abstraction implements Cloneable {
 	
 	public Abstraction getActiveCopy(){
 		Abstraction a = clone();
+		a.currentVal = null;
+		a.currentStmt = null;
 		a.isActive = true;
 		// do not kill the original activation point since we might return into
 		// a caller, find a new alias there and then need to know where both
@@ -212,20 +325,22 @@ public class Abstraction implements Cloneable {
 		return this.exceptionThrown;
 	}
 	
-	public final Abstraction deriveConditionalAbstractionEnter(UnitContainer postdom) {
+	public final Abstraction deriveConditionalAbstractionEnter(UnitContainer postdom,
+			Stmt conditionalUnit) {
 		if (!postdominators.isEmpty() && postdominators.contains(postdom))
 			return this;
 		assert this.conditionalCallSite == null;
 		
-		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath());
+		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), conditionalUnit);
 		abs.postdominators.push(postdom);
 		return abs;
 	}
 	
 	public final Abstraction deriveConditionalAbstractionCall(Unit conditionalCallSite) {
-		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath());
-		if (conditionalCallSite != null)
-			abs.conditionalCallSite = conditionalCallSite;
+		assert conditionalCallSite != null;
+		
+		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), (Stmt) conditionalCallSite);
+		abs.conditionalCallSite = conditionalCallSite;
 		abs.isActive = true;
 
 //		abs.activationUnit = conditionalCallSite;
@@ -235,6 +350,8 @@ public class Abstraction implements Cloneable {
 	
 	public final Abstraction leaveConditionalCall() {
 		Abstraction abs = clone();
+		abs.currentVal = null;
+		abs.currentStmt = null;
 		abs.conditionalCallSite = null;
 		return abs;
 	}
@@ -244,6 +361,8 @@ public class Abstraction implements Cloneable {
 			return this;
 		
 		Abstraction abs = clone();
+		abs.currentVal = null;
+		abs.currentStmt = null;
 		abs.postdominators.pop();
 		return abs;
 	}
@@ -275,6 +394,7 @@ public class Abstraction implements Cloneable {
 	@Override
 	public Abstraction clone() {
 		Abstraction abs = new Abstraction(accessPath, this);
+		abs.predecessors.add(this);
 		assert abs.equals(this);
 		return abs;
 	}
@@ -303,16 +423,18 @@ public class Abstraction implements Cloneable {
 	 * false
 	 */
 	private boolean localEquals(Abstraction other) {
-		if (source == null) {
-			if (other.source != null)
+		// deliberately ignore prevAbs
+		if (currentVal == null) {
+			if (other.currentVal != null)
 				return false;
-		} else if (!source.equals(other.source))
+		} else if (!currentVal.equals(other.currentVal))
 			return false;
-		if (sourceContext == null) {
-			if (other.sourceContext != null)
+		if (currentStmt == null) {
+			if (other.currentStmt != null)
 				return false;
-		} else if (!sourceContext.equals(other.sourceContext))
+		} else if (!currentStmt.equals(other.currentStmt))
 			return false;
+
 		if (activationUnit == null) {
 			if (other.activationUnit != null)
 				return false;
@@ -337,9 +459,12 @@ public class Abstraction implements Cloneable {
 		final int prime = 31;
 		if (this.hashCode == 0) {
 			this.hashCode = 1;
+
+			// deliberately ignore prevAbs
+			this.hashCode = prime * this.hashCode + ((currentVal == null) ? 0 : currentVal.hashCode());
+			this.hashCode = prime * this.hashCode + ((currentStmt == null) ? 0 : currentStmt.hashCode());
+
 			this.hashCode = prime * this.hashCode + ((accessPath == null) ? 0 : accessPath.hashCode());
-			this.hashCode = prime * this.hashCode + ((source == null) ? 0 : source.hashCode());
-			this.hashCode = prime * this.hashCode + ((sourceContext == null) ? 0 : sourceContext.hashCode());
 			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
@@ -364,5 +489,33 @@ public class Abstraction implements Cloneable {
 			return false;
 		return localEquals(other);
 	}
-		
+
+	/**
+	 * Gets the value associated with this abstraction. For abstractions at
+	 * sources, this is usually the expression that created the taint.
+	 * @return The value associated with this abstraction
+	 */
+	public Value getCurrentVal() {
+		return currentVal;
+	}
+
+	/**
+	 * Gets the statement associated with this abstraction.
+	 * @return The statement associated with this abstraction
+	 */
+	public Stmt getCurrentStmt() {
+		return currentStmt;
+	}
+	
+	/**
+	 * Merges the predecessors of the current abstraction with those of the
+	 * given one
+	 * @param abs The abstraction with which to merge predecessors
+	 */
+	public void mergePredecessors(Abstraction abs) {
+		for (Abstraction pred : abs.predecessors)
+			if (pred != this)
+				predecessors.add(pred);
+	}
+
 }

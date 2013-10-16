@@ -49,7 +49,7 @@ public abstract class JUnitTests {
    	
 
     protected static boolean taintWrapper = false;
-    protected static boolean debug = true;
+    protected static boolean debug = false;
    
     @BeforeClass
     public static void setUp() throws IOException

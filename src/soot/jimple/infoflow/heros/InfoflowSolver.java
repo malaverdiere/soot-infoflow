@@ -107,6 +107,16 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 	protected void propagate(Abstraction sourceVal, Unit target, Abstraction targetVal, EdgeFunction<BinaryDomain> f,
 			/* deliberately exposed to clients */ Unit relatedCallSite,
 			/* deliberately exposed to clients */ boolean isUnbalancedReturn) {
+		// Match previous abstraction
+		boolean found = false;
+		for (Abstraction abs : jumpFn.forwardLookup(sourceVal, target).keySet())
+			if (abs.equals(targetVal)) {
+				abs.mergePredecessors(targetVal);
+				found = true;
+			}
+		if (!found)
+			super.propagate(sourceVal, target, targetVal, f, relatedCallSite, isUnbalancedReturn);
+		
 		// Check whether we already have an abstraction that entails the new one.
 		// In such a case, we can simply ignore the new abstraction.
 		boolean noProp = false;

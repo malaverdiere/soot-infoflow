@@ -51,7 +51,6 @@ import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.problems.BackwardsInfoflowProblem;
 import soot.jimple.infoflow.problems.InfoflowProblem;
-import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
@@ -68,7 +67,7 @@ public class Infoflow implements IInfoflow {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-	private static boolean debug = true;
+	private static boolean debug = false;
 	private static int accessPathLength = 5;
 	
 	private InfoflowResults results;
@@ -76,7 +75,6 @@ public class Infoflow implements IInfoflow {
 	private final String androidPath;
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
-	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	private IInfoflowConfig sootConfig;
 	private boolean stopAfterFirstFlow = false;
 	private boolean enableImplicitFlows = false;
@@ -126,11 +124,6 @@ public class Infoflow implements IInfoflow {
 	@Override
 	public void setInspectSinks(boolean inspect){
 		inspectSinks = inspect;
-	}
-	
-	@Override
-	public void setPathTracking(PathTrackingMethod method) {
-		this.pathTracking = method;
 	}
 	
 	@Override
@@ -328,7 +321,6 @@ public class Infoflow implements IInfoflow {
                 iCfg = icfgFactory.buildBiDirICFG();
 				InfoflowProblem forwardProblem  = new InfoflowProblem(iCfg, sourcesSinks);
 				forwardProblem.setTaintWrapper(taintWrapper);
-				forwardProblem.setPathTracking(pathTracking);
 				forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
 
 				// We have to look through the complete program to find sources

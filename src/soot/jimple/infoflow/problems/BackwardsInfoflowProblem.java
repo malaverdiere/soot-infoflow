@@ -157,7 +157,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}
 						else if (rightValue.equals(source.getAccessPath().getPlainValue())) {
-							Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue));
+							Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(leftValue),
+									defStmt);
 							res.add(abs);
 						}
 					}
@@ -190,7 +191,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						} else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
 							Local base = source.getAccessPath().getPlainLocal(); // ?
 							if (leftValue.equals(base)) {
-								res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue)));
+								res.add(source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rightValue),
+										defStmt));
 							}
 						} else if (leftValue instanceof ArrayRef) {
 							Local leftBase = (Local) ((ArrayRef) leftValue).getBase();
@@ -311,7 +313,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 										ReturnStmt rStmt = (ReturnStmt) u;
 										if (rStmt.getOp() instanceof Local
 												|| rStmt.getOp() instanceof FieldRef) {
-											Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(rStmt.getOp()));
+											Abstraction abs = source.deriveNewAbstraction
+													(source.getAccessPath().copyWithNewValue(rStmt.getOp()), (Stmt) src);
 											assert abs != source;		// our source abstraction must be immutable
 											res.add(abs);
 										}
@@ -348,7 +351,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								}
 								if (!param) {
 									if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
-										Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue(thisL));
+										Abstraction abs = source.deriveNewAbstraction
+												(source.getAccessPath().copyWithNewValue(thisL), (Stmt) src);
 										assert abs != source;		// our source abstraction must be immutable
 										res.add(abs);
 									}

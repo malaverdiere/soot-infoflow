@@ -28,7 +28,6 @@ import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.infoflow.InfoflowResults;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.data.AbstractionWithPath;
 import soot.jimple.infoflow.heros.InfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
@@ -45,32 +44,9 @@ import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
  */
 public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
 
-	/**
-	 * Supported methods for tracking data flow paths through applications
-	 * @author sarzt
-	 *
-	 */
-	public enum PathTrackingMethod {
-		/**
-		 * Do not track any paths. Just search for connections between sources
-		 * and sinks, but forget about the path between them.
-		 */
-		NoTracking,
-		
-		/**
-		 * Perform a simple forward tracking. Whenever propagating taint
-		 * information, also track the current statement on the path. Consumes
-		 * a lot of memory.
-		 */
-		ForwardTracking
-	}
-
-	
-	
 	protected final Map<Unit, Set<Abstraction>> initialSeeds = new HashMap<Unit, Set<Abstraction>>();
 	protected final InfoflowResults results;
 	protected ITaintPropagationWrapper taintWrapper;
-	protected PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	protected NativeCallHandler ncHandler = new DefaultNativeCallHandler();
 	protected boolean debug = false;
 	protected boolean enableImplicitFlows = false;
@@ -122,19 +98,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {
 		this.stopAfterFirstFlow = stopAfterFirstFlow;
 	}
-	
-	
-	/**
-	 * Sets whether and how the paths between the sources and sinks shall be
-	 * tracked
-	 * @param method The method for tracking data flow paths through the
-	 * program.
-	 */
-	public void setPathTracking(PathTrackingMethod method) {
-		this.pathTracking = method;
-		this.ncHandler.setPathTracking(method);
-	}
-	
+		
 	/**
 	 * Sets whether the solver shall consider implicit flows.
 	 * @param enableImplicitFlows True if implicit flows shall be considered,
@@ -146,11 +110,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 
 	@Override
 	public Abstraction createZeroValue() {
-		if (zeroValue == null) {
-			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false, true, null) :
-				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, null, false, true, null);
-		}
+		if (zeroValue == null)
+			zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false, true, null);
 		return zeroValue;
 	}
 	

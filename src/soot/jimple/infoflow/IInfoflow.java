@@ -14,7 +14,6 @@ import java.util.List;
 
 import soot.Transform;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
-import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 /**
@@ -31,14 +30,6 @@ public interface IInfoflow {
 	 */
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper);
 
-	/**
-	 * Sets whether and how the paths between the sources and sinks shall be
-	 * tracked
-	 * @param method The method for tracking data flow paths through the
-	 * program.
-	 */
-	public void setPathTracking(PathTrackingMethod method);
-	
 	/**
 	 * Sets whether the information flow analysis shall stop after the first
 	 * flow has been found

@@ -19,19 +19,10 @@ import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.data.AbstractionWithPath;
-import soot.jimple.infoflow.problems.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.util.DataTypeHandler;
 
 public class DefaultNativeCallHandler extends NativeCallHandler {
 	
-	PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
-	
-	@Override
-	public void setPathTracking(PathTrackingMethod method) {
-		this.pathTracking = method;
-	}
-
 	@Override
 	public Set<Abstraction> getTaintedValues(Stmt call, Abstraction source, List<Value> params){
 		HashSet<Abstraction> set = new HashSet<Abstraction>();
@@ -44,8 +35,6 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 		if(call.getInvokeExpr().getMethod().toString().contains("arraycopy")){
 			if(params.get(0).equals(source.getAccessPath().getPlainValue())){
 				Abstraction abs = source.deriveNewAbstraction(params.get(2), call);
-				if (pathTracking == PathTrackingMethod.ForwardTracking)
-					((AbstractionWithPath) abs).addPathElement(call);
 				set.add(abs);
 			}
 		}else{
@@ -54,8 +43,6 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 				Value argValue = params.get(i);
 				if (DataTypeHandler.isFieldRefOrArrayRef(argValue) && !(argValue instanceof Constant)) {
 					Abstraction abs = source.deriveNewAbstraction(argValue, call);
-					if (pathTracking == PathTrackingMethod.ForwardTracking)
-						((AbstractionWithPath) abs).addPathElement(call);
 				}
 			}	
 		}
@@ -63,8 +50,6 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 		if(call instanceof DefinitionStmt){
 			DefinitionStmt dStmt = (DefinitionStmt) call;
 			Abstraction abs = source.deriveNewAbstraction(dStmt.getLeftOp(), call);
-			if (pathTracking == PathTrackingMethod.ForwardTracking)
-				((AbstractionWithPath) abs).addPathElement(call);
 		}
 		
 		return set;

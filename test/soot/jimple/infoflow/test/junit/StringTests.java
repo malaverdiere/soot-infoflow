@@ -18,6 +18,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
@@ -54,6 +55,7 @@ public class StringTests extends JUnitTests {
     }
 	
 	@Test
+	@Ignore
     public void lowerCaseTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -63,6 +65,7 @@ public class StringTests extends JUnitTests {
     }
 	
 	@Test
+	@Ignore
     public void upperCaseTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

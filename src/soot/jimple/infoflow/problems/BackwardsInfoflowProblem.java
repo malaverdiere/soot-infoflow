@@ -260,7 +260,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
-							
+							assert !source.isAbstractionActive();
+
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
 							// If the next statement assigns the base of the tainted value,
@@ -287,11 +288,11 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 			public FlowFunction<Abstraction> getCallFlowFunction(final Unit src, final SootMethod dest) {
 				return new FlowFunction<Abstraction>() {
 
-					@Override
 					public Set<Abstraction> computeTargets(Abstraction source) {
 						if (source.equals(zeroValue)) {
 							return Collections.emptySet();
 						}
+						
 						/* Backwards taint wrapping is highly complicated, so we ignore it for the moment
 						if (taintWrapper != null && taintWrapper.supportsBackwardWrapping() && taintWrapper.supportsTaintWrappingForClass(dest.getDeclaringClass())) {
 							// taint is propagated in CallToReturnFunction, so we do not need any taint here if it is exclusive:
@@ -324,12 +325,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// easy: static
-						if (source.getAccessPath().isStaticFieldRef()) {
-							Abstraction abs = source.clone();
-							assert (abs.equals(source) && abs.hashCode() == source.hashCode());
-							assert abs != source;		// our source abstraction must be immutable
-							res.add(abs);
-						}
+						if (source.getAccessPath().isStaticFieldRef())
+							res.add(source);
 
 						// checks: this/fields
 

@@ -29,7 +29,7 @@ public class StringTestCode {
 		String result = tainted1 + tainted2;
 		
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(result);	
+		cm.publish(result);
 	}
 	
 	public void methodSubstring(){

@@ -11,6 +11,9 @@
 package soot.jimple.infoflow.data;
 
 
+import heros.solver.Pair;
+
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,7 +58,6 @@ public class Abstraction implements Cloneable {
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + getOuterType().hashCode();
 			result = prime * result + ((stmt == null) ? 0 : stmt.hashCode());
 			result = prime * result + ((value == null) ? 0 : value.hashCode());
 			return result;
@@ -68,8 +70,6 @@ public class Abstraction implements Cloneable {
 			if (obj == null || !(obj instanceof SourceContext))
 				return false;
 			SourceContext other = (SourceContext) obj;
-			if (!getOuterType().equals(other.getOuterType()))
-				return false;
 			if (stmt == null) {
 				if (other.stmt != null)
 					return false;
@@ -82,10 +82,35 @@ public class Abstraction implements Cloneable {
 				return false;
 			return true;
 		}
-
-		private Abstraction getOuterType() {
-			return Abstraction.this;
+	}
+	
+	public class SourceContextAndPath extends SourceContext {
+		private final List<Stmt> path = new LinkedList<Stmt>();
+		
+		public SourceContextAndPath(Value value, Stmt stmt) {
+			super(value, stmt);
+			path.add(stmt);
 		}
+		
+		public List<Stmt> getPath() {
+			return this.path;
+		}
+		
+		@Override
+		public boolean equals(Object other) {
+			if (other == null || !(other instanceof SourceContextAndPath))
+				return false;
+			if (!super.equals(other))
+				return false;
+			SourceContextAndPath scap = (SourceContextAndPath) other;
+			return this.path.equals(scap.path);
+		}
+		
+		@Override
+		public int hashCode() {
+			return 31 * super.hashCode() + 7 * path.hashCode();
+		}
+		
 	}
 	
 	/**
@@ -93,9 +118,8 @@ public class Abstraction implements Cloneable {
 	 */
 	private final AccessPath accessPath;
 	
-	private final Set<Abstraction> predecessors = new HashSet<Abstraction>();
-	private Value currentVal = null;
-	private Stmt currentStmt = null;
+	private final Set<Pair<Abstraction, Stmt>> predecessors = new HashSet<Pair<Abstraction, Stmt>>();
+	private SourceContext sourceContext = null;
 	
 	/**
 	 * Unit/Stmt which activates the taint when the abstraction passes it
@@ -126,9 +150,7 @@ public class Abstraction implements Cloneable {
 
 	public Abstraction(Value taint, Value currentVal, Stmt currentStmt,
 			boolean exceptionThrown, boolean isActive, Unit activationUnit){
-		this.currentVal = currentVal;
-		this.currentStmt = currentStmt;
-
+		this.sourceContext = new SourceContext(currentVal, currentStmt);
 		this.accessPath = new AccessPath(taint);
 		this.activationUnit = activationUnit;
 		this.exceptionThrown = exceptionThrown;
@@ -143,17 +165,13 @@ public class Abstraction implements Cloneable {
 	 */
 	protected Abstraction(AccessPath p, Abstraction original){
 		if (original == null) {
-			currentVal = null;
-			currentStmt = null;
-			
+			sourceContext = null;
 			exceptionThrown = false;
 			activationUnit = null;
 			conditionalCallSite = null;
 		}
 		else {
-			currentVal = original.currentVal;
-			currentStmt = original.currentStmt;
-			
+			sourceContext = original.sourceContext;
 			exceptionThrown = original.exceptionThrown;
 			activationUnit = original.activationUnit;
 			isActive = original.isActive;
@@ -176,9 +194,9 @@ public class Abstraction implements Cloneable {
 
 	public Abstraction deriveNewAbstraction(AccessPath p, Stmt currentStmt){
 		Abstraction abs = new Abstraction(p, this);
-		abs.predecessors.add(this);
-		abs.currentVal = null;
-		abs.currentStmt = currentStmt;
+		abs.predecessors.add(new Pair<Abstraction, Stmt>(this, currentStmt));
+		assert abs.predecessors.size() == 1;
+		abs.sourceContext = null;
 		return abs;
 	}
 			
@@ -203,13 +221,13 @@ public class Abstraction implements Cloneable {
 	/**
 	 * Derives a new abstraction that models the current local being thrown as
 	 * an exception
+	 * @param throwStmt The statement at which the exception was thrown
 	 * @return The newly derived abstraction
 	 */
-	public final Abstraction deriveNewAbstractionOnThrow(){
+	public final Abstraction deriveNewAbstractionOnThrow(Stmt throwStmt){
 		assert !this.exceptionThrown;
-		Abstraction abs = clone();
-		abs.currentVal = null;
-		abs.currentStmt = null;
+		Abstraction abs = cloneWithPredecessor(throwStmt);
+		abs.sourceContext = null;
 		abs.exceptionThrown = true;
 		return abs;
 	}
@@ -230,58 +248,50 @@ public class Abstraction implements Cloneable {
 		}
 		return abs;
 	}
-	
-	private Set<Abstraction> getRootAbstractions() {
-		List<Abstraction> workList = new LinkedList<Abstraction>();
-		Set<Abstraction> doneSet = new HashSet<Abstraction>();
-		Set<Abstraction> rootAbstractions = new HashSet<Abstraction>();
-		workList.add(this);
 		
-		while (!workList.isEmpty()) {
-			Abstraction curAbs = workList.remove(0);
-			
-			// Schedule further predecessors
-			for (Abstraction prev : curAbs.predecessors)
-				if (doneSet.add(prev))
-					workList.add(prev);
-			
-			// Evaluate tree roots
-			if (curAbs.predecessors.isEmpty())
-				rootAbstractions.add(curAbs);
-		}
-		
-		return rootAbstractions;		
-	}
-	
-
-	public Set<SourceContext> getSources() {
-		Set<SourceContext> rootSources = new HashSet<SourceContext>();
-		for (Abstraction abs : getRootAbstractions())
-			rootSources.add(new SourceContext(abs.currentVal, abs.currentStmt));
-		return rootSources;
-	}
-	
 	/**
 	 * Gets the path of statements from the source to the current statement
 	 * with which this abstraction is associated. If this path is ambiguous,
 	 * a single path is selected randomly.
 	 * @return The path from the source to the current statement
 	 */
-	public List<Stmt> getPath() {
-		// Get a path from a random predecessor
-		List<Stmt> pathList = null;
-		for (Abstraction prevAbs : predecessors) {
-			pathList = prevAbs.getPath();
-			break;
+	public Set<SourceContextAndPath> getPaths() {
+		return getPath(Collections.<Pair<Abstraction, Stmt>>emptySet());
+	}
+		
+	private Set<SourceContextAndPath> getPath(Set<Pair<Abstraction, Stmt>> doneSet) {
+		Set<SourceContextAndPath> pathList = new HashSet<SourceContextAndPath>();
+
+		// If this statement has a context, we create a path context from it
+		if (sourceContext != null) {
+			SourceContextAndPath sourceAndPath = new SourceContextAndPath
+					(sourceContext.value, sourceContext.stmt);
+			pathList.add(sourceAndPath);
+			return pathList;
 		}
-		
-		// If we are at the source, we have to generate the list
-		if (pathList == null)
-			pathList = new LinkedList<Stmt>();
-		
-		// Add the current statement
-		if (currentStmt != null)
-			pathList.add(currentStmt);
+
+		// Look for predecessors to extend a path
+		for (Pair<Abstraction, Stmt> prevEntry : predecessors) {
+			// On every path we explore, we also track the abstractions to
+			// make sure that we don't run in circles
+			Set<Pair<Abstraction, Stmt>> prevDoneSet = new HashSet<Pair<Abstraction, Stmt>>();
+			prevDoneSet.addAll(doneSet);
+			if (!prevDoneSet.add(prevEntry))
+				continue;
+
+			// See if there is a valid path from this predecessor up to a source
+			Set<SourceContextAndPath> prevPath = prevEntry.getO1().getPath(prevDoneSet);
+			if (prevPath.isEmpty())
+				continue;
+			if (!pathList.addAll(prevPath))
+				continue;
+
+			// Extend the paths we have found with the current statement
+			if (!prevEntry.getO1().isAbstractionActive())
+				if (prevEntry.getO2() != null)
+					for (SourceContextAndPath context : prevPath)
+						context.getPath().add(prevEntry.getO2());
+		}
 		
 		return pathList;
 	}
@@ -304,9 +314,8 @@ public class Abstraction implements Cloneable {
 	}
 	
 	public Abstraction getActiveCopy(){
-		Abstraction a = clone();
-		a.currentVal = null;
-		a.currentStmt = null;
+		Abstraction a = cloneWithPredecessor((Stmt) this.activationUnit);
+		a.sourceContext = null;
 		a.isActive = true;
 		// do not kill the original activation point since we might return into
 		// a caller, find a new alias there and then need to know where both
@@ -350,8 +359,7 @@ public class Abstraction implements Cloneable {
 	
 	public final Abstraction leaveConditionalCall() {
 		Abstraction abs = clone();
-		abs.currentVal = null;
-		abs.currentStmt = null;
+		abs.sourceContext = null;
 		abs.conditionalCallSite = null;
 		return abs;
 	}
@@ -361,8 +369,7 @@ public class Abstraction implements Cloneable {
 			return this;
 		
 		Abstraction abs = clone();
-		abs.currentVal = null;
-		abs.currentStmt = null;
+		abs.sourceContext = null;
 		abs.postdominators.pop();
 		return abs;
 	}
@@ -393,8 +400,16 @@ public class Abstraction implements Cloneable {
 
 	@Override
 	public Abstraction clone() {
+		return cloneWithPredecessor(null);
+	}
+	
+	public Abstraction cloneWithPredecessor(Stmt predStmt) {
 		Abstraction abs = new Abstraction(accessPath, this);
-		abs.predecessors.add(this);
+		if (predStmt == null)
+			abs.predecessors.add(new Pair<Abstraction, Stmt>(this, null));
+		else
+			abs.predecessors.add(new Pair<Abstraction, Stmt>(this, predStmt));
+		assert abs.predecessors.size() == 1;
 		assert abs.equals(this);
 		return abs;
 	}
@@ -424,17 +439,11 @@ public class Abstraction implements Cloneable {
 	 */
 	private boolean localEquals(Abstraction other) {
 		// deliberately ignore prevAbs
-		if (currentVal == null) {
-			if (other.currentVal != null)
+		if (sourceContext == null) {
+			if (other.sourceContext != null)
 				return false;
-		} else if (!currentVal.equals(other.currentVal))
+		} else if (!sourceContext.equals(other.sourceContext))
 			return false;
-		if (currentStmt == null) {
-			if (other.currentStmt != null)
-				return false;
-		} else if (!currentStmt.equals(other.currentStmt))
-			return false;
-
 		if (activationUnit == null) {
 			if (other.activationUnit != null)
 				return false;
@@ -461,9 +470,7 @@ public class Abstraction implements Cloneable {
 			this.hashCode = 1;
 
 			// deliberately ignore prevAbs
-			this.hashCode = prime * this.hashCode + ((currentVal == null) ? 0 : currentVal.hashCode());
-			this.hashCode = prime * this.hashCode + ((currentStmt == null) ? 0 : currentStmt.hashCode());
-
+			this.hashCode = prime * this.hashCode + ((sourceContext == null) ? 0 : sourceContext.hashCode());
 			this.hashCode = prime * this.hashCode + ((accessPath == null) ? 0 : accessPath.hashCode());
 			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
@@ -491,31 +498,59 @@ public class Abstraction implements Cloneable {
 	}
 
 	/**
-	 * Gets the value associated with this abstraction. For abstractions at
-	 * sources, this is usually the expression that created the taint.
-	 * @return The value associated with this abstraction
+	 * Gets the context of the taint, i.e. the statement and value of the source
+	 * @return The statement and value of the source
 	 */
-	public Value getCurrentVal() {
-		return currentVal;
+	public SourceContext getSourceContext() {
+		return sourceContext;
 	}
 
-	/**
-	 * Gets the statement associated with this abstraction.
-	 * @return The statement associated with this abstraction
-	 */
-	public Stmt getCurrentStmt() {
-		return currentStmt;
-	}
-	
 	/**
 	 * Merges the predecessors of the current abstraction with those of the
 	 * given one
 	 * @param abs The abstraction with which to merge predecessors
 	 */
 	public void mergePredecessors(Abstraction abs) {
-		for (Abstraction pred : abs.predecessors)
-			if (pred != this)
-				predecessors.add(pred);
+		assert this.equals(abs);
+		
+		if (abs != this)
+			mergePredecessors(abs, Collections.<Pair<Abstraction, Stmt>>emptySet());
 	}
 
+	private void mergePredecessors(Abstraction abs, Set<Pair<Abstraction, Stmt>> doneSet) {
+		for (Pair<Abstraction, Stmt> absVal : abs.predecessors) {
+			if (!predecessors.contains(absVal)) {
+				predecessors.add(absVal);
+				continue;
+			}
+				
+			Pair<Abstraction, Stmt> curVal = null;	
+			for (Pair<Abstraction, Stmt> tmp : predecessors)
+				if (tmp.equals(absVal)) {
+					curVal = tmp;
+					break;
+				}
+			assert curVal != null;
+			
+			// If this very abstraction is already in the list, we can skip it
+			if (curVal == absVal)
+				continue;
+			
+			// Make sure not to add cyclic predecessors
+			if (doneSet.contains(absVal))
+				continue;
+
+			Set<Pair<Abstraction, Stmt>> prevDoneSet = new HashSet<Pair<Abstraction, Stmt>>();
+			prevDoneSet.addAll(doneSet);
+			prevDoneSet.add(absVal);
+			curVal.getO1().mergePredecessors(absVal.getO1(), prevDoneSet);
+		}
+
+		/*
+		for (Pair<Abstraction, Stmt> absVal : abs.predecessors)
+			if (absVal.getO1() != this)
+				this.predecessors.add(absVal);
+		*/
+	}
+	
 }

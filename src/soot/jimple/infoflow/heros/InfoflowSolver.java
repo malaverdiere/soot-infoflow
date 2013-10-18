@@ -49,9 +49,13 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 		// edge <d1,n,d2>, there need not necessarily be a jump function
 		// to <n,d2>.
 		if (!jumpFn.forwardLookup(edge.factAtSource(), edge.getTarget()).containsKey(edge.factAtTarget())) {
+			/*
 			jumpFn.addFunction(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(),
 					EdgeIdentity.<IFDSSolver.BinaryDomain>v());
 			scheduleEdgeProcessing(edge);
+			*/
+			propagate(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(),
+					EdgeIdentity.<IFDSSolver.BinaryDomain>v(), null, false);
 			return true;
 		}
 		return false;
@@ -119,8 +123,8 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 		
 		// Check whether we already have an abstraction that entails the new one.
 		// In such a case, we can simply ignore the new abstraction.
-		boolean noProp = false;
 		/*
+		boolean noProp = false;
 		for (Abstraction abs : new HashSet<Abstraction>(jumpFn.forwardLookup(sourceVal, target).keySet()))
 			if (abs != targetVal) {
 				if (abs.entails(targetVal)) {
@@ -131,9 +135,9 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 					jumpFn.removeFunction(sourceVal, target, abs);
 				}
 			}
-			*/
 		if (!noProp)
 			super.propagate(sourceVal, target, targetVal, f, relatedCallSite, isUnbalancedReturn);
+			*/
 	}
 
 }

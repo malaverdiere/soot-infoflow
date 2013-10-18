@@ -114,8 +114,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 			zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false, true, null);
 		return zeroValue;
 	}
-	
-	public InfoflowResults getResults(){
+
+    public InfoflowResults getResults(){
 	    return results;
 	}
 

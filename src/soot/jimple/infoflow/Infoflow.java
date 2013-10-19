@@ -9,7 +9,6 @@
  ******************************************************************************/
 package soot.jimple.infoflow;
 
-import heros.InterproceduralCFG;
 import heros.solver.CountingThreadPoolExecutor;
 
 import java.io.BufferedWriter;
@@ -44,7 +43,6 @@ import soot.jimple.Stmt;
 import soot.jimple.infoflow.InfoflowResults.SinkInfo;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
 import soot.jimple.infoflow.config.IInfoflowConfig;
-import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
@@ -56,7 +54,6 @@ import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
-import soot.jimple.toolkits.ide.JimpleIFDSSolver;
 import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
 import soot.options.Options;
 /**
@@ -396,15 +393,15 @@ public class Infoflow implements IInfoflow {
 					return;
 				}
 
-				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> forwardSolver;
+				InfoflowSolver forwardSolver;
 				logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.getInitialSeeds().size(),
 						sinkCount);
 
 				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor
 						(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-				forwardSolver = new InfoflowSolver(forwardProblem, debug, executor);
+				forwardSolver = new InfoflowSolver(forwardProblem, executor);
 				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem();
-				InfoflowSolver backSolver = new InfoflowSolver(backProblem, debug, executor);
+				InfoflowSolver backSolver = new InfoflowSolver(backProblem, executor);
 				forwardProblem.setBackwardSolver(backSolver);
 				forwardProblem.setInspectSources(inspectSources);
 				forwardProblem.setInspectSinks(inspectSinks);

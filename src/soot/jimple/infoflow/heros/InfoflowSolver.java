@@ -17,6 +17,7 @@ import heros.edgefunc.EdgeIdentity;
 import heros.solver.CountingThreadPoolExecutor;
 import heros.solver.IFDSSolver;
 import heros.solver.PathEdge;
+import heros.solver.PathTrackingIFDSSolver;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -25,16 +26,15 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.problems.AbstractInfoflowProblem;
-import soot.jimple.toolkits.ide.JimpleIFDSSolver;
 /**
  * We are subclassing the JimpleIFDSSolver because we need the same executor for both the forward and the backward analysis
  * Also we need to be able to insert edges containing new taint information
  * 
  */
-public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
+public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>> {
 
-	public InfoflowSolver(AbstractInfoflowProblem problem, boolean dumpResults, CountingThreadPoolExecutor executor) {
-		super(problem, dumpResults);
+	public InfoflowSolver(AbstractInfoflowProblem problem, CountingThreadPoolExecutor executor) {
+		super(problem);
 		this.executor = executor;
 		problem.setSolver(this);		
 	}
@@ -111,20 +111,10 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 	protected void propagate(Abstraction sourceVal, Unit target, Abstraction targetVal, EdgeFunction<BinaryDomain> f,
 			/* deliberately exposed to clients */ Unit relatedCallSite,
 			/* deliberately exposed to clients */ boolean isUnbalancedReturn) {
-		// Match previous abstraction
-		boolean found = false;
-		for (Abstraction abs : jumpFn.forwardLookup(sourceVal, target).keySet())
-			if (abs.equals(targetVal)) {
-				abs.mergePredecessors(targetVal);
-				found = true;
-			}
-		if (!found)
-			super.propagate(sourceVal, target, targetVal, f, relatedCallSite, isUnbalancedReturn);
-		
 		// Check whether we already have an abstraction that entails the new one.
 		// In such a case, we can simply ignore the new abstraction.
-		/*
 		boolean noProp = false;
+		/*
 		for (Abstraction abs : new HashSet<Abstraction>(jumpFn.forwardLookup(sourceVal, target).keySet()))
 			if (abs != targetVal) {
 				if (abs.entails(targetVal)) {
@@ -135,9 +125,9 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 					jumpFn.removeFunction(sourceVal, target, abs);
 				}
 			}
+		*/
 		if (!noProp)
 			super.propagate(sourceVal, target, targetVal, f, relatedCallSite, isUnbalancedReturn);
-			*/
 	}
 
 }

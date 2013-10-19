@@ -144,7 +144,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (source.getAccessPath().isInstanceFieldRef()
 									&& ref.getBase().equals(source.getAccessPath().getPlainValue())
 									&& ref.getField().equals(source.getAccessPath().getFirstField())) {
-								Abstraction abs = source.deriveNewAbstraction(leftValue, true, null);
+								Abstraction abs = source.deriveNewAbstraction(leftValue, true, defStmt);
 								res.add(abs);
 							}
 						}
@@ -152,7 +152,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							StaticFieldRef ref = (StaticFieldRef) rightValue;
 							if (source.getAccessPath().isStaticFieldRef()
 									&& ref.getField().equals(source.getAccessPath().getFirstField())) {
-								Abstraction abs = source.deriveNewAbstraction(leftValue, true, null);
+								Abstraction abs = source.deriveNewAbstraction(leftValue, true, defStmt);
 								res.add(abs);
 							}
 						}
@@ -206,7 +206,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 						// if one of them is true -> add rightValue
 						if (addRightValue) {
-							Abstraction newAbs = source.deriveNewAbstraction(rightValue, cutFirstField, null);
+							Abstraction newAbs = source.deriveNewAbstraction(rightValue, cutFirstField, defStmt);
 							res.add(newAbs);
 						}
 					}

@@ -164,8 +164,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				taintSet.add(newAbs);
 				
 				// call backwards-check for heap-objects only
-				if (triggerInaktiveTaintOrReverseFlow(targetValue, source) && source.isAbstractionActive()
-						&& d1.getConditionalCallSite() == null)
+				if (triggerInaktiveTaintOrReverseFlow(targetValue, source) && source.isAbstractionActive()/*
+						&& d1.getConditionalCallSite() == null*/)
 					// If we overwrite the complete local, there is no need for
 					// a backwards analysis
 					if (!(targetValue.equals(newAbs.getAccessPath().getPlainValue())
@@ -307,16 +307,22 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								// Only allow "taint alls" to be done on the special-purpose
 								// abstraction in conditionally-called methods to make sure
 								// that it's done once and not over and over again
-								if (newSource.getConditionalCallSite() != null && !newSource.getAccessPath().isEmpty())
+								// Aliases must be passed on since the alias may have been
+								// created outside of the conditional call.
+								if (newSource.getConditionalCallSite() != null && !newSource.getAccessPath().isEmpty()
+										&& !(newSource.getAccessPath().isInstanceFieldRef() || newSource.getAccessPath().isStaticFieldRef()))
 									return Collections.emptySet();
 								// We can skip over all local assignments inside conditionally-
 								// called functions since they are not visible in the caller
 								// anyway
 								if (newSource.getConditionalCallSite() != null && !(leftValue instanceof FieldRef))
 									return Collections.singleton(newSource);
-								addLeftValue = true;
+								
+								if (newSource.getAccessPath().isEmpty())
+									addLeftValue = true;
 							}
-							else {
+							
+							if (!addLeftValue) {
 								for (Value rightValue : rightVals) {
 									// check if static variable is tainted (same name, same class)
 									//y = X.f && X.f tainted --> y, X.f tainted
@@ -599,12 +605,20 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						// If no parameter is tainted, but we are in a conditional, we create a
 						// pseudo abstraction. We do not map parameters if we are handling an
 						// implicit flow anyway.
-						if (source.getTopPostdominator() != null && !source.getAccessPath().isEmpty()) {
-							Abstraction abs = source.deriveConditionalAbstractionCall(src);
-							return Collections.singleton(abs);
+						if (source.getAccessPath().isEmpty()) {
+							if (source.getConditionalCallSite() != null)
+								return Collections.singleton(source);
+							else {
+								Abstraction abs = source.deriveConditionalAbstractionCall(src);
+								return Collections.singleton(abs);
+							}
 						}
-						if (source.getAccessPath().isEmpty())
-							return Collections.singleton(source);
+						if (source.getConditionalCallSite() != null && !source.getAccessPath().isEmpty())
+							return Collections.emptySet();
+						if (source.getTopPostdominator() != null && !source.getAccessPath().isEmpty()
+								&& !source.getAccessPath().isInstanceFieldRef()
+								&& (!source.getAccessPath().isStaticFieldRef() || enableStaticFields))
+							return Collections.emptySet();
 
 						// Only propagate the taint if the target field is actually read
 						if (source.getAccessPath().isStaticFieldRef())
@@ -681,7 +695,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if(callSite != null)
 								if (callSite.equals(source.getActivationUnit()) || isCallSiteActivatingTaint(callSite, source.getActivationUnit()))
 									newSource = source.getActiveCopy();
-												
+						
 						// Are we still inside a conditional? We check this before we
 						// leave the method since the return value is still assigned
 						// inside the method.
@@ -896,7 +910,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								newSource = source.getActiveCopy();
 							else
 								newSource = source;
-														
+							
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.addAll(computeWrapperTaints(d1, iStmt, newSource));
 							

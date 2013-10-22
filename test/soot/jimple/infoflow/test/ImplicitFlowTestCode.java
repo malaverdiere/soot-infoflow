@@ -354,6 +354,22 @@ public class ImplicitFlowTestCode {
 		cm.publish(b2.a.data);
 	}
 	
+	public void createAliasInFunctionTest2() {
+		B b1 = new B();
+		b1.a = new A();
+		B b2 = new B();
+		int tainted = TelephonyManager.getIMEI();
+		if (tainted == 42)
+			aliasAndTaint(b1, b2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b2.a.data);
+	}
+	
+	private void aliasAndTaint(B b1, B b2) {
+		alias(b1, b2);
+		b1.a.data = "foo";
+	}
+
 	public void implicitFlowTaintWrapperTest() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("foo");
@@ -362,6 +378,37 @@ public class ImplicitFlowTestCode {
 			builder.append("bar");
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(builder.toString());
+	}
+	
+	public void hierarchicalCallSetTest() {
+		A a = new A();
+		int tainted = TelephonyManager.getIMEI();
+		if (tainted == 42)
+			setLevel1(a);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+	}
+
+	private void setLevel1(A a) {
+		setLevel2(a);
+	}
+
+	private void setLevel2(A a) {
+		a.data = "foo";
+	}
+	
+	public void conditionalAliasingTest() {
+		B b = new B();
+		b.a = new A();
+		A a = b.a;
+		if (TelephonyManager.getIMEI() == 42)
+			setVal(b);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+	}
+	
+	private void setVal(B b) {
+		b.a.data = "foo";
 	}
 	
 }

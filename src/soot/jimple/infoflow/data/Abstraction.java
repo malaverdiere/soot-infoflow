@@ -286,7 +286,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			pathList.addAll(predecessor.getPath(prevDoneSet));
 		
 		// Extend the paths we have found with the current statement
-//		if (currentStmt != null && this.isActive)
+		if (currentStmt != null && this.isActive)
 			for (SourceContextAndPath context : pathList)
 				context.getPath().add(currentStmt);
 		

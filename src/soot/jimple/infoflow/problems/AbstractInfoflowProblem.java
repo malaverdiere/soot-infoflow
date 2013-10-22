@@ -48,8 +48,9 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected final InfoflowResults results;
 	protected ITaintPropagationWrapper taintWrapper;
 	protected NativeCallHandler ncHandler = new DefaultNativeCallHandler();
-	protected boolean debug = false;
+	
 	protected boolean enableImplicitFlows = false;
+	protected boolean enableStaticFields = false;
 
 	protected boolean inspectSources = true;
 	protected boolean inspectSinks = true;
@@ -59,6 +60,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected InfoflowSolver solver = null;
 	
 	protected boolean stopAfterFirstFlow = false;
+	
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
 		results = new InfoflowResults();
@@ -84,11 +86,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
 		taintWrapper = wrapper;
 	}
-	
-	public void setDebug(boolean debug){
-		this.debug = debug;
-	}
-	
+		
 	/**
 	 * Sets whether the information flow analysis shall stop after the first
 	 * flow has been found
@@ -106,6 +104,15 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 */
 	public void setEnableImplicitFlows(boolean enableImplicitFlows) {
 		this.enableImplicitFlows = enableImplicitFlows;
+	}
+
+	/**
+	 * Sets whether the solver shall consider assignments to static fields.
+	 * @param enableStaticFields True if assignments to static fields shall be
+	 * tracked, otherwise false
+	 */
+	public void setEnableStaticFieldTracking(boolean enableStaticFields) {
+		this.enableStaticFields = enableStaticFields;
 	}
 
 	@Override

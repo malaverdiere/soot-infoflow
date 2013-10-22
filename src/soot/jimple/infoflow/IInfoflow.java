@@ -152,6 +152,13 @@ public interface IInfoflow {
 	public void setEnableImplicitFlows(boolean enableImplicitFlows);
 
 	/**
+	 * Sets whether the solver shall consider assignments to static fields
+	 * @param enableStaticFields True if assignments to static fields shall be
+	 * considered, otherwise false
+	 */
+	public void setEnableStaticFieldTracking(boolean enableStaticFields);
+
+	/**
 	 * sets the depth of the access path that are tracked
 	 * @param accessPathLength the maximum value of an access path. If it gets longer than
 	 *  this value, it is truncated and all following fields are assumed as tainted 

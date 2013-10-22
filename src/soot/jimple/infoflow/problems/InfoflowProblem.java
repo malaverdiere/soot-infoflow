@@ -111,7 +111,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 				// If the taint wrapper creates a new taint, this must be propagated
 				// backwards as there might be aliases for the base object
-				if (newAbs.getAccessPath().isStaticFieldRef()
+				if ((enableStaticFields && newAbs.getAccessPath().isStaticFieldRef())
 						|| triggerInaktiveTaintOrReverseFlow(val.getPlainValue(), newAbs))
 					if (d1.getConditionalCallSite() == null) {
 						Abstraction bwAbs = source.deriveInactiveAbstraction(val);
@@ -145,6 +145,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					boolean cutFirstField) {
 				// Keep the original taint
 				taintSet.add(source);
+				
+				// Do not taint static fields unless the option is enabled
+				if (!enableStaticFields && targetValue instanceof StaticFieldRef)
+					return;
 				
 				// Strip array references to their respective base
 				Value baseTarget = targetValue;
@@ -316,7 +320,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								for (Value rightValue : rightVals) {
 									// check if static variable is tainted (same name, same class)
 									//y = X.f && X.f tainted --> y, X.f tainted
-									if (newSource.getAccessPath().isStaticFieldRef() && rightValue instanceof StaticFieldRef) {
+									if (enableStaticFields
+											&& newSource.getAccessPath().isStaticFieldRef()
+											&& rightValue instanceof StaticFieldRef) {
 										StaticFieldRef rightRef = (StaticFieldRef) rightValue;
 										if (newSource.getAccessPath().getFirstField().equals(rightRef.getField())) {
 											addLeftValue = true;
@@ -406,9 +412,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}	
 							}
-							//X.f = y && X.f tainted -> no taint propagated
-							else if(newSource.getAccessPath().isStaticFieldRef()){
-								if(leftValue instanceof StaticFieldRef && ((StaticFieldRef)leftValue).getField().equals(newSource.getAccessPath().getFirstField())){
+							//X.f = y && X.f tainted -> no taint propagated. Kills are allowed even if
+							// static field tracking is disabled
+							else if (newSource.getAccessPath().isStaticFieldRef()){
+								if(leftValue instanceof StaticFieldRef
+										&& ((StaticFieldRef)leftValue).getField().equals(newSource.getAccessPath().getFirstField())){
 									return Collections.emptySet();
 								}
 								
@@ -635,7 +643,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// staticfieldRefs must be analyzed even if they are not part of the params:
-						if (source.getAccessPath().isStaticFieldRef())
+						if (enableStaticFields && source.getAccessPath().isStaticFieldRef())
 							res.add(source);
 
 						return res;
@@ -757,7 +765,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// easy: static
-						if (newSource.getAccessPath().isStaticFieldRef()) {
+						if (enableStaticFields && newSource.getAccessPath().isStaticFieldRef()) {
 							// Simply pass on the taint
 							Abstraction abs = newSource;
 							registerActivationCallSite(callSite, abs);
@@ -930,7 +938,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										}
 							// If the callee does not read the given value, we also need to pass it on
 							// since we do not propagate it into the callee.
-							if (source.getAccessPath().isStaticFieldRef())
+							if (enableStaticFields && source.getAccessPath().isStaticFieldRef())
 								if (fieldsReadByCallee != null && !isFieldReadByCallee(fieldsReadByCallee, source)
 										&& !isFieldReadByCallee(fieldsWrittenByCallee, source))
 									passOn = true;

@@ -148,7 +148,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								res.add(abs);
 							}
 						}
-						else if (rightValue instanceof StaticFieldRef) {
+						else if (enableStaticFields && rightValue instanceof StaticFieldRef) {
 							StaticFieldRef ref = (StaticFieldRef) rightValue;
 							if (source.getAccessPath().isStaticFieldRef()
 									&& ref.getField().equals(source.getAccessPath().getFirstField())) {
@@ -215,10 +215,11 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				// Trigger the forward solver with every newly-created alias
 				// on a static field. Since we don't have a fixed turn-around
 				// point for static fields, we turn around on every use.
-				for (Abstraction newAbs : res)
-					if (newAbs.getAccessPath().isStaticFieldRef() && newAbs != source)
-						for (Unit u : interproceduralCFG().getPredsOf(defStmt))
-							fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, newAbs));
+				if (enableStaticFields)
+					for (Abstraction newAbs : res)
+						if (newAbs.getAccessPath().isStaticFieldRef() && newAbs != source)
+							for (Unit u : interproceduralCFG().getPredsOf(defStmt))
+								fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, newAbs));
 
 				return res;
 			}
@@ -325,7 +326,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// easy: static
-						if (source.getAccessPath().isStaticFieldRef())
+						if (enableStaticFields && source.getAccessPath().isStaticFieldRef())
 							res.add(source);
 
 						// checks: this/fields

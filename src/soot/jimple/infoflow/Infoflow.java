@@ -75,6 +75,7 @@ public class Infoflow implements IInfoflow {
 	private IInfoflowConfig sootConfig;
 	private boolean stopAfterFirstFlow = false;
 	private boolean enableImplicitFlows = false;
+	private boolean enableStaticFields = true;
 	
 	private boolean inspectSources = true;
 	private boolean inspectSinks = true;
@@ -128,6 +129,11 @@ public class Infoflow implements IInfoflow {
 		this.enableImplicitFlows = enableImplicitFlows;
 	}
 
+	@Override
+	public void setEnableStaticFieldTracking(boolean enableStaticFields) {
+		this.enableStaticFields = enableStaticFields;
+	}
+
 	public void setSootConfig(IInfoflowConfig config){
 		sootConfig = config;
 	}
@@ -163,8 +169,6 @@ public class Infoflow implements IInfoflow {
 	public void computeInfoflow(String path, String entryPoint, List<String> sources, List<String> sinks) {
 		this.computeInfoflow(path, entryPoint, new DefaultSourceSinkManager(sources, sinks));
 	}
-
-
 	
 	/**
 	 * Initializes Soot.
@@ -406,6 +410,7 @@ public class Infoflow implements IInfoflow {
 				forwardProblem.setInspectSources(inspectSources);
 				forwardProblem.setInspectSinks(inspectSinks);
 				forwardProblem.setEnableImplicitFlows(enableImplicitFlows);
+				forwardProblem.setEnableStaticFieldTracking(enableStaticFields);
 				
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);

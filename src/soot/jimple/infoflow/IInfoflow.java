@@ -23,6 +23,16 @@ import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 public interface IInfoflow {
 	
 	/**
+	 * Enumeration containing the callgraph algorithms supported for the use with
+	 * the data flow tracker
+	 */
+	public enum CallgraphAlgorithm {
+		AutomaticSelection,
+		VTA,
+		RTA
+	}
+
+	/**
 	 * Sets the taint wrapper for deciding on taint propagation through black-box
 	 * methods
 	 * @param wrapper The taint wrapper object that decides on how information is
@@ -157,6 +167,12 @@ public interface IInfoflow {
 	 * considered, otherwise false
 	 */
 	public void setEnableStaticFieldTracking(boolean enableStaticFields);
+	
+	/**
+	 * Sets the callgraph algorithm to be used by the data flow tracker
+	 * @param algorithm The callgraph algorithm to be used by the data flow tracker
+	 */
+	public void setCallgraphAlgorithm(CallgraphAlgorithm algorithm);
 
 	/**
 	 * sets the depth of the access path that are tracked

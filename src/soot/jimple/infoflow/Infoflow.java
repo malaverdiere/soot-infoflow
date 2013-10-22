@@ -61,7 +61,7 @@ import soot.options.Options;
  *
  */
 public class Infoflow implements IInfoflow {
-
+	
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static boolean debug = false;
@@ -73,12 +73,15 @@ public class Infoflow implements IInfoflow {
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
 	private IInfoflowConfig sootConfig;
+	
 	private boolean stopAfterFirstFlow = false;
 	private boolean enableImplicitFlows = false;
 	private boolean enableStaticFields = true;
 	
 	private boolean inspectSources = true;
 	private boolean inspectSinks = true;
+	
+	private CallgraphAlgorithm callgraphAlgorithm = CallgraphAlgorithm.AutomaticSelection;
 
     private BiDirICFGFactory icfgFactory = new DefaultBiDiICFGFactory();
     private List<Transform> preProcessors = Collections.emptyList();
@@ -152,6 +155,11 @@ public class Infoflow implements IInfoflow {
     public void setPreProcessors(List<Transform> preprocessors){
         this.preProcessors = preprocessors;
     }
+    
+    @Override
+    public void setCallgraphAlgorithm(CallgraphAlgorithm algorithm) {
+    	this.callgraphAlgorithm = algorithm;
+    }
 	
 	@Override
 	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
@@ -210,10 +218,25 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_soot_classpath(path);
 		Options.v().set_process_dir(new ArrayList<String>(classes));
 
-		if (extraSeed == null || extraSeed.isEmpty())
-			Options.v().setPhaseOption("cg.spark", "on");
-		else
-			Options.v().setPhaseOption("cg.spark", "vta:true");
+		// Configure the callgraph algorithm
+		switch (callgraphAlgorithm) {
+			case AutomaticSelection:
+				if (extraSeed == null || extraSeed.isEmpty())
+					Options.v().setPhaseOption("cg.spark", "on");
+				else
+					Options.v().setPhaseOption("cg.spark", "vta:true");
+				break;
+			case RTA:
+				Options.v().setPhaseOption("cg.spark", "on");
+				Options.v().setPhaseOption("cg.spark", "rta:true");
+				break;
+			case VTA:
+				Options.v().setPhaseOption("cg.spark", "on");
+				Options.v().setPhaseOption("cg.spark", "vta:true");
+				break;
+			default:
+				throw new RuntimeException("Invalid callgraph algorithm");
+		}
 		// do not merge variables (causes problems with PointsToSets)
 		Options.v().setPhaseOption("jb.ulp", "off");
 		
@@ -415,6 +438,7 @@ public class Infoflow implements IInfoflow {
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);
 				backProblem.setZeroValue(forwardProblem.createZeroValue());
+				backProblem.setEnableStaticFieldTracking(enableStaticFields);
 
 				forwardSolver.solve();
 

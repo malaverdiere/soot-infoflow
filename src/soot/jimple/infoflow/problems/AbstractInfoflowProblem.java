@@ -50,7 +50,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected NativeCallHandler ncHandler = new DefaultNativeCallHandler();
 	
 	protected boolean enableImplicitFlows = false;
-	protected boolean enableStaticFields = false;
+	protected boolean enableStaticFields = true;
 
 	protected boolean inspectSources = true;
 	protected boolean inspectSinks = true;

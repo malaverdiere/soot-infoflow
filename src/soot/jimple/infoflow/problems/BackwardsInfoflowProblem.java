@@ -262,7 +262,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
 							assert !source.isAbstractionActive();
-
+							
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
 							// If the next statement assigns the base of the tainted value,

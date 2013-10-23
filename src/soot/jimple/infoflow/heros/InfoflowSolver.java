@@ -65,9 +65,11 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		for (Unit sP : icfg.getStartPointsOf(callee))
 			addIncoming(sP, d3, callSite, d2);
 		
-		for (Abstraction d1: otherSolver.jumpFn.reverseLookup(callSite, d2).keySet()) {
-			if (!d1.getAccessPath().isEmpty() && !d1.getAccessPath().isStaticFieldRef())
-				processEdge(new PathEdge<Unit, Abstraction>(d1, callSite, d2));
+		synchronized (otherSolver.jumpFn) {
+			for (Abstraction d1: otherSolver.jumpFn.reverseLookup(callSite, d2).keySet()) {
+				if (!d1.getAccessPath().isEmpty() && !d1.getAccessPath().isStaticFieldRef())
+					processEdge(new PathEdge<Unit, Abstraction>(d1, callSite, d2));
+			}
 		}
 	}
 	
@@ -81,7 +83,9 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 				if (d4 == zeroValue)
 					d1s.add(d4);
 				else
-					d1s.addAll(jumpFn.reverseLookup(callSite, d4).keySet());
+					synchronized (jumpFn) {
+						d1s.addAll(jumpFn.reverseLookup(callSite, d4).keySet());
+					}
 			
 			return ((SolverReturnFlowFunction) retFunction).computeTargets(d2, d1s);
 		}

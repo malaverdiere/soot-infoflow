@@ -13,12 +13,12 @@ package soot.jimple.infoflow.data;
 
 import heros.solver.PathTrackingIFDSSolver.LinkedNode;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.Stack;
 
 import soot.SootField;
 import soot.SootMethod;
@@ -85,7 +85,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		}
 	}
 	
-	public class SourceContextAndPath extends SourceContext {
+	public class SourceContextAndPath extends SourceContext implements Cloneable {
 		private final List<Stmt> path = new LinkedList<Stmt>();
 		
 		public SourceContextAndPath(Value value, Stmt stmt) {
@@ -94,7 +94,13 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		}
 		
 		public List<Stmt> getPath() {
-			return this.path;
+			return Collections.unmodifiableList(this.path);
+		}
+		
+		public SourceContextAndPath extendPath(Stmt s) {
+			SourceContextAndPath scap = clone();
+			scap.path.add(s);
+			return scap;
 		}
 		
 		@Override
@@ -110,6 +116,11 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		@Override
 		public int hashCode() {
 			return 31 * super.hashCode() + 7 * path.hashCode();
+		}
+		
+		@Override
+		public SourceContextAndPath clone() {
+			return new SourceContextAndPath(getValue(), getStmt());
 		}
 		
 	}
@@ -143,14 +154,16 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 
 	/**
 	 * The postdominators we need to pass in order to leave the current conditional
-	 * branch
+	 * branch. Do not use the synchronized Stack class here to avoid deadlocks.
 	 */
-	private final Stack<UnitContainer> postdominators = new Stack<UnitContainer>();
+	private final List<UnitContainer> postdominators = new ArrayList<UnitContainer>();
 	/**
 	 * The conditional call site. If this site is set, the current code is running
 	 * inside a conditionally-called method.
 	 */
 	private Unit conditionalCallSite = null;
+
+	private Set<SourceContextAndPath> pathCache = null;
 
 	public Abstraction(Value taint, Value currentVal, Stmt currentStmt,
 			boolean exceptionThrown, boolean isActive, Unit activationUnit){
@@ -263,46 +276,48 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	public Set<SourceContextAndPath> getPaths() {
 		return getPath(Collections.<Abstraction>emptySet());
 	}
-	
-	private Set<SourceContextAndPath> pathCache = null;
-	
-	private Set<SourceContextAndPath> getPath(Set<Abstraction> doneSet) {
+		
+	private synchronized Set<SourceContextAndPath> getPath(Set<Abstraction> doneSet) {
 		if (pathCache != null)
 			return pathCache;
-		
-		Set<SourceContextAndPath> pathList = new HashSet<SourceContextAndPath>();
-
+			
 		// If this statement has a context, we create a path context from it
 		if (sourceContext != null) {
 			SourceContextAndPath sourceAndPath = new SourceContextAndPath
 					(sourceContext.value, sourceContext.stmt);
-			pathList.add(sourceAndPath);
-			return pathList;
+			pathCache = Collections.singleton(sourceAndPath);
+			return pathCache;
 		}
+	
+
+		Set<SourceContextAndPath> pathList = new HashSet<SourceContextAndPath>();
 
 		Set<Abstraction> prevDoneSet = new IdentityHashSet<Abstraction>();
 		prevDoneSet.addAll(doneSet);
-		if (prevDoneSet.add(predecessor))
-			pathList.addAll(predecessor.getPath(prevDoneSet));
-		
-		// Extend the paths we have found with the current statement
-		if (currentStmt != null && this.isActive)
-			for (SourceContextAndPath context : pathList)
-				context.getPath().add(currentStmt);
-		
+		if (prevDoneSet.add(predecessor)) {
+			final Set<SourceContextAndPath> predecessorPath = predecessor.getPath(prevDoneSet);
+			for (SourceContextAndPath scap : predecessorPath) {
+				// Extend the paths we have found with the current statement
+				if (currentStmt != null && this.isActive)
+					pathList.add(scap.extendPath(currentStmt));
+				else
+					pathList.add(scap);
+			}
+		}		
+			
 		// Look for neighbors and extend the paths along them
 		for (Abstraction neighbor : neighbors) {
 			// If this neighbor is one of our predecessors, we started running
 			// in circles
 			if (doneSet.contains(neighbor))
 				continue;
-			
+				
 			Set<Abstraction> neighborDoneSet = new IdentityHashSet<Abstraction>();
 			neighborDoneSet.addAll(doneSet);
 			if (!neighborDoneSet.add(neighbor))
 				continue;
-
-			Set<SourceContextAndPath> scaps = neighbor.getPath(neighborDoneSet);
+	
+			final Set<SourceContextAndPath> scaps = neighbor.getPath(neighborDoneSet);
 			for (SourceContextAndPath context : scaps) {
 				boolean found = false;
 				for (SourceContextAndPath contextOld : pathList)
@@ -314,9 +329,9 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 					pathList.add(context);
 			}
 		}
-
-		pathCache = pathList;
-		return pathList;
+	
+		pathCache = Collections.unmodifiableSet(pathList);
+		return pathCache;
 	}
 
 	public boolean isAbstractionActive(){
@@ -364,7 +379,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		assert this.conditionalCallSite == null;
 		
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), conditionalUnit);
-		abs.postdominators.push(postdom);
+		abs.postdominators.add(0, postdom);
 		return abs;
 	}
 	
@@ -393,14 +408,14 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		
 		Abstraction abs = clone();
 		abs.sourceContext = null;
-		abs.postdominators.pop();
+		abs.postdominators.remove(0);
 		return abs;
 	}
 	
 	public UnitContainer getTopPostdominator() {
 		if (this.postdominators.isEmpty())
 			return null;
-		return this.postdominators.peek();
+		return this.postdominators.get(0);
 	}
 	
 	public boolean isTopPostdominator(Unit u) {

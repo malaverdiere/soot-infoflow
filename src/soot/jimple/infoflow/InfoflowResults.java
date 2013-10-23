@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -211,21 +212,19 @@ public class InfoflowResults {
 
 	public void addResult(Value sink, Stmt sinkContext, Value source,
 			Stmt sourceStmt, List<Stmt> propagationPath, Stmt stmt) {
-		List<Stmt> newPropPath = new ArrayList<Stmt>(propagationPath);
+		List<Stmt> newPropPath = new LinkedList<Stmt>(propagationPath);
 		newPropPath.add(stmt);
 		this.addResult(new SinkInfo(sink, sinkContext),
 				new SourceInfo(source, sourceStmt, newPropPath));
 	}
 
-	public void addResult(SinkInfo sink, SourceInfo source) {
+	public synchronized void addResult(SinkInfo sink, SourceInfo source) {
 		Set<SourceInfo> sourceInfo = this.results.get(sink);
 		if (sourceInfo == null) {
 			sourceInfo = new HashSet<SourceInfo>();
 			this.results.put(sink, sourceInfo);
 		}
-		synchronized (sourceInfo) {
-			sourceInfo.add(source);
-		}
+		sourceInfo.add(source);
 	}
 
 	/**

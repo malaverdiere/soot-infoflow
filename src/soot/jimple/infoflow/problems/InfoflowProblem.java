@@ -62,7 +62,6 @@ import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.tagkit.LineNumberTag;
 import soot.tagkit.SourceFileTag;
-import soot.util.SootAnnotationUtils;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 

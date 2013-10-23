@@ -2,7 +2,7 @@ name := "soot-infoflow"
 
 organization := "sable"
 
-version := "20131015"
+version := "20131023"
 
 sbtVersion := "0.13"
 
@@ -14,9 +14,9 @@ ideaExcludeFolders += ".idea_modules"
 
 resolvers += Resolver.mavenLocal
 
-//libraryDependencies += "sable" %% "heros" % "20131010"
+libraryDependencies += "sable" %% "soot" % "20131022"
 
-libraryDependencies += "sable" %% "soot" % "20131015"
+libraryDependencies += "sable" %% "heros" % "20131022"
 
 //Temporary - until Scala extensions are split off
 libraryDependencies += "soot.plugins" % "soot.plugins.entry-points" % "0.0.1-SNAPSHOT"
@@ -32,6 +32,6 @@ libraryDependencies += "junit" % "junit" % "4.11" % "test"
 
 unmanagedSourceDirectories in Compile := Seq(file("src"))
 
-unmanagedSourceDirectories in Test := Seq (file("tests"), file("securibench"))
+unmanagedSourceDirectories in Test := Seq (file("test"))
 
 

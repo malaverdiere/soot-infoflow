@@ -1,11 +1,11 @@
 package soot.jimple.infoflow.aliasing;
 
 import soot.jimple.infoflow.data.AccessPath;
-import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 
 public abstract class AbstractBulkAliasStrategy extends AbstractAliasStrategy {
 
-	public AbstractBulkAliasStrategy(InfoflowCFG cfg) {
+	public AbstractBulkAliasStrategy(IInfoflowCFG cfg) {
 		super(cfg);
 	}
 

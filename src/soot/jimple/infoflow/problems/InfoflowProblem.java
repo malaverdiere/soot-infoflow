@@ -58,13 +58,8 @@ import soot.jimple.infoflow.data.AbstractionAtSink;
 import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler.FlowFunctionType;
-import soot.jimple.infoflow.heros.ConcurrentHashSet;
-import soot.jimple.infoflow.heros.InfoflowCFG;
-import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
-import soot.jimple.infoflow.heros.SolverCallFlowFunction;
-import soot.jimple.infoflow.heros.SolverCallToReturnFlowFunction;
-import soot.jimple.infoflow.heros.SolverNormalFlowFunction;
-import soot.jimple.infoflow.heros.SolverReturnFlowFunction;
+import soot.jimple.infoflow.heros.*;
+import soot.jimple.infoflow.heros.IInfoflowCFG.UnitContainer;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
@@ -100,7 +95,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	    	this.initialSeeds.put(u, Collections.singleton(zeroValue));
     }
 	
-	public InfoflowProblem(InfoflowCFG icfg, ISourceSinkManager sourceSinkManager,
+	public InfoflowProblem(IInfoflowCFG icfg, ISourceSinkManager sourceSinkManager,
 			IAliasingStrategy aliasingStrategy) {
 		super(icfg);
 		this.sourceSinkManager = sourceSinkManager;

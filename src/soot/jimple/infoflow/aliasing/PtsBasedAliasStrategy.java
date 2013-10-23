@@ -24,7 +24,7 @@ import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AccessPath;
-import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Sets;
@@ -39,7 +39,7 @@ public class PtsBasedAliasStrategy extends AbstractBulkAliasStrategy {
 	
 	private final Table<SootMethod, Abstraction, Set<Abstraction>> aliases = HashBasedTable.create();
 
-	public PtsBasedAliasStrategy(InfoflowCFG cfg) {
+	public PtsBasedAliasStrategy(IInfoflowCFG cfg) {
 		super(cfg);
 	}
 

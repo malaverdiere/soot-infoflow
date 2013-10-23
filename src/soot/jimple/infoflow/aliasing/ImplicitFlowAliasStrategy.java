@@ -13,7 +13,7 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AccessPath;
-import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
@@ -26,7 +26,7 @@ import com.google.common.collect.Table;
  */
 public class ImplicitFlowAliasStrategy extends AbstractBulkAliasStrategy {
 
-    public ImplicitFlowAliasStrategy(InfoflowCFG cfg) {
+    public ImplicitFlowAliasStrategy(IInfoflowCFG cfg) {
 		super(cfg);
 	}
 

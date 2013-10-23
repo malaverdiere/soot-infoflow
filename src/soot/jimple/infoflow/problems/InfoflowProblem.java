@@ -54,6 +54,7 @@ import soot.jimple.ThrowStmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.Abstraction.SourceContextAndPath;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.heros.ConcurrentHashSet;
 import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.heros.SolverCallToReturnFlowFunction;
@@ -191,7 +192,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				return isFieldRead;
 			}
 
-
 			private boolean isCallSiteActivatingTaint(Unit callSite, Unit activationUnit) {
 				if (activationUnit == null)
 					return false;
@@ -204,13 +204,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					return false;
 				Unit activationUnit = activationAbs.getActivationUnit();
 				
-				if (!activationUnitsToCallSites.containsKey(activationUnit))
-					activationUnitsToCallSites.put(activationUnit, new HashSet<Unit>());
-				
-				Set<Unit> callSites = activationUnitsToCallSites.get(activationUnit);
-				synchronized (callSites) {
-					return callSites.add(callSite);
+				synchronized (activationUnitsToCallSites) {
+					if (!activationUnitsToCallSites.containsKey(activationUnit))
+						activationUnitsToCallSites.put(activationUnit, new ConcurrentHashSet<Unit>());
 				}
+					
+				Set<Unit> callSites = activationUnitsToCallSites.get(activationUnit);
+				return callSites.add(callSite);
 			}
 
 			@Override

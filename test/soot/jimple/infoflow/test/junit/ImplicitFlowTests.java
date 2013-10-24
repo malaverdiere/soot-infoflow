@@ -315,7 +315,6 @@ public class ImplicitFlowTests extends JUnitTests {
 	}
 
 	@Test
-	@Ignore
 	public void stringClassTest(){
 		long timeBefore = System.nanoTime();
     	System.out.println("Starting stringClassTest...");

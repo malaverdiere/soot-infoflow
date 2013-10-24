@@ -253,5 +253,22 @@ public class AccessPath implements Cloneable {
 				return false;
 		return true;
 	}
+	
+	/**
+	 * Merges this access path with the given one, i.e., adds the fields of the
+	 * given access path to this one.
+	 * @param ap The access path whose fields to append to this one
+	 * @return The new access path
+	 */
+	public AccessPath merge(AccessPath ap) {
+		SootField[] fields = new SootField[this.fields.length + ap.fields.length];
+		for (int i = 0; i < this.fields.length; i++)
+			fields[i] = this.fields[i];
+		if (ap.fields != null && ap.fields.length > 0)
+			for (int i = 0; i < ap.fields.length; i++)
+				fields[this.fields.length + i] = ap.fields[i];
+		
+		return new AccessPath(this.value, fields);
+	}
 
 }

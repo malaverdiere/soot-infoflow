@@ -252,6 +252,34 @@ public class ImplicitFlowTestCode {
 		cm.publish(ImplicitFlowTestCode.staticDataClass.data.data);
 	}
 
+	private static void conditionalStaticAliasAccess() {
+		StaticDataClass data = new StaticDataClass();
+		ImplicitFlowTestCode.staticDataClass = data;
+		data.data.data = 42;
+	}
+
+	public void staticFieldTest4() {
+		int secret = TelephonyManager.getIMEI();
+		if (secret == 42)
+			conditionalStaticAliasAccess();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ImplicitFlowTestCode.staticDataClass.data.data);
+	}
+
+	private static void conditionalStaticAliasAccess(StaticDataClass data) {
+		data.data.data = 42;
+	}
+
+	public void staticFieldTest5() {
+		StaticDataClass data = new StaticDataClass();
+		ImplicitFlowTestCode.staticDataClass = data;
+		int secret = TelephonyManager.getIMEI();
+		if (secret == 42)
+			conditionalStaticAliasAccess(data);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ImplicitFlowTestCode.staticDataClass.data.data);
+	}
+
 	public void integerClassTest() {
 		// Not an implicit flow, but used to produce a hickup with implicit
 		// flows enabled
@@ -409,6 +437,18 @@ public class ImplicitFlowTestCode {
 	
 	private void setVal(B b) {
 		b.a.data = "foo";
+	}
+	
+	public void conditionalAliasingTest2() {
+		B b = new B();
+		b.a = new A();
+		A a = new A();
+		if (TelephonyManager.getIMEI() == 42)
+			setVal(b);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+		a = b.a;
+		System.out.println(a);
 	}
 	
 }

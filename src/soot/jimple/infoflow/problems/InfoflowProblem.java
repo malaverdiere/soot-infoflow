@@ -65,6 +65,9 @@ import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
+
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
 	private InfoflowSolver bSolver; 
@@ -73,6 +76,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
     private final Map<Unit, Set<Unit>> activationUnitsToCallSites = new ConcurrentHashMap<Unit, Set<Unit>>();
+    private final Table<SootMethod, AccessPath, Set<AccessPath>> globalAliases = HashBasedTable.create();
     
 	/**
 	 * Computes the taints produced by a taint wrapper object
@@ -114,15 +118,104 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				// backwards as there might be aliases for the base object
 				if ((enableStaticFields && newAbs.getAccessPath().isStaticFieldRef())
 						|| triggerInaktiveTaintOrReverseFlow(val.getPlainValue(), newAbs))
+					computeAliasTaints(d1, (Stmt) iStmt, val.getPlainValue(), res,
+							interproceduralCFG().getMethodOf(iStmt), newAbs);											
+					/*
 					if (d1.getConditionalCallSite() == null) {
 						Abstraction bwAbs = source.deriveInactiveAbstraction(val);
 						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
 							bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 					}
+					*/
 			}
 		}
 
 		return res;
+	}
+	
+	/**
+	 * Computes the taints for the aliases of a given tainted variable
+	 * @param d1 The context in which the variable has been tainted
+	 * @param src The statement that tainted the variable
+	 * @param targetValue The target value which has been tainted
+	 * @param taintSet The set to which all generated alias taints shall be
+	 * added
+	 * @param method The method containing src
+	 * @param newAbs The newly generated abstraction for the variable taint
+	 */
+	private void computeAliasTaints
+			(final Abstraction d1, final Stmt src,
+			final Value targetValue, Set<Abstraction> taintSet,
+			SootMethod method, Abstraction newAbs) {
+		// If we are not in a conditionally-called method, we run the
+		// full alias analysis algorithm. Otherwise, we use a global
+		// non-flow-sensitive approximation.
+		if (d1.getConditionalCallSite() == null) {
+			Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
+			for (Unit predUnit : interproceduralCFG().getPredsOf(src))
+				bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1,
+						predUnit, bwAbs));
+		} else if (targetValue instanceof InstanceFieldRef) {
+			// Use global aliasing
+			Value baseValue = ((InstanceFieldRef) targetValue).getBase();
+			Set<AccessPath> aliases = globalAliases.get(method, new AccessPath(
+					baseValue));
+			if (aliases != null)
+				for (AccessPath ap : aliases) {
+					Abstraction aliasAbs = newAbs.deriveNewAbstraction(
+							ap.merge(newAbs.getAccessPath()), src);
+					taintSet.add(aliasAbs);
+				}
+		}
+	}
+	
+	/**
+	 * Computes the global non-flow-sensitive alias information for the given
+	 * method
+	 * @param method The method for which to compute the alias information
+	 */
+	private void computeGlobalAliases(SootMethod method) {
+		assert enableImplicitFlows;
+		
+		synchronized (globalAliases) {
+			// If we already know the aliases for the given method, there is nothing
+			// left to be done
+			if (globalAliases.containsRow(method))
+				return;
+	
+			// Find the aliases
+			for (Unit u : method.getActiveBody().getUnits()) {
+				if (!(u instanceof AssignStmt))
+					continue;
+				final AssignStmt assign = (AssignStmt) u;
+				
+				// Aliases can only be generated on the heap
+				if (!(assign.getLeftOp() instanceof FieldRef
+						&& (assign.getRightOp() instanceof FieldRef
+								|| assign.getRightOp() instanceof Local)))
+					if (!(assign.getRightOp() instanceof FieldRef
+							&& (assign.getLeftOp() instanceof FieldRef
+									|| assign.getLeftOp() instanceof Local)))
+						continue;
+				
+				final AccessPath apLeft = new AccessPath(assign.getLeftOp());
+				final AccessPath apRight = new AccessPath(assign.getRightOp());
+
+				Set<AccessPath> mapLeft = globalAliases.get(method, apLeft);
+				if (mapLeft == null) {
+					mapLeft = new HashSet<AccessPath>();
+					globalAliases.put(method, apLeft, mapLeft);
+				}
+				mapLeft.add(apRight);
+
+				Set<AccessPath> mapRight = globalAliases.get(method, apRight);
+				if (mapRight == null) {
+					mapRight = new HashSet<AccessPath>();
+					globalAliases.put(method, apRight, mapRight);
+				}
+				mapLeft.add(apLeft);
+			}
+		}
 	}
 	
 	@Override
@@ -143,7 +236,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					final Value targetValue,
 					Abstraction source,
 					Set<Abstraction> taintSet,
-					boolean cutFirstField) {
+					boolean cutFirstField,
+					SootMethod method) {
 				// Keep the original taint
 				taintSet.add(source);
 				
@@ -163,20 +257,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				else
 					newAbs = source.deriveNewAbstraction(new AccessPath(targetValue), src);
 				taintSet.add(newAbs);
-				
-				// call backwards-check for heap-objects only
-				if (triggerInaktiveTaintOrReverseFlow(targetValue, source) && source.isAbstractionActive()/*
-						&& d1.getConditionalCallSite() == null*/)
+								
+				if (triggerInaktiveTaintOrReverseFlow(targetValue, newAbs) && newAbs.isAbstractionActive()) {
 					// If we overwrite the complete local, there is no need for
 					// a backwards analysis
 					if (!(targetValue.equals(newAbs.getAccessPath().getPlainValue())
-							&& newAbs.getAccessPath().isLocal())) {
-						Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-						for (Unit predUnit : interproceduralCFG().getPredsOf(src))
-							bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
+							&& newAbs.getAccessPath().isLocal()))
+						computeAliasTaints(d1, src, targetValue, taintSet, method, newAbs);
 				}
 			}
-
 			
 			private boolean isFieldReadByCallee(
 					final Set<?> fieldsReadByCallee, Abstraction source) {
@@ -299,7 +388,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								newSource = source.getActiveCopy();
 							else
 								newSource = source;
-														
+																					
 							// If we have a non-empty postdominator stack, we taint
 							// every assignment target
 							if (newSource.getTopPostdominator() != null
@@ -386,7 +475,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												context.getPath(), (Stmt) src);
 								}
 								if(triggerInaktiveTaintOrReverseFlow(leftValue, newSource) || newSource.isAbstractionActive())
-									addTaintViaStmt(d1, (Stmt) src, leftValue, newSource, res, cutFirstField);
+									addTaintViaStmt(d1, (Stmt) src, leftValue, newSource, res, cutFirstField,
+											interproceduralCFG().getMethodOf(src));
 								res.add(newSource);
 								return res;
 							}
@@ -606,6 +696,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						// pseudo abstraction. We do not map parameters if we are handling an
 						// implicit flow anyway.
 						if (source.getAccessPath().isEmpty()) {
+							// Compute the aliases in the callee
+							computeGlobalAliases(dest);
+							
 							if (source.getConditionalCallSite() != null)
 								return Collections.singleton(source);
 							else {
@@ -765,8 +858,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 								assert abs != newSource;		// our source abstraction must be immutable
 								res.add(abs);
-									
+								
+								if(triggerInaktiveTaintOrReverseFlow(leftOp, abs) && !callerD1sConditional)
+									for (Abstraction d1 : callerD1s)
+										computeAliasTaints(d1, (Stmt) callSite, leftOp, res,
+												interproceduralCFG().getMethodOf(callSite), abs);
+								
 								//call backwards-solver:
+									/*
 								if(triggerInaktiveTaintOrReverseFlow(leftOp, abs) && !callerD1sConditional){
 									Abstraction bwAbs = newSource.deriveInactiveAbstraction
 											(newSource.getAccessPath().copyWithNewValue(leftOp));
@@ -775,6 +874,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 									}
 								}
+								*/
 							}
 						}
 
@@ -784,8 +884,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Abstraction abs = newSource;
 							registerActivationCallSite(callSite, abs);
 							res.add(abs);
+
+							for (Abstraction d1 : callerD1s)
+								computeAliasTaints(d1, (Stmt) callSite, null, res,
+										interproceduralCFG().getMethodOf(callSite), abs);
 							
 							// call backwards-check:
+							/*
 							if (newSource.getConditionalCallSite() == null  && !callerD1sConditional) {
 								Abstraction bwAbs = abs.deriveInactiveAbstraction();
 								for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
@@ -793,14 +898,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 								}
 							}
+							*/
 						}
 						
 						// checks: this/params/fields
 
 						// check one of the call params are tainted (not if simple type)
 						Value sourceBase = newSource.getAccessPath().getPlainLocal();
+						{
 						Value originalCallArg = null;
-
 						for (int i = 0; i < callee.getParameterCount(); i++) {
 							if (callee.getActiveBody().getParameterLocal(i).equals(sourceBase)) {
 								if (callSite instanceof Stmt) {
@@ -818,18 +924,27 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									res.add(abs);
 									if (triggerInaktiveTaintOrReverseFlow(originalCallArg, newSource)) {
 										if(triggerInaktiveTaintOrReverseFlow(originalCallArg, abs) && !callerD1sConditional){
+											for (Abstraction d1 : callerD1s)
+												computeAliasTaints(d1, (Stmt) callSite, originalCallArg, res,
+													interproceduralCFG().getMethodOf(callSite), abs);											
+											
+											/*
 											// call backwards-check:
 											Abstraction bwAbs = abs.deriveInactiveAbstraction();
 											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
 												for (Abstraction d1 : callerD1s)
 													bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 											}
+											*/
 										}
 									}
 								}
 							}
 						}
+						}
 
+						
+						{
 						if (!callee.isStatic()) {
 							Local thisL = callee.getActiveBody().getThisLocal();
 							if (thisL.equals(sourceBase)) {
@@ -852,15 +967,21 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											res.add(abs);
 
 											if(triggerInaktiveTaintOrReverseFlow(iIExpr.getBase(), abs) && !callerD1sConditional){
+												for (Abstraction d1 : callerD1s)
+													computeAliasTaints(d1, (Stmt) callSite, iIExpr.getBase(), res,
+															interproceduralCFG().getMethodOf(callSite), abs);											
+												/*
 												Abstraction bwAbs = abs.deriveInactiveAbstraction();
 												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
 													for (Abstraction d1 : callerD1s)
 														bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 												}
+												*/
 											}
 										}
 									}
 								}
+							}
 							}
 						}
 
@@ -972,11 +1093,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									for (Abstraction abs : nativeAbs)
 										if (abs.getAccessPath().isStaticFieldRef()
 												|| triggerInaktiveTaintOrReverseFlow(abs.getAccessPath().getPlainValue(), abs))
+											computeAliasTaints(d1, (Stmt) call, abs.getAccessPath().getPlainValue(), res,
+													interproceduralCFG().getMethodOf(call), abs);
+
+									/*
 											if (d1.getConditionalCallSite() == null) {
 												Abstraction bwAbs = abs.deriveInactiveAbstraction(abs.getAccessPath());
 												for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
 													bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
 											}
+									*/
 								}
 							
 							// Sources can either be assignments like x = getSecret() or

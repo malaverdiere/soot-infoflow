@@ -387,9 +387,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							else
 								newSource = source;
 							
-							if (interproceduralCFG().getMethodOf(src).getName().equals("setVal"))
-								System.out.println("x");
-																					
 							// If we have a non-empty postdominator stack, we taint
 							// every assignment target
 							if (newSource.getTopPostdominator() != null || newSource.getAccessPath().isEmpty()) {
@@ -663,8 +660,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 						
-						if (dest.getName().equals("alias"))
-							System.out.println("x");
 						
 						//if we do not have to look into sources or sinks:
 						if (!inspectSources && isSource)
@@ -689,7 +684,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Abstraction abs = source.deriveConditionalAbstractionCall(src);
 							return Collections.singleton(abs);
 						}
-						else if (source.getTopPostdominator() != null && source.isAbstractionActive())
+						else if (source.getTopPostdominator() != null/* && source.isAbstractionActive()*/)
 								return Collections.emptySet();
 
 						// TODO: use implicit flag
@@ -766,9 +761,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								break;
 							}
 						
-						if (callee.getName().equals("staticFieldAccess"))
-							System.out.println("x");
-						
 						// Activate taint if necessary
 						Abstraction newSource = source;
 						if(!source.isAbstractionActive())
@@ -832,8 +824,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									&& newSource.getAccessPath().isLocal()
 									&& newSource.getAccessPath().getPlainValue().equals(returnStmt.getOp());
 							if (mustTaintSink && isSink
-									&& newSource.isAbstractionActive()
-									&& newSource.getAccessPath().isEmpty())
+									&& newSource.isAbstractionActive())
 								results.add(new AbstractionAtSink(newSource, returnStmt.getOp(), returnStmt));
 						}
 												

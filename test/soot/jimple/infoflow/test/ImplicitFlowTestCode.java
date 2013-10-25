@@ -323,6 +323,7 @@ public class ImplicitFlowTestCode {
 	
 	private class A {
 		String data;
+		int intData;
 	}
 	
 	private class B {
@@ -452,7 +453,8 @@ public class ImplicitFlowTestCode {
 	}
 	
 	private void setVal(A a) {
-		a.data = "foo";
+		String s = "foo";
+		a.data = s;
 	}
 
 	public void afterCallNegativeTest() {
@@ -462,6 +464,20 @@ public class ImplicitFlowTestCode {
 		String s = "foo";
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(s);
+	}
+	
+	public void ifInCalleeTest() {
+		A a = new A();
+		a.intData = 42;
+		if (TelephonyManager.getIMEI() == 42)
+			ifInCallee(a);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+	}
+	
+	public void ifInCallee(A a) {
+		if (a.intData > 0)
+			a.data = "foo";
 	}
 
 }

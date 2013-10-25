@@ -159,11 +159,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 * branch. Do not use the synchronized Stack class here to avoid deadlocks.
 	 */
 	private final List<UnitContainer> postdominators = new ArrayList<UnitContainer>();
-	/**
-	 * The conditional call site. If this site is set, the current code is running
-	 * inside a conditionally-called method.
-	 */
-	private Unit conditionalCallSite = null;
 
 	private Set<SourceContextAndPath> pathCache = null;
 
@@ -187,7 +182,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			sourceContext = null;
 			exceptionThrown = false;
 			activationUnit = null;
-			conditionalCallSite = null;
 		}
 		else {
 			sourceContext = original.sourceContext;
@@ -196,7 +190,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			isActive = original.isActive;
 			postdominators.addAll(original.postdominators);
 			assert this.postdominators.equals(original.postdominators);
-			conditionalCallSite = original.conditionalCallSite;
 		}
 		accessPath = p;
 	}
@@ -208,6 +201,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	public final Abstraction deriveInactiveAbstraction(AccessPath p){
 		Abstraction a = deriveNewAbstraction(p, null);
 		a.isActive = false;
+		a.postdominators.clear();
 		return a;
 	}
 
@@ -384,10 +378,10 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			Stmt conditionalUnit) {
 		if (postdominators.contains(postdom))
 			return this;
-		assert this.conditionalCallSite == null;
 		
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), conditionalUnit);
 		abs.postdominators.add(0, postdom);
+		abs.isActive = true;
 		return abs;
 	}
 	
@@ -395,25 +389,15 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		assert conditionalCallSite != null;
 		
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), (Stmt) conditionalCallSite);
-		abs.conditionalCallSite = conditionalCallSite;
 		abs.isActive = true;
 		
 		// Postdominators are only kept intraprocedurally in order to not
 		// mess up the summary functions with caller-side information
 		abs.postdominators.clear();
 
-//		abs.activationUnit = conditionalCallSite;
-//		abs.activationUnitOnCurrentLevel.clear();
 		return abs;
 	}
 	
-	public final Abstraction leaveConditionalCall() {
-		Abstraction abs = clone();
-		abs.sourceContext = null;
-		abs.conditionalCallSite = null;
-		return abs;
-	}
-
 	public final Abstraction dropTopPostdominator() {
 		if (postdominators.isEmpty())
 			return this;
@@ -444,10 +428,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		return uc.getMethod() == sm;
 	}
 	
-	public Unit getConditionalCallSite() {
-		return this.conditionalCallSite;
-	}
-
 	@Override
 	public Abstraction clone() {
 		return cloneWithPredecessor(null);
@@ -503,11 +483,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			return false;
 		if(!this.postdominators.equals(other.postdominators))
 			return false;
-		if (conditionalCallSite == null) {
-			if (other.conditionalCallSite != null)
-				return false;
-		} else if (!conditionalCallSite.equals(other.conditionalCallSite))
-			return false;
 		return true;
 	}
 	
@@ -524,7 +499,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + postdominators.hashCode();
-			this.hashCode = prime * this.hashCode + ((conditionalCallSite == null) ? 0 : conditionalCallSite.hashCode());
 		}
 		return hashCode;
 	}

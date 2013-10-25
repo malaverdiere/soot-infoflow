@@ -148,7 +148,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		// If we are not in a conditionally-called method, we run the
 		// full alias analysis algorithm. Otherwise, we use a global
 		// non-flow-sensitive approximation.
-		if (d1.getConditionalCallSite() == null) {
+		if (!d1.getAccessPath().isEmpty()) {
 			Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
 			for (Unit predUnit : interproceduralCFG().getPredsOf(src))
 				bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1,
@@ -386,23 +386,17 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								newSource = source.getActiveCopy();
 							else
 								newSource = source;
+							
+							if (interproceduralCFG().getMethodOf(src).getName().equals("setVal"))
+								System.out.println("x");
 																					
 							// If we have a non-empty postdominator stack, we taint
 							// every assignment target
-							if (newSource.getTopPostdominator() != null
-									|| newSource.getConditionalCallSite() != null) {
-								// Only allow "taint alls" to be done on the special-purpose
-								// abstraction in conditionally-called methods to make sure
-								// that it's done once and not over and over again
-								// Aliases must be passed on since the alias may have been
-								// created outside of the conditional call.
-								if (newSource.getConditionalCallSite() != null && !newSource.getAccessPath().isEmpty()
-										&& !(newSource.getAccessPath().isInstanceFieldRef() || newSource.getAccessPath().isStaticFieldRef()))
-									return Collections.emptySet();
+							if (newSource.getTopPostdominator() != null || newSource.getAccessPath().isEmpty()) {
 								// We can skip over all local assignments inside conditionally-
 								// called functions since they are not visible in the caller
 								// anyway
-								if (newSource.getConditionalCallSite() != null && !(leftValue instanceof FieldRef))
+								if (d1 != null && d1.getAccessPath().isEmpty() && !(leftValue instanceof FieldRef))
 									return Collections.singleton(newSource);
 								
 								if (newSource.getAccessPath().isEmpty())
@@ -466,8 +460,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
-								if (isSink && newSource.isAbstractionActive()
-										&& (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty()))
+								if (isSink && newSource.isAbstractionActive() && newSource.getAccessPath().isEmpty())
 									results.add(new AbstractionAtSink(newSource, leftValue, assignStmt));
 								if(triggerInaktiveTaintOrReverseFlow(leftValue, newSource) || newSource.isAbstractionActive())
 									addTaintViaStmt(d1, (Stmt) src, leftValue, newSource, res, cutFirstField,
@@ -548,7 +541,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (returnStmt.getOp().equals(source.getAccessPath().getPlainValue())
 									&& source.isAbstractionActive()
 									&& sourceSinkManager.isSink(returnStmt, interproceduralCFG())
-									&& (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty()))
+									&& source.getAccessPath().isEmpty())
 								results.add(new AbstractionAtSink(source, returnStmt.getOp(), returnStmt));
 
 							return Collections.singleton(source);
@@ -596,16 +589,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									return Collections.emptySet();
 							}
 							
-							Set<Abstraction> res = new HashSet<Abstraction>();
-							res.add(source);
-
 							// If we are in a conditionally-called method, there is no
 							// need to care about further conditionals, since all
 							// assignment targets will be tainted anyway
-							if (source.getConditionalCallSite() != null
-									|| source.getAccessPath().isEmpty())
-								return res;
+							if (source.getAccessPath().isEmpty())
+								return Collections.singleton(source);
 							
+							Set<Abstraction> res = new HashSet<Abstraction>();
+							res.add(source);
+
 							Set<Value> values = new HashSet<Value>();
 							if (condition instanceof Local)
 								values.add(condition);
@@ -624,6 +616,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											&& interproceduralCFG().getMethodOf(postdom.getUnit()) == source.getTopPostdominator().getMethod())) {
 										Abstraction newAbs = source.deriveConditionalAbstractionEnter(postdom, (Stmt) src);
 										res.add(newAbs);
+										break;
 									}
 								}
 							return res;
@@ -670,6 +663,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						}
 						
+						if (dest.getName().equals("alias"))
+							System.out.println("x");
+						
 						//if we do not have to look into sources or sinks:
 						if (!inspectSources && isSource)
 							return Collections.emptySet();
@@ -690,20 +686,17 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.getAccessPath().isEmpty()) {
 							// Compute the aliases in the callee
 							computeGlobalAliases(dest);
-							
-							if (source.getConditionalCallSite() != null)
-								return Collections.singleton(source);
-							else {
-								Abstraction abs = source.deriveConditionalAbstractionCall(src);
-								return Collections.singleton(abs);
-							}
+							Abstraction abs = source.deriveConditionalAbstractionCall(src);
+							return Collections.singleton(abs);
 						}
-						if (source.getConditionalCallSite() != null && !source.getAccessPath().isEmpty())
+						else if (source.getTopPostdominator() != null && source.isAbstractionActive())
+								return Collections.emptySet();
+
+						// TODO: use implicit flag
+						/*
+						if ( && !source.getAccessPath().isEmpty())
 							return Collections.emptySet();
-						if (source.getTopPostdominator() != null && !source.getAccessPath().isEmpty()
-								&& !source.getAccessPath().isInstanceFieldRef()
-								&& (!source.getAccessPath().isStaticFieldRef() || enableStaticFields))
-							return Collections.emptySet();
+						*/
 
 						// Only propagate the taint if the target field is actually read
 						if (source.getAccessPath().isStaticFieldRef())
@@ -768,10 +761,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						boolean callerD1sConditional = false;
 						for (Abstraction d1 : callerD1s)
-							if (d1.getConditionalCallSite() != null) {
+							if (d1.getAccessPath().isEmpty()) {
 								callerD1sConditional = true;
 								break;
 							}
+						
+						if (callee.getName().equals("staticFieldAccess"))
+							System.out.println("x");
 						
 						// Activate taint if necessary
 						Abstraction newSource = source;
@@ -808,7 +804,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						// leave the method since the return value is still assigned
 						// inside the method.
 						boolean insideConditional = newSource.getTopPostdominator() != null
-								|| newSource.getConditionalCallSite() != null;
+								|| newSource.getAccessPath().isEmpty();
 
 						// Check whether we must leave a conditional branch
 						if (newSource.isTopPostdominator(exitStmt) || newSource.isTopPostdominator(callee)) {
@@ -817,11 +813,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (!insideConditional && newSource.getAccessPath().isEmpty() && newSource.getTopPostdominator() == null)
 								return Collections.emptySet();
 						}
-
-						// Check whether we are leaving a conditional call
-						if (newSource.getConditionalCallSite() == callSite)
-// TODO: check me
-							newSource = newSource.leaveConditionalCall();
 
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null)
@@ -842,7 +833,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									&& newSource.getAccessPath().getPlainValue().equals(returnStmt.getOp());
 							if (mustTaintSink && isSink
 									&& newSource.isAbstractionActive()
-									&& (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty()))
+									&& newSource.getAccessPath().isEmpty())
 								results.add(new AbstractionAtSink(newSource, returnStmt.getOp(), returnStmt));
 						}
 												
@@ -857,11 +848,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							DefinitionStmt defnStmt = (DefinitionStmt) callSite;
 							Value leftOp = defnStmt.getLeftOp();
 								
-							boolean taintReturnValue = insideConditional && (newSource.getConditionalCallSite() == null
-									|| retLocal instanceof FieldRef);
-							taintReturnValue |= retLocal.equals(newSource.getAccessPath().getPlainLocal());
-							taintReturnValue &= (triggerInaktiveTaintOrReverseFlow(leftOp, newSource) || newSource.isAbstractionActive());
-							if (taintReturnValue) {
+							if (insideConditional || retLocal.equals(newSource.getAccessPath().getPlainLocal())) {
 								Abstraction abs = newSource.deriveNewAbstraction
 										(newSource.getAccessPath().copyWithNewValue(leftOp), (Stmt) exitStmt);
 								registerActivationCallSite(callSite, abs);
@@ -1008,7 +995,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							
 							// Implicit flows: taint return value
 							if (call instanceof DefinitionStmt && (newSource.getTopPostdominator() != null
-									|| newSource.getConditionalCallSite() != null)) {
+									|| newSource.getAccessPath().isEmpty())) {
 								Value leftVal = ((DefinitionStmt) call).getLeftOp();
 								Abstraction abs = newSource.deriveNewAbstraction(new AccessPath(leftVal), (Stmt) call);
 								res.add(abs);
@@ -1049,9 +1036,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										&& !isFieldReadByCallee(fieldsWrittenByCallee, source))
 									passOn = true;
 							// Implicit taints are always passed over conditionally called methods
-							passOn |= source.getTopPostdominator() != null
-									|| source.getConditionalCallSite() != null
-									|| source.getAccessPath().isEmpty();
+							passOn |= source.getTopPostdominator() != null || source.getAccessPath().isEmpty();
 							if (passOn)
 								res.add(newSource);
 							
@@ -1086,9 +1071,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									res.remove(zeroValue);
 								}
 							}
-
+							
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
-							if (isSink && (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty())) {
+							if (isSink) {
 								// If we are inside a conditional branch, we consider every sink call a leak
 								boolean taintedParam = (newSource.getTopPostdominator() != null
 											|| newSource.getAccessPath().isEmpty())

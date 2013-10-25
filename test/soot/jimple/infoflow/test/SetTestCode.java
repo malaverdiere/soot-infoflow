@@ -41,10 +41,10 @@ public class SetTestCode {
 		String tainted = TelephonyManager.getDeviceId();
 		HashSet<String> set = new HashSet<String>();
 		set.add(tainted);
-		boolean x = set.contains(tainted);
+//		boolean x = set.contains(tainted);
 		ConnectionManager cm = new ConnectionManager();
-		cm.publish(String.valueOf(x));
-		
+//		cm.publish(String.valueOf(x));
+		cm.publish(tainted);
 	}
 	
 	public void concreteWriteReadTreePos0Test(){

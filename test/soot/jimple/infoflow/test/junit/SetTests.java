@@ -40,7 +40,7 @@ public class SetTests extends JUnitTests {
     }
     
     @Test(timeout=300000)
-    @Ignore		// implicit flow, takes forever
+	@Ignore		// implicit flow, takes forever
     public void containsTest(){
     	System.out.println("Running test case containsTest...");
     	Infoflow infoflow = initInfoflow();

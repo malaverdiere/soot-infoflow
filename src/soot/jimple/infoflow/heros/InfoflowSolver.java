@@ -62,15 +62,22 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 	}
 	
 	public void injectContext(InfoflowSolver otherSolver, SootMethod callee, Abstraction d3, Unit callSite, Abstraction d2) {
-		for (Unit sP : icfg.getStartPointsOf(callee))
-			addIncoming(sP, d3, callSite, d2);
-		
-		synchronized (otherSolver.jumpFn) {
-			for (Abstraction d1: otherSolver.jumpFn.reverseLookup(callSite, d2).keySet()) {
-				if (!d1.getAccessPath().isEmpty() && !d1.getAccessPath().isStaticFieldRef())
-					processEdge(new PathEdge<Unit, Abstraction>(d1, callSite, d2));
-			}
+		synchronized (incoming) {
+			for (Unit sP : icfg.getStartPointsOf(callee))
+				addIncoming(sP, d3, callSite, d2);
 		}
+		
+		// First, get a list of the other solver's jump functions.
+		// Then release the lock on otherSolver.jumpFn before doing
+		// anything that locks our own jumpFn.
+		final Set<Abstraction> otherAbstractions;
+		synchronized (otherSolver.jumpFn) {
+			otherAbstractions = new HashSet<Abstraction>
+					(otherSolver.jumpFn.reverseLookup(callSite, d2).keySet());
+		}
+		for (Abstraction d1: otherAbstractions)
+			if (!d1.getAccessPath().isEmpty() && !d1.getAccessPath().isStaticFieldRef())
+				processEdge(new PathEdge<Unit, Abstraction>(d1, callSite, d2));
 	}
 	
 	@Override

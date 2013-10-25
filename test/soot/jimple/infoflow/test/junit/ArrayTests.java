@@ -21,7 +21,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class ArrayTests extends JUnitTests {
 
-	  @Test
+	  @Test(timeout=300000)
 	    public void arrayReadWritePos0Test(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -30,7 +30,7 @@ public class ArrayTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);	
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void arrayReadWritePos1Test(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -39,7 +39,7 @@ public class ArrayTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);		
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void arrayStaticTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -48,7 +48,7 @@ public class ArrayTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);		
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void arrayTransientTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -57,7 +57,7 @@ public class ArrayTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);		
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void arrayGlobalTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -67,7 +67,7 @@ public class ArrayTests extends JUnitTests {
 	    }
 
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void arrayCopyTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -76,7 +76,7 @@ public class ArrayTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void arrayAsFieldOfClassTest(){
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -85,7 +85,7 @@ public class ArrayTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void arrayAsListTest(){
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -94,7 +94,7 @@ public class ArrayTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void concreteNegativeTest(){
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();

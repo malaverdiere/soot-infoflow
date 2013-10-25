@@ -21,7 +21,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class MapTests extends JUnitTests {
 
-    @Test
+    @Test(timeout=300000)
     public void mapPos0Test(){
     	Infoflow infoflow = initInfoflow();
 
@@ -36,7 +36,7 @@ public class MapTests extends JUnitTests {
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mapPos1Test(){
     	Infoflow infoflow = initInfoflow();
 
@@ -51,7 +51,7 @@ public class MapTests extends JUnitTests {
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
 
-    @Test
+    @Test(timeout=300000)
     public void concreteMapPos0Test(){
     	Infoflow infoflow = initInfoflow();
 
@@ -66,7 +66,7 @@ public class MapTests extends JUnitTests {
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concreteLinkedMapPos0Test(){
     	Infoflow infoflow = initInfoflow();
 
@@ -81,7 +81,7 @@ public class MapTests extends JUnitTests {
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
 
-    @Test
+    @Test(timeout=300000)
     public void concreteMapPos1Test(){
     	Infoflow infoflow = initInfoflow();
     	
@@ -96,7 +96,7 @@ public class MapTests extends JUnitTests {
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concreteMapTest2(){
     	Infoflow infoflow = initInfoflow();
     	
@@ -111,7 +111,7 @@ public class MapTests extends JUnitTests {
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mapIteratorTest(){
     	Infoflow infoflow = initInfoflow();
     	
@@ -126,7 +126,7 @@ public class MapTests extends JUnitTests {
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mapEntryTest(){
     	Infoflow infoflow = initInfoflow();
     	
@@ -141,7 +141,7 @@ public class MapTests extends JUnitTests {
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concreteTableTest(){
     	Infoflow infoflow = initInfoflow();
     	
@@ -156,7 +156,7 @@ public class MapTests extends JUnitTests {
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concreteNegativeTest(){
     	Infoflow infoflow = initInfoflow();
     	

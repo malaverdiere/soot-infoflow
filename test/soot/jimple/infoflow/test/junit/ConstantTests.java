@@ -21,7 +21,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class ConstantTests extends JUnitTests {
 	
-	  @Test
+	  @Test(timeout=300000)
 	    public void easyConstantFieldTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -30,7 +30,7 @@ public class ConstantTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);	
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void easyConstantVarTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -39,7 +39,7 @@ public class ConstantTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);	
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void constantArrayTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -48,7 +48,7 @@ public class ConstantTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);	
 	    }
 
-	  @Test
+	  @Test(timeout=300000)
 	    public void constantStaticArrayTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -57,7 +57,7 @@ public class ConstantTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);	
 	    }
 
-	  @Test
+	  @Test(timeout=300000)
 	    public void constantFieldArrayTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -66,7 +66,7 @@ public class ConstantTests extends JUnitTests {
 			checkInfoflow(infoflow, 2);	
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void constantFieldTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();

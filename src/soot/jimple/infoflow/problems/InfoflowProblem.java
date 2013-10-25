@@ -51,8 +51,10 @@ import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
 import soot.jimple.ThrowStmt;
+import soot.jimple.infoflow.InfoflowResults;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.Abstraction.SourceContextAndPath;
+import soot.jimple.infoflow.data.AbstractionAtSink;
 import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.heros.ConcurrentHashSet;
 import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
@@ -78,6 +80,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
     private final Map<Unit, Set<Unit>> activationUnitsToCallSites = new ConcurrentHashMap<Unit, Set<Unit>>();
     private final Table<SootMethod, AccessPath, Set<AccessPath>> globalAliases = HashBasedTable.create();
     
+	protected final Set<AbstractionAtSink> results = new HashSet<AbstractionAtSink>();
+	protected InfoflowResults infoflowResults = null;
+
 	/**
 	 * Computes the taints produced by a taint wrapper object
 	 * @param d1 The context (abstraction at the method's start node)
@@ -120,13 +125,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						|| triggerInaktiveTaintOrReverseFlow(val.getPlainValue(), newAbs))
 					computeAliasTaints(d1, (Stmt) iStmt, val.getPlainValue(), res,
 							interproceduralCFG().getMethodOf(iStmt), newAbs);											
-					/*
-					if (d1.getConditionalCallSite() == null) {
-						Abstraction bwAbs = source.deriveInactiveAbstraction(val);
-						for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
-							bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
-					}
-					*/
 			}
 		}
 
@@ -469,11 +467,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
 								if (isSink && newSource.isAbstractionActive()
-										&& (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty())) {
-									for (SourceContextAndPath context : newSource.getPaths())
-										results.addResult(leftValue, assignStmt, context.getValue(), context.getStmt(),
-												context.getPath(), (Stmt) src);
-								}
+										&& (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty()))
+									results.add(new AbstractionAtSink(newSource, leftValue, assignStmt));
 								if(triggerInaktiveTaintOrReverseFlow(leftValue, newSource) || newSource.isAbstractionActive())
 									addTaintViaStmt(d1, (Stmt) src, leftValue, newSource, res, cutFirstField,
 											interproceduralCFG().getMethodOf(src));
@@ -553,11 +548,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (returnStmt.getOp().equals(source.getAccessPath().getPlainValue())
 									&& source.isAbstractionActive()
 									&& sourceSinkManager.isSink(returnStmt, interproceduralCFG())
-									&& (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty())) {
-								for (SourceContextAndPath context : source.getPaths())
-									results.addResult(returnStmt.getOp(), returnStmt, context.getValue(),
-											context.getStmt(), context.getPath(), (Stmt) src);
-							}
+									&& (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty()))
+								results.add(new AbstractionAtSink(source, returnStmt.getOp(), returnStmt));
 
 							return Collections.singleton(source);
 						}
@@ -771,9 +763,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					public Set<Abstraction> computeTargets(Abstraction source, Set<Abstraction> callerD1s) {
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
-						if (source.equals(zeroValue)) {
+						if (source.equals(zeroValue))
 							return Collections.emptySet();
-						}
 
 						boolean callerD1sConditional = false;
 						for (Abstraction d1 : callerD1s)
@@ -789,6 +780,30 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								if (callSite.equals(source.getActivationUnit()) || isCallSiteActivatingTaint(callSite, source.getActivationUnit()))
 									newSource = source.getActiveCopy();
 						
+						// Empty access paths are never propagated over return edges
+						if (source.getAccessPath().isEmpty()) {
+							// If we return a constant, we must taint it
+							if (returnStmt != null && returnStmt.getOp() instanceof Constant)
+								if (callSite instanceof DefinitionStmt) {
+									DefinitionStmt def = (DefinitionStmt) callSite;
+									Abstraction abs = newSource.deriveNewAbstraction
+											(newSource.getAccessPath().copyWithNewValue(def.getLeftOp()), (Stmt) exitStmt);
+									registerActivationCallSite(callSite, abs);
+
+									HashSet<Abstraction> res = new HashSet<Abstraction>();
+									res.add(abs);
+									
+									if(triggerInaktiveTaintOrReverseFlow(def.getLeftOp(), abs) && !callerD1sConditional)
+										for (Abstraction d1 : callerD1s)
+											computeAliasTaints(d1, (Stmt) callSite, def.getLeftOp(), res,
+													interproceduralCFG().getMethodOf(callSite), abs);
+									
+									return res;
+								}
+							
+							return Collections.emptySet();
+						}
+
 						// Are we still inside a conditional? We check this before we
 						// leave the method since the return value is still assigned
 						// inside the method.
@@ -804,11 +819,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 
 						// Check whether we are leaving a conditional call
-						if (newSource.getConditionalCallSite() == callSite) {
+						if (newSource.getConditionalCallSite() == callSite)
+// TODO: check me
 							newSource = newSource.leaveConditionalCall();
-							if (newSource.getAccessPath().isEmpty())
-								return Collections.emptySet();
-						}
 
 						//if abstraction is not active and activeStmt was in this method, it will not get activated = it can be removed:
 						if(!newSource.isAbstractionActive() && newSource.getActivationUnit() != null)
@@ -829,11 +842,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									&& newSource.getAccessPath().getPlainValue().equals(returnStmt.getOp());
 							if (mustTaintSink && isSink
 									&& newSource.isAbstractionActive()
-									&& (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty())) {
-								for (SourceContextAndPath context : newSource.getPaths())
-									results.addResult(returnStmt.getOp(), returnStmt, context.getValue(),
-											context.getStmt(), context.getPath(), (Stmt) exitStmt);
-							}
+									&& (newSource.getConditionalCallSite() == null || newSource.getAccessPath().isEmpty()))
+								results.add(new AbstractionAtSink(newSource, returnStmt.getOp(), returnStmt));
 						}
 												
 						// If we have no caller, we have nowhere to propagate. This
@@ -863,18 +873,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									for (Abstraction d1 : callerD1s)
 										computeAliasTaints(d1, (Stmt) callSite, leftOp, res,
 												interproceduralCFG().getMethodOf(callSite), abs);
-								
-								//call backwards-solver:
-									/*
-								if(triggerInaktiveTaintOrReverseFlow(leftOp, abs) && !callerD1sConditional){
-									Abstraction bwAbs = newSource.deriveInactiveAbstraction
-											(newSource.getAccessPath().copyWithNewValue(leftOp));
-									for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
-										for (Abstraction d1 : callerD1s)
-											bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
-									}
-								}
-								*/
 							}
 						}
 
@@ -888,17 +886,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							for (Abstraction d1 : callerD1s)
 								computeAliasTaints(d1, (Stmt) callSite, null, res,
 										interproceduralCFG().getMethodOf(callSite), abs);
-							
-							// call backwards-check:
-							/*
-							if (newSource.getConditionalCallSite() == null  && !callerD1sConditional) {
-								Abstraction bwAbs = abs.deriveInactiveAbstraction();
-								for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
-									for (Abstraction d1 : callerD1s)
-										bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
-								}
-							}
-							*/
 						}
 						
 						// checks: this/params/fields
@@ -927,15 +914,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											for (Abstraction d1 : callerD1s)
 												computeAliasTaints(d1, (Stmt) callSite, originalCallArg, res,
 													interproceduralCFG().getMethodOf(callSite), abs);											
-											
-											/*
-											// call backwards-check:
-											Abstraction bwAbs = abs.deriveInactiveAbstraction();
-											for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
-												for (Abstraction d1 : callerD1s)
-													bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
-											}
-											*/
 										}
 									}
 								}
@@ -970,13 +948,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												for (Abstraction d1 : callerD1s)
 													computeAliasTaints(d1, (Stmt) callSite, iIExpr.getBase(), res,
 															interproceduralCFG().getMethodOf(callSite), abs);											
-												/*
-												Abstraction bwAbs = abs.deriveInactiveAbstraction();
-												for (Unit predUnit : interproceduralCFG().getPredsOf(callSite)) {
-													for (Abstraction d1 : callerD1s)
-														bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
-												}
-												*/
 											}
 										}
 									}
@@ -1079,7 +1050,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									passOn = true;
 							// Implicit taints are always passed over conditionally called methods
 							passOn |= source.getTopPostdominator() != null
-									|| source.getConditionalCallSite() != null;
+									|| source.getConditionalCallSite() != null
+									|| source.getAccessPath().isEmpty();
 							if (passOn)
 								res.add(newSource);
 							
@@ -1095,14 +1067,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 												|| triggerInaktiveTaintOrReverseFlow(abs.getAccessPath().getPlainValue(), abs))
 											computeAliasTaints(d1, (Stmt) call, abs.getAccessPath().getPlainValue(), res,
 													interproceduralCFG().getMethodOf(call), abs);
-
-									/*
-											if (d1.getConditionalCallSite() == null) {
-												Abstraction bwAbs = abs.deriveInactiveAbstraction(abs.getAccessPath());
-												for (Unit predUnit : interproceduralCFG().getPredsOf(iStmt))
-													bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, predUnit, bwAbs));
-											}
-									*/
 								}
 							
 							// Sources can either be assignments like x = getSecret() or
@@ -1126,7 +1090,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
 							if (isSink && (source.getConditionalCallSite() == null || source.getAccessPath().isEmpty())) {
 								// If we are inside a conditional branch, we consider every sink call a leak
-								boolean taintedParam = newSource.getTopPostdominator() != null
+								boolean taintedParam = (newSource.getTopPostdominator() != null
+											|| newSource.getAccessPath().isEmpty())
 										&& newSource.isAbstractionActive();
 								// If the base object is tainted, we also consider the "code" associated
 								// with the object's class as tainted.
@@ -1139,19 +1104,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 
-								if (newSource.isAbstractionActive() && taintedParam) {
-									for (SourceContextAndPath context : newSource.getPaths())
-										results.addResult(iStmt.getInvokeExpr(), iStmt, context.getValue(),
-												context.getStmt(), context.getPath(), (Stmt) call);
-								}
+								if (newSource.isAbstractionActive() && taintedParam)
+									results.add(new AbstractionAtSink(newSource, iStmt.getInvokeExpr(), iStmt));
 								// if the base object which executes the method is tainted the sink is reached, too.
 								if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 									InstanceInvokeExpr vie = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-									if (newSource.isAbstractionActive() && vie.getBase().equals(newSource.getAccessPath().getPlainValue())) {
-										for (SourceContextAndPath context : newSource.getPaths())
-											results.addResult(iStmt.getInvokeExpr(), iStmt, context.getValue(),
-													context.getStmt(), context.getPath(), (Stmt) call);
-									}
+									if (newSource.isAbstractionActive() && vie.getBase().equals(newSource.getAccessPath().getPlainValue()))
+										results.add(new AbstractionAtSink(newSource, iStmt.getInvokeExpr(), iStmt));
 								}
 							}
 							return res;
@@ -1192,16 +1151,16 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		this(icfg, new DefaultSourceSinkManager(sourceList, sinkList));
 	}
 
-	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, ISourceSinkManager sourceSinkManager) {
-		super(icfg);
-		this.sourceSinkManager = sourceSinkManager;
-	}
-
 	public InfoflowProblem(ISourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds) {
 	    this(new JimpleBasedBiDiICFG(), mySourceSinkManager);
 	    for (Unit u : analysisSeeds)
 	    	this.initialSeeds.put(u, Collections.singleton(zeroValue));
     }
+
+	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, ISourceSinkManager sourceSinkManager) {
+		super(icfg);
+		this.sourceSinkManager = sourceSinkManager;
+	}
 
 	public void setBackwardSolver(InfoflowSolver backwardSolver){
 		bSolver = backwardSolver;
@@ -1210,6 +1169,28 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 	@Override
 	public boolean autoAddZero() {
 		return false;
+	}
+
+	/**
+	 * Gets the results of the data flow analysis
+	 * @return The paths between sources and sinks found by the data flow
+	 * analysis
+	 */
+    public InfoflowResults getResults(){
+    	if (this.infoflowResults != null)
+    		return this.infoflowResults;
+    	
+    	logger.debug("Running path reconstruction");
+    	InfoflowResults results = new InfoflowResults();
+    	for (AbstractionAtSink abs : this.results)
+    		for (SourceContextAndPath context : abs.getAbstraction().getPaths())
+				results.addResult(abs.getSinkValue(), abs.getSinkStmt(),
+						context.getValue(), context.getStmt(),
+						context.getPath(), abs.getSinkStmt());
+    	logger.debug("Path reconstruction done.");
+    	
+    	this.infoflowResults = results;
+	    return results;
 	}
 
 }

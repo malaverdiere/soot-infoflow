@@ -25,7 +25,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class OperationSemanticTests extends JUnitTests{
 
-	@Test
+	@Test(timeout=300000)
     public void baseTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

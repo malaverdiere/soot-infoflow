@@ -21,7 +21,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class VectorTests extends JUnitTests {
 
-	@Test
+	@Test(timeout=300000)
 	public void vectorRWPos0Test() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
@@ -30,7 +30,7 @@ public class VectorTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void vectorRWPos1Test() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
@@ -39,7 +39,7 @@ public class VectorTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 		}
 
-	@Test
+	@Test(timeout=300000)
 	public void vIteratorPos0Test() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
@@ -48,7 +48,7 @@ public class VectorTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 	}
 	
-	@Test
+	@Test(timeout=300000)
 	public void vIteratorPos1Test() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
@@ -57,7 +57,7 @@ public class VectorTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void concreteVIteratorTest() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
@@ -66,7 +66,7 @@ public class VectorTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void concreteNegativeTest() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();

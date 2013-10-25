@@ -22,7 +22,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class SetTests extends JUnitTests {
     
-    @Test
+    @Test(timeout=300000)
     public void concreteHashSetTest(){
     	System.out.println("Running test case concreteHashSetTest...");
     	Infoflow infoflow = initInfoflow();
@@ -39,11 +39,15 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case concreteHashSetTest done.");
     }
     
-    @Test
-    @Ignore		// implicit flow
+    @Test(timeout=300000)
+    @Ignore		// implicit flow, takes forever
     public void containsTest(){
     	System.out.println("Running test case containsTest...");
     	Infoflow infoflow = initInfoflow();
+    	infoflow.setEnableImplicitFlows(true);
+    	infoflow.setEnableStaticFieldTracking(false);
+    	infoflow.setAccessPathLength(1);
+    	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void containsTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
@@ -51,8 +55,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case containsTest done.");
     }
     
-    @Test
-    @Ignore	// takes forever
+    @Test(timeout=300000)
     public void concreteTreeSetPos0Test(){
     	System.out.println("Running test case concreteTreeSetPos0Test...");
     	Infoflow infoflow = initInfoflow();
@@ -69,8 +72,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case concreteTreeSetPos0Test done.");
     }
     
-    @Test
-    @Ignore	// takes forever
+    @Test(timeout=300000)
     public void concreteTreeSetPos1Test(){
     	System.out.println("Running test case concreteTreeSetPos1Test...");
     	Infoflow infoflow = initInfoflow();
@@ -87,7 +89,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case concreteTreeSetPos1Test done.");
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concreteLinkedSetPos0Test(){
     	System.out.println("Running test case concreteLinkedSetPos0Test...");
     	Infoflow infoflow = initInfoflow();
@@ -104,7 +106,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case concreteLinkedSetPos0Test done.");
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concreteLinkedSetPos1Test(){
     	System.out.println("Running test case concreteLinkedSetPos1Test...");
     	Infoflow infoflow = initInfoflow();
@@ -121,7 +123,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case concreteLinkedSetPos1Test done.");
     }
     
-    @Test
+    @Test(timeout=300000)
     public void setTest(){
     	System.out.println("Running test case setTest...");
     	Infoflow infoflow = initInfoflow();
@@ -138,7 +140,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case setTest done.");
     }
     
-    @Test
+    @Test(timeout=300000)
     public void setIteratorTest(){
     	System.out.println("Running test case setIteratorTest...");
     	Infoflow infoflow = initInfoflow();
@@ -155,8 +157,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case setIteratorTest done.");
     }
     
-    @Test
-    @Ignore		// runs forever
+    @Test(timeout=300000)
     public void concreteNegativeTest(){
     	System.out.println("Running test case concreteNegativeTest...");
     	Infoflow infoflow = initInfoflow();

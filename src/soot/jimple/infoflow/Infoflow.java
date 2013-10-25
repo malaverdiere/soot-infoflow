@@ -441,6 +441,9 @@ public class Infoflow implements IInfoflow {
 				backProblem.setTaintWrapper(taintWrapper);
 				backProblem.setZeroValue(forwardProblem.createZeroValue());
 				backProblem.setEnableStaticFieldTracking(enableStaticFields);
+				
+				if (!enableStaticFields)
+					logger.warn("Static field tracking is disabled, results may be incomplete");
 
 				forwardSolver.solve();
 

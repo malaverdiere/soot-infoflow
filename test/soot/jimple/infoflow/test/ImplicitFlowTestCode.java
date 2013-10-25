@@ -451,4 +451,17 @@ public class ImplicitFlowTestCode {
 		System.out.println(a);
 	}
 	
+	private void setVal(A a) {
+		a.data = "foo";
+	}
+
+	public void afterCallNegativeTest() {
+		A a = new A();
+		if (TelephonyManager.getIMEI() == 42)
+			setVal(a);
+		String s = "foo";
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(s);
+	}
+
 }

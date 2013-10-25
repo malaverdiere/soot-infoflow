@@ -41,7 +41,7 @@ public class InFunctionTests extends JUnitTests {
     	return infoflow;
 	}
 
-    @Test
+    @Test(timeout=300000)
     public void inFunctionTest1(){
     	Infoflow infoflow = initInfoflow();
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode1(java.lang.String)>";
@@ -54,7 +54,7 @@ public class InFunctionTests extends JUnitTests {
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER));
     }
 
-    @Test
+    @Test(timeout=300000)
     public void inFunctionTest2(){
     	Infoflow infoflow = initInfoflow();
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode2(java.lang.String)>";
@@ -67,7 +67,7 @@ public class InFunctionTests extends JUnitTests {
 		Assert.assertTrue(infoflow.getResults().getResults().isEmpty());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void inFunctionTest3(){
     	Infoflow infoflow = initInfoflow();
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode3(java.lang.String)>";
@@ -80,7 +80,7 @@ public class InFunctionTests extends JUnitTests {
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER));
     }
 
-    @Test
+    @Test(timeout=300000)
     public void inFunctionTest4(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoint = new ArrayList<String>();
@@ -96,7 +96,7 @@ public class InFunctionTests extends JUnitTests {
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN_R5, SOURCE_STRING_PARAMETER2));
     }
 
-    @Test
+    @Test(timeout=300000)
     public void parameterFlowTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoint = new ArrayList<String>();

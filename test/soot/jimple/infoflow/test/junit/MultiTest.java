@@ -24,7 +24,7 @@ public class MultiTest extends JUnitTests {
 
 	private static final String SOURCE_STRING_PWD = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>";
 
-    @Test
+    @Test(timeout=300000)
     public void multiTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -34,7 +34,7 @@ public class MultiTest extends JUnitTests {
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
     }
 
-    @Test
+    @Test(timeout=300000)
     public void multiTest2(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -44,7 +44,7 @@ public class MultiTest extends JUnitTests {
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
     }
 
-    @Test
+    @Test(timeout=300000)
     public void ifPathTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -55,7 +55,7 @@ public class MultiTest extends JUnitTests {
 		Assert.assertEquals(2, infoflow.getResults().size());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void ifPathTest2(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -66,7 +66,7 @@ public class MultiTest extends JUnitTests {
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void ifPathTest3(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -77,7 +77,7 @@ public class MultiTest extends JUnitTests {
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void ifPathTest4(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -88,7 +88,7 @@ public class MultiTest extends JUnitTests {
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void loopPathTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -99,7 +99,7 @@ public class MultiTest extends JUnitTests {
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void hashTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -110,7 +110,7 @@ public class MultiTest extends JUnitTests {
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void shiftTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

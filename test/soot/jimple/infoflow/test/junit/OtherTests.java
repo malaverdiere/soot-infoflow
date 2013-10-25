@@ -23,7 +23,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class OtherTests extends JUnitTests{
 
-	@Test
+	@Test(timeout=300000)
     public void fieldTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -32,7 +32,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 2);
     }
 	
-	@Test
+	@Test(timeout=300000)
     public void defaultlifecycleTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -42,7 +42,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void ConstructorFinalClassTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -51,7 +51,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void ptsTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -60,7 +60,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void negativeTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -69,7 +69,7 @@ public class OtherTests extends JUnitTests{
 		negativeCheckInfoflow(infoflow);	
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mailTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -78,7 +78,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mailNegativeTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -87,7 +87,7 @@ public class OtherTests extends JUnitTests{
 		negativeCheckInfoflow(infoflow);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mail2Test(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -96,7 +96,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mail2TestNegative(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -105,7 +105,7 @@ public class OtherTests extends JUnitTests{
 		negativeCheckInfoflow(infoflow);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mail3Test(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -114,7 +114,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mail3NegativeTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -123,7 +123,7 @@ public class OtherTests extends JUnitTests{
 		negativeCheckInfoflow(infoflow);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mail4(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -132,7 +132,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mail5(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -141,17 +141,16 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void mail6(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void method6()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);
-    } 
-   
+    }
     
-    @Test
+    @Test(timeout=300000)
     public void innerClassTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -160,7 +159,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 1);
     }
 
-    @Test
+    @Test(timeout=300000)
     public void multiCallTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -169,7 +168,7 @@ public class OtherTests extends JUnitTests{
 		checkInfoflow(infoflow, 2);
     }
 
-    @Test
+    @Test(timeout=300000)
     public void passOverTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -179,7 +178,7 @@ public class OtherTests extends JUnitTests{
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void overwriteTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -188,7 +187,7 @@ public class OtherTests extends JUnitTests{
 		negativeCheckInfoflow(infoflow);
     }
 
-    @Test
+    @Test(timeout=300000)
     public void loopTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -198,7 +197,7 @@ public class OtherTests extends JUnitTests{
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void dataObjectTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -208,7 +207,7 @@ public class OtherTests extends JUnitTests{
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
     
-    @Test
+    @Test(timeout=300000)
     public void paramTransferTest(){
     	taintWrapper = true;
     	Infoflow infoflow = initInfoflow();
@@ -219,7 +218,7 @@ public class OtherTests extends JUnitTests{
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
-    @Test
+    @Test(timeout=300000)
     public void objectSensitiveTest1(){
     	taintWrapper = true;
     	Infoflow infoflow = initInfoflow();
@@ -230,7 +229,7 @@ public class OtherTests extends JUnitTests{
 		
     }
 
-    @Test
+    @Test(timeout=300000)
     public void accessPathTest(){
     	taintWrapper = false;
     	Infoflow infoflow = initInfoflow();

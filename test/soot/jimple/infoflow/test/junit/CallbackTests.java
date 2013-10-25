@@ -23,7 +23,7 @@ import soot.jimple.infoflow.Infoflow;
 public class CallbackTests extends JUnitTests {
 	
 	
-	@Test
+	@Test(timeout=300000)
 	public void thirdCallBackTest(){
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -32,7 +32,7 @@ public class CallbackTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void secondCallBackTest(){
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -41,7 +41,7 @@ public class CallbackTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 	}
 	
-	@Test
+	@Test(timeout=300000)
 	public void callbackTest(){
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

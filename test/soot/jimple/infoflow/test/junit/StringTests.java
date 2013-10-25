@@ -18,7 +18,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
@@ -36,7 +35,7 @@ public class StringTests extends JUnitTests {
     	taintWrapper = false;
 	}
 	
-	@Test
+	@Test(timeout=300000)
     public void multipleSourcesTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -45,7 +44,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
 	
-	@Test
+	@Test(timeout=300000)
     public void substringTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -54,8 +53,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
 	
-	@Test
-	@Ignore
+	@Test(timeout=300000)
     public void lowerCaseTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -64,8 +62,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
 	
-	@Test
-	@Ignore
+	@Test(timeout=300000)
     public void upperCaseTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -74,7 +71,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
 
-    @Test
+    @Test(timeout=300000)
     public void concatTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -83,7 +80,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concatTest1b(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -92,7 +89,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concatTest1c(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -101,7 +98,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concatTest2(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -110,7 +107,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void stringConcatTest(){
 	   Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -119,7 +116,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
    
-   @Test
+   @Test(timeout=300000)
    public void stringConcatTestSmall1(){
 	   Infoflow infoflow = initInfoflow();
    		List<String> epoints = new ArrayList<String>();
@@ -128,16 +125,16 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
    }
    
-   @Test
+   @Test(timeout=300000)
    public void stringConcatTestSmall2(){
 	   Infoflow infoflow = initInfoflow();
    		List<String> epoints = new ArrayList<String>();
    		epoints.add("<soot.jimple.infoflow.test.StringTestCode: void stringConcatTestSmall2()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);
-   }
+	}
     
-    @Test
+    @Test(timeout=300000)
     public void concatTestNegative(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -146,7 +143,7 @@ public class StringTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concatPlusTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -155,7 +152,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void concatPlusTest2(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -164,7 +161,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
     }
     
-    @Test
+    @Test(timeout=300000)
     public void valueOfTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -173,7 +170,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void toStringTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -182,7 +179,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void stringBufferTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -191,7 +188,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void stringBufferTest2(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -201,7 +198,7 @@ public class StringTests extends JUnitTests {
    }
     
   
-    @Test
+    @Test(timeout=300000)
     public void stringBuilderTest1(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -210,7 +207,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void stringBuilderTest2(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -219,7 +216,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);		
     }
     
-    @Test
+    @Test(timeout=300000)
     public void stringBuilderTest2_NoJDK(){
     	taintWrapper = true;
     	Infoflow infoflow = initInfoflow();
@@ -241,7 +238,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);		
     }
 
-    @Test
+    @Test(timeout=300000)
     public void stringBuilderTest3(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -250,7 +247,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
     }
     
-    @Test
+    @Test(timeout=300000)
     public void stringBuilderTest4(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -259,7 +256,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
     }
     
-    @Test
+    @Test(timeout=300000)
     public void stringBuilderTest5(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -268,7 +265,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
     }
 
-    @Test
+    @Test(timeout=300000)
     public void stringBuilderTest6(){
     	taintWrapper = true;	// Implicit flow, does not run without taint wrapper
     	Infoflow infoflow = initInfoflow();
@@ -278,7 +275,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);	
     }
     
-    @Test
+    @Test(timeout=300000)
     public void testcharArray(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -287,7 +284,7 @@ public class StringTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void testStringConcat(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -297,7 +294,7 @@ public class StringTests extends JUnitTests {
 		assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourcePwd));
     }
 
-    @Test
+    @Test(timeout=300000)
     public void testStringConstructor(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

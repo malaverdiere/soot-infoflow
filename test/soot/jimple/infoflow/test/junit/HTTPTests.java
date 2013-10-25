@@ -24,7 +24,7 @@ import soot.jimple.infoflow.Infoflow;
 @Ignore
 public class HTTPTests extends JUnitTests {
 	
-    @Test
+    @Test(timeout=300000)
     public void testURL() throws IOException{
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -34,7 +34,7 @@ public class HTTPTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
     
-    @Test
+    @Test(timeout=300000)
     public void testConnection() throws IOException{
 //    	this.taintWrapper = true;
     	Infoflow infoflow = initInfoflow();

@@ -21,7 +21,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class LengthTests extends JUnitTests {
 
-	@Test
+	@Test(timeout=300000)
 	public void easyLengthTest(){
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -30,7 +30,7 @@ public class LengthTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
 	}
 	
-	@Test
+	@Test(timeout=300000)
 	public void lengthTest(){
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -39,7 +39,7 @@ public class LengthTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
 	}
 	
-	@Test
+	@Test(timeout=300000)
 	public void lengthTest2(){
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

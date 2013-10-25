@@ -32,6 +32,8 @@ import soot.util.IdentityHashSet;
  *
  */
 public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
+	
+	private static Object pathLockObject = new Object();
 
 	/**
 	 * Class representing a source value together with the statement that created it
@@ -277,61 +279,67 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		return getPath(Collections.<Abstraction>emptySet());
 	}
 		
-	private synchronized Set<SourceContextAndPath> getPath(Set<Abstraction> doneSet) {
+	private Set<SourceContextAndPath> getPath(Set<Abstraction> doneSet) {
 		if (pathCache != null)
 			return pathCache;
+		
+		synchronized (pathLockObject) {
+			// Check again. In the meantime, another thread might have created
+			// a path
+			if (pathCache != null)
+				return pathCache;
+
+			// If this statement has a context, we create a path context from it
+			if (sourceContext != null) {
+				SourceContextAndPath sourceAndPath = new SourceContextAndPath
+						(sourceContext.value, sourceContext.stmt);
+				pathCache = Collections.singleton(sourceAndPath);
+				return pathCache;
+			}
 			
-		// If this statement has a context, we create a path context from it
-		if (sourceContext != null) {
-			SourceContextAndPath sourceAndPath = new SourceContextAndPath
-					(sourceContext.value, sourceContext.stmt);
-			pathCache = Collections.singleton(sourceAndPath);
+			Set<SourceContextAndPath> pathList = new HashSet<SourceContextAndPath>();
+			
+			Set<Abstraction> prevDoneSet = new IdentityHashSet<Abstraction>();
+			prevDoneSet.addAll(doneSet);
+			if (prevDoneSet.add(predecessor)) {
+				final Set<SourceContextAndPath> predecessorPath = predecessor.getPath(prevDoneSet);
+				for (SourceContextAndPath scap : predecessorPath) {
+					// Extend the paths we have found with the current statement
+					if (currentStmt != null && this.isActive)
+						pathList.add(scap.extendPath(currentStmt));
+					else
+						pathList.add(scap);
+				}
+			}
+			
+			// Look for neighbors and extend the paths along them
+			for (Abstraction neighbor : neighbors) {
+				// If this neighbor is one of our predecessors, we started running
+				// in circles
+				if (doneSet.contains(neighbor))
+					continue;
+					
+				Set<Abstraction> neighborDoneSet = new IdentityHashSet<Abstraction>();
+				neighborDoneSet.addAll(doneSet);
+				if (!neighborDoneSet.add(neighbor))
+					continue;
+		
+				final Set<SourceContextAndPath> scaps = neighbor.getPath(neighborDoneSet);
+				for (SourceContextAndPath context : scaps) {
+					boolean found = false;
+					for (SourceContextAndPath contextOld : pathList)
+						if (contextOld.getValue().equals(context.getValue())) {
+							found = true;
+							break;
+						}
+					if (!found)
+						pathList.add(context);
+				}
+			}
+		
+			pathCache = Collections.unmodifiableSet(pathList);
 			return pathCache;
 		}
-	
-
-		Set<SourceContextAndPath> pathList = new HashSet<SourceContextAndPath>();
-
-		Set<Abstraction> prevDoneSet = new IdentityHashSet<Abstraction>();
-		prevDoneSet.addAll(doneSet);
-		if (prevDoneSet.add(predecessor)) {
-			final Set<SourceContextAndPath> predecessorPath = predecessor.getPath(prevDoneSet);
-			for (SourceContextAndPath scap : predecessorPath) {
-				// Extend the paths we have found with the current statement
-				if (currentStmt != null && this.isActive)
-					pathList.add(scap.extendPath(currentStmt));
-				else
-					pathList.add(scap);
-			}
-		}		
-			
-		// Look for neighbors and extend the paths along them
-		for (Abstraction neighbor : neighbors) {
-			// If this neighbor is one of our predecessors, we started running
-			// in circles
-			if (doneSet.contains(neighbor))
-				continue;
-				
-			Set<Abstraction> neighborDoneSet = new IdentityHashSet<Abstraction>();
-			neighborDoneSet.addAll(doneSet);
-			if (!neighborDoneSet.add(neighbor))
-				continue;
-	
-			final Set<SourceContextAndPath> scaps = neighbor.getPath(neighborDoneSet);
-			for (SourceContextAndPath context : scaps) {
-				boolean found = false;
-				for (SourceContextAndPath contextOld : pathList)
-					if (contextOld.getValue().equals(context.getValue())) {
-						found = true;
-						break;
-					}
-				if (!found)
-					pathList.add(context);
-			}
-		}
-	
-		pathCache = Collections.unmodifiableSet(pathList);
-		return pathCache;
 	}
 
 	public boolean isAbstractionActive(){
@@ -374,7 +382,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	
 	public final Abstraction deriveConditionalAbstractionEnter(UnitContainer postdom,
 			Stmt conditionalUnit) {
-		if (!postdominators.isEmpty() && postdominators.contains(postdom))
+		if (postdominators.contains(postdom))
 			return this;
 		assert this.conditionalCallSite == null;
 		
@@ -389,6 +397,10 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), (Stmt) conditionalCallSite);
 		abs.conditionalCallSite = conditionalCallSite;
 		abs.isActive = true;
+		
+		// Postdominators are only kept intraprocedurally in order to not
+		// mess up the summary functions with caller-side information
+		abs.postdominators.clear();
 
 //		abs.activationUnit = conditionalCallSite;
 //		abs.activationUnitOnCurrentLevel.clear();

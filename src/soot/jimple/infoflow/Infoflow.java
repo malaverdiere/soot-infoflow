@@ -425,7 +425,7 @@ public class Infoflow implements IInfoflow {
 						sinkCount);
 
 				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor
-						(forwardProblem.numThreads(), Integer.MAX_VALUE, 30, TimeUnit.SECONDS,
+						(1 /*forwardProblem.numThreads()*/, Integer.MAX_VALUE, 30, TimeUnit.SECONDS,
 						new LinkedBlockingQueue<Runnable>());
 				
 				forwardSolver = new InfoflowSolver(forwardProblem, executor);

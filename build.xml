@@ -50,7 +50,7 @@
 
 	<target name="runtests" depends="compiletests">
 		<mkdir dir="reports" />
-		<junit printsummary="yes" fork="true" maxmemory="4G" includeantruntime="false">
+		<junit printsummary="yes" fork="true" maxmemory="4G">
 			<classpath>
 				<pathelement location="${soot.jar}" />
 				<pathelement location="${heros.jar}" />

@@ -513,4 +513,16 @@ public class ImplicitFlowTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 	}
 
+	@Test(timeout=300000)
+	public void activationConditionalTest(){
+		Infoflow infoflow = initInfoflow();
+		infoflow.setEnableImplicitFlows(true);
+		infoflow.setInspectSinks(false);
+
+		List<String> epoints = new ArrayList<String>();
+	    epoints.add("<soot.jimple.infoflow.test.ImplicitFlowTestCode: void activationConditionalTest()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		negativeCheckInfoflow(infoflow);	
+	}
+
 }

@@ -154,6 +154,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1,
 						predUnit, bwAbs));
 		} else if (targetValue instanceof InstanceFieldRef) {
+			assert enableImplicitFlows;
+			
 			// Use global aliasing
 			Value baseValue = ((InstanceFieldRef) targetValue).getBase();
 			Set<AccessPath> aliases = globalAliases.get(method, new AccessPath(
@@ -256,7 +258,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					newAbs = source.deriveNewAbstraction(new AccessPath(targetValue), src);
 				taintSet.add(newAbs);
 								
-				if (triggerInaktiveTaintOrReverseFlow(targetValue, newAbs) && newAbs.isAbstractionActive()) {
+				if (triggerInaktiveTaintOrReverseFlow(targetValue, newAbs)
+						&& newAbs.isAbstractionActive()) {
 					// If we overwrite the complete local, there is no need for
 					// a backwards analysis
 					if (!(targetValue.equals(newAbs.getAccessPath().getPlainValue())
@@ -290,6 +293,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				if (!activationAbs.isAbstractionActive())
 					return false;
 				Unit activationUnit = activationAbs.getActivationUnit();
+				if (activationUnit == null)
+					return false;
 				
 				synchronized (activationUnitsToCallSites) {
 					if (!activationUnitsToCallSites.containsKey(activationUnit))
@@ -390,6 +395,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// If we have a non-empty postdominator stack, we taint
 							// every assignment target
 							if (newSource.getTopPostdominator() != null || newSource.getAccessPath().isEmpty()) {
+								assert enableImplicitFlows;
+								
 								// We can skip over all local assignments inside conditionally-
 								// called functions since they are not visible in the caller
 								// anyway
@@ -509,7 +516,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							}
 							//nothing applies: z = y && x tainted -> taint is preserved
-							res.add(newSource);
+							res.add(newSource);							
 							return res;
 						}
 					};
@@ -659,8 +666,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-						
-						
+					
 						//if we do not have to look into sources or sinks:
 						if (!inspectSources && isSource)
 							return Collections.emptySet();
@@ -765,7 +771,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						Abstraction newSource = source;
 						if(!source.isAbstractionActive())
 							if(callSite != null)
-								if (callSite.equals(source.getActivationUnit()) || isCallSiteActivatingTaint(callSite, source.getActivationUnit()))
+								if (callSite.equals(source.getActivationUnit())
+										|| isCallSiteActivatingTaint(callSite, source.getActivationUnit()))
 									newSource = source.getActiveCopy();
 						
 						// Empty access paths are never propagated over return edges
@@ -789,6 +796,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									return res;
 								}
 							
+							// Kill the empty abstraction
 							return Collections.emptySet();
 						}
 
@@ -802,7 +810,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (newSource.isTopPostdominator(exitStmt) || newSource.isTopPostdominator(callee)) {
 							newSource = newSource.dropTopPostdominator();
 							// Have we dropped the last postdominator for an empty taint?
-							if (!insideConditional && newSource.getAccessPath().isEmpty() && newSource.getTopPostdominator() == null)
+							if (!insideConditional
+									&& newSource.getAccessPath().isEmpty()
+									&& newSource.getTopPostdominator() == null)
 								return Collections.emptySet();
 						}
 
@@ -838,8 +848,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							Value retLocal = returnStmt.getOp();
 							DefinitionStmt defnStmt = (DefinitionStmt) callSite;
 							Value leftOp = defnStmt.getLeftOp();
-								
-							if (insideConditional || retLocal.equals(newSource.getAccessPath().getPlainLocal())) {
+							
+							if ((insideConditional && leftOp instanceof FieldRef)
+									|| retLocal.equals(newSource.getAccessPath().getPlainLocal())) {
 								Abstraction abs = newSource.deriveNewAbstraction
 										(newSource.getAccessPath().copyWithNewValue(leftOp), (Stmt) exitStmt);
 								registerActivationCallSite(callSite, abs);
@@ -933,7 +944,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							}
 						}
-
+					
 						return res;
 					}
 

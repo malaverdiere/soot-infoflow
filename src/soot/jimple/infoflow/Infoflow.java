@@ -202,6 +202,7 @@ public class Infoflow implements IInfoflow {
 	 */
 	private void initializeSoot(String path, Set<String> classes, ISourceSinkManager sourcesSinks, String extraSeed) {
 		// reset Soot:
+		logger.info("Resetting Soot...");
 		soot.G.reset();
 		
 		// add SceneTransformer which calculates and prints infoflow
@@ -450,9 +451,30 @@ public class Infoflow implements IInfoflow {
 					logger.warn("Static field tracking is disabled, results may be incomplete");
 
 				forwardSolver.solve();
-				logger.info("IDFS problem solved, processing results...");
+				
+				// Not really nice, but sometimes Heros returns before all
+				// executor tasks are actually done. This way, we give it a
+				// chance to terminate gracefully before moving on.
+				int terminateTries = 0;
+				while (terminateTries < 10) {
+					if (executor.getActiveCount() != 0 || !executor.isTerminated()) {
+						terminateTries++;
+						try {
+							Thread.sleep(500);
+						}
+						catch (InterruptedException e) {
+							logger.error("Could not wait for executor termination", e);
+						}
+					}
+					else
+						break;
+				}
+				if (executor.getActiveCount() != 0 || !executor.isTerminated())
+					logger.error("Executor did not terminate gracefully");
 
+				logger.info("IDFS problem solved, processing results...");
 				results = forwardProblem.getResults();
+				
 				if (results.getResults().isEmpty())
 					logger.warn("No results found.");
 				else for (Entry<SinkInfo, Set<SourceInfo>> entry : results.getResults().entrySet()) {

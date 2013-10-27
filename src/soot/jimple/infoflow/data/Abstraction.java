@@ -40,7 +40,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 * 
 	 * @author Steven Arzt
 	 */
-	public class SourceContext {
+	public class SourceContext implements Cloneable {
 		private final Value value;
 		private final Stmt stmt;
 		
@@ -84,6 +84,13 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			} else if (!value.equals(other.value))
 				return false;
 			return true;
+		}
+		
+		@Override
+		public SourceContext clone() {
+			SourceContext sc = new SourceContext(value, stmt);
+			assert sc.equals(this);
+			return sc;
 		}
 	}
 	
@@ -147,18 +154,18 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	/**
 	 * Unit/Stmt which activates the taint when the abstraction passes it
 	 */
-	private Unit activationUnit;
+	private Unit activationUnit = null;
 	/**
 	 * active abstraction is tainted value,
 	 * inactive abstraction is an alias to a tainted value that
 	 * might be activated in the future
 	 */
-	private boolean isActive;
+	private boolean isActive = true;
 	/**
 	 * taint is thrown by an exception (is set to false when it reaches the catch-Stmt)
 	 */
-	private boolean exceptionThrown;
-	private int hashCode;
+	private boolean exceptionThrown = false;
+	private int hashCode = 0;
 
 	/**
 	 * The postdominators we need to pass in order to leave the current conditional
@@ -193,7 +200,9 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			sourceContext = original.sourceContext;
 			exceptionThrown = original.exceptionThrown;
 			activationUnit = original.activationUnit;
+			
 			isActive = original.isActive;
+			
 			postdominators.addAll(original.postdominators);
 			assert this.postdominators.equals(original.postdominators);
 		}
@@ -225,6 +234,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	}
 	
 	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit){
+		assert !this.getAccessPath().isEmpty();
+
 		Abstraction a;
 		SootField[] orgFields = accessPath.getFields();
 		SootField[] fields = new SootField[cutFirstField ? orgFields.length - 1 : orgFields.length];
@@ -393,6 +404,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	
 	public final Abstraction deriveConditionalAbstractionCall(Unit conditionalCallSite) {
 		assert conditionalCallSite != null;
+		assert activationUnit == null;
 		
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), (Stmt) conditionalCallSite);
 		abs.isActive = true;

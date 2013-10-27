@@ -117,9 +117,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 					if (leftSideMatches) {
 						// Termination shortcut: If the right side is a value we do not track,
 						// we can stop here.
-						if (rightValue instanceof NewExpr
-									|| rightValue instanceof NewArrayExpr
-									|| rightValue instanceof Constant) {
+						if (!(rightValue instanceof Local || rightValue instanceof FieldRef)) {
 							return Collections.emptySet();
 						}
 					}
@@ -166,10 +164,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 					// If we have the tainted value on the left side of the assignment,
 					// we also have to look or aliases of the value on the right side of
 					// the assignment.
-					if (!(rightValue instanceof NewExpr || rightValue instanceof NewArrayExpr
-							|| rightValue instanceof Constant
-							|| rightValue instanceof BinopExpr
-							|| rightValue instanceof InvokeExpr)) {
+					if (rightValue instanceof Local
+							|| rightValue instanceof FieldRef) {
 						boolean addRightValue = false;
 						boolean cutFirstField = false;
 
@@ -262,7 +258,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
 							assert !source.isAbstractionActive();
-							
+	
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
 							// If the next statement assigns the base of the tainted value,
@@ -290,9 +286,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				return new FlowFunction<Abstraction>() {
 
 					public Set<Abstraction> computeTargets(Abstraction source) {
-						if (source.equals(zeroValue)) {
+						if (source.equals(zeroValue))
 							return Collections.emptySet();
-						}
 						
 						/* Backwards taint wrapping is highly complicated, so we ignore it for the moment
 						if (taintWrapper != null && taintWrapper.supportsBackwardWrapping() && taintWrapper.supportsTaintWrappingForClass(dest.getDeclaringClass())) {

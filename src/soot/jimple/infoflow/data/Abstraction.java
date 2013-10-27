@@ -107,6 +107,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		
 		@Override
 		public boolean equals(Object other) {
+			if (this == other)
+				return true;
 			if (other == null || !(other instanceof SourceContextAndPath))
 				return false;
 			if (!super.equals(other))
@@ -122,7 +124,11 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		
 		@Override
 		public SourceContextAndPath clone() {
-			return new SourceContextAndPath(getValue(), getStmt());
+			SourceContextAndPath scap = new SourceContextAndPath(getValue(), getStmt());
+			scap.path.clear();
+			scap.path.addAll(this.path);
+			assert scap.equals(this);
+			return scap;
 		}
 		
 	}

@@ -183,4 +183,13 @@ public interface IInfoflow {
 	 */
 	public void setAccessPathLength(int accessPathLength);
 	
+	/**
+	 * Sets the maximum number of threads to be used by the solver. A value of -1
+	 * indicates an unlimited number of threads, i.e., there will be as many threads
+	 * as there are CPU cores on the machine.
+	 * @param threadNum The maximum number of threads to be used by the solver,
+	 * or -1 for an unlimited number of threads.
+	 */
+	public void setMaxThreadNum(int threadNum);
+	
 }

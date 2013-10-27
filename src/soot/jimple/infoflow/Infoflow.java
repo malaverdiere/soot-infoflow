@@ -81,6 +81,8 @@ public class Infoflow implements IInfoflow {
 	private boolean inspectSources = true;
 	private boolean inspectSinks = true;
 	
+	private int maxThreadNum = -1;
+	
 	private CallgraphAlgorithm callgraphAlgorithm = CallgraphAlgorithm.AutomaticSelection;
 
     private BiDirICFGFactory icfgFactory = new DefaultBiDiICFGFactory();
@@ -425,7 +427,9 @@ public class Infoflow implements IInfoflow {
 						sinkCount);
 
 				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor
-						(1 /*forwardProblem.numThreads()*/, Integer.MAX_VALUE, 30, TimeUnit.SECONDS,
+						(maxThreadNum == -1 ? forwardProblem.numThreads()
+								: Math.min(maxThreadNum, forwardProblem.numThreads()),
+						Integer.MAX_VALUE, 30, TimeUnit.SECONDS,
 						new LinkedBlockingQueue<Runnable>());
 				
 				forwardSolver = new InfoflowSolver(forwardProblem, executor);
@@ -446,6 +450,7 @@ public class Infoflow implements IInfoflow {
 					logger.warn("Static field tracking is disabled, results may be incomplete");
 
 				forwardSolver.solve();
+				logger.info("IDFS problem solved, processing results...");
 
 				results = forwardProblem.getResults();
 				if (results.getResults().isEmpty())
@@ -527,6 +532,11 @@ public class Infoflow implements IInfoflow {
 	 */
 	public void removeResultsAvailableHandler(ResultsAvailableHandler handler) {
 		onResultsAvailable.remove(handler);
+	}
+	
+	@Override
+	public void setMaxThreadNum(int threadNum) {
+		this.maxThreadNum = threadNum;
 	}
 
 }

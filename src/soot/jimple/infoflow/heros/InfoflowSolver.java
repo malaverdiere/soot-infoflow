@@ -49,11 +49,6 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		// edge <d1,n,d2>, there need not necessarily be a jump function
 		// to <n,d2>.
 		if (!jumpFn.forwardLookup(edge.factAtSource(), edge.getTarget()).containsKey(edge.factAtTarget())) {
-			/*
-			jumpFn.addFunction(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(),
-					EdgeIdentity.<IFDSSolver.BinaryDomain>v());
-			scheduleEdgeProcessing(edge);
-			*/
 			propagate(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(),
 					EdgeIdentity.<IFDSSolver.BinaryDomain>v(), null, false);
 			return true;

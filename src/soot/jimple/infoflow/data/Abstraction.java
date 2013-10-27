@@ -404,7 +404,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	
 	public final Abstraction deriveConditionalAbstractionCall(Unit conditionalCallSite) {
 		assert conditionalCallSite != null;
-		assert activationUnit == null;
 		
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), (Stmt) conditionalCallSite);
 		abs.isActive = true;

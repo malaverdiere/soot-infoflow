@@ -41,7 +41,7 @@ public class ListTests extends JUnitTests {
     }
     
     @Test(timeout=300000)
-    @Ignore		// fails in JDK 1.7.0_45
+    @Ignore // no longer works due to changes in JDK 1.7.0_45
     public void concreteArrayListNegativeTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

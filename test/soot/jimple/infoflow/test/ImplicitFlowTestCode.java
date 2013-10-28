@@ -484,9 +484,20 @@ public class ImplicitFlowTestCode {
 		cm.publish(a.data);
 	}
 	
-	public void ifInCallee(A a) {
+	private void ifInCallee(A a) {
 		if (a.intData > 0)
 			a.data = "foo";
+	}
+	
+	public void activationConditionalTest() {
+		B b = new B();
+		b.a = new A();
+		
+		A a = b.a;
+		if (b.a.intData == 42)
+			doPublish();
+		
+		a.intData = TelephonyManager.getIMEI();
 	}
 
 }

@@ -411,7 +411,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), conditionalUnit);
 		abs.postdominators.add(0, postdom);
 		abs.isActive = true;
-		abs.activationUnit = null;
 		return abs;
 	}
 	

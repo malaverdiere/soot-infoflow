@@ -13,6 +13,7 @@ package soot.jimple.infoflow.test.junit;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
@@ -157,6 +158,7 @@ public class MapTests extends JUnitTests {
     }
     
     @Test(timeout=300000)
+    @Ignore // does not work anymore since JRE 1.7.0_45
     public void concreteNegativeTest(){
     	Infoflow infoflow = initInfoflow();
     	

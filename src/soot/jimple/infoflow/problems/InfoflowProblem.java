@@ -59,6 +59,7 @@ import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.heros.ConcurrentHashSet;
 import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
 import soot.jimple.infoflow.heros.InfoflowSolver;
+import soot.jimple.infoflow.heros.SolverCallFlowFunction;
 import soot.jimple.infoflow.heros.SolverCallToReturnFlowFunction;
 import soot.jimple.infoflow.heros.SolverNormalFlowFunction;
 import soot.jimple.infoflow.heros.SolverReturnFlowFunction;
@@ -79,6 +80,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
     
     private final Map<Unit, Set<Unit>> activationUnitsToCallSites = new ConcurrentHashMap<Unit, Set<Unit>>();
     private final Table<SootMethod, AccessPath, Set<AccessPath>> globalAliases = HashBasedTable.create();
+    private final Map<Unit, Set<Abstraction>> implicitTargets = new ConcurrentHashMap<Unit, Set<Abstraction>>();
     
 	protected final Set<AbstractionAtSink> results = new HashSet<AbstractionAtSink>();
 	protected InfoflowResults infoflowResults = null;
@@ -277,6 +279,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 				}
 				return isFieldRead;
+			}
+
+			private boolean isCallSiteActivatingTaint(Unit callSite, Set<Unit> activationUnit) {
+				for (Unit act : activationUnit)
+					if (isCallSiteActivatingTaint(callSite, act))
+						return true;
+				return false;
 			}
 
 			private boolean isCallSiteActivatingTaint(Unit callSite, Unit activationUnit) {
@@ -646,10 +655,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				final Set<?> fieldsReadByCallee = interproceduralCFG().getReadVariables
 						(interproceduralCFG().getMethodOf(stmt), stmt);
 
-				return new FlowFunction<Abstraction>() {
+				return new SolverCallFlowFunction() {
 
 					@Override
-					public Set<Abstraction> computeTargets(Abstraction source) {
+					public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
 						if (source.equals(zeroValue)) {
@@ -666,7 +675,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						if (!inspectSinks && isSink)
 							return Collections.emptySet();
-
+						
 						// Check whether we must leave a conditional branch
 						if (source.isTopPostdominator(stmt)) {
 							source = source.dropTopPostdominator();
@@ -681,17 +690,24 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.getAccessPath().isEmpty()) {
 							// Compute the aliases in the callee
 							computeGlobalAliases(dest);
+							
+							// Block the call site for further explicit tracking
+							if (d1 != null) {
+								synchronized (implicitTargets) {
+									if (!implicitTargets.containsKey(src))
+										implicitTargets.put(src, new ConcurrentHashSet<Abstraction>());
+								}
+								implicitTargets.get(src).add(d1);
+							}
+							
 							Abstraction abs = source.deriveConditionalAbstractionCall(src);
 							return Collections.singleton(abs);
 						}
-						else if (source.getTopPostdominator() != null/* && source.isAbstractionActive()*/)
-								return Collections.emptySet();
-
-						// TODO: use implicit flag
-						/*
-						if ( && !source.getAccessPath().isEmpty())
+						else if (source.getTopPostdominator() != null)
 							return Collections.emptySet();
-						*/
+						
+						if (implicitTargets.containsKey(src) && (d1 == null || implicitTargets.get(src).contains(d1)))
+							return Collections.emptySet();
 
 						// Only propagate the taint if the target field is actually read
 						if (source.getAccessPath().isStaticFieldRef())

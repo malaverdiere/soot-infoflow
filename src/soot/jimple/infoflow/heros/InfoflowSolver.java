@@ -119,6 +119,15 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 	}
 
 	@Override
+	protected Set<Abstraction> computeCallFlowFunction
+			(FlowFunction<Abstraction> flowFunction, Abstraction d1, Abstraction d2) {
+		if (flowFunction instanceof SolverCallFlowFunction)
+			return ((SolverCallFlowFunction) flowFunction).computeTargets(d1, d2);
+		else
+			return flowFunction.computeTargets(d2);		
+	}
+
+	@Override
 	protected void propagate(Abstraction sourceVal, Unit target, Abstraction targetVal, EdgeFunction<BinaryDomain> f,
 			/* deliberately exposed to clients */ Unit relatedCallSite,
 			/* deliberately exposed to clients */ boolean isUnbalancedReturn) {

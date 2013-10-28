@@ -25,6 +25,7 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.heros.ConcurrentHashSet;
 import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
 import soot.util.IdentityHashSet;
 /**
@@ -139,7 +140,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	private final AccessPath accessPath;
 	
 	private Abstraction predecessor = null;
-	private final Set<Abstraction> neighbors = new HashSet<Abstraction>();
+	private final Set<Abstraction> neighbors = new ConcurrentHashSet<Abstraction>();
 	private Stmt currentStmt = null;
 	
 	private SourceContext sourceContext = null;
@@ -205,6 +206,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	}
 	
 	public final Abstraction deriveInactiveAbstraction(AccessPath p){
+		assert this.isActive;
+		
 		Abstraction a = deriveNewAbstraction(p, null);
 		a.isActive = false;
 		a.postdominators.clear();
@@ -233,7 +236,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		a = deriveNewAbstraction(new AccessPath(taint, fields), (Stmt) newActUnit);
 		if (isActive) {
 			assert newActUnit != null;
-			a.activationUnit = newActUnit;
+			if (!this.getAccessPath().isEmpty())
+				a.activationUnit = newActUnit;
 		}
 		return a;
 	}
@@ -247,6 +251,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	public final Abstraction deriveNewAbstractionOnThrow(Stmt throwStmt){
 		assert !this.exceptionThrown;
 		Abstraction abs = cloneWithPredecessor(throwStmt);
+		
 		abs.sourceContext = null;
 		abs.exceptionThrown = true;
 		return abs;
@@ -323,6 +328,12 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 				neighborDoneSet.addAll(doneSet);
 				if (!neighborDoneSet.add(neighbor))
 					continue;
+				
+				// Check whether this is a real neighbor
+				if (neighbor.equals(this) && neighbor.predecessor.equals(this.predecessor)
+						&& (neighbor.currentStmt == null && this.currentStmt == null
+							|| neighbor.currentStmt.equals(this.currentStmt)))
+					continue;
 		
 				final Set<SourceContextAndPath> scaps = neighbor.getPath(neighborDoneSet);
 				for (SourceContextAndPath context : scaps) {
@@ -396,6 +407,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), (Stmt) conditionalCallSite);
 		abs.isActive = true;
+		abs.activationUnit = conditionalCallSite;
 		
 		// Postdominators are only kept intraprocedurally in order to not
 		// mess up the summary functions with caller-side information

@@ -354,6 +354,15 @@ public class ImplicitFlowTestCode {
 		cm.publish(secret);		
 	}
 	
+	public void passOverTest2() {
+		String secret = TelephonyManager.getDeviceId();
+		int imei = TelephonyManager.getIMEI();
+		if (imei == 42)
+			throwAround(secret);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(secret);		
+	}
+
 	public void callToReturnTest() {
 		String secret = TelephonyManager.getDeviceId();
 		String s1 = "foo";

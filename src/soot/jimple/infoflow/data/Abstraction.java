@@ -211,6 +211,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	}
 	
 	public final Abstraction deriveInactiveAbstraction(){
+		if (!this.isActive)
+			return this;
 		return deriveInactiveAbstraction(accessPath);
 	}
 	
@@ -389,7 +391,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		// a caller, find a new alias there and then need to know where both
 		// aliases originally became active.
 //		a.activationUnit = null;
-//		a.activationUnitOnCurrentLevel.clear();
 		return a;
 	}
 	
@@ -410,6 +411,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), conditionalUnit);
 		abs.postdominators.add(0, postdom);
 		abs.isActive = true;
+		abs.activationUnit = null;
 		return abs;
 	}
 	

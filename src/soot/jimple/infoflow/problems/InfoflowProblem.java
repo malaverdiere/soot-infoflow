@@ -1100,9 +1100,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
 							if (isSink) {
 								// If we are inside a conditional branch, we consider every sink call a leak
-								boolean conditionalCall = !interproceduralCFG().getMethodOf(call).isStatic()
+								boolean conditionalCall = enableImplicitFlows 
+										&& !interproceduralCFG().getMethodOf(call).isStatic()
 										&& interproceduralCFG().getMethodOf(call).getActiveBody().getThisLocal().equals
-												(newSource.getAccessPath().getPlainValue());
+												(newSource.getAccessPath().getPlainValue())
+										&& newSource.getAccessPath().getFirstField() == null;
 								boolean taintedParam = (newSource.getTopPostdominator() != null
 											|| newSource.getAccessPath().isEmpty()
 											|| conditionalCall)

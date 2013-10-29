@@ -676,7 +676,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-					
+						
 						//if we do not have to look into sources or sinks:
 						if (!inspectSources && isSource)
 							return Collections.emptySet();
@@ -778,7 +778,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						if (source.equals(zeroValue))
 							return Collections.emptySet();
-
+						
 						boolean callerD1sConditional = false;
 						for (Abstraction d1 : callerD1s)
 							if (d1.getAccessPath().isEmpty()) {

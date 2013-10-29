@@ -33,9 +33,6 @@ import soot.jimple.DefinitionStmt;
 import soot.jimple.FieldRef;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
-import soot.jimple.InvokeExpr;
-import soot.jimple.NewArrayExpr;
-import soot.jimple.NewExpr;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -258,7 +255,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
 							assert !source.isAbstractionActive();
-	
+							
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
 							// If the next statement assigns the base of the tainted value,

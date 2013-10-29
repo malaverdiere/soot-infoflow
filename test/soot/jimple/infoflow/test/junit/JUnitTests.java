@@ -92,6 +92,7 @@ public abstract class JUnitTests {
 				assertTrue(map.containsSinkMethod(sink) || map.containsSinkMethod(sinkInt));
 				assertTrue(map.isPathBetweenMethods(sink, sourceDeviceId)
 						|| map.isPathBetweenMethods(sink, sourceIMEI)	// implicit flows
+						|| map.isPathBetweenMethods(sink, sourcePwd)
 						|| map.isPathBetweenMethods(sinkInt, sourceDeviceId)
 						|| map.isPathBetweenMethods(sinkInt, sourceIMEI));
 			}else{

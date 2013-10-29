@@ -291,6 +291,7 @@ public class StringTests extends JUnitTests {
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		checkInfoflow(infoflow, 1);
 		assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourcePwd));
+		assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourceDeviceId));
     }
 
 	@Test(timeout=600000)

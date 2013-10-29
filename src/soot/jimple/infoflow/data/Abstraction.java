@@ -93,6 +93,11 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			assert sc.equals(this);
 			return sc;
 		}
+
+		@Override
+		public String toString() {
+			return value.toString();
+		}
 	}
 	
 	public class SourceContextAndPath extends SourceContext implements Cloneable {
@@ -139,6 +144,11 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			return scap;
 		}
 		
+		@Override
+		public String toString() {
+			return super.toString() + "\n\ton Path: " + path;
+		}
+		
 	}
 	
 	/**
@@ -147,7 +157,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	private final AccessPath accessPath;
 	
 	private Abstraction predecessor = null;
-	private final Set<Abstraction> neighbors = new ConcurrentHashSet<Abstraction>();
+	private final Set<Abstraction> neighbors = new IdentityHashSet<Abstraction>();
 	private Stmt currentStmt = null;
 	
 	private SourceContext sourceContext = null;
@@ -311,26 +321,29 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			if (pathCache != null)
 				return pathCache;
 
+			Set<SourceContextAndPath> pathList = new HashSet<SourceContextAndPath>();
+
 			// If this statement has a context, we create a path context from it
 			if (sourceContext != null) {
 				SourceContextAndPath sourceAndPath = new SourceContextAndPath
 						(sourceContext.value, sourceContext.stmt);
-				pathCache = Collections.singleton(sourceAndPath);
-				return pathCache;
+				pathList.add(sourceAndPath);
 			}
-			
-			Set<SourceContextAndPath> pathList = new HashSet<SourceContextAndPath>();
-			
-			Set<Abstraction> prevDoneSet = new IdentityHashSet<Abstraction>();
-			prevDoneSet.addAll(doneSet);
-			if (prevDoneSet.add(predecessor)) {
-				final Set<SourceContextAndPath> predecessorPath = predecessor.getPath(prevDoneSet);
-				for (SourceContextAndPath scap : predecessorPath) {
-					// Extend the paths we have found with the current statement
-					if (currentStmt != null && this.isActive)
-						pathList.add(scap.extendPath(currentStmt));
-					else
-						pathList.add(scap);
+
+
+			// Only look further up if we have no own source context
+			if (sourceContext == null) {
+				Set<Abstraction> prevDoneSet = new IdentityHashSet<Abstraction>();
+				prevDoneSet.addAll(doneSet);
+				if (predecessor != null && prevDoneSet.add(predecessor)) {
+					final Set<SourceContextAndPath> predecessorPath = predecessor.getPath(prevDoneSet);
+					for (SourceContextAndPath scap : predecessorPath) {
+						// Extend the paths we have found with the current statement
+						if (currentStmt != null && this.isActive)
+							pathList.add(scap.extendPath(currentStmt));
+						else
+							pathList.add(scap);
+					}
 				}
 			}
 			
@@ -347,7 +360,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 					continue;
 				
 				// Check whether this is a real neighbor
-				if (neighbor.equals(this) && neighbor.predecessor.equals(this.predecessor)
+				if (neighbor.equals(this) && neighbor.predecessor == this.predecessor
 						&& (neighbor.currentStmt == null && this.currentStmt == null
 							|| neighbor.currentStmt.equals(this.currentStmt)))
 					continue;
@@ -364,6 +377,12 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 						pathList.add(context);
 				}
 			}
+			
+			// Validate the path list
+			for (SourceContextAndPath scap : pathList)
+				assert scap.getPath().isEmpty()
+						|| scap.getStmt() == null
+						|| scap.getPath().get(0).equals(scap.getStmt());
 		
 			pathCache = Collections.unmodifiableSet(pathList);
 			return pathCache;
@@ -570,8 +589,10 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		assert originalAbstraction.equals(this);
 		
 		// We should not register ourselves as a neighbor
-		if (originalAbstraction != this)
-			this.neighbors.add(originalAbstraction);
+		synchronized (neighbors) {
+			if (originalAbstraction != this)
+				this.neighbors.add(originalAbstraction);
+		}
 	}
 	
 }

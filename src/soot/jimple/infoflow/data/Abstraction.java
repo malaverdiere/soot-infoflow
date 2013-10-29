@@ -230,10 +230,13 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		abs.predecessor = this;
 		abs.currentStmt = currentStmt;
 		
+		if (!abs.getAccessPath().isEmpty())
+			abs.postdominators.clear();
+		
 		abs.sourceContext = null;
 		return abs;
 	}
-			
+	
 	public final Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
 		return this.deriveNewAbstraction(taint, false, activationUnit);
 	}
@@ -280,6 +283,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		assert this.exceptionThrown;
 		Abstraction abs = deriveNewAbstraction(new AccessPath(taint), (Stmt) newActivationUnit);
 		abs.exceptionThrown = false;
+		
 		if(isActive) {
 			assert newActivationUnit != null;
 			abs.activationUnit = newActivationUnit;
@@ -384,6 +388,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	}
 	
 	public Abstraction getActiveCopy(){
+		assert !this.isActive;
+		
 		Abstraction a = cloneWithPredecessor(null);
 		a.sourceContext = null;
 		a.isActive = true;
@@ -409,6 +415,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			return this;
 		
 		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), conditionalUnit);
+		// TODO
+//		abs.activationUnit = null;
 		abs.postdominators.add(0, postdom);
 		abs.isActive = true;
 		return abs;
@@ -463,7 +471,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		return cloneWithPredecessor(null);
 	}
 	
-	public Abstraction cloneWithPredecessor(Stmt predStmt) {
+	private Abstraction cloneWithPredecessor(Stmt predStmt) {
 		Abstraction abs = new Abstraction(accessPath, this);
 		abs.predecessor = this;
 		abs.currentStmt = predStmt;

@@ -13,7 +13,6 @@ package soot.jimple.infoflow.test.junit;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
@@ -39,8 +38,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case concreteHashSetTest done.");
     }
     
-    @Test(timeout=300000)
-	@Ignore		// implicit flow, takes forever
+    @Test(timeout=300000)	// implicit flow, takes ~74s
     public void containsTest(){
     	System.out.println("Running test case containsTest...");
     	Infoflow infoflow = initInfoflow();

@@ -627,5 +627,30 @@ public class HeapTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(untainted);
 	}
+	
+	private void alias(B b1, B b2) {
+		b2.attr = b1.attr;
+	}
+	
+	private void set(B a, String secret, B b) {
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+		a.attr.b = secret;
+		cm.publish(b.attr.b);
+	}
+	
+	private void foo(B a) {
+		System.out.println(a);
+	}
+	
+	public void aliasPerformanceTest() {
+		B a = new B();
+		B b = new B();
+		alias(a, b);
+		set(a, TelephonyManager.getDeviceId(), b);
+		foo(a);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+	}
 
 }

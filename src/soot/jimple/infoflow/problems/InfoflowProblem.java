@@ -283,14 +283,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				}
 				return isFieldRead;
 			}
-
-			private boolean isCallSiteActivatingTaint(Unit callSite, Set<Unit> activationUnit) {
-				for (Unit act : activationUnit)
-					if (isCallSiteActivatingTaint(callSite, act))
-						return true;
-				return false;
-			}
-
+			
 			private boolean isCallSiteActivatingTaint(Unit callSite, Unit activationUnit) {
 				if (activationUnit == null)
 					return false;
@@ -326,7 +319,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
-
+							
 							// Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(is)) {
 								source = source.dropTopPostdominator();
@@ -377,15 +370,21 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
+							// Make sure nothing all wonky is going on here
+							assert source.getAccessPath().isEmpty()
+									|| source.getTopPostdominator() == null;
+							assert source.getTopPostdominator() == null
+									|| interproceduralCFG().getMethodOf(src) == source.getTopPostdominator().getMethod()
+									|| interproceduralCFG().getMethodOf(src).getActiveBody().getUnits().contains
+											(source.getTopPostdominator().getUnit());
+							
 							boolean addLeftValue = false;
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							
-							// shortcuts:
 							// on NormalFlow taint cannot be created
-							if (source.equals(zeroValue)) {
+							if (source.equals(zeroValue))
 								return Collections.emptySet();
-							}
 
 							// Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(assignStmt)) {
@@ -668,9 +667,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
-						if (source.equals(zeroValue)) {
+						if (source.equals(zeroValue))
 							return Collections.singleton(source);
-						}
+						
+						if (dest.getName().equals("foo"))
+							System.out.println("x");
+						
+						// If we have an exclusive taint wrapper for the target
+						// method, we do not perform an own taint propagation. 
 						if(taintWrapper != null && taintWrapper.isExclusive(stmt, source.getAccessPath())) {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
@@ -712,6 +716,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						else if (source.getTopPostdominator() != null)
 							return Collections.emptySet();
 						
+						// If we have already tracked implicits flows through this method,
+						// there is no point in tracking explicit ones afterwards as well.
 						if (implicitTargets.containsKey(src) && (d1 == null || implicitTargets.get(src).contains(d1)))
 							return Collections.emptySet();
 
@@ -1002,12 +1008,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							
 							//check inactive elements:
-							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit()))
-									|| isCallSiteActivatingTaint(call, source.getActivationUnit()))
+							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit())
+									|| isCallSiteActivatingTaint(call, source.getActivationUnit())))
 								newSource = source.getActiveCopy();
 							else
 								newSource = source;
 							
+							// Compute the taint wrapper taints
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.addAll(computeWrapperTaints(d1, iStmt, newSource));
 							
@@ -1047,12 +1054,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											if(newSource.getAccessPath().isStaticFieldRef())
 												passOn = false;
 										}
+							
 							// If the callee does not read the given value, we also need to pass it on
 							// since we do not propagate it into the callee.
 							if (enableStaticFields && source.getAccessPath().isStaticFieldRef())
 								if (fieldsReadByCallee != null && !isFieldReadByCallee(fieldsReadByCallee, source)
 										&& !isFieldReadByCallee(fieldsWrittenByCallee, source))
 									passOn = true;
+							
 							// Implicit taints are always passed over conditionally called methods
 							passOn |= source.getTopPostdominator() != null || source.getAccessPath().isEmpty();
 							if (passOn)

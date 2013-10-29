@@ -25,7 +25,6 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.heros.ConcurrentHashSet;
 import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
 import soot.util.IdentityHashSet;
 /**
@@ -308,7 +307,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 * @return The path from the source to the current statement
 	 */
 	public Set<SourceContextAndPath> getPaths() {
-		return getPath(Collections.<Abstraction>emptySet());
+		return getPath(new IdentityHashSet<Abstraction>());
 	}
 		
 	private Set<SourceContextAndPath> getPath(Set<Abstraction> doneSet) {
@@ -321,22 +320,25 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			if (pathCache != null)
 				return pathCache;
 
-			Set<SourceContextAndPath> pathList = new HashSet<SourceContextAndPath>();
+			// Do not run in circles
+			if (!doneSet.add(this))
+				return Collections.emptySet();
 
 			// If this statement has a context, we create a path context from it
 			if (sourceContext != null) {
 				SourceContextAndPath sourceAndPath = new SourceContextAndPath
 						(sourceContext.value, sourceContext.stmt);
-				pathList.add(sourceAndPath);
+				pathCache = Collections.singleton(sourceAndPath);
+				return pathCache;
 			}
 
+			Set<SourceContextAndPath> pathList = null;
 
 			// Only look further up if we have no own source context
-			if (sourceContext == null) {
-				Set<Abstraction> prevDoneSet = new IdentityHashSet<Abstraction>();
-				prevDoneSet.addAll(doneSet);
-				if (predecessor != null && prevDoneSet.add(predecessor)) {
-					final Set<SourceContextAndPath> predecessorPath = predecessor.getPath(prevDoneSet);
+			if (predecessor != null) {
+				final Set<SourceContextAndPath> predecessorPath = predecessor.getPath(doneSet);
+				if (!predecessorPath.isEmpty()) {
+					pathList = new HashSet<SourceContextAndPath>();
 					for (SourceContextAndPath scap : predecessorPath) {
 						// Extend the paths we have found with the current statement
 						if (currentStmt != null && this.isActive)
@@ -349,23 +351,25 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			
 			// Look for neighbors and extend the paths along them
 			for (Abstraction neighbor : neighbors) {
+				// Neighbors may not have neighbors on their own by definition
+//				assert neighbor.neighbors.isEmpty();
+
 				// If this neighbor is one of our predecessors, we started running
 				// in circles
 				if (doneSet.contains(neighbor))
 					continue;
-					
-				Set<Abstraction> neighborDoneSet = new IdentityHashSet<Abstraction>();
-				neighborDoneSet.addAll(doneSet);
-				if (!neighborDoneSet.add(neighbor))
-					continue;
 				
 				// Check whether this is a real neighbor
 				if (neighbor.equals(this) && neighbor.predecessor == this.predecessor
-						&& (neighbor.currentStmt == null && this.currentStmt == null
+						&& ((neighbor.currentStmt == null && this.currentStmt == null)
 							|| neighbor.currentStmt.equals(this.currentStmt)))
 					continue;
 		
-				final Set<SourceContextAndPath> scaps = neighbor.getPath(neighborDoneSet);
+				final Set<SourceContextAndPath> scaps = neighbor.getPath(doneSet);
+				if (!scaps.isEmpty())
+					if (pathList == null)
+						pathList = new HashSet<SourceContextAndPath>();
+				
 				for (SourceContextAndPath context : scaps) {
 					boolean found = false;
 					for (SourceContextAndPath contextOld : pathList)
@@ -377,6 +381,10 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 						pathList.add(context);
 				}
 			}
+			
+			// If we still have no path list, we set a dummy object
+			if (pathList == null)
+				pathList = Collections.emptySet();
 			
 			// Validate the path list
 			for (SourceContextAndPath scap : pathList)
@@ -589,9 +597,21 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		assert originalAbstraction.equals(this);
 		
 		// We should not register ourselves as a neighbor
+		if (originalAbstraction == this)
+			return;
+		if (this.predecessor == originalAbstraction.predecessor
+				&& this.currentStmt == originalAbstraction.currentStmt)
+			return;
+
 		synchronized (neighbors) {
-			if (originalAbstraction != this)
-				this.neighbors.add(originalAbstraction);
+			// Check if we already have such a neighbor
+			for (Abstraction abs : this.neighbors)
+				if (abs.equals(originalAbstraction)
+						&& abs.predecessor == originalAbstraction.predecessor
+						&& abs.currentStmt == originalAbstraction.currentStmt)
+					return;
+			
+			this.neighbors.add(originalAbstraction);
 		}
 	}
 	

@@ -644,7 +644,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
                     logger.debug("Call skipped because target has no body: {} -> {}", src, dest);
                     return KillAll.v();
                 }
-
+                
 				final Stmt stmt = (Stmt) src;
 				final InvokeExpr ie = stmt.getInvokeExpr();
 				final List<Value> callArgs = ie.getArgs();
@@ -669,9 +669,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						if (source.equals(zeroValue))
 							return Collections.singleton(source);
-						
-						if (dest.getName().equals("foo"))
-							System.out.println("x");
 						
 						// If we have an exclusive taint wrapper for the target
 						// method, we do not perform an own taint propagation. 
@@ -998,8 +995,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							Abstraction newSource;
-
-							// Check whether we must leave a conditional branch
+							
+			                // Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(iStmt)) {
 								source = source.dropTopPostdominator();
 								// Have we dropped the last postdominator for an empty taint?
@@ -1065,7 +1062,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// Implicit taints are always passed over conditionally called methods
 							passOn |= source.getTopPostdominator() != null || source.getAccessPath().isEmpty();
 							if (passOn)
-								res.add(newSource);
+								if (newSource != zeroValue)
+									res.add(newSource);
 							
 							if (iStmt.getInvokeExpr().getMethod().isNative())
 								if (callArgs.contains(newSource.getAccessPath().getPlainValue())) {
@@ -1102,8 +1100,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
 							if (isSink) {
 								// If we are inside a conditional branch, we consider every sink call a leak
+								boolean conditionalCall = !interproceduralCFG().getMethodOf(call).isStatic()
+										&& interproceduralCFG().getMethodOf(call).getActiveBody().getThisLocal().equals
+												(newSource.getAccessPath().getPlainValue());
 								boolean taintedParam = (newSource.getTopPostdominator() != null
-											|| newSource.getAccessPath().isEmpty())
+											|| newSource.getAccessPath().isEmpty()
+											|| conditionalCall)
 										&& newSource.isAbstractionActive();
 								// If the base object is tainted, we also consider the "code" associated
 								// with the object's class as tainted.

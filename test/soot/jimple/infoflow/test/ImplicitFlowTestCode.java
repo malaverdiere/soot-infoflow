@@ -499,5 +499,32 @@ public class ImplicitFlowTestCode {
 		
 		a.intData = TelephonyManager.getIMEI();
 	}
+	
+	private interface I {
+		public void leak();
+	}
+	
+	private class I1 implements I {
+		public void leak() {
+			doPublish();
+		}
+	}
+	
+	private class I2 implements I {
+		public void leak() {
+			// Could be a different message, we use the same method as in I1
+			// just to simply things
+			doPublish();
+		}		
+	}
+	
+	public void classTypeTest() {
+		I i;
+		if (TelephonyManager.getIMEI() == 42)
+			i = new I1();
+		else
+			i = new I2();
+		i.leak();
+	}
 
 }

@@ -11,6 +11,7 @@
 package soot.jimple.infoflow.data;
 
 
+import heros.solver.Pair;
 import heros.solver.PathTrackingIFDSSolver.LinkedNode;
 
 import java.util.ArrayList;
@@ -19,6 +20,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import soot.SootField;
 import soot.SootMethod;
@@ -33,8 +37,8 @@ import soot.util.IdentityHashSet;
  */
 public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	
-	private static Object pathLockObject = new Object();
-
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    
 	/**
 	 * Class representing a source value together with the statement that created it
 	 * 
@@ -125,13 +129,13 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 				return false;
 			if (!super.equals(other))
 				return false;
-			SourceContextAndPath scap = (SourceContextAndPath) other;
-			return this.path.equals(scap.path);
+			//SourceContextAndPath scap = (SourceContextAndPath) other;
+			return true; //this.path.equals(scap.path);
 		}
 		
 		@Override
 		public int hashCode() {
-			return 31 * super.hashCode() + 7 * path.hashCode();
+			return 31 * super.hashCode(); // + 7 * path.hashCode();
 		}
 		
 		@Override
@@ -156,10 +160,14 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	private final AccessPath accessPath;
 	
 	private Abstraction predecessor = null;
-	private final Set<Abstraction> neighbors = new IdentityHashSet<Abstraction>();
+	private List<Abstraction> neighbors = null;
 	private Stmt currentStmt = null;
 	
 	private SourceContext sourceContext = null;
+
+	// only used in path generation
+	private List<Abstraction> successors = null;
+	private Abstraction sinkAbs = null;
 	
 	/**
 	 * Unit/Stmt which activates the taint when the abstraction passes it
@@ -222,19 +230,23 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	public final Abstraction deriveInactiveAbstraction(){
 		if (!this.isActive)
 			return this;
-		return deriveInactiveAbstraction(accessPath);
-	}
-	
-	public final Abstraction deriveInactiveAbstraction(AccessPath p){
-		assert this.isActive;
-		
-		Abstraction a = deriveNewAbstraction(p, null);
+
+		Abstraction a = deriveNewAbstractionMutable(accessPath, null);
 		a.isActive = false;
 		a.postdominators.clear();
 		return a;
 	}
 
 	public Abstraction deriveNewAbstraction(AccessPath p, Stmt currentStmt){
+		if (this.accessPath.equals(p) && this.currentStmt == currentStmt)
+			return this;
+		return deriveNewAbstractionMutable(p, currentStmt);
+	}
+	
+	private Abstraction deriveNewAbstractionMutable(AccessPath p, Stmt currentStmt){
+		if (this.accessPath.equals(p) && this.currentStmt == currentStmt)
+			return clone();
+		
 		Abstraction abs = new Abstraction(p, this);
 		abs.predecessor = this;
 		abs.currentStmt = currentStmt;
@@ -258,7 +270,9 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		SootField[] fields = new SootField[cutFirstField ? orgFields.length - 1 : orgFields.length];
 		for (int i = cutFirstField ? 1 : 0; i < orgFields.length; i++)
 			fields[cutFirstField ? i - 1 : i] = orgFields[i];
-		a = deriveNewAbstraction(new AccessPath(taint, fields), (Stmt) newActUnit);
+		AccessPath newAP = new AccessPath(taint, fields);
+		
+		a = deriveNewAbstractionMutable(newAP, (Stmt) newActUnit);
 		if (isActive) {
 			assert newActUnit != null;
 			if (!this.getAccessPath().isEmpty())
@@ -290,7 +304,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 */
 	public final Abstraction deriveNewAbstractionOnCatch(Value taint, Unit newActivationUnit){
 		assert this.exceptionThrown;
-		Abstraction abs = deriveNewAbstraction(new AccessPath(taint), (Stmt) newActivationUnit);
+		Abstraction abs = deriveNewAbstractionMutable(new AccessPath(taint), (Stmt) newActivationUnit);
 		abs.exceptionThrown = false;
 		
 		if(isActive) {
@@ -307,96 +321,208 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 * @return The path from the source to the current statement
 	 */
 	public Set<SourceContextAndPath> getPaths() {
-		return getPath(new IdentityHashSet<Abstraction>());
+		Runtime.getRuntime().gc();
+		return getPaths(true);
 	}
-		
-	private Set<SourceContextAndPath> getPath(Set<Abstraction> doneSet) {
+	
+	/**
+	 * Gets the path of statements from the source to the current statement
+	 * with which this abstraction is associated. If this path is ambiguous,
+	 * a single path is selected randomly.
+	 * @return The path from the source to the current statement
+	 */
+	public Set<SourceContextAndPath> getSources() {
+		Runtime.getRuntime().gc();
+		return getPaths(false);
+	}
+	
+	/**
+	 * Gets the path of statements from the source to the current statement
+	 * with which this abstraction is associated. If this path is ambiguous,
+	 * a single path is selected randomly.
+	 * @return The path from the source to the current statement
+	 */
+	private Set<SourceContextAndPath> getPaths(boolean reconstructPaths) {
 		if (pathCache != null)
-			return pathCache;
+			return Collections.unmodifiableSet(pathCache);
 		
-		synchronized (pathLockObject) {
-			// Check again. In the meantime, another thread might have created
-			// a path
-			if (pathCache != null)
-				return pathCache;
+		// Phase 1: Collect the graph roots
+		logger.info("Running path collection phase 1...");
+		
+		Set<Abstraction> roots = new IdentityHashSet<Abstraction>();
+		List<Abstraction> workList = new LinkedList<Abstraction>();
+		
+		Set<Abstraction> iterativeWorklist = new IdentityHashSet<Abstraction>();
+		workList.add(this);
 
-			// Do not run in circles
-			if (!doneSet.add(this))
-				return Collections.emptySet();
-
-			// If this statement has a context, we create a path context from it
-			if (sourceContext != null) {
-				SourceContextAndPath sourceAndPath = new SourceContextAndPath
-						(sourceContext.value, sourceContext.stmt);
-				pathCache = Collections.singleton(sourceAndPath);
-				return pathCache;
-			}
-
-			Set<SourceContextAndPath> pathList = null;
-
-			// Only look further up if we have no own source context
-			if (predecessor != null) {
-				final Set<SourceContextAndPath> predecessorPath = predecessor.getPath(doneSet);
-				if (!predecessorPath.isEmpty()) {
-					pathList = new HashSet<SourceContextAndPath>();
-					for (SourceContextAndPath scap : predecessorPath) {
-						// Extend the paths we have found with the current statement
-						if (currentStmt != null && this.isActive)
-							pathList.add(scap.extendPath(currentStmt));
-						else
-							pathList.add(scap);
-					}
+		boolean isIncremental = false;
+		
+		while (!workList.isEmpty()) {
+			Abstraction curAbs = workList.remove(0);
+			
+			if (curAbs.sourceContext != null) {
+				if (roots.add(curAbs)) {
+					// Construct the path root
+					SourceContextAndPath sourceAndPath = new SourceContextAndPath
+							(curAbs.sourceContext.value, curAbs.sourceContext.stmt);
+					if (curAbs.pathCache == null)
+						curAbs.pathCache = Collections.singleton(sourceAndPath);
+					else
+						isIncremental = true;
 				}
 			}
-			
-			// Look for neighbors and extend the paths along them
-			for (Abstraction neighbor : neighbors) {
-				// Neighbors may not have neighbors on their own by definition
-//				assert neighbor.neighbors.isEmpty();
+			else if (curAbs.predecessor != null) {
+				// If we have not seen this predecessor, we have to walk up
+				// this path as well
+				if (curAbs.predecessor.sinkAbs != this) {
+					curAbs.predecessor.sinkAbs = this;
+					workList.add(curAbs.predecessor);
+				}
+				
+				// Add the current element to the successor list of our
+				// predecessor
+				if (reconstructPaths) {
+					if (curAbs.predecessor.successors == null)
+						curAbs.predecessor.successors = new LinkedList<Abstraction>();
+					merge(curAbs.predecessor, curAbs, iterativeWorklist);
+				}
 
-				// If this neighbor is one of our predecessors, we started running
-				// in circles
-				if (doneSet.contains(neighbor))
-					continue;
-				
-				// Check whether this is a real neighbor
-				if (neighbor.equals(this) && neighbor.predecessor == this.predecessor
-						&& ((neighbor.currentStmt == null && this.currentStmt == null)
-							|| neighbor.currentStmt.equals(this.currentStmt)))
-					continue;
-		
-				final Set<SourceContextAndPath> scaps = neighbor.getPath(doneSet);
-				if (!scaps.isEmpty())
-					if (pathList == null)
-						pathList = new HashSet<SourceContextAndPath>();
-				
-				for (SourceContextAndPath context : scaps) {
-					boolean found = false;
-					for (SourceContextAndPath contextOld : pathList)
-						if (contextOld.getValue().equals(context.getValue())) {
-							found = true;
-							break;
+//				System.out.println(System.identityHashCode(curAbs.predecessor) + "->" + System.identityHashCode(curAbs));
+
+				if (curAbs.predecessor.neighbors != null)
+					for (Abstraction predNeighbor : curAbs.predecessor.neighbors) {
+						// If we have not processed this neighbor of the predecessor,
+						// we need to walk up this path as well
+						if (predNeighbor.sinkAbs != this) {
+							predNeighbor.sinkAbs = this;
+							workList.add(predNeighbor);
 						}
-					if (!found)
-						pathList.add(context);
+
+						// Add the current element as a successor to all neighbors
+						// of our predecessor
+						if (reconstructPaths) {
+							if (predNeighbor.successors == null)
+								predNeighbor.successors = new LinkedList<Abstraction>();  
+							merge(predNeighbor, curAbs, iterativeWorklist);
+						}
+						
+	//					System.out.println(System.identityHashCode(predNeighbor) + "->" + System.identityHashCode(curAbs));
+					}
+			}
+			else
+				throw new RuntimeException("Invalid abstraction detected");
+		}
+		
+		logger.info("Phase 1 completed.");
+//		System.out.println("---------");
+		
+		// If we have not found any roots, we are in trouble
+		assert !roots.isEmpty();
+		
+		// If we don't need the paths, just return the roots
+		if (!reconstructPaths) {
+			Set<SourceContextAndPath> res = new HashSet<SourceContextAndPath>();
+			for (Abstraction abs : roots)
+				res.add(new SourceContextAndPath(abs.sourceContext.value, abs.sourceContext.stmt));
+			return res;
+		}
+		
+		// Make sure that nothing wonky is going on
+		for (Abstraction abs : iterativeWorklist)
+			assert abs.pathCache != null;
+		
+		// Phase 2: Construct the paths
+		logger.info("Running path collection phase 2...");
+		
+		// If we perform an incremental build, we must add the nodes that have
+		// received new children
+		if (isIncremental)
+			workList.addAll(iterativeWorklist);
+		else
+			workList.addAll(roots);
+		
+		while (!workList.isEmpty()) {
+			Abstraction curAbs = workList.remove(0);
+			if (curAbs.successors == null)
+				continue;
+
+			// Shortcut: If we have found an equivalent abstraction, we
+			// copy its path cache
+			if (this.pathCache == null
+					&& curAbs.equals(this)
+					&& curAbs.currentStmt == this.currentStmt
+					&& curAbs.predecessor == this.predecessor)
+				this.pathCache = curAbs.pathCache;
+
+			// Propagate the path down
+			for (Abstraction successor : curAbs.successors)
+				for (SourceContextAndPath curScap : curAbs.pathCache) {
+					SourceContextAndPath extendedPath = successor.currentStmt == null
+							? curScap : curScap.extendPath(successor.currentStmt);
+					if (successor.pathCache == null)
+						successor.pathCache = new HashSet<SourceContextAndPath>();
+					if (successor.pathCache.add(extendedPath))
+						workList.add(successor);
+				}
+		}
+		
+		logger.info("Path construction done");
+		
+		assert pathCache != null;
+		return Collections.unmodifiableSet(pathCache);
+	}
+	
+	private void merge(Abstraction parentElement, Abstraction successor,
+			Set<Abstraction> iterativeWorklist) {
+		if (parentElement == successor)
+			return;
+		
+		List<Pair<Abstraction, Abstraction>> workSet = new LinkedList<Pair<Abstraction, Abstraction>>();
+		workSet.add(new Pair<Abstraction, Abstraction>(parentElement, successor));
+		
+		while (!workSet.isEmpty()) {
+			Pair<Abstraction, Abstraction> workPair = workSet.remove(0);
+			parentElement = workPair.getO1();
+			successor = workPair.getO2();
+
+			boolean found = false;
+			for (Abstraction abs : parentElement.successors) {
+				if (abs == successor)
+					break;
+				
+				if (abs.equals(successor)
+						&& abs.currentStmt == successor.currentStmt
+						&& abs.predecessor == successor.predecessor) {
+					found = true;
+					
+					// Link the two path caches
+					if (abs.pathCache == null)
+						abs.pathCache = new HashSet<SourceContextAndPath>();
+					successor.pathCache = abs.pathCache;
+						
+					// The element is already in the list, so we need to merge its
+					// children
+	//abs.successors.addAll(successor.successors);
+					for (Abstraction elemSuccs : successor.successors)
+						workSet.add(new Pair<Abstraction, Abstraction>(abs, elemSuccs));
+					
+					// We have merged the children to our own list of children, so
+					// we can cut off this part of the graph
+					successor.successors.clear();
+	
+					break;
 				}
 			}
 			
-			// If we still have no path list, we set a dummy object
-			if (pathList == null)
-				pathList = Collections.emptySet();
-			
-			// Validate the path list
-			for (SourceContextAndPath scap : pathList)
-				assert scap.getPath().isEmpty()
-						|| scap.getStmt() == null
-						|| scap.getPath().get(0).equals(scap.getStmt());
-		
-			pathCache = Collections.unmodifiableSet(pathList);
-			return pathCache;
+			// The element was not in the list, so we need to add it
+			if (!found) {
+				if (parentElement.successors.add(successor))
+					if (parentElement.pathCache != null)
+						iterativeWorklist.add(parentElement);
+			}
 		}
 	}
-
+	
 	public boolean isAbstractionActive(){
 		return isActive;
 	}
@@ -441,7 +567,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		if (postdominators.contains(postdom))
 			return this;
 		
-		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), conditionalUnit);
+		Abstraction abs = deriveNewAbstractionMutable
+				(AccessPath.getEmptyAccessPath(), conditionalUnit);
 		// TODO
 //		abs.activationUnit = null;
 		abs.postdominators.add(0, postdom);
@@ -452,7 +579,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	public final Abstraction deriveConditionalAbstractionCall(Unit conditionalCallSite) {
 		assert conditionalCallSite != null;
 		
-		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath(), (Stmt) conditionalCallSite);
+		Abstraction abs = deriveNewAbstractionMutable
+				(AccessPath.getEmptyAccessPath(), (Stmt) conditionalCallSite);
 		abs.isActive = true;
 		abs.activationUnit = conditionalCallSite;
 		
@@ -552,7 +680,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	}
 	
 	@Override
-	public int hashCode() {
+	public synchronized int hashCode() {
 		final int prime = 31;
 		if (this.hashCode == 0) {
 			this.hashCode = 1;
@@ -602,8 +730,11 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		if (this.predecessor == originalAbstraction.predecessor
 				&& this.currentStmt == originalAbstraction.currentStmt)
 			return;
-
-		synchronized (neighbors) {
+		
+		synchronized (this) {
+			if (neighbors == null)
+				neighbors = new LinkedList<Abstraction>();
+			
 			// Check if we already have such a neighbor
 			for (Abstraction abs : this.neighbors)
 				if (abs.equals(originalAbstraction)

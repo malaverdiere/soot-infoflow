@@ -169,6 +169,20 @@ public interface IInfoflow {
 	public void setEnableStaticFieldTracking(boolean enableStaticFields);
 	
 	/**
+	 * Sets whether the solver shall compute the paths between the sources and
+	 * sinks instead of just reporting if there is a path or not.
+	 * @param computeResultPaths True if paths shall be computed, otherwise false
+	 */
+	public void setComputeResultPaths(boolean computeResultPaths);
+
+	/**
+	 * Sets whether the solver shall track taints of thrown exception objects
+	 * @param enableExceptions True if taints associated with exceptions shall
+	 * be tracked over try/catch construct, otherwise false
+	 */
+	public void setEnableExceptionTracking(boolean enableExceptions);
+
+	/**
 	 * Sets the callgraph algorithm to be used by the data flow tracker
 	 * @param algorithm The callgraph algorithm to be used by the data flow tracker
 	 */

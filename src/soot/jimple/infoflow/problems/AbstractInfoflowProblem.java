@@ -26,6 +26,7 @@ import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
+import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.heros.InfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;
@@ -49,6 +50,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 	protected boolean enableImplicitFlows = false;
 	protected boolean enableStaticFields = true;
+	protected boolean enableExceptions = true;
 
 	protected boolean inspectSources = true;
 	protected boolean inspectSinks = true;
@@ -110,6 +112,16 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 */
 	public void setEnableStaticFieldTracking(boolean enableStaticFields) {
 		this.enableStaticFields = enableStaticFields;
+	}
+
+	/**
+	 * Sets whether the solver shall track taints over exceptions, i.e. throw
+	 * new RuntimeException(secretData).
+	 * @param enableExceptions True if taints in thrown exception objects shall
+	 * be tracked.
+	 */
+	public void setEnableExceptionTracking(boolean enableExceptions) {
+		this.enableExceptions = enableExceptions;
 	}
 
 	@Override
@@ -191,11 +203,11 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		if(val instanceof Constant)
 			return false;
 		
-		 if(DataTypeHandler.isFieldRefOrArrayRef(val) ||
-				source.getAccessPath().isInstanceFieldRef() ||
-				source.getAccessPath().isStaticFieldRef()){
+		if(DataTypeHandler.isFieldRefOrArrayRef(val)
+				|| source.getAccessPath().isInstanceFieldRef()
+				|| source.getAccessPath().isStaticFieldRef())
 			return true;
-		}
+		
 		return false;
 	}
 	

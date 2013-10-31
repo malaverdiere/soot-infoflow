@@ -82,7 +82,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
     private final Table<SootMethod, AccessPath, Set<AccessPath>> globalAliases = HashBasedTable.create();
     private final Map<Unit, Set<Abstraction>> implicitTargets = new ConcurrentHashMap<Unit, Set<Abstraction>>();
     
-	protected final Set<AbstractionAtSink> results = new HashSet<AbstractionAtSink>();
+	protected final Set<AbstractionAtSink> results = new ConcurrentHashSet<AbstractionAtSink>();
 	protected InfoflowResults infoflowResults = null;
 
 	/**
@@ -394,7 +394,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									return Collections.emptySet();
 							}
 							
-							Abstraction newSource;
+							final Abstraction newSource;
 							if (!source.isAbstractionActive() && src.equals(source.getActivationUnit()))
 								newSource = source.getActiveCopy();
 							else
@@ -560,7 +560,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						}
 					};
 				}
-				else if (src instanceof ThrowStmt) {
+				else if (enableExceptions && src instanceof ThrowStmt) {
 					final ThrowStmt throwStmt = (ThrowStmt) src;
 					return new FlowFunction<Abstraction>() {
 
@@ -743,8 +743,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							assert dest.getParameterCount() == callArgs.size();
 							// check if param is tainted:
 							for (int i = 0; i < callArgs.size(); i++) {
-								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) &&
-										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())) {
+								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) /*&&
+										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())*/) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
 											(paramLocals.get(i)), stmt);
 
@@ -1189,17 +1189,21 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 	/**
 	 * Gets the results of the data flow analysis
+	 * @param computePaths True if the paths between sources and sinks shall
+	 * also be computed instead of just reporting that such a path exists
 	 * @return The paths between sources and sinks found by the data flow
 	 * analysis
 	 */
-    public InfoflowResults getResults(){
+    public InfoflowResults getResults(boolean computePaths){
     	if (this.infoflowResults != null)
     		return this.infoflowResults;
     	
     	logger.debug("Running path reconstruction");
     	InfoflowResults results = new InfoflowResults();
+    	logger.info("Obtainted {} connections between sources and sinks", this.results.size());
     	for (AbstractionAtSink abs : this.results)
-    		for (SourceContextAndPath context : abs.getAbstraction().getPaths())
+    		for (SourceContextAndPath context : computePaths ? abs.getAbstraction().getPaths()
+    				: abs.getAbstraction().getSources())
 				results.addResult(abs.getSinkValue(), abs.getSinkStmt(),
 						context.getValue(), context.getStmt(),
 						context.getPath(), abs.getSinkStmt());

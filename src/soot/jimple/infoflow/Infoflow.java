@@ -77,6 +77,8 @@ public class Infoflow implements IInfoflow {
 	private boolean stopAfterFirstFlow = false;
 	private boolean enableImplicitFlows = false;
 	private boolean enableStaticFields = true;
+	private boolean enableExceptions = true;
+	private boolean computeResultPaths = true;
 	
 	private boolean inspectSources = true;
 	private boolean inspectSinks = true;
@@ -137,6 +139,16 @@ public class Infoflow implements IInfoflow {
 	@Override
 	public void setEnableStaticFieldTracking(boolean enableStaticFields) {
 		this.enableStaticFields = enableStaticFields;
+	}
+
+	@Override
+	public void setEnableExceptionTracking(boolean enableExceptions) {
+		this.enableExceptions = enableExceptions;
+	}
+
+	@Override
+	public void setComputeResultPaths(boolean computeResultPaths) {
+		this.computeResultPaths = computeResultPaths;
 	}
 
 	public void setSootConfig(IInfoflowConfig config){
@@ -441,11 +453,13 @@ public class Infoflow implements IInfoflow {
 				forwardProblem.setInspectSinks(inspectSinks);
 				forwardProblem.setEnableImplicitFlows(enableImplicitFlows);
 				forwardProblem.setEnableStaticFieldTracking(enableStaticFields);
+				forwardProblem.setEnableExceptionTracking(enableExceptions);
 				
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);
 				backProblem.setZeroValue(forwardProblem.createZeroValue());
 				backProblem.setEnableStaticFieldTracking(enableStaticFields);
+				backProblem.setEnableExceptionTracking(enableExceptions);
 				
 				if (!enableStaticFields)
 					logger.warn("Static field tracking is disabled, results may be incomplete");
@@ -472,8 +486,17 @@ public class Infoflow implements IInfoflow {
 				if (executor.getActiveCount() != 0 || !executor.isTerminated())
 					logger.error("Executor did not terminate gracefully");
 
-				logger.info("IDFS problem solved, processing results...");
-				results = forwardProblem.getResults();
+				logger.info("IFDS problem solved, processing results...");
+				
+				// Force a cleanup. Everything we need is reachable through the
+				// results set, the other abstractions can be killed now.
+				forwardSolver.cleanup();
+				backSolver.cleanup();
+				forwardSolver = null;
+				backSolver = null;
+				Runtime.getRuntime().gc();
+				
+				results = forwardProblem.getResults(computeResultPaths);
 				
 				if (results.getResults().isEmpty())
 					logger.warn("No results found.");

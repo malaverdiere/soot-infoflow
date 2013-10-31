@@ -145,4 +145,16 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 			super.propagate(sourceVal, target, targetVal, f, relatedCallSite, isUnbalancedReturn);
 	}
 
+	/**
+	 * Cleans up some unused memory. Results will still be available afterwards,
+	 * but no intermediate computation values.
+	 */
+	public void cleanup() {
+		this.jumpFn.clear();
+		this.incoming.clear();
+		this.endSummary.clear();
+		this.val.clear();
+		this.cache.clear();
+	}
+
 }

@@ -141,7 +141,7 @@ public class AccessPath implements Cloneable {
 	}
 	
 	@Override
-	public int hashCode() {
+	public synchronized int hashCode() {
 		if (hashCode == 0) {
 			final int prime = 31;
 			this.hashCode = 1;
@@ -153,10 +153,11 @@ public class AccessPath implements Cloneable {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (super.equals(obj))
+		if (obj == this || super.equals(obj))
 			return true;
 		if (obj == null || !(obj instanceof AccessPath))
 			return false;
+		
 		AccessPath other = (AccessPath) obj;
 		if (!Arrays.equals(fields, other.fields))
 			return false;
@@ -166,6 +167,7 @@ public class AccessPath implements Cloneable {
 		} else if (!value.equals(other.value))
 			return false;
 		
+		assert this.hashCode == obj.hashCode();
 		return true;
 	}
 	

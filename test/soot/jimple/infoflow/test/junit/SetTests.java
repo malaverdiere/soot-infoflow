@@ -38,7 +38,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case concreteHashSetTest done.");
     }
     
-    @Test(timeout=300000)	// implicit flow, takes ~74s
+    @Test(timeout=600000)	// implicit flow, takes ~74s
     public void containsTest(){
     	System.out.println("Running test case containsTest...");
     	Infoflow infoflow = initInfoflow();

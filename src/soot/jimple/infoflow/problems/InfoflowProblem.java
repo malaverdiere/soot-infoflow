@@ -365,7 +365,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					return new SolverNormalFlowFunction() {
 
-						 @Override
+						@Override
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
@@ -382,7 +382,15 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							boolean cutFirstField = false;
 							Set<Abstraction> res = new HashSet<Abstraction>();
 							
-							// on NormalFlow taint cannot be created
+							// Fields can be sources in some cases
+                            if (source.equals(zeroValue)
+                            		&& sourceSinkManager.isSource(assignStmt, interproceduralCFG())) {
+                                final Abstraction abs = new Abstraction(assignStmt.getLeftOp(),
+                                		assignStmt.getRightOp(), assignStmt, false, true, assignStmt);
+                                return Collections.singleton(abs);
+                            }
+
+                            // on NormalFlow taint cannot be created
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
 

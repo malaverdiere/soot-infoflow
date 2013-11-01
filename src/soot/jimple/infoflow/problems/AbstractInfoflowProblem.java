@@ -27,6 +27,7 @@ import soot.jimple.ArrayRef;
 import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.handlers.TaintPropagationHandler;
 import soot.jimple.infoflow.heros.InfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
@@ -59,6 +60,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected InfoflowSolver solver = null;
 	
 	protected boolean stopAfterFirstFlow = false;
+	
+	protected Set<TaintPropagationHandler> taintPropagationHandlers = new HashSet<TaintPropagationHandler>();
 	
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
@@ -244,6 +247,10 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 */
 	public Map<Unit, Set<Abstraction>> getInitialSeeds() {
 		return this.initialSeeds;
+	}
+	
+	public void addTaintPropagationHandler(TaintPropagationHandler handler) {
+		this.taintPropagationHandlers.add(handler);
 	}
 	
 }

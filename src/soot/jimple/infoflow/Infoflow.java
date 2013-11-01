@@ -46,6 +46,7 @@ import soot.jimple.infoflow.config.IInfoflowConfig;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
+import soot.jimple.infoflow.handlers.TaintPropagationHandler;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.problems.BackwardsInfoflowProblem;
 import soot.jimple.infoflow.problems.InfoflowProblem;
@@ -92,6 +93,7 @@ public class Infoflow implements IInfoflow {
     private BiDiInterproceduralCFG<Unit,SootMethod> iCfg;
     
     private Set<ResultsAvailableHandler> onResultsAvailable = new HashSet<ResultsAvailableHandler>();
+    private Set<TaintPropagationHandler> taintPropagationHandlers = new HashSet<TaintPropagationHandler>();
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
@@ -454,12 +456,16 @@ public class Infoflow implements IInfoflow {
 				forwardProblem.setEnableImplicitFlows(enableImplicitFlows);
 				forwardProblem.setEnableStaticFieldTracking(enableStaticFields);
 				forwardProblem.setEnableExceptionTracking(enableExceptions);
+				for (TaintPropagationHandler tp : taintPropagationHandlers)
+					forwardProblem.addTaintPropagationHandler(tp);
 				
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);
 				backProblem.setZeroValue(forwardProblem.createZeroValue());
 				backProblem.setEnableStaticFieldTracking(enableStaticFields);
 				backProblem.setEnableExceptionTracking(enableExceptions);
+				for (TaintPropagationHandler tp : taintPropagationHandlers)
+					backProblem.addTaintPropagationHandler(tp);
 				
 				if (!enableStaticFields)
 					logger.warn("Static field tracking is disabled, results may be incomplete");
@@ -568,7 +574,11 @@ public class Infoflow implements IInfoflow {
 	 * @param handler The handler to add
 	 */
 	public void addResultsAvailableHandler(ResultsAvailableHandler handler) {
-		onResultsAvailable.add(handler);
+		this.onResultsAvailable.add(handler);
+	}
+	
+	public void addTaintPropagationHandler(TaintPropagationHandler handler) {
+		this.taintPropagationHandlers.add(handler);
 	}
 	
 	/**

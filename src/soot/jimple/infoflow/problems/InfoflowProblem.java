@@ -56,6 +56,8 @@ import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.Abstraction.SourceContextAndPath;
 import soot.jimple.infoflow.data.AbstractionAtSink;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.handlers.TaintPropagationHandler;
+import soot.jimple.infoflow.handlers.TaintPropagationHandler.FlowFunctionType;
 import soot.jimple.infoflow.heros.ConcurrentHashSet;
 import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
 import soot.jimple.infoflow.heros.InfoflowSolver;
@@ -786,6 +788,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						if (source.equals(zeroValue))
 							return Collections.emptySet();
+						
+						// Notify the handler if we have one
+						for (TaintPropagationHandler tp : taintPropagationHandlers)
+							tp.notifyFlowIn(returnStmt, Collections.singleton(source),
+									interproceduralCFG(), FlowFunctionType.ReturnFlowFunction);
 						
 						boolean callerD1sConditional = false;
 						for (Abstraction d1 : callerD1s)

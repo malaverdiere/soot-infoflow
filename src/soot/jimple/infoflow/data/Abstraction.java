@@ -499,16 +499,17 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 					if (abs.pathCache == null)
 						abs.pathCache = new HashSet<SourceContextAndPath>();
 					successor.pathCache = abs.pathCache;
-						
-					// The element is already in the list, so we need to merge its
-					// children
-	//abs.successors.addAll(successor.successors);
-					for (Abstraction elemSuccs : successor.successors)
-						workSet.add(new Pair<Abstraction, Abstraction>(abs, elemSuccs));
 					
-					// We have merged the children to our own list of children, so
-					// we can cut off this part of the graph
-					successor.successors.clear();
+					if (successor.successors != null) {	
+						// The element is already in the list, so we need to merge its
+						// children
+						for (Abstraction elemSuccs : successor.successors)
+							workSet.add(new Pair<Abstraction, Abstraction>(abs, elemSuccs));
+					
+						// We have merged the children to our own list of children, so
+						// we can cut off this part of the graph
+						successor.successors.clear();
+					}
 	
 					break;
 				}

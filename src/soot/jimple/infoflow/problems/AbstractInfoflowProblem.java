@@ -26,7 +26,6 @@ import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
-import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.heros.InfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;

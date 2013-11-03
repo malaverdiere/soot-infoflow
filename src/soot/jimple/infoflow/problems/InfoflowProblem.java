@@ -322,6 +322,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
+							// Notify the handler if we have one
+							for (TaintPropagationHandler tp : taintPropagationHandlers)
+								tp.notifyFlowIn(is, Collections.singleton(source),
+										interproceduralCFG(), FlowFunctionType.NormalFlowFunction);
+
 							// Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(is)) {
 								source = source.dropTopPostdominator();
@@ -372,6 +377,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
+							// Notify the handler if we have one
+							for (TaintPropagationHandler tp : taintPropagationHandlers)
+								tp.notifyFlowIn(assignStmt, Collections.singleton(source),
+										interproceduralCFG(), FlowFunctionType.NormalFlowFunction);
+
 							// Make sure nothing all wonky is going on here
 							assert source.getAccessPath().isEmpty()
 									|| source.getTopPostdominator() == null;
@@ -551,6 +561,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 
+							// Notify the handler if we have one
+							for (TaintPropagationHandler tp : taintPropagationHandlers)
+								tp.notifyFlowIn(returnStmt, Collections.singleton(source),
+										interproceduralCFG(), FlowFunctionType.NormalFlowFunction);
+
 							// Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(returnStmt)) {
 								source = source.dropTopPostdominator();
@@ -579,6 +594,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
+							// Notify the handler if we have one
+							for (TaintPropagationHandler tp : taintPropagationHandlers)
+								tp.notifyFlowIn(throwStmt, Collections.singleton(source),
+										interproceduralCFG(), FlowFunctionType.NormalFlowFunction);
+
 							// Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(throwStmt)) {
 								source = source.dropTopPostdominator();
@@ -603,6 +623,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction source) {
+							if (stopAfterFirstFlow && !results.isEmpty())
+								return Collections.emptySet();
+
+							// Notify the handler if we have one
+							for (TaintPropagationHandler tp : taintPropagationHandlers)
+								tp.notifyFlowIn((Stmt) src, Collections.singleton(source),
+										interproceduralCFG(), FlowFunctionType.NormalFlowFunction);
+
 							// Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(src)) {
 								source = source.dropTopPostdominator();
@@ -680,6 +708,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue))
 							return Collections.singleton(source);
 						
+						// Notify the handler if we have one
+						for (TaintPropagationHandler tp : taintPropagationHandlers)
+							tp.notifyFlowIn(stmt, Collections.singleton(source),
+									interproceduralCFG(), FlowFunctionType.CallFlowFunction);
+
 						// If we have an exclusive taint wrapper for the target
 						// method, we do not perform an own taint propagation. 
 						if(taintWrapper != null && taintWrapper.isExclusive(stmt, source.getAccessPath())) {
@@ -1011,7 +1044,12 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								return Collections.emptySet();
 							Abstraction newSource;
 							
-			                // Check whether we must leave a conditional branch
+							// Notify the handler if we have one
+							for (TaintPropagationHandler tp : taintPropagationHandlers)
+								tp.notifyFlowIn(call, Collections.singleton(source),
+										interproceduralCFG(), FlowFunctionType.CallToReturnFlowFunction);
+
+							// Check whether we must leave a conditional branch
 							if (source.isTopPostdominator(iStmt)) {
 								source = source.dropTopPostdominator();
 								// Have we dropped the last postdominator for an empty taint?

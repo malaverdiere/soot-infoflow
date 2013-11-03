@@ -249,6 +249,10 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		return this.initialSeeds;
 	}
 	
+	/**
+	 * Adds a handler which is invoked whenever a taint is propagated
+	 * @param handler The handler to be invoked when propagating taints
+	 */
 	public void addTaintPropagationHandler(TaintPropagationHandler handler) {
 		this.taintPropagationHandlers.add(handler);
 	}

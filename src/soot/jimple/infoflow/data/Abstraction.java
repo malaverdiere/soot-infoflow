@@ -405,13 +405,27 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 							workList.add(neighbor);
 							neighbor.successors = null;
 						}
-						if (neighbor.successors == null) {
-							neighbor.successors = curAbs.successors;
-							if (neighbor.pathCache != null)
-								iterativeWorklist.add(neighbor);
-							if (curAbs.pathCache != null)
-								iterativeWorklist.add(curAbs);
+						
+						// Merge the successor lists
+						if (neighbor.successors != null) {
+							for (Abstraction nbSucc : neighbor.successors) {
+								boolean found = false;
+								for (Abstraction curSucc : curAbs.successors)
+									if (nbSucc == curSucc) {
+										found = true;
+										break;
+									}
+								if (!found)
+									curAbs.successors.add(nbSucc);
+							}
 						}
+						
+						if (neighbor.pathCache != null)
+							iterativeWorklist.add(neighbor);
+						if (curAbs.pathCache != null)
+							iterativeWorklist.add(curAbs);
+						neighbor.successors = curAbs.successors;
+						
 						if (neighbor.pathCache == null && curAbs.pathCache != null)
 							neighbor.pathCache = curAbs.pathCache;
 						else if (neighbor.pathCache != null && curAbs.pathCache == null)

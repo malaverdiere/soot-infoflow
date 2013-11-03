@@ -60,6 +60,8 @@
 				</fileset>
 			</classpath>
 			
+			<jvmarg value="-ea" />
+			
 			<!-- Make stuff debuggable -->
 			<!--
 			<jvmarg value="-Xdebug" />

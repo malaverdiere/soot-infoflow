@@ -374,6 +374,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 						curAbs.pathCache = Collections.singleton(sourceAndPath);
 					else
 						isIncremental = true;
+					assert curAbs.neighbors == null;
 				}
 			}
 			else if (curAbs.predecessor != null) {
@@ -452,14 +453,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			Abstraction curAbs = workList.remove(0);
 			if (curAbs.successors == null)
 				continue;
-//			if (curAbs.sinkAbs == null)
-//				continue;
-			curAbs.sinkAbs = null;
 			
 			assert curAbs.pathCache != null;
-			
-			if (curAbs == this)
-				System.out.println("x");
 			
 			// Merge the path cache with all neighbors
 			if (curAbs.neighbors != null)

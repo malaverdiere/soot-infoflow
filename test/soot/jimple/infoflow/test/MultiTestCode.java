@@ -137,5 +137,13 @@ public class MultiTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(foo << 32);
 	}
+	
+	public void intMultiTest() {
+		int imei = TelephonyManager.getIMEI();
+		int imsi = TelephonyManager.getIMSI();
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(imei + imsi);
+	}
 
 }

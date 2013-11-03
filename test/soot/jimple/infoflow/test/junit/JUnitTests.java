@@ -44,6 +44,7 @@ public abstract class JUnitTests {
     protected static List<String> sources;
     protected static final String sourceDeviceId = "<soot.jimple.infoflow.test.android.TelephonyManager: java.lang.String getDeviceId()>";
     protected static final String sourceIMEI = "<soot.jimple.infoflow.test.android.TelephonyManager: int getIMEI()>";
+    protected static final String sourceIMSI = "<soot.jimple.infoflow.test.android.TelephonyManager: int getIMSI()>";
     protected static final String sourcePwd = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>";
     protected static final String sourceUserData = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String[] getUserData(java.lang.String)>";
    	
@@ -72,6 +73,7 @@ public abstract class JUnitTests {
         sources.add(sourceUserData);
         sources.add(sourceDeviceId);
         sources.add(sourceIMEI);
+        sources.add(sourceIMSI);
         
         sinks = new ArrayList<String>();
         sinks.add(sink);
@@ -94,7 +96,8 @@ public abstract class JUnitTests {
 						|| map.isPathBetweenMethods(sink, sourceIMEI)	// implicit flows
 						|| map.isPathBetweenMethods(sink, sourcePwd)
 						|| map.isPathBetweenMethods(sinkInt, sourceDeviceId)
-						|| map.isPathBetweenMethods(sinkInt, sourceIMEI));
+						|| map.isPathBetweenMethods(sinkInt, sourceIMEI)
+						|| map.isPathBetweenMethods(sinkInt, sourceIMSI));
 			}else{
 				fail("result is not available");
 			}

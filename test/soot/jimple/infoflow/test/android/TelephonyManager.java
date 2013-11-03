@@ -20,4 +20,8 @@ public class TelephonyManager {
 		return 123;
 	}
 
+	public static int getIMSI() {
+		return 321;
+	}
+
 }

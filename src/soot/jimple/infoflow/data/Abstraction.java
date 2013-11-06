@@ -167,6 +167,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	// only used in path generation
 	private List<Abstraction> successors = null;
 	private Abstraction sinkAbs = null;
+	private Set<SourceContextAndPath> pathCache = null;
 	
 	/**
 	 * Unit/Stmt which activates the taint when the abstraction passes it
@@ -189,16 +190,28 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 * branch. Do not use the synchronized Stack class here to avoid deadlocks.
 	 */
 	private final List<UnitContainer> postdominators = new ArrayList<UnitContainer>();
-
-	private Set<SourceContextAndPath> pathCache = null;
-
+	
+	private final boolean flowSensitiveAliasing;
+	
 	public Abstraction(Value taint, Value currentVal, Stmt currentStmt,
-			boolean exceptionThrown, boolean isActive, Unit activationUnit){
+			boolean exceptionThrown, boolean isActive, Unit activationUnit,
+			boolean flowSensitiveAliasing){
 		this.sourceContext = new SourceContext(currentVal, currentStmt);
 		this.accessPath = new AccessPath(taint);
-		this.activationUnit = activationUnit;
+		
+		if (flowSensitiveAliasing)
+			this.activationUnit = activationUnit;
+		else
+			this.activationUnit = null;
+		
 		this.exceptionThrown = exceptionThrown;
-		this.isActive = isActive;
+		
+		if (flowSensitiveAliasing)
+			this.isActive = isActive;
+		else
+			this.isActive = true;
+		
+		this.flowSensitiveAliasing = flowSensitiveAliasing;
 	}
 
 	/**
@@ -212,6 +225,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			sourceContext = null;
 			exceptionThrown = false;
 			activationUnit = null;
+			flowSensitiveAliasing = true;
 		}
 		else {
 			sourceContext = original.sourceContext;
@@ -222,11 +236,19 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			
 			postdominators.addAll(original.postdominators);
 			assert this.postdominators.equals(original.postdominators);
+			
+			flowSensitiveAliasing = original.flowSensitiveAliasing;
+			assert flowSensitiveAliasing || this.activationUnit == null;
+			assert this.isActive || !flowSensitiveAliasing;
 		}
 		accessPath = p;
 	}
 	
 	public final Abstraction deriveInactiveAbstraction(){
+		if (!flowSensitiveAliasing)
+			return this;
+		
+		// If this abstraction is already inactive, we keep it
 		if (!this.isActive)
 			return this;
 
@@ -272,7 +294,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		AccessPath newAP = new AccessPath(taint, fields);
 		
 		a = deriveNewAbstractionMutable(newAP, (Stmt) newActUnit);
-		if (isActive) {
+		if (flowSensitiveAliasing && isActive) {
 			assert newActUnit != null;
 			if (!this.getAccessPath().isEmpty())
 				a.activationUnit = newActUnit;
@@ -306,7 +328,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		Abstraction abs = deriveNewAbstractionMutable(new AccessPath(taint), (Stmt) newActivationUnit);
 		abs.exceptionThrown = false;
 		
-		if(isActive) {
+		if(flowSensitiveAliasing && isActive) {
 			assert newActivationUnit != null;
 			abs.activationUnit = newActivationUnit;
 		}
@@ -454,7 +476,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			assert abs.pathCache != null;
 		
 		// Phase 2: Construct the paths
-		logger.info("Running path collection phase 2...");
+		logger.info("Running path collection phase 2 from {} roots...", roots.size());
 		
 		// If we perform an incremental build, we must add the nodes that have
 		// received new children
@@ -683,6 +705,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			return false;
 		if(!this.postdominators.equals(other.postdominators))
 			return false;
+		if(this.flowSensitiveAliasing != other.flowSensitiveAliasing)
+			return false;
 		return true;
 	}
 	
@@ -699,6 +723,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + postdominators.hashCode();
+			this.hashCode = prime * this.hashCode + (flowSensitiveAliasing ? 1231 : 1237);
 		}
 		return hashCode;
 	}

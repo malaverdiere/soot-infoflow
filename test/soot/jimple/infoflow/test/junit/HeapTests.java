@@ -527,6 +527,28 @@ public class HeapTests extends JUnitTests {
 	    }
 
 	    @Test(timeout=300000)
+	    public void aliasPerformanceTestFIS(){
+	    	taintWrapper = false;
+	    	
+	    	Infoflow infoflow = initInfoflow();
+	    	int oldLength = Infoflow.getAccessPathLength();
+	    	infoflow.setAccessPathLength(3);
+
+	    	infoflow.setInspectSources(false);
+	    	infoflow.setInspectSinks(false);
+	    	infoflow.setEnableImplicitFlows(false);
+	    	infoflow.setFlowSensitiveAliasing(false);
+	    	
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void aliasPerformanceTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 3);		// we're not flow sensitive, so we get a spurious one
+			Assert.assertEquals(3, infoflow.getResults().size());
+
+			infoflow.setAccessPathLength(oldLength);
+	    }
+
+	    @Test(timeout=300000)
 	    public void backwardsParameterTest(){
 	    	taintWrapper = false;
 	    	

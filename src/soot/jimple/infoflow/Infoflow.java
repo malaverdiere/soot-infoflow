@@ -80,6 +80,7 @@ public class Infoflow implements IInfoflow {
 	private boolean enableStaticFields = true;
 	private boolean enableExceptions = true;
 	private boolean computeResultPaths = true;
+	private boolean flowSensitiveAliasing = true;
 	
 	private boolean inspectSources = true;
 	private boolean inspectSinks = true;
@@ -151,6 +152,11 @@ public class Infoflow implements IInfoflow {
 	@Override
 	public void setComputeResultPaths(boolean computeResultPaths) {
 		this.computeResultPaths = computeResultPaths;
+	}
+
+	@Override
+	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing) {
+		this.flowSensitiveAliasing = flowSensitiveAliasing;
 	}
 
 	public void setSootConfig(IInfoflowConfig config){
@@ -458,6 +464,7 @@ public class Infoflow implements IInfoflow {
 				forwardProblem.setEnableExceptionTracking(enableExceptions);
 				for (TaintPropagationHandler tp : taintPropagationHandlers)
 					forwardProblem.addTaintPropagationHandler(tp);
+				forwardProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
 				
 				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
 				backProblem.setTaintWrapper(taintWrapper);
@@ -466,9 +473,12 @@ public class Infoflow implements IInfoflow {
 				backProblem.setEnableExceptionTracking(enableExceptions);
 				for (TaintPropagationHandler tp : taintPropagationHandlers)
 					backProblem.addTaintPropagationHandler(tp);
+				backProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
 				
 				if (!enableStaticFields)
 					logger.warn("Static field tracking is disabled, results may be incomplete");
+				if (!flowSensitiveAliasing)
+					logger.warn("Using flow-insensitive alias tracking, results may be imprecise");
 
 				forwardSolver.solve();
 				

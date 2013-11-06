@@ -287,6 +287,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			}
 			
 			private boolean isCallSiteActivatingTaint(Unit callSite, Unit activationUnit) {
+				if (!flowSensitiveAliasing)
+					return false;
+
 				if (activationUnit == null)
 					return false;
 				Set<Unit> callSites = activationUnitsToCallSites.get(activationUnit);
@@ -294,6 +297,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			}
 			
 			private boolean registerActivationCallSite(Unit callSite, Abstraction activationAbs) {
+				if (!flowSensitiveAliasing)
+					return false;
+				
 				if (!activationAbs.isAbstractionActive())
 					return false;
 				Unit activationUnit = activationAbs.getActivationUnit();
@@ -348,7 +354,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								res.add(source);
 							
 							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
-								Abstraction abs = new Abstraction(is.getLeftOp(), is.getRightOp(), is, false, true, is);
+								Abstraction abs = new Abstraction(is.getLeftOp(), is.getRightOp(), is, false,
+										true, is, flowSensitiveAliasing);
 								res.add(abs);
 							}
 							
@@ -398,7 +405,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
                             if (source.equals(zeroValue)
                             		&& sourceSinkManager.isSource(assignStmt, interproceduralCFG())) {
                                 final Abstraction abs = new Abstraction(assignStmt.getLeftOp(),
-                                		assignStmt.getRightOp(), assignStmt, false, true, assignStmt);
+                                		assignStmt.getRightOp(), assignStmt, false, true, assignStmt,
+                                		flowSensitiveAliasing);
                                 return Collections.singleton(abs);
                             }
 
@@ -696,8 +704,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				final boolean isSink = sourceSinkManager != null
 						? sourceSinkManager.isSink(stmt, interproceduralCFG()) : false;
 				
-				final Set<?> fieldsReadByCallee = interproceduralCFG().getReadVariables
-						(interproceduralCFG().getMethodOf(stmt), stmt);
+				final Set<?> fieldsReadByCallee = enableStaticFields ? interproceduralCFG().getReadVariables
+						(interproceduralCFG().getMethodOf(stmt), stmt) : null;
 
 				return new SolverCallFlowFunction() {
 
@@ -762,7 +770,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 
 						// Only propagate the taint if the target field is actually read
-						if (source.getAccessPath().isStaticFieldRef())
+						if (enableStaticFields && source.getAccessPath().isStaticFieldRef())
 							if (fieldsReadByCallee != null && !isFieldReadByCallee(fieldsReadByCallee, source))
 								return Collections.emptySet();
 						
@@ -1026,10 +1034,10 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					final boolean isSink = (sourceSinkManager != null)
 							? sourceSinkManager.isSink(iStmt, interproceduralCFG()) : false;
 
-					final Set<?> fieldsReadByCallee = interproceduralCFG().getReadVariables
-							(interproceduralCFG().getMethodOf(call), (Stmt) call);
-					final Set<?> fieldsWrittenByCallee = interproceduralCFG().getWriteVariables
-							(interproceduralCFG().getMethodOf(call), (Stmt) call);
+					final Set<?> fieldsReadByCallee = enableStaticFields ? interproceduralCFG().getReadVariables
+							(interproceduralCFG().getMethodOf(call), (Stmt) call) : null;
+					final Set<?> fieldsWrittenByCallee = enableStaticFields ? interproceduralCFG().getWriteVariables
+							(interproceduralCFG().getMethodOf(call), (Stmt) call) : null;
 
 					return new SolverCallToReturnFlowFunction() {
 
@@ -1138,7 +1146,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										target = ((InstanceInvokeExpr) invExpr).getBase();
 									}
 									
-									final Abstraction abs = new Abstraction(target, iStmt.getInvokeExpr(), iStmt, false, true, iStmt);
+									final Abstraction abs = new Abstraction(target, iStmt.getInvokeExpr(),
+											iStmt, false, true, iStmt, flowSensitiveAliasing);
 									
 									res.add(abs);
 									res.remove(zeroValue);

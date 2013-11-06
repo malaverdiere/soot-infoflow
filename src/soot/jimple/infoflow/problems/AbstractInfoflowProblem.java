@@ -51,6 +51,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected boolean enableImplicitFlows = false;
 	protected boolean enableStaticFields = true;
 	protected boolean enableExceptions = true;
+	protected boolean flowSensitiveAliasing = true;
 
 	protected boolean inspectSources = true;
 	protected boolean inspectSinks = true;
@@ -126,10 +127,21 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		this.enableExceptions = enableExceptions;
 	}
 
+	/**
+	 * Sets whether the solver shall use flow sensitive aliasing. This makes
+	 * the analysis more precise, but also requires more time.
+	 * @param flowSensitiveAliasing True if flow sensitive aliasing shall be
+	 * used, otherwise false
+	 */
+	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing) {
+		this.flowSensitiveAliasing = flowSensitiveAliasing;
+	}
+
 	@Override
 	public Abstraction createZeroValue() {
 		if (zeroValue == null)
-			zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false, true, null);
+			zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), null,
+					null, false, true, null, flowSensitiveAliasing);
 		return zeroValue;
 	}
 

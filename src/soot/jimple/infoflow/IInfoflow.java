@@ -176,6 +176,13 @@ public interface IInfoflow {
 	public void setComputeResultPaths(boolean computeResultPaths);
 
 	/**
+	 * Sets whether a flow sensitive aliasing algorithm shall be used
+	 * @param flowSensitiveAliasing True if a flow sensitive aliasing algorithm
+	 * shall be used, otherwise false
+	 */
+	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing);
+
+	/**
 	 * Sets whether the solver shall track taints of thrown exception objects
 	 * @param enableExceptions True if taints associated with exceptions shall
 	 * be tracked over try/catch construct, otherwise false

@@ -103,9 +103,11 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 					// If we have an assignment to the base local of the current taint,
 					// all taint propagations must be below that point, so this is the
 					// right point to turn around.
-					if (triggerInaktiveTaintOrReverseFlow(leftValue, source))
+					if (triggerInaktiveTaintOrReverseFlow(leftValue, source)) {
+						Abstraction fabs = getForwardAbstraction(source);
 						for (Unit u : interproceduralCFG().getPredsOf(defStmt))
-							fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, source));
+							fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
+					}
 				}
 				
 				if (defStmt instanceof AssignStmt) {
@@ -213,9 +215,11 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				// point for static fields, we turn around on every use.
 				if (enableStaticFields)
 					for (Abstraction newAbs : res)
-						if (newAbs.getAccessPath().isStaticFieldRef() && newAbs != source)
+						if (newAbs.getAccessPath().isStaticFieldRef() && newAbs != source) {
+							Abstraction fabs = getForwardAbstraction(newAbs);
 							for (Unit u : interproceduralCFG().getPredsOf(defStmt))
-								fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, newAbs));
+								fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
+						}
 
 				return res;
 			}
@@ -244,6 +248,21 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				}
 				return leftSideMatches;
 			}
+			
+			/**
+			 * Computes the abstraction to be injected into the forward solver
+			 * @param bwAbs The backward abstraction from the alias search
+			 * @return The new forward abstraction to be injected into the other
+			 * solver
+			 */
+			private Abstraction getForwardAbstraction(Abstraction bwAbs) {
+				if (flowSensitiveAliasing)
+					return bwAbs;
+				if (bwAbs.isAbstractionActive())
+					return bwAbs;
+				
+				return bwAbs.getActiveCopy();
+			}
 
 			@Override
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, final Unit dest) {
@@ -257,7 +276,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
-							assert !source.isAbstractionActive();
+							assert !source.isAbstractionActive() || !flowSensitiveAliasing;
 							
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
@@ -268,9 +287,11 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								DefinitionStmt defStmt = (DefinitionStmt) dest;
 								for (Abstraction newAbs : res)
 									if (baseMatches(defStmt.getLeftOp(), newAbs)
-											&& triggerInaktiveTaintOrReverseFlow(defStmt.getLeftOp(), newAbs))
+											&& triggerInaktiveTaintOrReverseFlow(defStmt.getLeftOp(), newAbs)) {
+										Abstraction fabs = getForwardAbstraction(newAbs);
 										for (Unit u : interproceduralCFG().getPredsOf(defStmt))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, newAbs));
+											fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
+									}
  							}
 
 							return res;
@@ -371,7 +392,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								}
 							}
 						}
-
+						
 						for (Abstraction abs : res)
 							if (!abs.getAccessPath().isEmpty())
 								fSolver.injectContext(solver, dest, abs, src, source);
@@ -399,8 +420,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals
 									(source.getAccessPath().getPlainValue())){
 								//terminates here, but we have to start a forward pass to consider all method calls:
+								Abstraction fabs = getForwardAbstraction(source);
 								for (Unit u : interproceduralCFG().getPredsOf(iStmt))
-									fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, source));
+									fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
 								return Collections.emptySet();
 							}
 							else {
@@ -409,9 +431,11 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 								if (returnSite instanceof DefinitionStmt) {
 									DefinitionStmt defStmt = (DefinitionStmt) returnSite;
 									if (baseMatches(defStmt.getLeftOp(), source)
-											&& triggerInaktiveTaintOrReverseFlow(defStmt.getLeftOp(), source))
+											&& triggerInaktiveTaintOrReverseFlow(defStmt.getLeftOp(), source)) {
+										Abstraction fabs = getForwardAbstraction(source);
 										for (Unit u : interproceduralCFG().getPredsOf(defStmt))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, source));
+											fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
+									}
 	 							}
 								return Collections.singleton(source);
 							}

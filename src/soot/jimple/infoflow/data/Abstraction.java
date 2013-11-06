@@ -165,7 +165,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	private SourceContext sourceContext = null;
 
 	// only used in path generation
-	private List<Abstraction> successors = null;
+	private Set<Abstraction> successors = null;
 	private Abstraction sinkAbs = null;
 	private Set<SourceContextAndPath> pathCache = null;
 	
@@ -239,7 +239,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			
 			flowSensitiveAliasing = original.flowSensitiveAliasing;
 			assert flowSensitiveAliasing || this.activationUnit == null;
-			assert this.isActive || !flowSensitiveAliasing;
+			assert this.isActive || flowSensitiveAliasing;
 		}
 		accessPath = p;
 	}
@@ -375,7 +375,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		
 		Set<Abstraction> iterativeWorklist = new IdentityHashSet<Abstraction>();
 		workList.add(this);
-		this.successors = new LinkedList<Abstraction>();
+		this.successors = new IdentityHashSet<Abstraction>();
 
 		boolean isIncremental = false;
 		
@@ -405,7 +405,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 				if (curAbs.predecessor.sinkAbs != this) {
 					curAbs.predecessor.sinkAbs = this;
 					if (curAbs.predecessor.successors != null)
-						curAbs.predecessor.successors.clear();
+						curAbs.predecessor.successors = null;
 					workList.add(curAbs.predecessor);
 				}
 				
@@ -413,7 +413,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 				// predecessor
 				if (reconstructPaths) {
 					if (curAbs.predecessor.successors == null)
-						curAbs.predecessor.successors = new LinkedList<Abstraction>();
+						curAbs.predecessor.successors = new IdentityHashSet<Abstraction>();
 					merge(curAbs.predecessor, curAbs, iterativeWorklist);
 				}
 				
@@ -429,18 +429,9 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 						}
 						
 						// Merge the successor lists
-						if (neighbor.successors != null) {
-							for (Abstraction nbSucc : neighbor.successors) {
-								boolean found = false;
-								for (Abstraction curSucc : curAbs.successors)
-									if (nbSucc == curSucc) {
-										found = true;
-										break;
-									}
-								if (!found)
-									curAbs.successors.add(nbSucc);
-							}
-						}
+						if (neighbor.successors != null)
+							for (Abstraction nbSucc : neighbor.successors)
+								curAbs.successors.add(nbSucc);
 						
 						if (neighbor.pathCache != null)
 							iterativeWorklist.add(neighbor);
@@ -534,21 +525,9 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		if (parentElement == successor)
 			return;
 		
-		boolean found = false;
-		for (Abstraction parentSucc : parentElement.successors)
-			if (parentSucc == successor) {
-				found = true;
-				break;
-			}
-		if (!found) {
-			parentElement.successors.add(successor);
-
+		if (parentElement.successors.add(successor)) {
 			if (parentElement.pathCache != null)
 				iterativeWorklist.add(parentElement);
-			if (parentElement.neighbors != null)
-				for (Abstraction nb : parentElement.neighbors)
-					if (nb.pathCache != null)
-						iterativeWorklist.add(nb);
 		}
 	}
 	

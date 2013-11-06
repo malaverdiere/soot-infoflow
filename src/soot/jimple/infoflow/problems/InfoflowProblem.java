@@ -685,11 +685,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
                 
 				final Stmt stmt = (Stmt) src;
 				final InvokeExpr ie = stmt.getInvokeExpr();
-				final List<Value> callArgs = ie.getArgs();
-				final List<Value> paramLocals = new ArrayList<Value>();
-				for (int i = 0; i < dest.getParameterCount(); i++) {
+				
+				final List<Value> callArgs = ie.getArgs();				
+				final List<Value> paramLocals = new ArrayList<Value>(dest.getParameterCount());
+				for (int i = 0; i < dest.getParameterCount(); i++)
 					paramLocals.add(dest.getActiveBody().getParameterLocal(i));
-				}
 				
 				final boolean isSource = sourceSinkManager != null
 						? sourceSinkManager.isSource(stmt, interproceduralCFG()) : false;
@@ -774,9 +774,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							if (vie.getBase().equals(source.getAccessPath().getPlainValue())) {
 								Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
 										(dest.getActiveBody().getThisLocal()), stmt);
-
-								//add new callArgs:
-								assert abs != source; 		// our source abstraction must be immutable
 								res.add(abs);
 							}
 						}
@@ -790,8 +787,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())*/) {
 									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
 											(paramLocals.get(i)), stmt);
-
-									assert abs != source;		// our source abstraction must be immutable
 									res.add(abs);
 								}
 							}

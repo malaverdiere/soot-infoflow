@@ -652,5 +652,17 @@ public class HeapTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(b.attr.b);
 	}
+	
+	public void backwardsParameterTest() {
+		B b1 = new B();
+		b1.attr = new A();
+		B b2 = new B();
+		
+		alias(b1, b2);
+		
+		b2.attr.b = TelephonyManager.getDeviceId();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b1.attr.b);
+	}
 
 }

@@ -17,8 +17,10 @@ import heros.flowfunc.Identity;
 import heros.flowfunc.KillAll;
 import heros.solver.PathEdge;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import soot.Local;
@@ -33,6 +35,7 @@ import soot.jimple.DefinitionStmt;
 import soot.jimple.FieldRef;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.InstanceInvokeExpr;
+import soot.jimple.InvokeExpr;
 import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -280,6 +283,14 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 			@Override
 			public FlowFunction<Abstraction> getCallFlowFunction(final Unit src, final SootMethod dest) {
+				final Stmt stmt = (Stmt) src;
+				final InvokeExpr ie = stmt.getInvokeExpr();
+
+				final List<Value> callArgs = ie.getArgs();				
+				final List<Value> paramLocals = new ArrayList<Value>(dest.getParameterCount());
+				for (int i = 0; i < dest.getParameterCount(); i++)
+					paramLocals.add(dest.getActiveBody().getParameterLocal(i));
+
 				return new FlowFunction<Abstraction>() {
 
 					public Set<Abstraction> computeTargets(Abstraction source) {
@@ -329,8 +340,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							Local thisL = dest.getActiveBody().getThisLocal();
 							InstanceInvokeExpr iIExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
 							if (iIExpr.getBase().equals(sourceBase)) {
-								// there is only one case in which this must be added, too: if the caller-Method has the same thisLocal - check this:
-
 								boolean param = false;
 								// check if it is not one of the params (then we have already fixed it)
 								for (int i = 0; i < dest.getParameterCount(); i++) {
@@ -347,8 +356,20 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									}
 								}
 							}
-							// TODO: add testcase which requires params to be propagated
-
+						}
+						
+						// Map the parameter values into the callee
+						if(!dest.getName().equals("<clinit>")) {
+							assert dest.getParameterCount() == callArgs.size();
+							// check if param is tainted:
+							for (int i = 0; i < callArgs.size(); i++) {
+								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()) /*&&
+										(triggerInaktiveTaintOrReverseFlow(callArgs.get(i), source) || source.isAbstractionActive())*/) {
+									Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+											(paramLocals.get(i)), stmt);
+									res.add(abs);
+								}
+							}
 						}
 
 						for (Abstraction abs : res)

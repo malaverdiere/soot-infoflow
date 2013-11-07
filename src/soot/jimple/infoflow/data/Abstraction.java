@@ -168,6 +168,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	private Set<Abstraction> successors = null;
 	private Abstraction sinkAbs = null;
 	private Set<SourceContextAndPath> pathCache = null;
+	private Set<Abstraction> roots = null;
 	
 	/**
 	 * Unit/Stmt which activates the taint when the abstraction passes it
@@ -369,7 +370,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		
 		// Phase 1: Collect the graph roots
 		logger.info("Running path collection phase 1...");
-		
+
 		Set<Abstraction> roots = new IdentityHashSet<Abstraction>();
 		List<Abstraction> workList = new LinkedList<Abstraction>();
 		
@@ -382,6 +383,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		while (!workList.isEmpty()) {
 			Abstraction curAbs = workList.remove(0);
 			curAbs.sinkAbs = this;
+			curAbs.roots = roots;
 
 			// Since we walk up from the bottom, a predecessor must already
 			// have a successor list 
@@ -408,6 +410,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 						curAbs.predecessor.successors = null;
 					workList.add(curAbs.predecessor);
 				}
+				else if (curAbs.predecessor.roots != null)
+					roots.addAll(curAbs.predecessor.roots);
 				
 				// Add the current element to the successor list of our
 				// predecessor
@@ -427,6 +431,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 							workList.add(neighbor);
 							neighbor.successors = null;
 						}
+						else if (neighbor.roots != null)
+							roots.addAll(neighbor.roots);
 						
 						// Merge the successor lists
 						if (neighbor.successors != null)
@@ -440,6 +446,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 							neighbor.pathCache = curAbs.pathCache;
 						else if (neighbor.pathCache != null && curAbs.pathCache == null)
 							curAbs.pathCache = neighbor.pathCache;
+						
+						neighbor.roots = roots;
 					}
 			}
 			else
@@ -447,7 +455,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		}
 		
 		logger.info("Phase 1 completed.");
-		
+				
 		// If we have not found any roots, we are in trouble
 		assert !roots.isEmpty();
 		

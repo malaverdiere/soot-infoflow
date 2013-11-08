@@ -57,7 +57,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case containsTest done.");
     }
     
-    @Test(timeout=300000)
+    @Test(timeout=600000)
     public void concreteTreeSetPos0Test(){
     	System.out.println("Running test case concreteTreeSetPos0Test...");
     	Infoflow infoflow = initInfoflow();
@@ -75,7 +75,7 @@ public class SetTests extends JUnitTests {
 		System.out.println("Test case concreteTreeSetPos0Test done.");
     }
     
-    @Test/*(timeout=300000)*/
+    @Test(timeout=600000)
     public void concreteTreeSetPos1Test(){
     	System.out.println("Running test case concreteTreeSetPos1Test...");
     	Infoflow infoflow = initInfoflow();

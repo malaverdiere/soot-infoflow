@@ -16,6 +16,7 @@ import heros.solver.PathTrackingIFDSSolver.LinkedNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -409,7 +410,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 					workList.add(curAbs.predecessor);
 				}
 				else if (curAbs.predecessor.roots != null)
-					roots.addAll(curAbs.predecessor.roots);
+					if (roots.addAll(curAbs.predecessor.roots))
+						isIncremental = true;
 				
 				// Add the current element to the successor list of our
 				// predecessor
@@ -429,7 +431,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 							workList.add(neighbor);
 						}
 						else if (neighbor.roots != null)
-							roots.addAll(neighbor.roots);
+							if (roots.addAll(neighbor.roots))
+								isIncremental = true;
 						
 						// Merge the successor lists
 						if (neighbor.successors != null)
@@ -452,7 +455,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		}
 		
 		logger.info("Phase 1 completed.");
-				
+		
 		// If we have not found any roots, we are in trouble
 		assert !roots.isEmpty();
 		
@@ -478,9 +481,12 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		else
 			workList.addAll(roots);
 		
+		if (workList.isEmpty())
+			logger.warn("Path reconstruction work list is empty");
+		
 		while (!workList.isEmpty()) {
 			Abstraction curAbs = workList.remove(0);
-			if (curAbs.successors == null)
+			if (curAbs.successors == null || curAbs.successors.isEmpty())
 				continue;
 			
 			assert curAbs.pathCache != null;
@@ -503,12 +509,13 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 
 			// Propagate the path down
 			for (Abstraction successor : curAbs.successors) {
+				if (successor.pathCache == null)
+					successor.pathCache = new HashSet<SourceContextAndPath>();
+
 //				System.out.println(System.identityHashCode(curAbs) + "->" + System.identityHashCode(successor));
 				for (SourceContextAndPath curScap : curAbs.pathCache) {
 					SourceContextAndPath extendedPath = successor.currentStmt == null
 							? curScap : curScap.extendPath(successor.currentStmt);
-					if (successor.pathCache == null)
-						successor.pathCache = new HashSet<SourceContextAndPath>();
 					if (successor.pathCache.add(extendedPath))
 						workList.add(successor);
 				}
@@ -526,11 +533,12 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			Set<Abstraction> iterativeWorklist) {
 		if (parentElement == successor)
 			return;
-		
-		if (parentElement.successors.add(successor)) {
+		if (parentElement.successors.add(successor))
 			if (parentElement.pathCache != null)
-				iterativeWorklist.add(parentElement);
-		}
+				// If the predecessor is already scheduled, we will process the
+				// successor as well anyway
+				if (!iterativeWorklist.contains(parentElement))
+					iterativeWorklist.add(parentElement);
 	}
 	
 	public boolean isAbstractionActive(){

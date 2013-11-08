@@ -406,8 +406,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 				// this path as well
 				if (curAbs.predecessor.sinkAbs != this) {
 					curAbs.predecessor.sinkAbs = this;
-					if (curAbs.predecessor.successors != null)
-						curAbs.predecessor.successors = null;
 					workList.add(curAbs.predecessor);
 				}
 				else if (curAbs.predecessor.roots != null)
@@ -429,7 +427,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 						if (neighbor.sinkAbs != this) {
 							neighbor.sinkAbs = this;
 							workList.add(neighbor);
-							neighbor.successors = null;
 						}
 						else if (neighbor.roots != null)
 							roots.addAll(neighbor.roots);

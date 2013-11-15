@@ -455,9 +455,9 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 					curAbs.predecessor.successors = Sets.newIdentityHashSet();
 				if (curAbs.predecessor.successors.add(curAbs) || curAbs.predecessor.sinkAbs != this) {
 					// Schedule the predecessor
-					curAbs.predecessor.sinkAbs = this;
 					if (curAbs.predecessor.sinkAbs != this)
 						curAbs.predecessor.pathCache = null;
+					curAbs.predecessor.sinkAbs = this;
 					workList.add(curAbs.predecessor);
 				}
 
@@ -482,9 +482,9 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 						else
 							addIt = nb.abstraction.successors.add(curAbs);
 						if (addIt || nb.abstraction.sinkAbs != this) {
-							nb.abstraction.sinkAbs = this;
 							if (nb.abstraction.sinkAbs != this)
 								nb.abstraction.pathCache = null;
+							nb.abstraction.sinkAbs = this;
 							workList.add(nb.abstraction);
 						}
 					}
@@ -540,7 +540,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 					neighbor.abstraction.pathCache = curAbs.pathCache;
 				}
 
-			/*
 			// Shortcut: If we have found an equivalent abstraction, we
 			// copy its path cache
 			if (this.pathCache == null
@@ -548,7 +547,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 					&& curAbs.currentStmt == this.currentStmt
 					&& curAbs.predecessor == this.predecessor)
 				this.pathCache = curAbs.pathCache;
-			*/
 
 			// Propagate the path down
 			if (curAbs.successors != null)

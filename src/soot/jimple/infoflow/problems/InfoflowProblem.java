@@ -827,7 +827,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						
 						// Notify the handler if we have one
 						for (TaintPropagationHandler tp : taintPropagationHandlers)
-							tp.notifyFlowIn(returnStmt, Collections.singleton(source),
+							tp.notifyFlowIn(exitStmt, Collections.singleton(source),
 									interproceduralCFG(), FlowFunctionType.ReturnFlowFunction);
 						
 						boolean callerD1sConditional = false;

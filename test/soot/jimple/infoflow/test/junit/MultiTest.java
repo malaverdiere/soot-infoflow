@@ -133,4 +133,16 @@ public class MultiTest extends JUnitTests {
 		Assert.assertEquals(1, infoflow.getResults().size());
     }
 
+    @Test(timeout=300000)
+    public void intMultiTest2(){
+    	Infoflow infoflow = initInfoflow();
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void intMultiTest2()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, sourceIMEI));
+		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, sourceIMSI));
+		Assert.assertEquals(1, infoflow.getResults().size());
+    }
+
 }

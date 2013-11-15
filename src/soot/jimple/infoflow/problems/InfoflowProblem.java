@@ -1045,7 +1045,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
-							Abstraction newSource;
 							
 							// Notify the handler if we have one
 							for (TaintPropagationHandler tp : taintPropagationHandlers)
@@ -1061,6 +1060,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							}
 							
 							//check inactive elements:
+							final Abstraction newSource;
 							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit())
 									|| isCallSiteActivatingTaint(call, source.getActivationUnit())))
 								newSource = source.getActiveCopy();

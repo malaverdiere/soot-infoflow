@@ -17,7 +17,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import soot.NullType;
 import soot.PrimType;
 import soot.RefType;
 import soot.SootMethod;
@@ -34,7 +33,6 @@ import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.DataTypeHandler;
-import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 /**
  * abstract super class which 
@@ -140,8 +138,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	@Override
 	public Abstraction createZeroValue() {
 		if (zeroValue == null)
-			zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), null,
-					null, false, true, null, flowSensitiveAliasing);
+			zeroValue = Abstraction.getZeroAbstraction(flowSensitiveAliasing);
 		return zeroValue;
 	}
 

@@ -443,7 +443,6 @@ public class Infoflow implements IInfoflow {
 					return;
 				}
 
-				InfoflowSolver forwardSolver;
 				logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.getInitialSeeds().size(),
 						sinkCount);
 
@@ -453,9 +452,10 @@ public class Infoflow implements IInfoflow {
 						Integer.MAX_VALUE, 30, TimeUnit.SECONDS,
 						new LinkedBlockingQueue<Runnable>());
 				
-				forwardSolver = new InfoflowSolver(forwardProblem, executor);
+				InfoflowSolver forwardSolver = new InfoflowSolver(forwardProblem, executor);
 				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem();
 				InfoflowSolver backSolver = new InfoflowSolver(backProblem, executor);
+				
 				forwardProblem.setBackwardSolver(backSolver);
 				forwardProblem.setInspectSources(inspectSources);
 				forwardProblem.setInspectSinks(inspectSinks);

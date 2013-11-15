@@ -141,14 +141,17 @@ public class AccessPath implements Cloneable {
 	}
 	
 	@Override
-	public synchronized int hashCode() {
-		if (hashCode == 0) {
+	public int hashCode() {
+		if (hashCode != 0)
+			return hashCode;
+		
+		synchronized (this) {
 			final int prime = 31;
 			this.hashCode = 1;
 			this.hashCode = prime * this.hashCode + ((fields == null) ? 0 : Arrays.hashCode(fields));
 			this.hashCode = prime * this.hashCode + ((value == null) ? 0 : value.hashCode());
+			return this.hashCode;
 		}
-		return this.hashCode;
 	}
 
 	@Override

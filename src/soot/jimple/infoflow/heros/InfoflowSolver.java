@@ -125,7 +125,7 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 	@Override
 	protected void propagate(Abstraction sourceVal, Unit target, Abstraction targetVal, EdgeFunction<BinaryDomain> f,
 			/* deliberately exposed to clients */ Unit relatedCallSite,
-			/* deliberately exposed to clients */ boolean isUnbalancedReturn) {
+			/* deliberately exposed to clients */ boolean isUnbalancedReturn) {	
 		// Check whether we already have an abstraction that entails the new one.
 		// In such a case, we can simply ignore the new abstraction.
 		boolean noProp = false;

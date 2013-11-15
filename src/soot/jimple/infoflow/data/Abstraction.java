@@ -485,41 +485,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 									iterativeWorklist.add(nb.abstraction);
 							}
 						}
-						
-						// Merge the roots that have already been found
-						/*
-						if (pred.roots != null)
-							if (roots.addAll(pred.roots))
-								isIncremental = true;
-						pred.roots = roots;
-						*/
-
-					// All our neighbors have the same successors as we have
-					/*
-					if (curAbs.neighbors != null) {
-						assert curAbs.neighbors.contains(curAbs);
-						for (Abstraction neighbor : curAbs.neighbors) {
-							assert neighbor.neighbors == curAbs.neighbors;
-							assert neighbor.sourceContext == null;
-							
-							// Get the roots that have already been calculated for
-							// this abstraction
-							if (neighbor.roots != null)
-								if (roots.addAll(neighbor.roots))
-									isIncremental = true;
-							neighbor.roots = roots;
-							
-							// Merge the successor lists
-							if (neighbor.sinkAbs != this) {
-								if (neighbor.successors == null)
-									neighbor.successors = curAbs.successors;
-								
-//								workList.add(neighbor);
-								neighbor.sinkAbs = this;
-							}
-						}
-					}
-					*/
 				}
 			}
 			else
@@ -827,15 +792,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 				neighbors = Sets.newHashSet();
 				neighbors.add(new Neighbor(this));
 			}
-			
-			// Check if we already have such a neighbor
-			/*
-			for (Abstraction abs : this.neighbors)
-				if (abs.equals(originalAbstraction)
-						&& abs.predecessor == originalAbstraction.predecessor
-						&& abs.currentStmt == originalAbstraction.currentStmt)
-					return;
-			*/
 			
 			this.neighbors.add(new Neighbor(originalAbstraction));
 		}

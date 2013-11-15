@@ -440,23 +440,40 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 				assert curAbs.neighbors == null;
 			}
 			else if (curAbs.predecessor != null) {
+				// If we already have root for the predecessor, we copy it
+				if (curAbs.predecessor.pathCache != null && curAbs.predecessor.sinkAbs == this) {
+					iterativeWorklist.add(curAbs.predecessor);
+					if (curAbs.predecessor.roots != roots) {
+						roots.addAll(curAbs.predecessor.roots);
+						curAbs.predecessor.roots = roots;
+					}
+				}
+
 				// Set the current abstraction as a successor of the current
 				// predecessor
 				if (curAbs.predecessor.successors == null)
 					curAbs.predecessor.successors = Sets.newIdentityHashSet();
-				if (curAbs.predecessor.successors.add(curAbs) && curAbs.predecessor.sinkAbs != this) {
+				if (curAbs.predecessor.successors.add(curAbs) || curAbs.predecessor.sinkAbs != this) {
 					// Schedule the predecessor
 					curAbs.predecessor.sinkAbs = this;
+					if (curAbs.predecessor.sinkAbs != this)
+						curAbs.predecessor.pathCache = null;
 					workList.add(curAbs.predecessor);
-					if (curAbs.predecessor.pathCache != null) {
-						iterativeWorklist.add(curAbs.predecessor);
-						roots.addAll(curAbs.predecessor.roots);
-					}
 				}
 
 				// Schedule the predecessor's neighbors
 				if (curAbs.predecessor.neighbors != null)
 					for (Neighbor nb : curAbs.predecessor.neighbors) {
+						// If we already have a root for the neighbor, we copy it
+						if (nb.abstraction.pathCache != null && nb.abstraction.sinkAbs == this) {
+							iterativeWorklist.add(nb.abstraction);
+							if (nb.abstraction.roots != roots) {
+								roots.addAll(nb.abstraction.roots);
+								nb.abstraction.roots = roots;
+							}
+						}
+
+						// Register ourselves as the successor of our predecessor's neighbor
 						boolean addIt = false;
 						if (nb.abstraction.successors == null) {
 							nb.abstraction.successors = curAbs.predecessor.successors;
@@ -464,13 +481,11 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 						}
 						else
 							addIt = nb.abstraction.successors.add(curAbs);
-							
-						if (addIt) {
+						if (addIt || nb.abstraction.sinkAbs != this) {
+							nb.abstraction.sinkAbs = this;
+							if (nb.abstraction.sinkAbs != this)
+								nb.abstraction.pathCache = null;
 							workList.add(nb.abstraction);
-							if (nb.abstraction.pathCache != null) {
-								iterativeWorklist.add(nb.abstraction);
-								roots.addAll(nb.abstraction.roots);
-							}
 						}
 					}
 			}
@@ -525,6 +540,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 					neighbor.abstraction.pathCache = curAbs.pathCache;
 				}
 
+			/*
 			// Shortcut: If we have found an equivalent abstraction, we
 			// copy its path cache
 			if (this.pathCache == null
@@ -532,6 +548,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 					&& curAbs.currentStmt == this.currentStmt
 					&& curAbs.predecessor == this.predecessor)
 				this.pathCache = curAbs.pathCache;
+			*/
 
 			// Propagate the path down
 			if (curAbs.successors != null)

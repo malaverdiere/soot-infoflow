@@ -414,8 +414,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 				nb.abstraction.successors = this.successors;
 			}
 
-		boolean isIncremental = false;
-		
 		while (!workList.isEmpty()) {
 			Abstraction curAbs = workList.remove(0);
 			curAbs.roots = roots;
@@ -434,58 +432,47 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 							(curAbs.sourceContext.value, curAbs.sourceContext.stmt);
 					if (curAbs.pathCache == null)
 						curAbs.pathCache = Collections.singleton(sourceAndPath);
-					else {
+					else
 						assert curAbs.pathCache.contains(sourceAndPath);
-						isIncremental = true;
-					}
 				}
 				
 				// Sources may not have neighbors
 				assert curAbs.neighbors == null;
 			}
 			else if (curAbs.predecessor != null) {
-				// If we have not seen this predecessor, we have to walk up
-				// this path as well
-				if (curAbs.predecessor.roots != null)
-					if (roots.addAll(curAbs.predecessor.roots))
-						isIncremental = true;
-				if (curAbs.predecessor.neighbors != null)
-					for (Neighbor nb : curAbs.predecessor.neighbors)
-						if (nb.abstraction.roots != null)
-							if (roots.addAll(nb.abstraction.roots))
-								isIncremental = true;
-				
-				if (reconstructPaths) {
-					// Set the current abstraction as a successor of the current
-					// predecessor
-					if (curAbs.predecessor.successors == null)
-						curAbs.predecessor.successors = Sets.newIdentityHashSet();
-					if (curAbs.predecessor.successors.add(curAbs) && curAbs.predecessor.sinkAbs != this) {
-						// Schedule the predecessor
-						curAbs.predecessor.sinkAbs = this;
-						workList.add(curAbs.predecessor);
-						if (curAbs.predecessor.pathCache != null)
-							iterativeWorklist.add(curAbs.predecessor);
+				// Set the current abstraction as a successor of the current
+				// predecessor
+				if (curAbs.predecessor.successors == null)
+					curAbs.predecessor.successors = Sets.newIdentityHashSet();
+				if (curAbs.predecessor.successors.add(curAbs) && curAbs.predecessor.sinkAbs != this) {
+					// Schedule the predecessor
+					curAbs.predecessor.sinkAbs = this;
+					workList.add(curAbs.predecessor);
+					if (curAbs.predecessor.pathCache != null) {
+						iterativeWorklist.add(curAbs.predecessor);
+						roots.addAll(curAbs.predecessor.roots);
 					}
+				}
 
-					// Schedule the predecessor's neighbors
-					if (curAbs.predecessor.neighbors != null)
-						for (Neighbor nb : curAbs.predecessor.neighbors) {
-							boolean addIt = false;
-							if (nb.abstraction.successors == null) {
-								nb.abstraction.successors = curAbs.predecessor.successors;
-								addIt = true;
-							}
-							else
-								addIt = nb.abstraction.successors.add(curAbs);
+				// Schedule the predecessor's neighbors
+				if (curAbs.predecessor.neighbors != null)
+					for (Neighbor nb : curAbs.predecessor.neighbors) {
+						boolean addIt = false;
+						if (nb.abstraction.successors == null) {
+							nb.abstraction.successors = curAbs.predecessor.successors;
+							addIt = true;
+						}
+						else
+							addIt = nb.abstraction.successors.add(curAbs);
 							
-							if (addIt) {
-								workList.add(nb.abstraction);
-								if (nb.abstraction.pathCache != null)
-									iterativeWorklist.add(nb.abstraction);
+						if (addIt) {
+							workList.add(nb.abstraction);
+							if (nb.abstraction.pathCache != null) {
+								iterativeWorklist.add(nb.abstraction);
+								roots.addAll(nb.abstraction.roots);
 							}
 						}
-				}
+					}
 			}
 			else
 				throw new RuntimeException("Invalid abstraction detected");
@@ -513,7 +500,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		
 		// If we perform an incremental build, we must add the nodes that have
 		// received new children
-		if (isIncremental) {
+		if (!iterativeWorklist.isEmpty()) {
 			workList.addAll(iterativeWorklist);
 			logger.info("Running in incremental mode with {} nodes", iterativeWorklist.size());
 		}

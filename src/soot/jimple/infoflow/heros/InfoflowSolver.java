@@ -157,8 +157,4 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		this.cache.clear();
 	}
 	
-	public void injectPathCache(InfoflowSolver otherSolver) {
-		this.cache = otherSolver.cache;
-	}
-
 }

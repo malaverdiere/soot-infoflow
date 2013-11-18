@@ -383,18 +383,20 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		}
 		else {
 			this.pathCache = Sets.newHashSet();
-			Set<SourceContextAndPath> scaps = Sets.newHashSet();			
-			scaps.addAll(predecessor.getPaths(reconstructPaths, flagAbs));
+			Set<SourceContextAndPath> scaps = predecessor.getPaths(reconstructPaths, flagAbs);
+			if (scaps != null)
+				for (SourceContextAndPath curScap : scaps) {
+					SourceContextAndPath extendedPath = (currentStmt == null || !reconstructPaths)
+							? curScap : curScap.extendPath(currentStmt);
+					pathCache.add(extendedPath);
+				}
 				
 			if (neighbors != null)
-				for (Abstraction nb : neighbors)
-					scaps.addAll(nb.getPaths(reconstructPaths, flagAbs));
-				
-			for (SourceContextAndPath curScap : scaps) {
-				SourceContextAndPath extendedPath = (currentStmt == null || !reconstructPaths)
-						? curScap : curScap.extendPath(currentStmt);
-				pathCache.add(extendedPath);
-			}
+				for (Abstraction nb : neighbors) {
+					scaps = nb.getPaths(reconstructPaths, flagAbs);
+					if (scaps != null)
+						pathCache.addAll(scaps);
+				}
 		}
 		
 		assert pathCache != null;

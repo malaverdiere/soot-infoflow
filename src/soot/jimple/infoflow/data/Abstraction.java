@@ -370,7 +370,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		if (sinkAbs != null)
 			return Collections.emptySet();
 		sinkAbs = flagAbs;
-
+		
 		if (sourceContext != null) {
 			// Construct the path root
 			SourceContextAndPath sourceAndPath = new SourceContextAndPath
@@ -382,21 +382,18 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			assert neighbors == null;
 		}
 		else {
-			this.pathCache = Sets.newHashSet();
-			Set<SourceContextAndPath> scaps = predecessor.getPaths(reconstructPaths, flagAbs);
-			if (scaps != null)
-				for (SourceContextAndPath curScap : scaps) {
-					SourceContextAndPath extendedPath = (currentStmt == null || !reconstructPaths)
-							? curScap : curScap.extendPath(currentStmt);
-					pathCache.add(extendedPath);
-				}
-				
+			if (pathCache == null)
+				this.pathCache = Sets.newHashSet();
+			
+			for (SourceContextAndPath curScap : predecessor.getPaths(reconstructPaths, flagAbs)) {
+				SourceContextAndPath extendedPath = (currentStmt == null || !reconstructPaths)
+						? curScap : curScap.extendPath(currentStmt);
+				pathCache.add(extendedPath);
+			}
+			
 			if (neighbors != null)
-				for (Abstraction nb : neighbors) {
-					scaps = nb.getPaths(reconstructPaths, flagAbs);
-					if (scaps != null)
-						pathCache.addAll(scaps);
-				}
+				for (Abstraction nb : neighbors)
+					pathCache.addAll(nb.getPaths(reconstructPaths, flagAbs));
 		}
 		
 		assert pathCache != null;
@@ -624,11 +621,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 				neighbors = Sets.newIdentityHashSet();
 			
 			this.neighbors.add(originalAbstraction);
-			/*
-			if (originalAbstraction.neighbors != null
-					&& originalAbstraction.neighbors != this.neighbors)
-				this.neighbors.addAll(originalAbstraction.neighbors);
-			*/
 		}
 	}
 		

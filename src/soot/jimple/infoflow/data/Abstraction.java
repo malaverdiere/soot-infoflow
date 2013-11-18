@@ -364,10 +364,10 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 * @return The path from the source to the current statement
 	 */
 	private Set<SourceContextAndPath> getPaths(boolean reconstructPaths, Abstraction flagAbs) {
-		if (pathCache != null)
+		if (pathCache != null && sinkAbs == flagAbs)
 			return Collections.unmodifiableSet(pathCache);
-		
-		if (sinkAbs != null)
+
+		if (sinkAbs == flagAbs)
 			return Collections.emptySet();
 		sinkAbs = flagAbs;
 		
@@ -375,15 +375,14 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			// Construct the path root
 			SourceContextAndPath sourceAndPath = new SourceContextAndPath
 					(sourceContext.value, sourceContext.stmt);
-			if (pathCache == null)
-				pathCache = Collections.singleton(sourceAndPath);
+			pathCache = Collections.singleton(sourceAndPath);
 			
 			// Sources may not have neighbors
 			assert neighbors == null;
+			assert predecessor == null;
 		}
 		else {
-			if (pathCache == null)
-				this.pathCache = Sets.newHashSet();
+			this.pathCache = Sets.newHashSet();
 			
 			for (SourceContextAndPath curScap : predecessor.getPaths(reconstructPaths, flagAbs)) {
 				SourceContextAndPath extendedPath = (currentStmt == null || !reconstructPaths)

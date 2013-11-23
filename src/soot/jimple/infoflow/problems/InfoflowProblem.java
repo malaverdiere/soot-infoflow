@@ -776,9 +776,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source, Set<Abstraction> callerD1s) {
-						if (callee.getName().equals("taintMe"))
-							System.out.println("x");
-						
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
 						if (source.equals(zeroValue))

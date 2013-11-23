@@ -107,8 +107,8 @@ public class HeapTestCode {
 	
 	
 	class A{
-		public String b;
-		public String c;
+		public String b = "Y";
+		public String c = "X";
 	}
 	
 	class X{

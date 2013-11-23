@@ -12,10 +12,8 @@ package soot.jimple.infoflow.problems;
 
 import heros.FlowFunction;
 import heros.FlowFunctions;
-import heros.InterproceduralCFG;
 import heros.flowfunc.Identity;
 import heros.flowfunc.KillAll;
-import heros.solver.PathEdge;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,6 +50,8 @@ import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
 import soot.jimple.ThrowStmt;
 import soot.jimple.infoflow.InfoflowResults;
+import soot.jimple.infoflow.aliasing.IAliasingStrategy;
+import soot.jimple.infoflow.aliasing.ImplicitFlowAliasStrategy;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.Abstraction.SourceContextAndPath;
 import soot.jimple.infoflow.data.AbstractionAtSink;
@@ -59,8 +59,8 @@ import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler.FlowFunctionType;
 import soot.jimple.infoflow.heros.ConcurrentHashSet;
+import soot.jimple.infoflow.heros.InfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
-import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.heros.SolverCallFlowFunction;
 import soot.jimple.infoflow.heros.SolverCallToReturnFlowFunction;
 import soot.jimple.infoflow.heros.SolverNormalFlowFunction;
@@ -68,24 +68,45 @@ import soot.jimple.infoflow.heros.SolverReturnFlowFunction;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
-import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
-
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 
-	private InfoflowSolver bSolver; 
+	private final IAliasingStrategy aliasingStrategy;
+	private final IAliasingStrategy implicitFlowAliasingStrategy;
 	private final ISourceSinkManager sourceSinkManager;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
     private final Map<Unit, Set<Unit>> activationUnitsToCallSites = new ConcurrentHashMap<Unit, Set<Unit>>();
-    private final Table<SootMethod, AccessPath, Set<AccessPath>> globalAliases = HashBasedTable.create();
     private final Map<Unit, Set<Abstraction>> implicitTargets = new ConcurrentHashMap<Unit, Set<Abstraction>>();
     
 	protected final Set<AbstractionAtSink> results = new ConcurrentHashSet<AbstractionAtSink>();
 	protected InfoflowResults infoflowResults = null;
+
+	public InfoflowProblem(ISourceSinkManager sourceSinkManager,
+			IAliasingStrategy aliasingStrategy) {
+		this(new InfoflowCFG(), sourceSinkManager, aliasingStrategy);
+	}
+
+	public InfoflowProblem(InfoflowCFG icfg, List<String> sourceList, List<String> sinkList,
+			IAliasingStrategy aliasingStrategy) {
+		this(icfg, new DefaultSourceSinkManager(sourceList, sinkList), aliasingStrategy);
+	}
+
+	public InfoflowProblem(ISourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds,
+			IAliasingStrategy aliasingStrategy) {
+	    this(new InfoflowCFG(), mySourceSinkManager, aliasingStrategy);
+	    for (Unit u : analysisSeeds)
+	    	this.initialSeeds.put(u, Collections.singleton(zeroValue));
+    }
+	
+	public InfoflowProblem(InfoflowCFG icfg, ISourceSinkManager sourceSinkManager,
+			IAliasingStrategy aliasingStrategy) {
+		super(icfg);
+		this.sourceSinkManager = sourceSinkManager;
+		this.aliasingStrategy = aliasingStrategy;
+		this.implicitFlowAliasingStrategy = new ImplicitFlowAliasStrategy(icfg);
+	}
 
 	/**
 	 * Computes the taints produced by a taint wrapper object
@@ -153,75 +174,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		// full alias analysis algorithm. Otherwise, we use a global
 		// non-flow-sensitive approximation.
 		if (!d1.getAccessPath().isEmpty()) {
-			Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
-			for (Unit predUnit : interproceduralCFG().getPredsOf(src))
-				bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1,
-						predUnit, bwAbs));
+			aliasingStrategy.computeAliasTaints(d1, src, targetValue, taintSet, method, newAbs);
 		} else if (targetValue instanceof InstanceFieldRef) {
 			assert enableImplicitFlows;
-			
-			// Use global aliasing
-			Value baseValue = ((InstanceFieldRef) targetValue).getBase();
-			Set<AccessPath> aliases = globalAliases.get(method, new AccessPath(
-					baseValue));
-			if (aliases != null)
-				for (AccessPath ap : aliases) {
-					Abstraction aliasAbs = newAbs.deriveNewAbstraction(
-							ap.merge(newAbs.getAccessPath()), src);
-					taintSet.add(aliasAbs);
-				}
+			implicitFlowAliasingStrategy.computeAliasTaints(d1, src, targetValue, taintSet, method, newAbs);
 		}
 	}
-	
-	/**
-	 * Computes the global non-flow-sensitive alias information for the given
-	 * method
-	 * @param method The method for which to compute the alias information
-	 */
-	private void computeGlobalAliases(SootMethod method) {
-		assert enableImplicitFlows;
 		
-		synchronized (globalAliases) {
-			// If we already know the aliases for the given method, there is nothing
-			// left to be done
-			if (globalAliases.containsRow(method))
-				return;
-	
-			// Find the aliases
-			for (Unit u : method.getActiveBody().getUnits()) {
-				if (!(u instanceof AssignStmt))
-					continue;
-				final AssignStmt assign = (AssignStmt) u;
-				
-				// Aliases can only be generated on the heap
-				if (!(assign.getLeftOp() instanceof FieldRef
-						&& (assign.getRightOp() instanceof FieldRef
-								|| assign.getRightOp() instanceof Local)))
-					if (!(assign.getRightOp() instanceof FieldRef
-							&& (assign.getLeftOp() instanceof FieldRef
-									|| assign.getLeftOp() instanceof Local)))
-						continue;
-				
-				final AccessPath apLeft = new AccessPath(assign.getLeftOp());
-				final AccessPath apRight = new AccessPath(assign.getRightOp());
-
-				Set<AccessPath> mapLeft = globalAliases.get(method, apLeft);
-				if (mapLeft == null) {
-					mapLeft = new HashSet<AccessPath>();
-					globalAliases.put(method, apLeft, mapLeft);
-				}
-				mapLeft.add(apRight);
-
-				Set<AccessPath> mapRight = globalAliases.get(method, apRight);
-				if (mapRight == null) {
-					mapRight = new HashSet<AccessPath>();
-					globalAliases.put(method, apRight, mapRight);
-				}
-				mapLeft.add(apLeft);
-			}
-		}
-	}
-	
 	@Override
 	public FlowFunctions<Unit, Abstraction, SootMethod> createFlowFunctionsFactory() {
 		return new FlowFunctions<Unit, Abstraction, SootMethod>() {
@@ -746,9 +705,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 						// pseudo abstraction. We do not map parameters if we are handling an
 						// implicit flow anyway.
 						if (source.getAccessPath().isEmpty()) {
-							// Compute the aliases in the callee
-							computeGlobalAliases(dest);
-							
 							// Block the call site for further explicit tracking
 							if (d1 != null) {
 								synchronized (implicitTargets) {
@@ -820,6 +776,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source, Set<Abstraction> callerD1s) {
+						if (callee.getName().equals("taintMe"))
+							System.out.println("x");
+						
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
 						if (source.equals(zeroValue))
@@ -924,8 +883,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								Abstraction abs = newSource.deriveNewAbstraction
 										(newSource.getAccessPath().copyWithNewValue(leftOp), (Stmt) exitStmt);
 								registerActivationCallSite(callSite, abs);
-
-								assert abs != newSource;		// our source abstraction must be immutable
 								res.add(abs);
 								
 								if(triggerInaktiveTaintOrReverseFlow(leftOp, abs) && !callerD1sConditional)
@@ -1210,33 +1167,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				return Identity.v();
 			}
 		};
-	}
-
-	public InfoflowProblem(List<String> sourceList, List<String> sinkList) {
-		this(new JimpleBasedBiDiICFG(), new DefaultSourceSinkManager(sourceList, sinkList));
-	}
-
-	public InfoflowProblem(ISourceSinkManager sourceSinkManager) {
-		this(new JimpleBasedBiDiICFG(), sourceSinkManager);
-	}
-
-	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, List<String> sourceList, List<String> sinkList) {
-		this(icfg, new DefaultSourceSinkManager(sourceList, sinkList));
-	}
-
-	public InfoflowProblem(ISourceSinkManager mySourceSinkManager, Set<Unit> analysisSeeds) {
-	    this(new JimpleBasedBiDiICFG(), mySourceSinkManager);
-	    for (Unit u : analysisSeeds)
-	    	this.initialSeeds.put(u, Collections.singleton(zeroValue));
-    }
-
-	public InfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg, ISourceSinkManager sourceSinkManager) {
-		super(icfg);
-		this.sourceSinkManager = sourceSinkManager;
-	}
-
-	public void setBackwardSolver(InfoflowSolver backwardSolver){
-		bSolver = backwardSolver;
 	}
 
 	@Override

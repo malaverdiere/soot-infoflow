@@ -237,6 +237,10 @@ public class HeapTestCode {
 	
 	public class B{
 		public A attr;
+		
+		public B() {
+			attr = new A();
+		}
 	}
 	
 	public A m(){
@@ -432,7 +436,6 @@ public class HeapTestCode {
 
 	public void activationUnitTest1() {
 		B b = new B();
-		b.attr = new A();
 		
 		A a = b.attr;
 		String tainted = TelephonyManager.getDeviceId();
@@ -532,6 +535,7 @@ public class HeapTestCode {
 		B c = b;
 		A a = alias(c);
 		c.attr.b = tainted;
+		b.attr.b = tainted;
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(a.b);
 	}

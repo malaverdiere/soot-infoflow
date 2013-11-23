@@ -31,6 +31,20 @@ public interface IInfoflow {
 		VTA,
 		RTA
 	}
+	
+	/**
+	 * Enumeration containing the aliasing algorithms supported by FlowDroid
+	 */
+	public enum AliasingAlgorithm {
+		/**
+		 * A fully flow-sensitive algorithm based on Andromeda
+		 */
+		FlowSensitive,
+		/**
+		 * A flow-insensitive algorithm based on Soot's point-to-sets
+		 */
+		PtsBased
+	}
 
 	/**
 	 * Sets the taint wrapper for deciding on taint propagation through black-box
@@ -194,6 +208,12 @@ public interface IInfoflow {
 	 * @param algorithm The callgraph algorithm to be used by the data flow tracker
 	 */
 	public void setCallgraphAlgorithm(CallgraphAlgorithm algorithm);
+	
+	/**
+	 * Sets the aliasing algorithm to be used by the data flow tracker
+	 * @param algorithm The aliasing algorithm to be used by the data flow tracker
+	 */
+	public void setAliasingAlgorithm(AliasingAlgorithm algorithm);
 
 	/**
 	 * sets the depth of the access path that are tracked

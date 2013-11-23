@@ -140,6 +140,10 @@ public class AccessPath implements Cloneable {
 		return fields;
 	}
 	
+	public int getFieldCount() {
+		return fields == null ? 0 : fields.length;
+	}
+	
 	@Override
 	public int hashCode() {
 		if (hashCode != 0)
@@ -274,6 +278,14 @@ public class AccessPath implements Cloneable {
 				fields[this.fields.length + i] = ap.fields[i];
 		
 		return new AccessPath(this.value, fields);
+	}
+	
+	public AccessPath dropLastField() {
+		if (fields == null || fields.length == 0)
+			return this;
+		SootField[] newFields = new SootField[fields.length - 1];
+		System.arraycopy(fields, 0, newFields, 0, fields.length - 1);
+		return new AccessPath(value, newFields);
 	}
 
 }

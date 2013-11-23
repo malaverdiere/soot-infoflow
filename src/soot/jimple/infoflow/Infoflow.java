@@ -42,11 +42,15 @@ import soot.Unit;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.InfoflowResults.SinkInfo;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
+import soot.jimple.infoflow.aliasing.FlowSensitiveAliasStrategy;
+import soot.jimple.infoflow.aliasing.IAliasingStrategy;
+import soot.jimple.infoflow.aliasing.PtsBasedAliasStrategy;
 import soot.jimple.infoflow.config.IInfoflowConfig;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
+import soot.jimple.infoflow.heros.InfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.problems.BackwardsInfoflowProblem;
 import soot.jimple.infoflow.problems.InfoflowProblem;
@@ -55,7 +59,6 @@ import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
-import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
 import soot.options.Options;
 /**
  * main infoflow class which triggers the analysis and offers method to customize it.
@@ -88,10 +91,11 @@ public class Infoflow implements IInfoflow {
 	private int maxThreadNum = -1;
 	
 	private CallgraphAlgorithm callgraphAlgorithm = CallgraphAlgorithm.AutomaticSelection;
+	private AliasingAlgorithm aliasingAlgorithm = AliasingAlgorithm.FlowSensitive;
 
     private BiDirICFGFactory icfgFactory = new DefaultBiDiICFGFactory();
     private List<Transform> preProcessors = Collections.emptyList();
-    private BiDiInterproceduralCFG<Unit,SootMethod> iCfg;
+    private InfoflowCFG iCfg;
     
     private Set<ResultsAvailableHandler> onResultsAvailable = new HashSet<ResultsAvailableHandler>();
     private Set<TaintPropagationHandler> taintPropagationHandlers = new HashSet<TaintPropagationHandler>();
@@ -183,7 +187,12 @@ public class Infoflow implements IInfoflow {
     	this.callgraphAlgorithm = algorithm;
     }
 	
-	@Override
+    @Override
+    public void setAliasingAlgorithm(AliasingAlgorithm algorithm) {
+    	this.aliasingAlgorithm = algorithm;
+    }
+
+    @Override
 	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
 			List<String> entryPoints, List<String> sources, List<String> sinks) {
 		this.computeInfoflow(path, entryPointCreator, entryPoints,
@@ -366,7 +375,33 @@ public class Infoflow implements IInfoflow {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
                 logger.info("Callgraph has {} edges", Scene.v().getCallGraph().size());
                 iCfg = icfgFactory.buildBiDirICFG();
-				InfoflowProblem forwardProblem  = new InfoflowProblem(iCfg, sourcesSinks);
+                
+                int numThreads = Runtime.getRuntime().availableProcessors();
+
+				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor
+						(maxThreadNum == -1 ? numThreads : Math.min(maxThreadNum, numThreads),
+						Integer.MAX_VALUE, 30, TimeUnit.SECONDS,
+						new LinkedBlockingQueue<Runnable>());
+
+				BackwardsInfoflowProblem backProblem;
+				InfoflowSolver backSolver;
+				final IAliasingStrategy aliasingStrategy;
+				switch (aliasingAlgorithm) {
+					case FlowSensitive:
+						backProblem = new BackwardsInfoflowProblem();
+						backSolver = new InfoflowSolver(backProblem, executor);
+						aliasingStrategy = new FlowSensitiveAliasStrategy(iCfg, backSolver);
+						break;
+					case PtsBased:
+						backProblem = null;
+						backSolver = null;
+						aliasingStrategy = new PtsBasedAliasStrategy(iCfg);
+						break;
+					default:
+						throw new RuntimeException("Unsupported aliasing algorithm");
+				}
+
+				InfoflowProblem forwardProblem  = new InfoflowProblem(iCfg, sourcesSinks, aliasingStrategy);
 				forwardProblem.setTaintWrapper(taintWrapper);
 				forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
 
@@ -397,11 +432,11 @@ public class Infoflow implements IInfoflow {
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
-							if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
+							if (sourcesSinks.isSource(s, iCfg)) {
 								forwardProblem.addInitialSeeds(u, Collections.singleton(forwardProblem.zeroValue()));
 								logger.debug("Source found: {}", u);
 							}
-							if (sourcesSinks.isSink(s, forwardProblem.interproceduralCFG())) {
+							if (sourcesSinks.isSink(s, iCfg)) {
                                 logger.debug("Sink found: {}", u);
 								sinkCount++;
 							}
@@ -445,18 +480,10 @@ public class Infoflow implements IInfoflow {
 
 				logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.getInitialSeeds().size(),
 						sinkCount);
-
-				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor
-						(maxThreadNum == -1 ? forwardProblem.numThreads()
-								: Math.min(maxThreadNum, forwardProblem.numThreads()),
-						Integer.MAX_VALUE, 30, TimeUnit.SECONDS,
-						new LinkedBlockingQueue<Runnable>());
 				
 				InfoflowSolver forwardSolver = new InfoflowSolver(forwardProblem, executor);
-				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem();
-				InfoflowSolver backSolver = new InfoflowSolver(backProblem, executor);
+				aliasingStrategy.setForwardSolver(forwardSolver);
 				
-				forwardProblem.setBackwardSolver(backSolver);
 				forwardProblem.setInspectSources(inspectSources);
 				forwardProblem.setInspectSinks(inspectSinks);
 				forwardProblem.setEnableImplicitFlows(enableImplicitFlows);
@@ -466,14 +493,16 @@ public class Infoflow implements IInfoflow {
 					forwardProblem.addTaintPropagationHandler(tp);
 				forwardProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
 				
-				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
-				backProblem.setTaintWrapper(taintWrapper);
-				backProblem.setZeroValue(forwardProblem.createZeroValue());
-				backProblem.setEnableStaticFieldTracking(enableStaticFields);
-				backProblem.setEnableExceptionTracking(enableExceptions);
-				for (TaintPropagationHandler tp : taintPropagationHandlers)
-					backProblem.addTaintPropagationHandler(tp);
-				backProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
+				if (backProblem != null) {
+					backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
+					backProblem.setTaintWrapper(taintWrapper);
+					backProblem.setZeroValue(forwardProblem.createZeroValue());
+					backProblem.setEnableStaticFieldTracking(enableStaticFields);
+					backProblem.setEnableExceptionTracking(enableExceptions);
+					for (TaintPropagationHandler tp : taintPropagationHandlers)
+						backProblem.addTaintPropagationHandler(tp);
+					backProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
+				}
 				
 				if (!enableStaticFields)
 					logger.warn("Static field tracking is disabled, results may be incomplete");
@@ -507,9 +536,11 @@ public class Infoflow implements IInfoflow {
 				// Force a cleanup. Everything we need is reachable through the
 				// results set, the other abstractions can be killed now.
 				forwardSolver.cleanup();
-				backSolver.cleanup();
+				if (backSolver != null) {
+					backSolver.cleanup();
+					backSolver = null;
+				}
 				forwardSolver = null;
-				backSolver = null;
 				Runtime.getRuntime().gc();
 				
 				results = forwardProblem.getResults(computeResultPaths);

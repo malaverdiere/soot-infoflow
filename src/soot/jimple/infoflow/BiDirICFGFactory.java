@@ -5,12 +5,10 @@
 package soot.jimple.infoflow;
 
 
-import soot.SootMethod;
-import soot.Unit;
-import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
+import soot.jimple.infoflow.heros.InfoflowCFG;
 
 public interface BiDirICFGFactory {
 
-    public BiDiInterproceduralCFG<Unit,SootMethod> buildBiDirICFG();
+    public InfoflowCFG buildBiDirICFG();
 
 }

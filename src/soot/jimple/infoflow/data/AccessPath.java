@@ -174,7 +174,7 @@ public class AccessPath implements Cloneable {
 		} else if (!value.equals(other.value))
 			return false;
 		
-		assert this.hashCode == obj.hashCode();
+		assert this.hashCode() == obj.hashCode();
 		return true;
 	}
 	

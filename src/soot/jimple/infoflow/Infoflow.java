@@ -85,8 +85,8 @@ public class Infoflow implements IInfoflow {
 	private boolean computeResultPaths = true;
 	private boolean flowSensitiveAliasing = true;
 	
-	private boolean inspectSources = true;
-	private boolean inspectSinks = true;
+	private boolean inspectSources = false;
+	private boolean inspectSinks = false;
 	
 	private int maxThreadNum = -1;
 	

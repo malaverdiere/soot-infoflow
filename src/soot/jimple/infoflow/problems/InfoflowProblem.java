@@ -120,6 +120,8 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			(Abstraction d1,
 			final Stmt iStmt,
 			Abstraction source) {
+		assert inspectSources || source != zeroValue;
+		
 		Set<Abstraction> res = new HashSet<Abstraction>();
 		if(taintWrapper == null)
 			return Collections.emptySet();
@@ -753,9 +755,17 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 					public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 						if (stopAfterFirstFlow && !results.isEmpty())
 							return Collections.emptySet();
-						if (source.equals(zeroValue))
-							return Collections.singleton(source);
 						
+						//if we do not have to look into sources or sinks:
+						if (!inspectSources && isSource)
+							return Collections.emptySet();
+						if (!inspectSinks && isSink)
+							return Collections.emptySet();
+						if (source == zeroValue) {
+							assert isSource;
+							return Collections.singleton(source);
+						}
+
 						// Notify the handler if we have one
 						for (TaintPropagationHandler tp : taintPropagationHandlers)
 							tp.notifyFlowIn(stmt, Collections.singleton(source),
@@ -767,12 +777,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 							//taint is propagated in CallToReturnFunction, so we do not need any taint here:
 							return Collections.emptySet();
 						}
-						
-						//if we do not have to look into sources or sinks:
-						if (!inspectSources && isSource)
-							return Collections.emptySet();
-						if (!inspectSinks && isSink)
-							return Collections.emptySet();
 						
 						// Check whether we must leave a conditional branch
 						if (source.isTopPostdominator(stmt)) {
@@ -1093,6 +1097,29 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									return Collections.emptySet();
 							}
 							
+							Set<Abstraction> res = new HashSet<Abstraction>();
+
+							// Sources can either be assignments like x = getSecret() or
+							// instance method calls like constructor invocations
+							if (isSource && source == zeroValue
+									&& (iStmt instanceof AssignStmt || invExpr instanceof InstanceInvokeExpr)) {
+								final Value target;
+								if (iStmt instanceof AssignStmt)
+									target = ((AssignStmt) iStmt).getLeftOp();
+								else
+									target = ((InstanceInvokeExpr) invExpr).getBase();
+									
+								final Abstraction abs = new Abstraction(target, iStmt.getInvokeExpr(),
+										iStmt, false, true, iStmt, flowSensitiveAliasing);
+								res.add(abs);
+								
+								// Compute the aliases
+								if (triggerInaktiveTaintOrReverseFlow(target, abs))
+									computeAliasTaints(d1, iStmt, target, res, interproceduralCFG().getMethodOf(call), abs);
+								
+								return res;
+							}
+
 							//check inactive elements:
 							final Abstraction newSource;
 							if (!source.isAbstractionActive() && (call.equals(source.getActivationUnit())
@@ -1102,7 +1129,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 								newSource = source;
 							
 							// Compute the taint wrapper taints
-							Set<Abstraction> res = new HashSet<Abstraction>();
 							res.addAll(computeWrapperTaints(d1, iStmt, newSource));
 							
 							// Implicit flows: taint return value
@@ -1168,25 +1194,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											computeAliasTaints(d1, (Stmt) call, abs.getAccessPath().getPlainValue(), res,
 													interproceduralCFG().getMethodOf(call), abs);
 								}
-							
-							// Sources can either be assignments like x = getSecret() or
-							// instance method calls like constructor invocations
-							if (source == zeroValue && (iStmt instanceof AssignStmt || invExpr instanceof InstanceInvokeExpr)) {
-								if (isSource) {
-									final Value target;
-									if (iStmt instanceof AssignStmt)
-										target = ((AssignStmt) iStmt).getLeftOp();
-									else {
-										target = ((InstanceInvokeExpr) invExpr).getBase();
-									}
-									
-									final Abstraction abs = new Abstraction(target, iStmt.getInvokeExpr(),
-											iStmt, false, true, iStmt, flowSensitiveAliasing);
-									
-									res.add(abs);
-									res.remove(zeroValue);
-								}
-							}
 							
 							// if we have called a sink we have to store the path from the source - in case one of the params is tainted!
 							if (isSink) {

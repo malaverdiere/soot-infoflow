@@ -126,19 +126,27 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 		if(taintWrapper == null)
 			return Collections.emptySet();
 		
-		if (!source.getAccessPath().isStaticFieldRef() && !source.getAccessPath().isEmpty())
-			if(iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+		if (!source.getAccessPath().isStaticFieldRef() && !source.getAccessPath().isEmpty()) {
+			boolean found = false;
+
+			// The base object must be tainted
+			if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
 				InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) iStmt.getInvokeExpr();
-				boolean found = mayAlias(iiExpr.getBase(), source.getAccessPath().getPlainValue());
-				if (!found)
-					for (Value param : iiExpr.getArgs())
-						if (mayAlias(source.getAccessPath().getPlainValue(), param)) {
-							found = true;
-							break;
-				}
-				if (!found)
-					return Collections.emptySet();
+				found = mayAlias(iiExpr.getBase(), source.getAccessPath().getPlainValue());
 			}
+			
+			// or one of the parameters must be tainted
+			if (!found)
+				for (Value param : iStmt.getInvokeExpr().getArgs())
+					if (mayAlias(source.getAccessPath().getPlainValue(), param)) {
+						found = true;
+						break;
+				}
+			
+			// If nothing is tainted, we don't have any taints to propagate
+			if (!found)
+				return Collections.emptySet();
+		}
 			
 		Set<AccessPath> vals = taintWrapper.getTaintsForMethod(iStmt, source.getAccessPath());
 		if(vals != null) {
@@ -357,10 +365,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				// flow fact here
 				if (src instanceof IdentityStmt) {
 					final IdentityStmt is = (IdentityStmt) src;
-					return new FlowFunction<Abstraction>() {
+					
+					return new SolverNormalFlowFunction() {
 
 						@Override
-						public Set<Abstraction> computeTargets(Abstraction source) {
+						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							
@@ -377,7 +386,20 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									return Collections.emptySet();
 							}
 
+							// This may also be a parameter access we regard as a source
 							Set<Abstraction> res = new HashSet<Abstraction>();
+							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
+								Abstraction abs = new Abstraction(is.getLeftOp(), is.getRightOp(), is, false,
+										true, is, flowSensitiveAliasing);
+								res.add(abs);
+								
+								// Compute the aliases
+								if (triggerInaktiveTaintOrReverseFlow(is.getLeftOp(), abs))
+									computeAliasTaints(d1, is, is.getLeftOp(), res, interproceduralCFG().getMethodOf(is), abs);
+								
+								return res;
+							}
+
 							boolean addOriginal = true;
 							if (is.getRightOp() instanceof CaughtExceptionRef) {
 								if (source.getExceptionThrown()) {
@@ -388,12 +410,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							if (addOriginal)
 								res.add(source);
-							
-							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
-								Abstraction abs = new Abstraction(is.getLeftOp(), is.getRightOp(), is, false,
-										true, is, flowSensitiveAliasing);
-								res.add(abs);
-							}
 							
 							return res;
 						}
@@ -446,7 +462,14 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
                                 final Abstraction abs = new Abstraction(assignStmt.getLeftOp(),
                                 		assignStmt.getRightOp(), assignStmt, false, true, assignStmt,
                                 		flowSensitiveAliasing);
-                                return Collections.singleton(abs);
+                                res.add(abs);
+
+                                // Compute the aliases
+								if (triggerInaktiveTaintOrReverseFlow(assignStmt.getLeftOp(), abs))
+									computeAliasTaints(d1, assignStmt, assignStmt.getLeftOp(), res,
+											interproceduralCFG().getMethodOf(assignStmt), abs);
+								
+                                return res;
                             }
 
                             // on NormalFlow taint cannot be created

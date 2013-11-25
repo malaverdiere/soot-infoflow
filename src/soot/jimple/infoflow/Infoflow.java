@@ -402,9 +402,7 @@ public class Infoflow implements IInfoflow {
 				}
 
 				InfoflowProblem forwardProblem  = new InfoflowProblem(iCfg, sourcesSinks, aliasingStrategy);
-				forwardProblem.setTaintWrapper(taintWrapper);
-				forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
-
+				
 				// We have to look through the complete program to find sources
 				// which are then taken as seeds.
 				int sinkCount = 0;
@@ -469,7 +467,6 @@ public class Infoflow implements IInfoflow {
 						} catch (IOException e) {
 							logger.error("Could not write jimple file: {}", entry.getKey() + ".jimple", e);
 						}
-					
 					}
 				}
 
@@ -492,6 +489,8 @@ public class Infoflow implements IInfoflow {
 				for (TaintPropagationHandler tp : taintPropagationHandlers)
 					forwardProblem.addTaintPropagationHandler(tp);
 				forwardProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
+				forwardProblem.setTaintWrapper(taintWrapper);
+				forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
 				
 				if (backProblem != null) {
 					backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
@@ -502,6 +501,7 @@ public class Infoflow implements IInfoflow {
 					for (TaintPropagationHandler tp : taintPropagationHandlers)
 						backProblem.addTaintPropagationHandler(tp);
 					backProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
+					backProblem.setTaintWrapper(taintWrapper);
 				}
 				
 				if (!enableStaticFields)

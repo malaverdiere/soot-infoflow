@@ -320,14 +320,10 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						if (source.equals(zeroValue))
 							return Collections.emptySet();
 						
-						/* Backwards taint wrapping is highly complicated, so we ignore it for the moment
-						if (taintWrapper != null && taintWrapper.supportsBackwardWrapping() && taintWrapper.supportsTaintWrappingForClass(dest.getDeclaringClass())) {
-							// taint is propagated in CallToReturnFunction, so we do not need any taint here if it is exclusive:
-							if(taintWrapper.isExclusive((Stmt)src, 0, null)){
-								return Collections.emptySet();
-							}
-						}
-						*/
+						// taint is propagated in CallToReturnFunction, so we do not need any taint here if it is exclusive:
+						if(taintWrapper != null &&  taintWrapper.isExclusive(stmt, source.getAccessPath()))
+							return Collections.emptySet();
+
 						Set<Abstraction> res = new HashSet<Abstraction>();
 						
 						// if the returned value is tainted - taint values from return statements

@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import soot.IntType;
 import soot.Local;
 import soot.Scene;
@@ -383,6 +384,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		NopEliminator.v().transform(body);
 		System.out.println("Generated main method:\n" + body);		logger.info("Generated main method:\n{}", body);		return mainMethod;
 	}
+	
+	private Map<SootClass, ComponentType> componentTypeCache = new HashMap<SootClass, ComponentType>();
 
 	/**
 	 * Gets the type of component represented by the given Soot class
@@ -390,21 +393,26 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * @return The component type of the given class
 	 */
 	private ComponentType getComponentType(SootClass currentClass) {
+		if (componentTypeCache.containsKey(currentClass))
+			return componentTypeCache.get(currentClass);
+		
 		// Check the type of this class
+		ComponentType ctype = ComponentType.Plain;
 		List<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
 		for(SootClass sc : extendedClasses) {
 			if(sc.getName().equals(AndroidEntryPointConstants.APPLICATIONCLASS))
-				return ComponentType.Application;
+				ctype = ComponentType.Application;
 			else if(sc.getName().equals(AndroidEntryPointConstants.ACTIVITYCLASS))
-				return ComponentType.Activity;
+				ctype = ComponentType.Activity;
 			else if(sc.getName().equals(AndroidEntryPointConstants.SERVICECLASS))
-				return ComponentType.Service;
+				ctype = ComponentType.Service;
 			else if(sc.getName().equals(AndroidEntryPointConstants.BROADCASTRECEIVERCLASS))
-				return ComponentType.BroadcastReceiver;
+				ctype = ComponentType.BroadcastReceiver;
 			else if(sc.getName().equals(AndroidEntryPointConstants.CONTENTPROVIDERCLASS))
-				return ComponentType.ContentProvider;
+				ctype = ComponentType.ContentProvider;
 		}
-		return ComponentType.Plain; 
+		componentTypeCache.put(currentClass, ctype);
+		return ctype; 
 	}
 
 	/**
@@ -775,12 +783,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	private boolean addCallbackMethods(SootClass currentClass) {
 		return addCallbackMethods(currentClass, Collections.<SootClass>emptySet(), "");
 	}
-	
+
 	/**
 	 * Generates invocation statements for all callback methods which need to
 	 * be invoked during the given class' run cycle.
 	 * @param currentClass The class for which we currently build the lifecycle
-	 * @param referenceClasses The classes for which no new instances shall be
+	 * @param referenceClasses The classes for which no new instances shall be	
 	 * created, but rather existing ones shall be used.
 	 * @param callbackSignature An empty string if calls to all callback methods
 	 * for the given class shall be generated, otherwise the subsignature of the
@@ -800,6 +808,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		boolean callbackFound = false;
 		Map<SootClass, Set<SootMethod>> callbackClasses = new HashMap<SootClass, Set<SootMethod>>();
 		for (String methodSig : this.callbackFunctions.get(currentClass.getName())) {
+			// Parse the callback 
 			SootMethodAndClass methodAndClass = SootMethodRepresentationParser.v().parseSootMethodString(methodSig);
 			if (!callbackSignature.isEmpty() && !callbackSignature.equals(methodAndClass.getSubSignature()))
 				continue;
@@ -811,6 +820,21 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				continue;
 			}
 			
+			// Check that we don't have one of the lifecycle methods as they are
+			// treated separately.
+			if (getComponentType(theClass) == ComponentType.Activity
+						&& AndroidEntryPointConstants.getActivityLifecycleMethods().contains(theMethod.getSubSignature()))
+					continue;
+			if (getComponentType(theClass) == ComponentType.Service
+					&& AndroidEntryPointConstants.getServiceLifecycleMethods().contains(theMethod.getSubSignature()))
+				continue;
+			if (getComponentType(theClass) == ComponentType.BroadcastReceiver
+					&& AndroidEntryPointConstants.getBroadcastLifecycleMethods().contains(theMethod.getSubSignature()))
+				continue;
+			if (getComponentType(theClass) == ComponentType.ContentProvider
+					&& AndroidEntryPointConstants.getContentproviderLifecycleMethods().contains(theMethod.getSubSignature()))
+				continue;
+
 			if (callbackClasses.containsKey(theClass))
 				callbackClasses.get(theClass).add(theMethod);
 			else {

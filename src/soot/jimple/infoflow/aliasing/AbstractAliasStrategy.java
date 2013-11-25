@@ -29,5 +29,5 @@ public abstract class AbstractAliasStrategy implements IAliasingStrategy {
 	protected InfoflowSolver getForwardSolver() {
 		return this.fSolver;
 	}
-
+	
 }

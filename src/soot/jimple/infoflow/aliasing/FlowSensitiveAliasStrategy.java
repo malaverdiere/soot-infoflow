@@ -17,7 +17,7 @@ import soot.jimple.infoflow.heros.InfoflowSolver;
  * 
  * @author Steven Arzt
  */
-public class FlowSensitiveAliasStrategy extends AbstractAliasStrategy {
+public class FlowSensitiveAliasStrategy extends AbstractBulkAliasStrategy {
 	
 	private final InfoflowSolver bSolver;
 	
@@ -37,5 +37,5 @@ public class FlowSensitiveAliasStrategy extends AbstractAliasStrategy {
 			bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1,
 					predUnit, bwAbs));		
 	}
-	
+
 }

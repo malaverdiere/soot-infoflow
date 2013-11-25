@@ -24,7 +24,7 @@ import com.google.common.collect.Table;
  * 
  * @author Steven Arzt
  */
-public class ImplicitFlowAliasStrategy extends AbstractAliasStrategy {
+public class ImplicitFlowAliasStrategy extends AbstractBulkAliasStrategy {
 
     public ImplicitFlowAliasStrategy(InfoflowCFG cfg) {
 		super(cfg);
@@ -97,5 +97,5 @@ public class ImplicitFlowAliasStrategy extends AbstractAliasStrategy {
 				taintSet.add(aliasAbs);
 			}
 	}
-
+	
 }

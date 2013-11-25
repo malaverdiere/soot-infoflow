@@ -35,7 +35,7 @@ import com.google.common.collect.Table;
  * 
  * @author Steven Arzt
  */
-public class PtsBasedAliasStrategy extends AbstractAliasStrategy {
+public class PtsBasedAliasStrategy extends AbstractBulkAliasStrategy {
 	
 	private final Table<SootMethod, Abstraction, Set<Abstraction>> aliases = HashBasedTable.create();
 

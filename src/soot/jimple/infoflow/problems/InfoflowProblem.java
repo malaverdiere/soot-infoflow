@@ -388,7 +388,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							// This may also be a parameter access we regard as a source
 							Set<Abstraction> res = new HashSet<Abstraction>();
-							if (sourceSinkManager.isSource(is, interproceduralCFG())) {
+							if (source == zeroValue && sourceSinkManager.isSource(is, interproceduralCFG())) {
 								Abstraction abs = new Abstraction(is.getLeftOp(), is.getRightOp(), is, false,
 										true, is, flowSensitiveAliasing);
 								res.add(abs);
@@ -433,9 +433,6 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
-							if (src.toString().equals("$r4 = a.<soot.jimple.infoflow.test.HeapTestCode$X: char[] e>"))
-								System.out.println("x");
-							
 							if (stopAfterFirstFlow && !results.isEmpty())
 								return Collections.emptySet();
 							

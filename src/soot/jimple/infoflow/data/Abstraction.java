@@ -25,7 +25,7 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.heros.InfoflowCFG.UnitContainer;
+import soot.jimple.infoflow.heros.IInfoflowCFG.UnitContainer;
 import soot.jimple.internal.JimpleLocal;
 
 import com.google.common.collect.Sets;

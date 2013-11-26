@@ -9,7 +9,7 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 
 /**
@@ -21,7 +21,7 @@ public class FlowSensitiveAliasStrategy extends AbstractBulkAliasStrategy {
 	
 	private final InfoflowSolver bSolver;
 	
-	public FlowSensitiveAliasStrategy(InfoflowCFG cfg, InfoflowSolver backwardsSolver) {
+	public FlowSensitiveAliasStrategy(IInfoflowCFG cfg, InfoflowSolver backwardsSolver) {
 		super(cfg);
 		this.bSolver = backwardsSolver;
 	}

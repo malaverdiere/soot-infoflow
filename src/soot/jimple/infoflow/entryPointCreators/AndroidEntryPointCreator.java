@@ -381,8 +381,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		body.getUnits().add(Jimple.v().newReturnVoidStmt());
 		if (DEBUG)
 			mainMethod.getActiveBody().validate();
+		
+		// Optimize the generated main method
 		NopEliminator.v().transform(body);
-		System.out.println("Generated main method:\n" + body);		logger.info("Generated main method:\n{}", body);		return mainMethod;
+		
+		logger.info("Generated main method:\n{}", body);
+		return mainMethod;
 	}
 	
 	private Map<SootClass, ComponentType> componentTypeCache = new HashMap<SootClass, ComponentType>();

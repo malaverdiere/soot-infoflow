@@ -531,6 +531,12 @@ public class Infoflow implements IInfoflow {
 				if (executor.getActiveCount() != 0 || !executor.isTerminated())
 					logger.error("Executor did not terminate gracefully");
 
+				// Print taint wrapper statistics
+				if (taintWrapper != null) {
+					logger.info("Taint wrapper hits: " + taintWrapper.getWrapperHits());
+					logger.info("Taint wrapper misses: " + taintWrapper.getWrapperMisses());
+				}
+				
 				logger.info("IFDS problem solved, processing results...");
 				
 				// Force a cleanup. Everything we need is reachable through the

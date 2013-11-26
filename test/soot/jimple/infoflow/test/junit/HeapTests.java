@@ -28,7 +28,7 @@ import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.data.AccessPath;
-import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
+import soot.jimple.infoflow.taintWrappers.AbstractTaintWrapper;
 import soot.jimple.infoflow.test.utilclasses.TestWrapper;
 /**
  * tests aliasing of heap references
@@ -411,10 +411,10 @@ public class HeapTests extends JUnitTests {
 	    	int oldLength = Infoflow.getAccessPathLength();
 	    	infoflow.setAccessPathLength(3);
 	    	
-	    	infoflow.setTaintWrapper(new ITaintPropagationWrapper() {
+	    	infoflow.setTaintWrapper(new AbstractTaintWrapper() {
 				
 				@Override
-				public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
+				public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
 					return stmt.containsInvokeExpr()
 							&& (stmt.getInvokeExpr().getMethod().getName().equals("foo2")
 									|| stmt.getInvokeExpr().getMethod().getName().equals("bar2"));

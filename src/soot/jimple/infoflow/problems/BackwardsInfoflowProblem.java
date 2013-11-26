@@ -279,7 +279,6 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							if (source.equals(zeroValue))
 								return Collections.emptySet();
 							assert !source.isAbstractionActive() || !flowSensitiveAliasing;
-							
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
 							// If the next statement assigns the base of the tainted value,
@@ -321,7 +320,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							return Collections.emptySet();
 						
 						// taint is propagated in CallToReturnFunction, so we do not need any taint here if it is exclusive:
-						if(taintWrapper != null &&  taintWrapper.isExclusive(stmt, source.getAccessPath()))
+						if(taintWrapper != null && taintWrapper.isExclusive(stmt, source.getAccessPath()))
 							return Collections.emptySet();
 
 						Set<Abstraction> res = new HashSet<Abstraction>();

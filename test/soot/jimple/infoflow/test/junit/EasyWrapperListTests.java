@@ -95,8 +95,8 @@ public class EasyWrapperListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListConcreteWriteReadNegativeTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		infoflow.setTaintWrapper(easyWrapper);
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
 		negativeCheckInfoflow(infoflow);
     }
     

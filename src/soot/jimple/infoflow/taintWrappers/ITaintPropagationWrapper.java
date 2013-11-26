@@ -44,4 +44,21 @@ public interface ITaintPropagationWrapper {
 	 */
 	public boolean isExclusive(Stmt stmt, AccessPath taintedPath);
 
+	/**
+	 * Gets the number of times in which the taint wrapper was able to
+	 * exclusively model a method call. This is equal to the number of times
+	 * isExclusive() returned true.
+	 * @return The number of method model requests that succeeded
+	 */
+	public int getWrapperHits();
+	
+
+	/**
+	 * Gets the number of times in which the taint wrapper was NOT able to
+	 * exclusively model a method call. This is equal to the number of times
+	 * isExclusive() returned false.
+	 * @return The number of method model requests that failed
+	 */
+	public int getWrapperMisses();
+
 }

@@ -147,7 +147,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 			if (!found)
 				return Collections.emptySet();
 		}
-			
+		
 		Set<AccessPath> vals = taintWrapper.getTaintsForMethod(iStmt, source.getAccessPath());
 		if(vals != null) {
 			for (AccessPath val : vals) {

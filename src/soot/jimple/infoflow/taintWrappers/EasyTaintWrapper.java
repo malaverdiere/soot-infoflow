@@ -48,13 +48,14 @@ import soot.jimple.internal.JAssignStmt;
  * @author Christian Fritz, Steven Arzt
  *
  */
-public class EasyTaintWrapper implements ITaintPropagationWrapper {
+public class EasyTaintWrapper extends AbstractTaintWrapper {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 	private final Map<String, List<String>> classList;
 	private final Map<String, List<String>> excludeList;
 	private final Map<String, List<String>> killList;
 	private final Set<String> includeList;
-
+	private boolean aggressiveMode = false;
+	
 	public EasyTaintWrapper(HashMap<String, List<String>> classList){
 		this.classList = classList;
 		this.excludeList = new HashMap<String, List<String>>();
@@ -137,7 +138,7 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 				isSupported = true;
 				break;
 			}
-		if (!isSupported)
+		if (!isSupported && !aggressiveMode)
 			return Collections.emptySet();
 
 		// For implicit flows, we always taint the return value and the base
@@ -182,6 +183,11 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			}
 		}
 		
+		// Even in aggressive mode, we do not taint base objects based on
+		// parameters unless we know what the method is doing
+		if (!isSupported)
+			return Collections.emptySet();
+
 		//if param is tainted && classList contains classname && if list. contains signature of method -> add propagation
 		for (Value param : stmt.getInvokeExpr().getArgs())
 			if (param.equals(taintedPath.getPlainValue())) {		
@@ -233,10 +239,58 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		return methodList;
 	}
 
+	private boolean hasMethodsForClass(SootClass c){
+		if (classList.containsKey(c.getName()))
+			return true;
+		
+		if(!c.isInterface()) {
+			// We have to walk up the hierarchy to also include all methods
+			// registered for superclasses
+			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
+			for(SootClass sclass : superclasses){
+				if(classList.containsKey(sclass.getName()))
+					return true;
+			}
+		}
+		
+		return false;
+	}
+
 	@Override
-	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
 		SootMethod method = stmt.getInvokeExpr().getMethod();
-		return !getMethodsForClass(method.getDeclaringClass()).isEmpty();
+		
+		// In aggressive mode, we always taint the return value if the base
+		// object is tainted.
+		if (aggressiveMode && stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+			InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();			
+			if (iiExpr.getBase().equals(taintedPath.getPlainValue()))
+				return true;
+		}
+		
+		return hasMethodsForClass(method.getDeclaringClass());
+	}
+	
+	/**
+	 * Sets whether the taint wrapper shall always assume the return value of a
+	 * call "a = x.foo()" to be tainted if the base object is tainted, even if
+	 * the respective method is not in the data file.
+	 * @param aggressiveMode True if return values shall always be tainted if
+	 * the base object on which the method is invoked is tainted, otherwise
+	 * false
+	 */
+	public void setAggressiveMode(boolean aggressiveMode) {
+		this.aggressiveMode = aggressiveMode;
+	}
+	
+	/**
+	 * Gets whether the taint wrapper shall always consider return values as
+	 * tainted if the base object of the respective invocation is tainted
+	 * @return True if return values shall always be tainted if the base
+	 * object on which the method is invoked is tainted, otherwise false
+	 */
+	public boolean getAggressiveMode() {
+		return this.aggressiveMode;
 	}
 
 }

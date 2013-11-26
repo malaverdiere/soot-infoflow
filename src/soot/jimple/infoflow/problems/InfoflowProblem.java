@@ -1121,8 +1121,11 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							// Sources can either be assignments like x = getSecret() or
 							// instance method calls like constructor invocations
-							if (isSource && source == zeroValue
-									&& (iStmt instanceof AssignStmt || invExpr instanceof InstanceInvokeExpr)) {
+							if (isSource && source == zeroValue) {
+								// If we have nothing to taint, we can skip this source
+								if (!(iStmt instanceof AssignStmt || invExpr instanceof InstanceInvokeExpr))
+									return Collections.emptySet();
+									
 								final Value target;
 								if (iStmt instanceof AssignStmt)
 									target = ((AssignStmt) iStmt).getLeftOp();

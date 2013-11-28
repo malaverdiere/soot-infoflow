@@ -219,7 +219,7 @@ public class AccessPath implements Cloneable {
 	 * @return
 	 */
 	public AccessPath copyWithNewValue(Value val){
-		if (this.value.equals(val))
+		if (this.value != null && this.value.equals(val))
 			return this;
 		
 		return new AccessPath(val, this.fields);

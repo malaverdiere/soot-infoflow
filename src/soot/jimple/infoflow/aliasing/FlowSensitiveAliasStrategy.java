@@ -9,8 +9,8 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.heros.IInfoflowCFG;
-import soot.jimple.infoflow.heros.InfoflowSolver;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
+import soot.jimple.infoflow.solver.IInfoflowSolver;
 
 /**
  * A fully flow-sensitive aliasing strategy
@@ -19,9 +19,9 @@ import soot.jimple.infoflow.heros.InfoflowSolver;
  */
 public class FlowSensitiveAliasStrategy extends AbstractBulkAliasStrategy {
 	
-	private final InfoflowSolver bSolver;
+	private final IInfoflowSolver bSolver;
 	
-	public FlowSensitiveAliasStrategy(IInfoflowCFG cfg, InfoflowSolver backwardsSolver) {
+	public FlowSensitiveAliasStrategy(IInfoflowCFG cfg, IInfoflowSolver backwardsSolver) {
 		super(cfg);
 		this.bSolver = backwardsSolver;
 	}
@@ -35,7 +35,7 @@ public class FlowSensitiveAliasStrategy extends AbstractBulkAliasStrategy {
 		Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
 		for (Unit predUnit : interproceduralCFG().getPredsOf(src))
 			bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1,
-					predUnit, bwAbs));		
+					predUnit, bwAbs));
 	}
 
 }

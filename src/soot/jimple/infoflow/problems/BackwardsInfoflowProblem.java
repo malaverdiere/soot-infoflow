@@ -40,10 +40,10 @@ import soot.jimple.ReturnStmt;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.heros.BackwardsInfoflowCFG;
-import soot.jimple.infoflow.heros.InfoflowSolver;
-import soot.jimple.infoflow.heros.SolverCallToReturnFlowFunction;
-import soot.jimple.infoflow.heros.SolverNormalFlowFunction;
+import soot.jimple.infoflow.solver.BackwardsInfoflowCFG;
+import soot.jimple.infoflow.solver.IInfoflowSolver;
+import soot.jimple.infoflow.solver.functions.SolverCallToReturnFlowFunction;
+import soot.jimple.infoflow.solver.functions.SolverNormalFlowFunction;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.BaseSelector;
 
@@ -51,7 +51,7 @@ import soot.jimple.infoflow.util.BaseSelector;
  * class which contains the flow functions for the backwards solver. This is required for on-demand alias analysis.
  */
 public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
-	private InfoflowSolver fSolver;
+	private IInfoflowSolver fSolver;
 
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper) {
 		taintWrapper = wrapper;
@@ -65,7 +65,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 		super(new BackwardsInfoflowCFG());
 	}
 
-	public void setForwardSolver(InfoflowSolver forwardSolver) {
+	public void setForwardSolver(IInfoflowSolver forwardSolver) {
 		fSolver = forwardSolver;
 	}
 	

@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.heros;
+package soot.jimple.infoflow.solver;
 
 import soot.Body;
 import soot.Unit;

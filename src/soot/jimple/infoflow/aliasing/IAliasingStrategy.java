@@ -7,7 +7,7 @@ import soot.Value;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AccessPath;
-import soot.jimple.infoflow.heros.InfoflowSolver;
+import soot.jimple.infoflow.solver.IInfoflowSolver;
 
 /**
  * Generic interface for the different taint aliasing strategies supported by
@@ -53,6 +53,6 @@ public interface IAliasingStrategy {
 	 * edges for taint aliases at right position.
 	 * @param fSolver The forward solver performing the taint propagation
 	 */
-	public void setForwardSolver(InfoflowSolver fSolver);
+	public void setForwardSolver(IInfoflowSolver fSolver);
 
 }

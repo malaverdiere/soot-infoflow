@@ -79,14 +79,17 @@ public class AccessPath implements Cloneable {
 
 		int fieldNum = (baseField == null ? 0 : 1)
 				+ (appendingFields == null ? 0 : appendingFields.length);
-		this.fields = new SootField[Math.min(Infoflow.getAccessPathLength(), fieldNum)];
-		
-		if (baseField != null)
-			this.fields[0] = baseField;
-
-		if (appendingFields != null)
-			for (int i = (baseField == null ? 0 : 1); i < this.fields.length; i++)
-				this.fields[i] = appendingFields[i - (baseField == null ? 0 : 1)];
+		fieldNum = Math.min(Infoflow.getAccessPathLength(), fieldNum);
+		if (fieldNum == 0)
+			this.fields = null;
+		else {
+			this.fields = new SootField[fieldNum];
+			if (baseField != null)
+				this.fields[0] = baseField;
+			if (appendingFields != null)
+				for (int i = (baseField == null ? 0 : 1); i < this.fields.length; i++)
+					this.fields[i] = appendingFields[i - (baseField == null ? 0 : 1)];
+		}
 	}
 	
 	public AccessPath(SootField staticfield){
@@ -216,6 +219,9 @@ public class AccessPath implements Cloneable {
 	 * @return
 	 */
 	public AccessPath copyWithNewValue(Value val){
+		if (this.value.equals(val))
+			return this;
+		
 		return new AccessPath(val, this.fields);
 	}
 	
@@ -270,12 +276,15 @@ public class AccessPath implements Cloneable {
 	 * @return The new access path
 	 */
 	public AccessPath merge(AccessPath ap) {
-		SootField[] fields = new SootField[this.fields.length + ap.fields.length];
-		for (int i = 0; i < this.fields.length; i++)
-			fields[i] = this.fields[i];
-		if (ap.fields != null && ap.fields.length > 0)
-			for (int i = 0; i < ap.fields.length; i++)
-				fields[this.fields.length + i] = ap.fields[i];
+		int offset = this.fields == null ? 0 : this.fields.length;
+		SootField[] fields = new SootField[offset + (ap.fields == null ? 0 : ap.fields.length)];
+		if (this.fields != null)
+			for (int i = 0; i < this.fields.length; i++)
+				fields[i] = this.fields[i];
+		if (ap.fields != null)
+			if (ap.fields != null && ap.fields.length > 0)
+				for (int i = 0; i < ap.fields.length; i++)
+					fields[offset + i] = ap.fields[i];
 		
 		return new AccessPath(this.value, fields);
 	}

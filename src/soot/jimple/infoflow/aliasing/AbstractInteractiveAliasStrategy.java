@@ -6,7 +6,7 @@ import soot.SootMethod;
 import soot.Value;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.solver.InfoflowCFG;
 
 public abstract class AbstractInteractiveAliasStrategy extends AbstractAliasStrategy {
 

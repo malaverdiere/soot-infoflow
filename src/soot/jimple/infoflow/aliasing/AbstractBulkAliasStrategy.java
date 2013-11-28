@@ -1,7 +1,7 @@
 package soot.jimple.infoflow.aliasing;
 
 import soot.jimple.infoflow.data.AccessPath;
-import soot.jimple.infoflow.heros.IInfoflowCFG;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
 
 public abstract class AbstractBulkAliasStrategy extends AbstractAliasStrategy {
 

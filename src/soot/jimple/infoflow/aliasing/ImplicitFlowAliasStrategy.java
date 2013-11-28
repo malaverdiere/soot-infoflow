@@ -13,7 +13,7 @@ import soot.jimple.InstanceFieldRef;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AccessPath;
-import soot.jimple.infoflow.heros.IInfoflowCFG;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;

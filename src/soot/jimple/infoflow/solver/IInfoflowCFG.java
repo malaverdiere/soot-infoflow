@@ -2,7 +2,7 @@
  * (c) 2013 Tata Consultancy Services & Ecole Polytechnique de Montreal
  * All rights reserved
  */
-package soot.jimple.infoflow.heros;
+package soot.jimple.infoflow.solver;
 
 import soot.SootMethod;
 import soot.Unit;

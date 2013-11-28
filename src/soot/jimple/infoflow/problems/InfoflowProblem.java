@@ -58,11 +58,17 @@ import soot.jimple.infoflow.data.AbstractionAtSink;
 import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler.FlowFunctionType;
-import soot.jimple.infoflow.heros.*;
-import soot.jimple.infoflow.heros.IInfoflowCFG.UnitContainer;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
+import soot.jimple.infoflow.solver.InfoflowCFG;
+import soot.jimple.infoflow.solver.IInfoflowCFG.UnitContainer;
+import soot.jimple.infoflow.solver.functions.SolverCallFlowFunction;
+import soot.jimple.infoflow.solver.functions.SolverCallToReturnFlowFunction;
+import soot.jimple.infoflow.solver.functions.SolverNormalFlowFunction;
+import soot.jimple.infoflow.solver.functions.SolverReturnFlowFunction;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.BaseSelector;
+import soot.jimple.infoflow.util.ConcurrentHashSet;
 
 public class InfoflowProblem extends AbstractInfoflowProblem {
 

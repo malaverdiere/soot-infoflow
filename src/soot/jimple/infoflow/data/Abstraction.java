@@ -11,7 +11,7 @@
 package soot.jimple.infoflow.data;
 
 
-import heros.solver.PathTrackingIFDSSolver.LinkedNode;
+import heros.solver.LinkedNode;
 
 import java.util.ArrayList;
 import java.util.Collections;

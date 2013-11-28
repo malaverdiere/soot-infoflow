@@ -42,6 +42,7 @@ import soot.jimple.internal.JEqExpr;
 import soot.jimple.internal.JIfStmt;
 import soot.jimple.internal.JNopStmt;
 import soot.jimple.toolkits.scalar.NopEliminator;
+import soot.options.Options;
 
 /**
  * class which creates a dummy main method with the entry points according to the Android lifecycles
@@ -173,6 +174,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		// monster, the onCreate() methods of content providers run even before
 		// the application object's onCreate() is called.
 		{
+			boolean hasContentProviders = false;
 			JNopStmt beforeContentProvidersStmt = new JNopStmt();
 			body.getUnits().add(beforeContentProvidersStmt);
 			for(String className : classMap.keySet()) {
@@ -192,11 +194,13 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					buildMethodCall(findMethod(currentClass, AndroidEntryPointConstants.CONTENTPROVIDER_ONCREATE),
 							body, localVal, generator);
 					body.getUnits().add(thenStmt);
+					hasContentProviders = true;
 				}
 			}
 			// Jump back to the beginning of this section to overapproximate the
 			// order in which the methods are called
-			createIfStmt(beforeContentProvidersStmt);
+			if (hasContentProviders)
+				createIfStmt(beforeContentProvidersStmt);
 		}
 		
 		// If we have an application, we need to start it in the very beginning
@@ -379,11 +383,11 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 					applicationClass, classMap.get(applicationClass.getName()), applicationLocal);
 
 		body.getUnits().add(Jimple.v().newReturnVoidStmt());
-		if (DEBUG)
-			mainMethod.getActiveBody().validate();
 		
-		// Optimize the generated main method
+		// Optimize and check the generated main method
 		NopEliminator.v().transform(body);
+		if (DEBUG || Options.v().validate())
+			mainMethod.getActiveBody().validate();
 		
 		logger.info("Generated main method:\n{}", body);
 		return mainMethod;

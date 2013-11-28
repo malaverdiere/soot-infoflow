@@ -1,6 +1,6 @@
 package soot.jimple.infoflow.aliasing;
 
-import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 
 /**
@@ -10,14 +10,14 @@ import soot.jimple.infoflow.heros.InfoflowSolver;
  */
 public abstract class AbstractAliasStrategy implements IAliasingStrategy {
 
-	private final InfoflowCFG cfg;
+	private final IInfoflowCFG cfg;
 	private InfoflowSolver fSolver;
 	
-	public AbstractAliasStrategy(InfoflowCFG cfg) {
+	public AbstractAliasStrategy(IInfoflowCFG cfg) {
 		this.cfg = cfg;
 	}
 	
-	public InfoflowCFG interproceduralCFG() {
+	public IInfoflowCFG interproceduralCFG() {
 		return this.cfg;
 	}
 	

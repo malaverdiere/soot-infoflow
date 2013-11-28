@@ -50,7 +50,7 @@ import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
-import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.problems.BackwardsInfoflowProblem;
 import soot.jimple.infoflow.problems.InfoflowProblem;
@@ -95,7 +95,7 @@ public class Infoflow implements IInfoflow {
 
     private BiDirICFGFactory icfgFactory = new DefaultBiDiICFGFactory();
     private List<Transform> preProcessors = Collections.emptyList();
-    private InfoflowCFG iCfg;
+    private IInfoflowCFG iCfg;
     
     private Set<ResultsAvailableHandler> onResultsAvailable = new HashSet<ResultsAvailableHandler>();
     private Set<TaintPropagationHandler> taintPropagationHandlers = new HashSet<TaintPropagationHandler>();

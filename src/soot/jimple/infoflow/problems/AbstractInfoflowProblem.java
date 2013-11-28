@@ -27,6 +27,7 @@ import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
@@ -223,8 +224,8 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 	@Override
-	public InfoflowCFG interproceduralCFG() {
-		return (InfoflowCFG) super.interproceduralCFG();
+	public IInfoflowCFG interproceduralCFG() {
+		return (IInfoflowCFG) super.interproceduralCFG();
 	}
 	
 	/**

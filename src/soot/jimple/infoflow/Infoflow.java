@@ -321,7 +321,11 @@ public class Infoflow implements IInfoflow {
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method,
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
 		Scene.v().setEntryPoints(Collections.singletonList(entryPointCreator.createDummyMain(entryPoints)));
-		PackManager.v().runPacks();
+
+		// We explicitly select the packs we want to run for performance reasons
+        PackManager.v().getPack("wjpp").apply();
+        PackManager.v().getPack("cg").apply();
+        PackManager.v().getPack("wjtp").apply();
 		if (debug)
 			PackManager.v().writeOutput();
 	}
@@ -335,22 +339,8 @@ public class Infoflow implements IInfoflow {
 			return;
 		}
 
-		// parse classNames as String and methodNames as string in soot representation
-		HashMap<String, List<String>> classes = SootMethodRepresentationParser.v().parseClassNames
-						(Collections.singletonList(entryPoint), false);
-
-		initializeSoot(path, classes.keySet(), sourcesSinks, entryPoint);
-		
-		if (debug) {
-			for (List<String> methodList : classes.values()) {
-				for (String methodSignature : methodList) {
-					if (Scene.v().containsMethod(methodSignature)) {
-						SootMethod method = Scene.v().getMethod(methodSignature);
-						logger.debug(method.retrieveActiveBody().toString());
-					}
-				}
-			}
-		}
+		initializeSoot(path, SootMethodRepresentationParser.v().parseClassNames
+				(Collections.singletonList(entryPoint), false).keySet(), sourcesSinks, entryPoint);
 
 		if (!Scene.v().containsMethod(entryPoint)){
 			logger.error("Entry point not found: " + entryPoint);
@@ -365,7 +355,11 @@ public class Infoflow implements IInfoflow {
 		}
 		Scene.v().setEntryPoints(Collections.singletonList(ep));
 		Options.v().set_main_class(ep.getDeclaringClass().getName());
-		PackManager.v().runPacks();
+		
+		// We explicitly select the packs we want to run for performance reasons
+        PackManager.v().getPack("wjpp").apply();
+        PackManager.v().getPack("cg").apply();
+        PackManager.v().getPack("wjtp").apply();
 		if (debug)
 			PackManager.v().writeOutput();
 	}

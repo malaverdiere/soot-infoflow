@@ -25,12 +25,11 @@ import heros.solver.CountingThreadPoolExecutor;
 import heros.solver.PathEdge;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -39,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import soot.SootMethod;
 import soot.Unit;
+import soot.jimple.infoflow.util.ConcurrentHashSet;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.HashBasedTable;
@@ -264,9 +264,7 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 						//line 15.1 of Naeem/Lhotak/Rodriguez
 						addIncoming(sP,d3,n,d2);
 						//line 15.2, copy to avoid concurrent modification exceptions by other threads
-						endSumm = new HashMap<N,Set<D>>();
-						for (Entry<N, Set<D>> entry : endSummary(sP, d3).entrySet())
-							endSumm.put(entry.getKey(), new HashSet<D>(entry.getValue()));
+						endSumm = endSummary(sP, d3);
 					}
 					
 					//still line 15.2 of Naeem/Lhotak/Rodriguez
@@ -344,7 +342,7 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 		
 		//for each of the method's start points, determine incoming calls
 		Set<N> startPointsOf = icfg.getStartPointsOf(methodThatNeedsSummary);
-		Map<N,Set<D>> inc = new HashMap<N,Set<D>>();
+		Map<N,Set<D>> inc = null;
 		for(N sP: startPointsOf) {
 			//line 21.1 of Naeem/Lhotak/Rodriguez
 			
@@ -352,8 +350,7 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 			synchronized (incoming) {
 				addEndSummary(sP, d1, n, d2);
 				//copy to avoid concurrent modification exceptions by other threads
-				for (Entry<N, Set<D>> entry : incoming(d1, sP).entrySet())
-					inc.put(entry.getKey(), new HashSet<D>(entry.getValue()));
+				inc = incoming(d1, sP);
 			}
 		}
 		
@@ -490,12 +487,12 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 		synchronized (endSummary) {
 			Map<N, Set<D>> summaries = endSummary.get(sP, d1);
 			if(summaries==null) {
-				summaries = new HashMap<N, Set<D>>();
+				summaries = new ConcurrentHashMap<N, Set<D>>();
 				endSummary.put(sP, d1, summaries);
 			}
 			Set<D> d2s = summaries.get(eP);
 			if (d2s == null) {
-				d2s = new HashSet<D>();
+				d2s = new ConcurrentHashSet<D>();
 				summaries.put(eP,d2s);
 			}
 			d2s.add(d2);
@@ -514,12 +511,12 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 		synchronized (incoming) {
 			Map<N, Set<D>> summaries = incoming.get(sP, d3);
 			if(summaries==null) {
-				summaries = new HashMap<N, Set<D>>();
+				summaries = new ConcurrentHashMap<N, Set<D>>();
 				incoming.put(sP, d3, summaries);
 			}
 			Set<D> set = summaries.get(n);
 			if(set==null) {
-				set = new HashSet<D>();
+				set = new ConcurrentHashSet<D>();
 				summaries.put(n,set);
 			}
 			set.add(d2);

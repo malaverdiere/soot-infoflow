@@ -26,7 +26,7 @@ import soot.jimple.internal.JAssignStmt;
  * @author Steven Arzt
  *
  */
-public class IdentityTaintWrapper implements ITaintPropagationWrapper {
+public class IdentityTaintWrapper extends AbstractTaintWrapper {
 
 	@Override
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
@@ -56,7 +56,7 @@ public class IdentityTaintWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
 		assert stmt.containsInvokeExpr();
 		
 		// We are exclusive if the base object is tainted

@@ -140,23 +140,31 @@ public class AccessPath implements Cloneable {
 		return fields;
 	}
 	
+	public int getFieldCount() {
+		return fields == null ? 0 : fields.length;
+	}
+	
 	@Override
 	public int hashCode() {
-		if (hashCode == 0) {
+		if (hashCode != 0)
+			return hashCode;
+		
+		synchronized (this) {
 			final int prime = 31;
 			this.hashCode = 1;
 			this.hashCode = prime * this.hashCode + ((fields == null) ? 0 : Arrays.hashCode(fields));
 			this.hashCode = prime * this.hashCode + ((value == null) ? 0 : value.hashCode());
+			return this.hashCode;
 		}
-		return this.hashCode;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (super.equals(obj))
+		if (obj == this || super.equals(obj))
 			return true;
 		if (obj == null || !(obj instanceof AccessPath))
 			return false;
+		
 		AccessPath other = (AccessPath) obj;
 		if (!Arrays.equals(fields, other.fields))
 			return false;
@@ -166,6 +174,7 @@ public class AccessPath implements Cloneable {
 		} else if (!value.equals(other.value))
 			return false;
 		
+		assert this.hashCode() == obj.hashCode();
 		return true;
 	}
 	
@@ -252,6 +261,31 @@ public class AccessPath implements Cloneable {
 			if (!this.fields[i].equals(a2.fields[i]))
 				return false;
 		return true;
+	}
+	
+	/**
+	 * Merges this access path with the given one, i.e., adds the fields of the
+	 * given access path to this one.
+	 * @param ap The access path whose fields to append to this one
+	 * @return The new access path
+	 */
+	public AccessPath merge(AccessPath ap) {
+		SootField[] fields = new SootField[this.fields.length + ap.fields.length];
+		for (int i = 0; i < this.fields.length; i++)
+			fields[i] = this.fields[i];
+		if (ap.fields != null && ap.fields.length > 0)
+			for (int i = 0; i < ap.fields.length; i++)
+				fields[this.fields.length + i] = ap.fields[i];
+		
+		return new AccessPath(this.value, fields);
+	}
+	
+	public AccessPath dropLastField() {
+		if (fields == null || fields.length == 0)
+			return this;
+		SootField[] newFields = new SootField[fields.length - 1];
+		System.arraycopy(fields, 0, newFields, 0, fields.length - 1);
+		return new AccessPath(value, newFields);
 	}
 
 }

@@ -28,7 +28,7 @@ import soot.jimple.infoflow.Infoflow;
 public class FutureTests extends JUnitTests {
 
 	// Subtraktions-Operator wird von soot nicht ausgewertet
-	@Test
+	@Test(timeout=300000)
 	public void mathTest() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
@@ -38,7 +38,7 @@ public class FutureTests extends JUnitTests {
 	}
 
 	// static initialization is not performed correctly on Soot
-	@Test
+	@Test(timeout=300000)
 	public void staticInit1Test() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
@@ -48,7 +48,7 @@ public class FutureTests extends JUnitTests {
 	}
 
 	//deleting tainted aliases of memory locations requires must-alias analysis, which is not used by FlowDroid
-	@Test
+	@Test(timeout=300000)
 	public void returnOverwriteTest7() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
@@ -57,16 +57,5 @@ public class FutureTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
-	
-	//converts a String to an Integer and back to String again
-	//is not working because of implicit flows
-    @Test
-    public void testStringConvert(){
-    	Infoflow infoflow = initInfoflow();
-    	List<String> epoints = new ArrayList<String>();
-    	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringConvert()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
-		checkInfoflow(infoflow, 1);
-    }
 
 }

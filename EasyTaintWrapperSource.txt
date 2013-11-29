@@ -21,6 +21,9 @@
 <java.util.List: boolean addAll(java.util.Collection)>
 <java.util.List: boolean addAll(int,java.util.Collection)>
 -<java.util.List: void clear()>
+<java.util.List: java.util.Iterator iterator()>()
+
+<java.util.Iterator: java.lang.Object next()>
 
 <java.util.ArrayList: void <init>(java.util.Collection)>
 <java.util.LinkedList: void <init>(java.util.Collection)>
@@ -284,3 +287,7 @@
 <java.util.UUID: void <init>(long,long)> 
 
 ~<android.app.Activity: android.view.View findViewById(int)>
+<android.widget.EditText: android.text.Editable getText()>
+<android.text.Editable: java.lang.String toString()>
+
+<javax.servlet.ServletResponse: java.io.PrintWriter getWriter()>

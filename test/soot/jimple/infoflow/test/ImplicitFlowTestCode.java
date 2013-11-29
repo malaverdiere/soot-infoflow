@@ -252,6 +252,34 @@ public class ImplicitFlowTestCode {
 		cm.publish(ImplicitFlowTestCode.staticDataClass.data.data);
 	}
 
+	private static void conditionalStaticAliasAccess() {
+		StaticDataClass data = new StaticDataClass();
+		ImplicitFlowTestCode.staticDataClass = data;
+		data.data.data = 42;
+	}
+
+	public void staticFieldTest4() {
+		int secret = TelephonyManager.getIMEI();
+		if (secret == 42)
+			conditionalStaticAliasAccess();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ImplicitFlowTestCode.staticDataClass.data.data);
+	}
+
+	private static void conditionalStaticAliasAccess(StaticDataClass data) {
+		data.data.data = 42;
+	}
+
+	public void staticFieldTest5() {
+		StaticDataClass data = new StaticDataClass();
+		ImplicitFlowTestCode.staticDataClass = data;
+		int secret = TelephonyManager.getIMEI();
+		if (secret == 42)
+			conditionalStaticAliasAccess(data);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(ImplicitFlowTestCode.staticDataClass.data.data);
+	}
+
 	public void integerClassTest() {
 		// Not an implicit flow, but used to produce a hickup with implicit
 		// flows enabled
@@ -295,6 +323,7 @@ public class ImplicitFlowTestCode {
 	
 	private class A {
 		String data;
+		int intData;
 	}
 	
 	private class B {
@@ -325,6 +354,15 @@ public class ImplicitFlowTestCode {
 		cm.publish(secret);		
 	}
 	
+	public void passOverTest2() {
+		String secret = TelephonyManager.getDeviceId();
+		int imei = TelephonyManager.getIMEI();
+		if (imei == 42)
+			throwAround(secret);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(secret);		
+	}
+
 	public void callToReturnTest() {
 		String secret = TelephonyManager.getDeviceId();
 		String s1 = "foo";
@@ -338,4 +376,155 @@ public class ImplicitFlowTestCode {
 		cm.publish(res);
 	}
 	
+	private void alias(B b1, B b2) {
+		b2.a = b1.a;
+	}
+	
+	public void createAliasInFunctionTest() {
+		B b1 = new B();
+		b1.a = new A();
+		B b2 = new B();
+		alias(b1, b2);
+		int tainted = TelephonyManager.getIMEI();
+		if (tainted == 42)
+			b1.a.data = "Hello World";
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b2.a.data);
+	}
+	
+	public void createAliasInFunctionTest2() {
+		B b1 = new B();
+		b1.a = new A();
+		B b2 = new B();
+		int tainted = TelephonyManager.getIMEI();
+		if (tainted == 42)
+			aliasAndTaint(b1, b2);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b2.a.data);
+	}
+	
+	private void aliasAndTaint(B b1, B b2) {
+		alias(b1, b2);
+		b1.a.data = "foo";
+	}
+
+	public void implicitFlowTaintWrapperTest() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("foo");
+		int tainted = TelephonyManager.getIMEI();
+		if (tainted == 42)
+			builder.append("bar");
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(builder.toString());
+	}
+	
+	public void hierarchicalCallSetTest() {
+		A a = new A();
+		int tainted = TelephonyManager.getIMEI();
+		if (tainted == 42)
+			setLevel1(a);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+	}
+
+	private void setLevel1(A a) {
+		setLevel2(a);
+	}
+
+	private void setLevel2(A a) {
+		a.data = "foo";
+	}
+	
+	public void conditionalAliasingTest() {
+		B b = new B();
+		b.a = new A();
+		A a = b.a;
+		if (TelephonyManager.getIMEI() == 42)
+			setVal(b);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+	}
+	
+	private void setVal(B b) {
+		b.a.data = "foo";
+	}
+	
+	public void conditionalAliasingTest2() {
+		B b = new B();
+		b.a = new A();
+		A a = new A();
+		if (TelephonyManager.getIMEI() == 42)
+			setVal(b);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+		a = b.a;
+		System.out.println(a);
+	}
+	
+	private void setVal(A a) {
+		String s = "foo";
+		a.data = s;
+	}
+
+	public void afterCallNegativeTest() {
+		A a = new A();
+		if (TelephonyManager.getIMEI() == 42)
+			setVal(a);
+		String s = "foo";
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(s);
+	}
+	
+	public void ifInCalleeTest() {
+		A a = new A();
+		a.intData = 42;
+		if (TelephonyManager.getIMEI() == 42)
+			ifInCallee(a);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+	}
+	
+	private void ifInCallee(A a) {
+		if (a.intData > 0)
+			a.data = "foo";
+	}
+	
+	public void activationConditionalTest() {
+		B b = new B();
+		b.a = new A();
+		
+		A a = b.a;
+		if (b.a.intData == 42)
+			doPublish();
+		
+		a.intData = TelephonyManager.getIMEI();
+	}
+	
+	private interface I {
+		public void leak();
+	}
+	
+	private class I1 implements I {
+		public void leak() {
+			doPublish();
+		}
+	}
+	
+	private class I2 implements I {
+		public void leak() {
+			// Could be a different message, we use the same method as in I1
+			// just to simply things
+			doPublish();
+		}		
+	}
+	
+	public void classTypeTest() {
+		I i;
+		if (TelephonyManager.getIMEI() == 42)
+			i = new I1();
+		else
+			i = new I2();
+		i.leak();
+	}
+
 }

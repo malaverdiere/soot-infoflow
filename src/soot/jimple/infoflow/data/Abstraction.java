@@ -11,83 +11,204 @@
 package soot.jimple.infoflow.data;
 
 
+import heros.solver.PathTrackingIFDSSolver.LinkedNode;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
+import java.util.Set;
 
+import soot.NullType;
 import soot.SootField;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.Infoflow;
-import soot.jimple.infoflow.heros.PDomICFG;
-import soot.jimple.infoflow.heros.PDomICFG.UnitContainer;
+import soot.jimple.infoflow.heros.IInfoflowCFG.UnitContainer;
+import soot.jimple.internal.JimpleLocal;
 
+import com.google.common.collect.Sets;
 /**
  * the abstraction class contains all information that is necessary to track the taint.
  *
  */
-public class Abstraction implements Cloneable {
+public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
+
+	private static Abstraction zeroValue = null;
+    
+	/**
+	 * Class representing a source value together with the statement that created it
+	 * 
+	 * @author Steven Arzt
+	 */
+	public class SourceContext implements Cloneable {
+		private final Value value;
+		private final Stmt stmt;
+		
+		public SourceContext(Value value, Stmt stmt) {
+			this.value = value;
+			this.stmt = stmt;
+		}
+		
+		public Value getValue() {
+			return this.value;
+		}
+		
+		public Stmt getStmt() {
+			return this.stmt;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((stmt == null) ? 0 : stmt.hashCode());
+			result = prime * result + ((value == null) ? 0 : value.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null || !(obj instanceof SourceContext))
+				return false;
+			SourceContext other = (SourceContext) obj;
+			if (stmt == null) {
+				if (other.stmt != null)
+					return false;
+			} else if (!stmt.equals(other.stmt))
+				return false;
+			if (value == null) {
+				if (other.value != null)
+					return false;
+			} else if (!value.equals(other.value))
+				return false;
+			return true;
+		}
+		
+		@Override
+		public SourceContext clone() {
+			SourceContext sc = new SourceContext(value, stmt);
+			assert sc.equals(this);
+			return sc;
+		}
+
+		@Override
+		public String toString() {
+			return value.toString();
+		}
+	}
+	
+	public class SourceContextAndPath extends SourceContext implements Cloneable {
+		private final List<Stmt> path = new LinkedList<Stmt>();
+		
+		public SourceContextAndPath(Value value, Stmt stmt) {
+			super(value, stmt);
+			path.add(stmt);
+		}
+		
+		public List<Stmt> getPath() {
+			return Collections.unmodifiableList(this.path);
+		}
+		
+		public SourceContextAndPath extendPath(Stmt s) {
+			SourceContextAndPath scap = clone();
+			scap.path.add(s);
+			return scap;
+		}
+		
+		@Override
+		public boolean equals(Object other) {
+			if (this == other)
+				return true;
+			if (other == null || !(other instanceof SourceContextAndPath))
+				return false;
+			if (!super.equals(other))
+				return false;
+			//SourceContextAndPath scap = (SourceContextAndPath) other;
+			return true; //this.path.equals(scap.path);
+		}
+		
+		@Override
+		public int hashCode() {
+			return 31 * super.hashCode(); // + 7 * path.hashCode();
+		}
+		
+		@Override
+		public SourceContextAndPath clone() {
+			SourceContextAndPath scap = new SourceContextAndPath(getValue(), getStmt());
+			scap.path.clear();
+			scap.path.addAll(this.path);
+			assert scap.equals(this);
+			return scap;
+		}
+		
+		@Override
+		public String toString() {
+			return super.toString() + "\n\ton Path: " + path;
+		}	
+	}
+	
 	/**
 	 * the access path contains the currently tainted variable or field
 	 */
 	private final AccessPath accessPath;
-	private final Value source;
-	/**
-	 * the statement which contains the source
-	 */
-	private final Stmt sourceContext;
+	
+	private Abstraction predecessor = null;
+	private Set<Abstraction> neighbors = null;
+	private Stmt currentStmt = null;
+	
+	private SourceContext sourceContext = null;
+
+	// only used in path generation
+	private Set<SourceContextAndPath> pathCache = null;
+	
 	/**
 	 * Unit/Stmt which activates the taint when the abstraction passes it
 	 */
-	private Unit activationUnit;
-	/**
-	 * Unit/Stmt which activates the taint when the abstraction passes it,
-	 * adapts to the current level
-	 */
-	private final List<Unit> activationUnitOnCurrentLevel = new ArrayList<Unit>();
+	private Unit activationUnit = null;
 	/**
 	 * active abstraction is tainted value,
 	 * inactive abstraction is an alias to a tainted value that
 	 * might be activated in the future
 	 */
-	private boolean isActive;
+	private boolean isActive = true;
 	/**
 	 * taint is thrown by an exception (is set to false when it reaches the catch-Stmt)
 	 */
-	private boolean exceptionThrown;
-	private int hashCode;
+	private boolean exceptionThrown = false;
+	private int hashCode = 0;
 
 	/**
 	 * The postdominators we need to pass in order to leave the current conditional
-	 * branch
+	 * branch. Do not use the synchronized Stack class here to avoid deadlocks.
 	 */
-	private final Stack<UnitContainer> postdominators = new Stack<UnitContainer>();
-	/**
-	 * The conditional call site. If this site is set, the current code is running
-	 * inside a conditionally-called method.
-	 */
-	private Unit conditionalCallSite = null;
-
-	public Abstraction(Value taint, Value src, Stmt srcContext, boolean exceptionThrown, boolean isActive, Unit activationUnit){
-		this.source = src;
-		this.accessPath = new AccessPath(taint);
-		this.activationUnit = activationUnit;
-		this.sourceContext = srcContext;
-		this.exceptionThrown = exceptionThrown;
-		this.isActive = isActive;
-	}
+	private final List<UnitContainer> postdominators = new ArrayList<UnitContainer>();
 	
-	/**
-	 * Creates an abstraction as a copy of an existing abstraction,
-	 * only exchanging the access path.
-	 * @param p The value to be used as the new access path
-	 * @param original The original abstraction to copy
-	 */
-	protected Abstraction(Value p, Abstraction original){
-		this(new AccessPath(p), original);
+	private final boolean flowSensitiveAliasing;
+	
+	public Abstraction(Value taint, Value currentVal, Stmt currentStmt,
+			boolean exceptionThrown, boolean isActive, Unit activationUnit,
+			boolean flowSensitiveAliasing){
+		this.sourceContext = new SourceContext(currentVal, currentStmt);
+		this.accessPath = new AccessPath(taint);
+		
+		if (flowSensitiveAliasing)
+			this.activationUnit = activationUnit;
+		else
+			this.activationUnit = null;
+		
+		this.exceptionThrown = exceptionThrown;
+		
+		if (flowSensitiveAliasing)
+			this.isActive = isActive;
+		else
+			this.isActive = true;
+		
+		this.flowSensitiveAliasing = flowSensitiveAliasing;
+		this.neighbors = null;
 	}
 
 	/**
@@ -98,55 +219,83 @@ public class Abstraction implements Cloneable {
 	 */
 	protected Abstraction(AccessPath p, Abstraction original){
 		if (original == null) {
-			source = null;
 			sourceContext = null;
 			exceptionThrown = false;
 			activationUnit = null;
-			conditionalCallSite = null;
+			flowSensitiveAliasing = true;
 		}
 		else {
-			source = original.source;
 			sourceContext = original.sourceContext;
 			exceptionThrown = original.exceptionThrown;
 			activationUnit = original.activationUnit;
-			activationUnitOnCurrentLevel.addAll(original.activationUnitOnCurrentLevel);
-			assert activationUnitOnCurrentLevel.size() <= Infoflow.getAbstractionDepth();
+			
 			isActive = original.isActive;
+			
 			postdominators.addAll(original.postdominators);
 			assert this.postdominators.equals(original.postdominators);
-			conditionalCallSite = original.conditionalCallSite;
+			
+			flowSensitiveAliasing = original.flowSensitiveAliasing;
+			assert flowSensitiveAliasing || this.activationUnit == null;
+			assert this.isActive || flowSensitiveAliasing;
 		}
 		accessPath = p;
+		neighbors = null;
 	}
 	
 	public final Abstraction deriveInactiveAbstraction(){
-		return deriveInactiveAbstraction(accessPath);
-	}
-	
-	public final Abstraction deriveInactiveAbstraction(AccessPath p){
-		Abstraction a = deriveNewAbstraction(p);
+		if (!flowSensitiveAliasing)
+			return this;
+		
+		// If this abstraction is already inactive, we keep it
+		if (!this.isActive)
+			return this;
+
+		Abstraction a = deriveNewAbstractionMutable(accessPath, null);
 		a.isActive = false;
+		a.postdominators.clear();
 		return a;
 	}
 
-	public Abstraction deriveNewAbstraction(AccessPath p){
-		return new Abstraction(p, this);
+	public Abstraction deriveNewAbstraction(AccessPath p, Stmt currentStmt){
+		if (this.accessPath.equals(p) && this.currentStmt == currentStmt)
+			return this;
+		return deriveNewAbstractionMutable(p, currentStmt);
 	}
-			
+	
+	private Abstraction deriveNewAbstractionMutable(AccessPath p, Stmt currentStmt){
+		if (this.accessPath.equals(p) && this.currentStmt == currentStmt)
+			return clone();
+		
+		Abstraction abs = new Abstraction(p, this);
+		abs.predecessor = this;
+		abs.currentStmt = currentStmt;
+		
+		if (!abs.getAccessPath().isEmpty())
+			abs.postdominators.clear();
+		
+		abs.sourceContext = null;
+		return abs;
+	}
+	
 	public final Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
 		return this.deriveNewAbstraction(taint, false, activationUnit);
 	}
 	
 	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit){
+		assert !this.getAccessPath().isEmpty();
+
 		Abstraction a;
 		SootField[] orgFields = accessPath.getFields();
 		SootField[] fields = new SootField[cutFirstField ? orgFields.length - 1 : orgFields.length];
 		for (int i = cutFirstField ? 1 : 0; i < orgFields.length; i++)
 			fields[cutFirstField ? i - 1 : i] = orgFields[i];
-		a = deriveNewAbstraction(new AccessPath(taint, fields));
-		if (isActive) {
+		AccessPath newAP = new AccessPath(taint, fields);
+		
+		a = deriveNewAbstractionMutable(newAP, (Stmt) newActUnit);
+		if (flowSensitiveAliasing && isActive) {
 			assert newActUnit != null;
-			a.activationUnit = newActUnit;
+			if (!this.getAccessPath().isEmpty())
+				a.activationUnit = newActUnit;
 		}
 		return a;
 	}
@@ -154,11 +303,14 @@ public class Abstraction implements Cloneable {
 	/**
 	 * Derives a new abstraction that models the current local being thrown as
 	 * an exception
+	 * @param throwStmt The statement at which the exception was thrown
 	 * @return The newly derived abstraction
 	 */
-	public final Abstraction deriveNewAbstractionOnThrow(){
+	public final Abstraction deriveNewAbstractionOnThrow(Stmt throwStmt){
 		assert !this.exceptionThrown;
-		Abstraction abs = clone();
+		Abstraction abs = cloneWithPredecessor(throwStmt);
+		
+		abs.sourceContext = null;
 		abs.exceptionThrown = true;
 		return abs;
 	}
@@ -171,21 +323,80 @@ public class Abstraction implements Cloneable {
 	 */
 	public final Abstraction deriveNewAbstractionOnCatch(Value taint, Unit newActivationUnit){
 		assert this.exceptionThrown;
-		Abstraction abs = deriveNewAbstraction(new AccessPath(taint));
+		Abstraction abs = deriveNewAbstractionMutable(new AccessPath(taint), (Stmt) newActivationUnit);
 		abs.exceptionThrown = false;
-		if(isActive) {
+		
+		if(flowSensitiveAliasing && isActive) {
 			assert newActivationUnit != null;
 			abs.activationUnit = newActivationUnit;
 		}
 		return abs;
 	}
-
-	public Value getSource() {
-		return source;
+		
+	/**
+	 * Gets the path of statements from the source to the current statement
+	 * with which this abstraction is associated. If this path is ambiguous,
+	 * a single path is selected randomly.
+	 * @return The path from the source to the current statement
+	 */
+	public Set<SourceContextAndPath> getPaths() {
+		Runtime.getRuntime().gc();
+		return getPaths(true, this);
 	}
+	
+	/**
+	 * Gets the path of statements from the source to the current statement
+	 * with which this abstraction is associated. If this path is ambiguous,
+	 * a single path is selected randomly.
+	 * @return The path from the source to the current statement
+	 */
+	public Set<SourceContextAndPath> getSources() {
+		Runtime.getRuntime().gc();
+		return getPaths(false, this);
+	}
+	
+	private Abstraction sinkAbs = null;
+	
+	/**
+	 * Gets the path of statements from the source to the current statement
+	 * with which this abstraction is associated. If this path is ambiguous,
+	 * a single path is selected randomly.
+	 * @return The path from the source to the current statement
+	 */
+	private Set<SourceContextAndPath> getPaths(boolean reconstructPaths, Abstraction flagAbs) {
+		if (pathCache != null && sinkAbs == flagAbs)
+			return Collections.unmodifiableSet(pathCache);
 
-	public Stmt getSourceContext() {
-		return this.sourceContext;
+		if (sinkAbs == flagAbs)
+			return Collections.emptySet();
+		sinkAbs = flagAbs;
+		
+		if (sourceContext != null) {
+			// Construct the path root
+			SourceContextAndPath sourceAndPath = new SourceContextAndPath
+					(sourceContext.value, sourceContext.stmt);
+			pathCache = Collections.singleton(sourceAndPath);
+			
+			// Sources may not have neighbors
+			assert neighbors == null;
+			assert predecessor == null;
+		}
+		else {
+			this.pathCache = Sets.newHashSet();
+			
+			for (SourceContextAndPath curScap : predecessor.getPaths(reconstructPaths, flagAbs)) {
+				SourceContextAndPath extendedPath = (currentStmt == null || !reconstructPaths)
+						? curScap : curScap.extendPath(currentStmt);
+				pathCache.add(extendedPath);
+			}
+			
+			if (neighbors != null)
+				for (Abstraction nb : neighbors)
+					pathCache.addAll(nb.getPaths(reconstructPaths, flagAbs));
+		}
+		
+		assert pathCache != null;
+		return Collections.unmodifiableSet(pathCache);
 	}
 	
 	public boolean isAbstractionActive(){
@@ -194,7 +405,7 @@ public class Abstraction implements Cloneable {
 	
 	@Override
 	public String toString(){
-		return (isActive?"":"_")+accessPath.toString() + " | "+(activationUnit==null?"":activationUnit.toString()) + ">>"+ (activationUnitOnCurrentLevel==null?"":activationUnitOnCurrentLevel.toString());
+		return (isActive?"":"_")+accessPath.toString() + " | "+(activationUnit==null?"":activationUnit.toString()) + ">>";
 	}
 	
 	public AccessPath getAccessPath(){
@@ -205,55 +416,19 @@ public class Abstraction implements Cloneable {
 		return activationUnit;
 	}
 	
-	public Abstraction getAbstractionWithNewActivationUnitOnCurrentLevel(Stmt u){
-		if (!isActive || this.getAccessPath().isEmpty() || this.conditionalCallSite != null)
-			return this;
-
-		assert u != null;
-		assert u.containsInvokeExpr();
-		
-		Abstraction a = this.clone();
-		a.activationUnitOnCurrentLevel.add(u);
-		while (a.activationUnitOnCurrentLevel.size() > Infoflow.getAbstractionDepth())
-			a.activationUnitOnCurrentLevel.remove(0);
-		return a;
-	}
-	
-	public List<Unit> getActivationUnitOnCurrentLevel(){
-		return Collections.unmodifiableList(activationUnitOnCurrentLevel);
-	}
-		
 	public Abstraction getActiveCopy(){
-		Abstraction a = clone();
+		assert !this.isActive;
+		
+		Abstraction a = cloneWithPredecessor(null);
+		a.sourceContext = null;
 		a.isActive = true;
 		// do not kill the original activation point since we might return into
 		// a caller, find a new alias there and then need to know where both
 		// aliases originally became active.
 //		a.activationUnit = null;
-//		a.activationUnitOnCurrentLevel.clear();
 		return a;
 	}
 	
-	public Abstraction removeActivationUnit(Unit callSite) {
-		if (activationUnitOnCurrentLevel.contains(callSite)) {
-			Abstraction a = clone();
-			a.activationUnitOnCurrentLevel.remove(callSite);
-			return a;
-		}
-		else
-			return this;
-	}
-	
-	public Abstraction clearActivationUnits() {
-		if (activationUnitOnCurrentLevel.isEmpty())
-			return this;
-		else {
-			Abstraction a = clone();
-			a.activationUnitOnCurrentLevel.clear();
-			return a;
-		}
-	}
-
 	/**
 	 * Gets whether this value has been thrown as an exception
 	 * @return True if this value has been thrown as an exception, otherwise
@@ -263,46 +438,49 @@ public class Abstraction implements Cloneable {
 		return this.exceptionThrown;
 	}
 	
-	public final Abstraction deriveConditionalAbstractionEnter(UnitContainer postdom) {
-		if (!postdominators.isEmpty() && postdominators.contains(postdom))
+	public final Abstraction deriveConditionalAbstractionEnter(UnitContainer postdom,
+			Stmt conditionalUnit) {
+		if (postdominators.contains(postdom))
 			return this;
-		assert this.conditionalCallSite == null;
 		
-		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath());
-		abs.postdominators.push(postdom);
+		Abstraction abs = deriveNewAbstractionMutable
+				(AccessPath.getEmptyAccessPath(), conditionalUnit);
+		// TODO
+//		abs.activationUnit = null;
+		abs.postdominators.add(0, postdom);
+		abs.isActive = true;
 		return abs;
 	}
 	
 	public final Abstraction deriveConditionalAbstractionCall(Unit conditionalCallSite) {
-		Abstraction abs = deriveNewAbstraction(AccessPath.getEmptyAccessPath());
-		if (conditionalCallSite != null)
-			abs.conditionalCallSite = conditionalCallSite;
+		assert conditionalCallSite != null;
+		
+		Abstraction abs = deriveNewAbstractionMutable
+				(AccessPath.getEmptyAccessPath(), (Stmt) conditionalCallSite);
 		abs.isActive = true;
+		abs.activationUnit = conditionalCallSite;
+		
+		// Postdominators are only kept intraprocedurally in order to not
+		// mess up the summary functions with caller-side information
+		abs.postdominators.clear();
 
-//		abs.activationUnit = conditionalCallSite;
-//		abs.activationUnitOnCurrentLevel.clear();
 		return abs;
 	}
 	
-	public final Abstraction leaveConditionalCall() {
-		Abstraction abs = clone();
-		abs.conditionalCallSite = null;
-		return abs;
-	}
-
 	public final Abstraction dropTopPostdominator() {
 		if (postdominators.isEmpty())
 			return this;
 		
 		Abstraction abs = clone();
-		abs.postdominators.pop();
+		abs.sourceContext = null;
+		abs.postdominators.remove(0);
 		return abs;
 	}
 	
 	public UnitContainer getTopPostdominator() {
 		if (this.postdominators.isEmpty())
 			return null;
-		return this.postdominators.peek();
+		return this.postdominators.get(0);
 	}
 	
 	public boolean isTopPostdominator(Unit u) {
@@ -319,13 +497,17 @@ public class Abstraction implements Cloneable {
 		return uc.getMethod() == sm;
 	}
 	
-	public Unit getConditionalCallSite() {
-		return this.conditionalCallSite;
-	}
-
 	@Override
 	public Abstraction clone() {
+		return cloneWithPredecessor(null);
+	}
+	
+	private Abstraction cloneWithPredecessor(Stmt predStmt) {
 		Abstraction abs = new Abstraction(accessPath, this);
+		abs.predecessor = this;
+		abs.currentStmt = predStmt;
+		abs.neighbors = null;
+		
 		assert abs.equals(this);
 		return abs;
 	}
@@ -354,11 +536,7 @@ public class Abstraction implements Cloneable {
 	 * false
 	 */
 	private boolean localEquals(Abstraction other) {
-		if (source == null) {
-			if (other.source != null)
-				return false;
-		} else if (!source.equals(other.source))
-			return false;
+		// deliberately ignore prevAbs
 		if (sourceContext == null) {
 			if (other.sourceContext != null)
 				return false;
@@ -369,41 +547,36 @@ public class Abstraction implements Cloneable {
 				return false;
 		} else if (!activationUnit.equals(other.activationUnit))
 			return false;
-		if (activationUnitOnCurrentLevel == null) {
-			if (other.activationUnitOnCurrentLevel != null)
-				return false;
-		} else if (!activationUnitOnCurrentLevel.equals(other.activationUnitOnCurrentLevel))
-			return false;
 		if (this.exceptionThrown != other.exceptionThrown)
 			return false;
 		if(this.isActive != other.isActive)
 			return false;
 		if(!this.postdominators.equals(other.postdominators))
 			return false;
-		if (conditionalCallSite == null) {
-			if (other.conditionalCallSite != null)
-				return false;
-		} else if (!conditionalCallSite.equals(other.conditionalCallSite))
+		if(this.flowSensitiveAliasing != other.flowSensitiveAliasing)
 			return false;
 		return true;
 	}
 	
 	@Override
 	public int hashCode() {
+		if (this.hashCode != 0)
+			return hashCode;
+
 		final int prime = 31;
-		if (this.hashCode == 0) {
+		synchronized (this) { 
 			this.hashCode = 1;
-			this.hashCode = prime * this.hashCode + ((accessPath == null) ? 0 : accessPath.hashCode());
-			this.hashCode = prime * this.hashCode + ((source == null) ? 0 : source.hashCode());
+	
+			// deliberately ignore prevAbs
 			this.hashCode = prime * this.hashCode + ((sourceContext == null) ? 0 : sourceContext.hashCode());
+			this.hashCode = prime * this.hashCode + ((accessPath == null) ? 0 : accessPath.hashCode());
 			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
-			this.hashCode = prime * this.hashCode + ((activationUnitOnCurrentLevel == null) ? 0 : activationUnitOnCurrentLevel.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + postdominators.hashCode();
-			this.hashCode = prime * this.hashCode + ((conditionalCallSite == null) ? 0 : conditionalCallSite.hashCode());
+			this.hashCode = prime * this.hashCode + (flowSensitiveAliasing ? 1231 : 1237);
+			return hashCode;
 		}
-		return hashCode;
 	}
 	
 	/**
@@ -421,5 +594,40 @@ public class Abstraction implements Cloneable {
 			return false;
 		return localEquals(other);
 	}
+
+	/**
+	 * Gets the context of the taint, i.e. the statement and value of the source
+	 * @return The statement and value of the source
+	 */
+	public SourceContext getSourceContext() {
+		return sourceContext;
+	}
+	
+	@Override
+	public void addNeighbor(Abstraction originalAbstraction) {
+		assert this != zeroValue;
+		assert originalAbstraction.equals(this);
 		
+		// We should not register ourselves as a neighbor
+		if (originalAbstraction == this)
+			return;
+		if (this.predecessor == originalAbstraction.predecessor
+				&& this.currentStmt == originalAbstraction.currentStmt)
+			return;
+		
+		synchronized (this) {
+			if (neighbors == null)
+				neighbors = Sets.newIdentityHashSet();
+			
+			this.neighbors.add(originalAbstraction);
+		}
+	}
+		
+	public static Abstraction getZeroAbstraction(boolean flowSensitiveAliasing) {
+		if (zeroValue == null)
+			zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), null,
+					null, false, true, null, flowSensitiveAliasing);
+		return zeroValue;
+	}
+	
 }

@@ -13,7 +13,6 @@ package soot.jimple.infoflow;
 import java.util.List;
 
 import soot.Transform;
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
@@ -24,6 +23,30 @@ import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 public interface IInfoflow {
 	
 	/**
+	 * Enumeration containing the callgraph algorithms supported for the use with
+	 * the data flow tracker
+	 */
+	public enum CallgraphAlgorithm {
+		AutomaticSelection,
+		VTA,
+		RTA
+	}
+	
+	/**
+	 * Enumeration containing the aliasing algorithms supported by FlowDroid
+	 */
+	public enum AliasingAlgorithm {
+		/**
+		 * A fully flow-sensitive algorithm based on Andromeda
+		 */
+		FlowSensitive,
+		/**
+		 * A flow-insensitive algorithm based on Soot's point-to-sets
+		 */
+		PtsBased
+	}
+
+	/**
 	 * Sets the taint wrapper for deciding on taint propagation through black-box
 	 * methods
 	 * @param wrapper The taint wrapper object that decides on how information is
@@ -31,14 +54,6 @@ public interface IInfoflow {
 	 */
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper);
 
-	/**
-	 * Sets whether and how the paths between the sources and sinks shall be
-	 * tracked
-	 * @param method The method for tracking data flow paths through the
-	 * program.
-	 */
-	public void setPathTracking(PathTrackingMethod method);
-	
 	/**
 	 * Sets whether the information flow analysis shall stop after the first
 	 * flow has been found
@@ -161,6 +176,46 @@ public interface IInfoflow {
 	public void setEnableImplicitFlows(boolean enableImplicitFlows);
 
 	/**
+	 * Sets whether the solver shall consider assignments to static fields
+	 * @param enableStaticFields True if assignments to static fields shall be
+	 * considered, otherwise false
+	 */
+	public void setEnableStaticFieldTracking(boolean enableStaticFields);
+	
+	/**
+	 * Sets whether the solver shall compute the paths between the sources and
+	 * sinks instead of just reporting if there is a path or not.
+	 * @param computeResultPaths True if paths shall be computed, otherwise false
+	 */
+	public void setComputeResultPaths(boolean computeResultPaths);
+
+	/**
+	 * Sets whether a flow sensitive aliasing algorithm shall be used
+	 * @param flowSensitiveAliasing True if a flow sensitive aliasing algorithm
+	 * shall be used, otherwise false
+	 */
+	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing);
+
+	/**
+	 * Sets whether the solver shall track taints of thrown exception objects
+	 * @param enableExceptions True if taints associated with exceptions shall
+	 * be tracked over try/catch construct, otherwise false
+	 */
+	public void setEnableExceptionTracking(boolean enableExceptions);
+
+	/**
+	 * Sets the callgraph algorithm to be used by the data flow tracker
+	 * @param algorithm The callgraph algorithm to be used by the data flow tracker
+	 */
+	public void setCallgraphAlgorithm(CallgraphAlgorithm algorithm);
+	
+	/**
+	 * Sets the aliasing algorithm to be used by the data flow tracker
+	 * @param algorithm The aliasing algorithm to be used by the data flow tracker
+	 */
+	public void setAliasingAlgorithm(AliasingAlgorithm algorithm);
+
+	/**
 	 * sets the depth of the access path that are tracked
 	 * @param accessPathLength the maximum value of an access path. If it gets longer than
 	 *  this value, it is truncated and all following fields are assumed as tainted 
@@ -170,12 +225,12 @@ public interface IInfoflow {
 	public void setAccessPathLength(int accessPathLength);
 	
 	/**
-	 * Sets the maximum depth over which activation statements (i.e. aliases) will be
-	 * tracked.
-	 * @param abstractionDepth The maximum depth over which aliases are tracked. If
-	 * deeper call hierarchies are created, the activation of the respective alias
-	 * is overapproximated. 
+	 * Sets the maximum number of threads to be used by the solver. A value of -1
+	 * indicates an unlimited number of threads, i.e., there will be as many threads
+	 * as there are CPU cores on the machine.
+	 * @param threadNum The maximum number of threads to be used by the solver,
+	 * or -1 for an unlimited number of threads.
 	 */
-	public void setAbstractionDepth(int abstractionDepth);
-
+	public void setMaxThreadNum(int threadNum);
+	
 }

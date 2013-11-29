@@ -23,7 +23,7 @@ import soot.jimple.infoflow.data.AccessPath;
  * 
  * @author Steven Arzt
  */
-public class TaintWrapperSet implements ITaintPropagationWrapper {
+public class TaintWrapperSet extends AbstractTaintWrapper {
 
 	private Set<ITaintPropagationWrapper> wrappers = new HashSet<ITaintPropagationWrapper>();
 	
@@ -44,7 +44,7 @@ public class TaintWrapperSet implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
 		for (ITaintPropagationWrapper w : this.wrappers)
 			if (w.isExclusive(stmt, taintedPath))
 				return true;

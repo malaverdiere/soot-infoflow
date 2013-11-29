@@ -21,7 +21,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class InheritanceTests extends JUnitTests {
 	
-	@Test
+	@Test(timeout=300000)
     public void defaultlifecycle2Test(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -30,7 +30,7 @@ public class InheritanceTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
 	
-	@Test
+	@Test(timeout=300000)
     public void inheritanceTestSpecial(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -39,7 +39,7 @@ public class InheritanceTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
 	
-	@Test
+	@Test(timeout=300000)
     public void staticInheritanceTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -48,7 +48,7 @@ public class InheritanceTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
     }
 	
-	@Test
+	@Test(timeout=300000)
     public void fieldInheritanceTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();

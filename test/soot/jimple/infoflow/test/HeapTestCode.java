@@ -107,8 +107,8 @@ public class HeapTestCode {
 	
 	
 	class A{
-		public String b;
-		public String c;
+		public String b = "Y";
+		public String c = "X";
 	}
 	
 	class X{
@@ -237,6 +237,10 @@ public class HeapTestCode {
 	
 	public class B{
 		public A attr;
+		
+		public B() {
+			attr = new A();
+		}
 	}
 	
 	public A m(){
@@ -432,7 +436,6 @@ public class HeapTestCode {
 
 	public void activationUnitTest1() {
 		B b = new B();
-		b.attr = new A();
 		
 		A a = b.attr;
 		String tainted = TelephonyManager.getDeviceId();
@@ -532,6 +535,7 @@ public class HeapTestCode {
 		B c = b;
 		A a = alias(c);
 		c.attr.b = tainted;
+		b.attr.b = tainted;
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(a.b);
 	}
@@ -626,6 +630,43 @@ public class HeapTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(untainted);
+	}
+	
+	private void alias(B b1, B b2) {
+		b2.attr = b1.attr;
+	}
+	
+	private void set(B a, String secret, B b) {
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+		a.attr.b = secret;
+		cm.publish(b.attr.b);
+	}
+	
+	private void foo(B a) {
+		System.out.println(a);
+	}
+	
+	public void aliasPerformanceTest() {
+		B a = new B();
+		B b = new B();
+		alias(a, b);
+		set(a, TelephonyManager.getDeviceId(), b);
+		foo(a);
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+	}
+	
+	public void backwardsParameterTest() {
+		B b1 = new B();
+		b1.attr = new A();
+		B b2 = new B();
+		
+		alias(b1, b2);
+		
+		b2.attr.b = TelephonyManager.getDeviceId();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b1.attr.b);
 	}
 
 }

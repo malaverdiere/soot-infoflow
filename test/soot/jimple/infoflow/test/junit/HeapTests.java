@@ -28,14 +28,14 @@ import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.data.AccessPath;
-import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
+import soot.jimple.infoflow.taintWrappers.AbstractTaintWrapper;
 import soot.jimple.infoflow.test.utilclasses.TestWrapper;
 /**
  * tests aliasing of heap references
  */
 public class HeapTests extends JUnitTests {
 	
-	@Test
+	@Test(timeout=300000)
 	public void testForEarlyTermination(){
 		Infoflow infoflow = initInfoflow();
 		infoflow.setTaintWrapper(new TestWrapper());
@@ -45,7 +45,7 @@ public class HeapTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 	}
 	
-	@Test
+	@Test(timeout=300000)
 	public void testForLoop(){
 		Infoflow infoflow = initInfoflow();
 		infoflow.setTaintWrapper(new TestWrapper());
@@ -56,7 +56,7 @@ public class HeapTests extends JUnitTests {
 	}
 	
 	
-	@Test
+	@Test(timeout=300000)
 	public void testForWrapper(){
 		Infoflow infoflow = initInfoflow();
 		infoflow.setTaintWrapper(new TestWrapper());
@@ -66,7 +66,7 @@ public class HeapTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
 	}
 	
-	@Test
+	@Test(timeout=300000)
     public void simpleTest(){
 	  Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -75,7 +75,7 @@ public class HeapTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
     }
 	
-	@Test
+	@Test(timeout=300000)
     public void argumentTest(){
 	  Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -84,7 +84,7 @@ public class HeapTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
     }
 	
-	@Test
+	@Test(timeout=300000)
     public void negativeTest(){
 	  Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -93,7 +93,7 @@ public class HeapTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
     }
 	
-	@Test
+	@Test(timeout=300000)
     public void doubleCallTest(){
 	  Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -102,13 +102,7 @@ public class HeapTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
     }
 	
-	//TODO: this test fails and describes the problem discussed earlier,
-	//similar to the following one:
-	// a = x;
-	// sink(a.f);
-	// x.f= taint();
-	// 
-	@Test
+	@Test(timeout=300000)
     public void heapTest0(){
 	  Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
@@ -117,7 +111,7 @@ public class HeapTests extends JUnitTests {
 		negativeCheckInfoflow(infoflow);
     }
 	
-	  @Test
+	  @Test(timeout=300000)
 	    public void heapTest1(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -126,7 +120,7 @@ public class HeapTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void testExample1(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -135,7 +129,7 @@ public class HeapTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 	    }
 	  
-	    @Test
+	    @Test(timeout=300000)
 	    public void testReturn(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -144,7 +138,7 @@ public class HeapTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void testTwoLevels(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -153,7 +147,7 @@ public class HeapTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void multiAliasTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -164,7 +158,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void overwriteAliasTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -175,7 +169,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(0, infoflow.getResults().size());
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void arrayAliasTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -186,7 +180,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void functionAliasTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -197,7 +191,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void functionAliasTest2(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -208,7 +202,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void multiLevelTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -219,7 +213,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void multiLevelTest2(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -230,7 +224,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void negativeMultiLevelTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -240,25 +234,17 @@ public class HeapTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void negativeMultiLevelTest2(){
 	    	taintWrapper = false;
-
 	    	Infoflow infoflow = initInfoflow();
-	    	int oldDepth = Infoflow.getAbstractionDepth();
-	    	infoflow.setAbstractionDepth(1);
-
-	    	infoflow.setAbstractionDepth(20);
-	    	
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void negativeMultiLevelTaint2()>");
 			infoflow.computeInfoflow(path, epoints,sources, sinks);
 			negativeCheckInfoflow(infoflow);
-			
-			infoflow.setAbstractionDepth(oldDepth);
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void threeLevelTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -270,7 +256,25 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
+	    public void threeLevelShortAPTest(){
+	    	taintWrapper = false;
+	    	Infoflow infoflow = initInfoflow();
+	    	
+	    	int oldAPLength = Infoflow.getAccessPathLength();
+	    	infoflow.setAccessPathLength(1);
+
+	    	infoflow.setInspectSinks(false);
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void threeLevelTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			
+			infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+			Assert.assertEquals(1, infoflow.getResults().size());
+	    }
+
+	    @Test(timeout=300000)
 	    public void recursionTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -282,7 +286,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void activationUnitTest1(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -294,7 +298,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void activationUnitTest2(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -306,7 +310,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(0, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void activationUnitTest3(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -318,7 +322,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void activationUnitTest4(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -330,7 +334,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(0, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void activationUnitTest4b(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -342,7 +346,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(0, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void activationUnitTest5(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -354,7 +358,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(0, infoflow.getResults().size());
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void returnAliasTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -366,7 +370,7 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void callPerformanceTest(){
 	    	taintWrapper = false;
 	    	Infoflow infoflow = initInfoflow();
@@ -378,13 +382,13 @@ public class HeapTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void aliasesTest(){
 	    	taintWrapper = false;
 	    	
 	    	Infoflow infoflow = initInfoflow();
 	    	int oldLength = Infoflow.getAccessPathLength();
-	    	infoflow.setAccessPathLength(2);
+	    	infoflow.setAccessPathLength(3);
 
 	    	infoflow.setInspectSources(false);
 	    	infoflow.setInspectSinks(false);
@@ -399,7 +403,7 @@ public class HeapTests extends JUnitTests {
 			infoflow.setAccessPathLength(oldLength);
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void wrapperAliasesTest(){
 	    	taintWrapper = false;
 	    	
@@ -407,10 +411,10 @@ public class HeapTests extends JUnitTests {
 	    	int oldLength = Infoflow.getAccessPathLength();
 	    	infoflow.setAccessPathLength(3);
 	    	
-	    	infoflow.setTaintWrapper(new ITaintPropagationWrapper() {
+	    	infoflow.setTaintWrapper(new AbstractTaintWrapper() {
 				
 				@Override
-				public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
+				public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
 					return stmt.containsInvokeExpr()
 							&& (stmt.getInvokeExpr().getMethod().getName().equals("foo2")
 									|| stmt.getInvokeExpr().getMethod().getName().equals("bar2"));
@@ -481,7 +485,7 @@ public class HeapTests extends JUnitTests {
 			infoflow.setAccessPathLength(oldLength);
 	    }
 
-	    @Test
+	    @Test(timeout=300000)
 	    public void negativeAliasesTest(){
 	    	taintWrapper = false;
 	    	
@@ -499,6 +503,65 @@ public class HeapTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 
 			infoflow.setAccessPathLength(oldLength);
+	    }
+
+	    @Test(timeout=300000)
+	    public void aliasPerformanceTest(){
+	    	taintWrapper = false;
+	    	
+	    	Infoflow infoflow = initInfoflow();
+	    	int oldLength = Infoflow.getAccessPathLength();
+	    	infoflow.setAccessPathLength(3);
+
+	    	infoflow.setInspectSources(false);
+	    	infoflow.setInspectSinks(false);
+	    	infoflow.setEnableImplicitFlows(false);
+	    	
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void aliasPerformanceTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 2);
+			Assert.assertEquals(2, infoflow.getResults().size());
+
+			infoflow.setAccessPathLength(oldLength);
+	    }
+
+	    @Test(timeout=300000)
+	    public void aliasPerformanceTestFIS(){
+	    	taintWrapper = false;
+	    	
+	    	Infoflow infoflow = initInfoflow();
+	    	int oldLength = Infoflow.getAccessPathLength();
+	    	infoflow.setAccessPathLength(3);
+
+	    	infoflow.setInspectSources(false);
+	    	infoflow.setInspectSinks(false);
+	    	infoflow.setEnableImplicitFlows(false);
+	    	infoflow.setFlowSensitiveAliasing(false);
+	    	
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void aliasPerformanceTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 3);		// we're not flow sensitive, so we get a spurious one
+			Assert.assertEquals(3, infoflow.getResults().size());
+
+			infoflow.setAccessPathLength(oldLength);
+	    }
+
+	    @Test(timeout=300000)
+	    public void backwardsParameterTest(){
+	    	taintWrapper = false;
+	    	
+	    	Infoflow infoflow = initInfoflow();
+	    	infoflow.setInspectSources(false);
+	    	infoflow.setInspectSinks(false);
+	    	infoflow.setEnableImplicitFlows(false);
+	    	
+	    	List<String> epoints = new ArrayList<String>();
+	    	epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void backwardsParameterTest()>");
+			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			checkInfoflow(infoflow, 1);
+			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
 }

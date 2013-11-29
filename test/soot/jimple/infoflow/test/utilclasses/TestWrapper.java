@@ -15,9 +15,9 @@ import java.util.Set;
 
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.AccessPath;
-import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
+import soot.jimple.infoflow.taintWrappers.AbstractTaintWrapper;
 
-public class TestWrapper implements ITaintPropagationWrapper {
+public class TestWrapper extends AbstractTaintWrapper {
 
 	@Override
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
@@ -25,7 +25,7 @@ public class TestWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
 		return false;
 	}
 

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import soot.Unit;
+
 import soot.Value;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
@@ -43,7 +44,7 @@ public class InfoflowResults {
 	public class SourceInfo {
 		private final Value source;
 		private final Stmt context;
-		private final List<Unit> path;
+		private final List<Stmt> path;
 		
 		public SourceInfo(Value source, Stmt context) {
 			assert source != null;
@@ -53,7 +54,7 @@ public class InfoflowResults {
 			this.path = null;
 		}
 		
-		public SourceInfo(Value source, Stmt context, List<Unit> path) {
+		public SourceInfo(Value source, Stmt context, List<Stmt> path) {
 			assert source != null;
 
 			this.source = source;
@@ -69,7 +70,7 @@ public class InfoflowResults {
 			return this.context;
 		}
 		
-		public List<Unit> getPath() {
+		public List<Stmt> getPath() {
 			return this.path;
 		}
 
@@ -205,27 +206,25 @@ public class InfoflowResults {
 	}
 	
 	public void addResult(Value sink, Stmt sinkStmt, Value source,
-			Stmt sourceStmt, List<Unit> propagationPath) {
+			Stmt sourceStmt, List<Stmt> propagationPath) {
 		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source, sourceStmt, propagationPath));
 	}
 
 	public void addResult(Value sink, Stmt sinkContext, Value source,
-			Stmt sourceStmt, List<Unit> propagationPath, Unit stmt) {
-		List<Unit> newPropPath = new ArrayList<Unit>(propagationPath);
+			Stmt sourceStmt, List<Stmt> propagationPath, Stmt stmt) {
+		List<Stmt> newPropPath = new LinkedList<Stmt>(propagationPath);
 		newPropPath.add(stmt);
 		this.addResult(new SinkInfo(sink, sinkContext),
 				new SourceInfo(source, sourceStmt, newPropPath));
 	}
 
-	public void addResult(SinkInfo sink, SourceInfo source) {
+	public synchronized void addResult(SinkInfo sink, SourceInfo source) {
 		Set<SourceInfo> sourceInfo = this.results.get(sink);
 		if (sourceInfo == null) {
 			sourceInfo = new HashSet<SourceInfo>();
 			this.results.put(sink, sourceInfo);
 		}
-		synchronized (sourceInfo) {
-			sourceInfo.add(source);
-		}
+		sourceInfo.add(source);
 	}
 
 	/**

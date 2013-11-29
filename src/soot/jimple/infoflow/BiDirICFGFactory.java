@@ -5,10 +5,10 @@
 package soot.jimple.infoflow;
 
 
-import soot.jimple.infoflow.heros.PDomICFG;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 
 public interface BiDirICFGFactory {
 
-    public PDomICFG buildBiDirICFG();
+    public IInfoflowCFG buildBiDirICFG();
 
 }

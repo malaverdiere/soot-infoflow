@@ -10,31 +10,33 @@
  ******************************************************************************/
 package soot.jimple.infoflow.heros;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import heros.EdgeFunction;
 import heros.FlowFunction;
-import heros.IFDSTabulationProblem;
 import heros.InterproceduralCFG;
 import heros.edgefunc.EdgeIdentity;
 import heros.solver.CountingThreadPoolExecutor;
 import heros.solver.IFDSSolver;
 import heros.solver.PathEdge;
+import heros.solver.PathTrackingIFDSSolver;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.toolkits.ide.JimpleIFDSSolver;
+import soot.jimple.infoflow.problems.AbstractInfoflowProblem;
 /**
  * We are subclassing the JimpleIFDSSolver because we need the same executor for both the forward and the backward analysis
  * Also we need to be able to insert edges containing new taint information
  * 
  */
-public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
+public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>> {
 
-	public InfoflowSolver(IFDSTabulationProblem<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>> problem, boolean dumpResults, CountingThreadPoolExecutor executor) {
-		super(problem, dumpResults);
+	public InfoflowSolver(AbstractInfoflowProblem problem, CountingThreadPoolExecutor executor) {
+		super(problem);
 		this.executor = executor;
+		problem.setSolver(this);		
 	}
 	
 	@Override
@@ -47,12 +49,30 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 		// edge <d1,n,d2>, there need not necessarily be a jump function
 		// to <n,d2>.
 		if (!jumpFn.forwardLookup(edge.factAtSource(), edge.getTarget()).containsKey(edge.factAtTarget())) {
-			jumpFn.addFunction(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(),
-					EdgeIdentity.<IFDSSolver.BinaryDomain>v());
-			scheduleEdgeProcessing(edge);
+			propagate(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(),
+					EdgeIdentity.<IFDSSolver.BinaryDomain>v(), null, false);
 			return true;
 		}
 		return false;
+	}
+	
+	public void injectContext(InfoflowSolver otherSolver, SootMethod callee, Abstraction d3, Unit callSite, Abstraction d2) {
+		synchronized (incoming) {
+			for (Unit sP : icfg.getStartPointsOf(callee))
+				addIncoming(sP, d3, callSite, d2);
+		}
+		
+		// First, get a list of the other solver's jump functions.
+		// Then release the lock on otherSolver.jumpFn before doing
+		// anything that locks our own jumpFn.
+		final Set<Abstraction> otherAbstractions;
+		synchronized (otherSolver.jumpFn) {
+			otherAbstractions = new HashSet<Abstraction>
+					(otherSolver.jumpFn.reverseLookup(callSite, d2).keySet());
+		}
+		for (Abstraction d1: otherAbstractions)
+			if (!d1.getAccessPath().isEmpty() && !d1.getAccessPath().isStaticFieldRef())
+				processEdge(new PathEdge<Unit, Abstraction>(d1, callSite, d2));
 	}
 	
 	@Override
@@ -65,7 +85,9 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 				if (d4 == zeroValue)
 					d1s.add(d4);
 				else
-					d1s.addAll(jumpFn.reverseLookup(callSite, d4).keySet());
+					synchronized (jumpFn) {
+						d1s.addAll(jumpFn.reverseLookup(callSite, d4).keySet());
+					}
 			
 			return ((SolverReturnFlowFunction) retFunction).computeTargets(d2, d1s);
 		}
@@ -92,12 +114,22 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 	}
 
 	@Override
+	protected Set<Abstraction> computeCallFlowFunction
+			(FlowFunction<Abstraction> flowFunction, Abstraction d1, Abstraction d2) {
+		if (flowFunction instanceof SolverCallFlowFunction)
+			return ((SolverCallFlowFunction) flowFunction).computeTargets(d1, d2);
+		else
+			return flowFunction.computeTargets(d2);		
+	}
+
+	@Override
 	protected void propagate(Abstraction sourceVal, Unit target, Abstraction targetVal, EdgeFunction<BinaryDomain> f,
 			/* deliberately exposed to clients */ Unit relatedCallSite,
-			/* deliberately exposed to clients */ boolean isUnbalancedReturn) {
+			/* deliberately exposed to clients */ boolean isUnbalancedReturn) {	
 		// Check whether we already have an abstraction that entails the new one.
 		// In such a case, we can simply ignore the new abstraction.
 		boolean noProp = false;
+		/*
 		for (Abstraction abs : new HashSet<Abstraction>(jumpFn.forwardLookup(sourceVal, target).keySet()))
 			if (abs != targetVal) {
 				if (abs.entails(targetVal)) {
@@ -108,8 +140,21 @@ public class InfoflowSolver extends JimpleIFDSSolver<Abstraction, Interprocedura
 					jumpFn.removeFunction(sourceVal, target, abs);
 				}
 			}
+		*/
 		if (!noProp)
 			super.propagate(sourceVal, target, targetVal, f, relatedCallSite, isUnbalancedReturn);
 	}
 
+	/**
+	 * Cleans up some unused memory. Results will still be available afterwards,
+	 * but no intermediate computation values.
+	 */
+	public void cleanup() {
+		this.jumpFn.clear();
+		this.incoming.clear();
+		this.endSummary.clear();
+		this.val.clear();
+		this.cache.clear();
+	}
+	
 }

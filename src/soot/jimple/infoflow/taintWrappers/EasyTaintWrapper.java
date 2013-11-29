@@ -10,10 +10,7 @@
  ******************************************************************************/
 package soot.jimple.infoflow.taintWrappers;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,11 +21,13 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Value;
 import soot.jimple.AssignStmt;
+import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.StaticInvokeExpr;
 import soot.jimple.Stmt;
@@ -46,13 +45,14 @@ import soot.jimple.internal.JAssignStmt;
  * @author Christian Fritz, Steven Arzt
  *
  */
-public class EasyTaintWrapper implements ITaintPropagationWrapper {
+public class EasyTaintWrapper extends AbstractTaintWrapper {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 	private final Map<String, List<String>> classList;
 	private final Map<String, List<String>> excludeList;
 	private final Map<String, List<String>> killList;
 	private final Set<String> includeList;
-
+	private boolean aggressiveMode = false;
+	
 	public EasyTaintWrapper(HashMap<String, List<String>> classList){
 		this.classList = classList;
 		this.excludeList = new HashMap<String, List<String>>();
@@ -82,39 +82,43 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
     }
 
 	public EasyTaintWrapper(File f) throws IOException{
-		BufferedReader reader = null;
-		try{
-			FileReader freader = new FileReader(f);
-			reader = new BufferedReader(freader);
-			String line = reader.readLine();
-			List<String> methodList = new LinkedList<String>();
-			List<String> excludeList = new LinkedList<String>();
-			List<String> killList = new LinkedList<String>();
-			this.includeList = new HashSet<String>();
-			while(line != null){
-				if (!line.isEmpty() && !line.startsWith("%"))
-					if (line.startsWith("~"))
-						excludeList.add(line.substring(1));
-					else if (line.startsWith("-"))
-						killList.add(line.substring(1));
-					else if (line.startsWith("^"))
-						includeList.add(line.substring(1));
-					else
-						methodList.add(line);
-				line = reader.readLine();
-			}
-			this.classList = SootMethodRepresentationParser.v().parseClassNames(methodList, true);
-			this.excludeList = SootMethodRepresentationParser.v().parseClassNames(excludeList, true);
-			this.killList = SootMethodRepresentationParser.v().parseClassNames(killList, true);
-			logger.info("Loaded wrapper entries for {} classes and {} exclusions.", classList.size(), excludeList.size());
-		}
-		finally {
-			if (reader != null)
-				reader.close();
-		}
+        this(new BufferedReader(new FileReader(f)));
 	}
-	
-	@Override
+
+    public EasyTaintWrapper(InputStream is) throws IOException {
+        this(new BufferedReader(new InputStreamReader(is)));
+    }
+
+    private EasyTaintWrapper(BufferedReader reader) throws IOException {
+        try {
+        this.includeList = new HashSet<String>();
+        String line = reader.readLine();
+        List<String> methodList = new LinkedList<String>();
+        List<String> excludeList = new LinkedList<String>();
+        List<String> killList = new LinkedList<String>();
+        while(line != null){
+            if (!line.isEmpty() && !line.startsWith("%"))
+                if (line.startsWith("~"))
+                    excludeList.add(line.substring(1));
+                else if (line.startsWith("-"))
+                    killList.add(line.substring(1));
+                else if (line.startsWith("^"))
+                    includeList.add(line.substring(1));
+                else
+                    methodList.add(line);
+            line = reader.readLine();
+        }
+        this.classList = SootMethodRepresentationParser.v().parseClassNames(methodList, true);
+        this.excludeList = SootMethodRepresentationParser.v().parseClassNames(excludeList, true);
+        this.killList = SootMethodRepresentationParser.v().parseClassNames(killList, true);
+        logger.info("Loaded wrapper entries for {} classes and {} exclusions.", classList.size(), excludeList.size());
+        } finally{
+            reader.close();
+        }
+    }
+
+
+    @Override
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
 		if (!stmt.containsInvokeExpr())
 			return Collections.emptySet();
@@ -135,8 +139,20 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 				isSupported = true;
 				break;
 			}
-		if (!isSupported)
+		if (!isSupported && !aggressiveMode)
 			return Collections.emptySet();
+
+		// For implicit flows, we always taint the return value and the base
+		// object on the empty abstraction.
+		if (taintedPath.isEmpty()) {
+			taints.add(taintedPath);
+			if (stmt instanceof DefinitionStmt)
+				taints.add(new AccessPath(((DefinitionStmt) stmt).getLeftOp()));
+			if (stmt.containsInvokeExpr())
+				if (stmt.getInvokeExpr() instanceof InstanceInvokeExpr)
+					taints.add(new AccessPath(((InstanceInvokeExpr) stmt.getInvokeExpr()).getBase()));
+			return taints;
+		}
 
 		// For the moment, we don't implement static taints on wrappers. Pass it on
 		// not to break anything
@@ -168,6 +184,11 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 			}
 		}
 		
+		// Even in aggressive mode, we do not taint base objects based on
+		// parameters unless we know what the method is doing
+		if (!isSupported)
+			return Collections.emptySet();
+
 		//if param is tainted && classList contains classname && if list. contains signature of method -> add propagation
 		for (Value param : stmt.getInvokeExpr().getArgs())
 			if (param.equals(taintedPath.getPlainValue())) {		
@@ -219,10 +240,58 @@ public class EasyTaintWrapper implements ITaintPropagationWrapper {
 		return methodList;
 	}
 
+	private boolean hasMethodsForClass(SootClass c){
+		if (classList.containsKey(c.getName()))
+			return true;
+		
+		if(!c.isInterface()) {
+			// We have to walk up the hierarchy to also include all methods
+			// registered for superclasses
+			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
+			for(SootClass sclass : superclasses){
+				if(classList.containsKey(sclass.getName()))
+					return true;
+			}
+		}
+		
+		return false;
+	}
+
 	@Override
-	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
 		SootMethod method = stmt.getInvokeExpr().getMethod();
-		return !getMethodsForClass(method.getDeclaringClass()).isEmpty();
+		
+		// In aggressive mode, we always taint the return value if the base
+		// object is tainted.
+		if (aggressiveMode && stmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+			InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();			
+			if (iiExpr.getBase().equals(taintedPath.getPlainValue()))
+				return true;
+		}
+		
+		return hasMethodsForClass(method.getDeclaringClass());
+	}
+	
+	/**
+	 * Sets whether the taint wrapper shall always assume the return value of a
+	 * call "a = x.foo()" to be tainted if the base object is tainted, even if
+	 * the respective method is not in the data file.
+	 * @param aggressiveMode True if return values shall always be tainted if
+	 * the base object on which the method is invoked is tainted, otherwise
+	 * false
+	 */
+	public void setAggressiveMode(boolean aggressiveMode) {
+		this.aggressiveMode = aggressiveMode;
+	}
+	
+	/**
+	 * Gets whether the taint wrapper shall always consider return values as
+	 * tainted if the base object of the respective invocation is tainted
+	 * @return True if return values shall always be tainted if the base
+	 * object on which the method is invoked is tainted, otherwise false
+	 */
+	public boolean getAggressiveMode() {
+		return this.aggressiveMode;
 	}
 
 }

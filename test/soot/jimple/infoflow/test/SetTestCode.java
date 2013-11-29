@@ -44,7 +44,6 @@ public class SetTestCode {
 		boolean x = set.contains(tainted);
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(String.valueOf(x));
-		
 	}
 	
 	public void concreteWriteReadTreePos0Test(){

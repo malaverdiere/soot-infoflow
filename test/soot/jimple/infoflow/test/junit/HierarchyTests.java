@@ -21,7 +21,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class HierarchyTests extends JUnitTests {
 
-	   @Test
+	   @Test(timeout=300000)
 	    public void hierarchytaintedTest(){
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -30,7 +30,7 @@ public class HierarchyTests extends JUnitTests {
 			checkInfoflow(infoflow, 1);
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void hierarchyuntaintedTest(){
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -39,7 +39,7 @@ public class HierarchyTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void classHierarchyTest(){
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -48,7 +48,7 @@ public class HierarchyTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 	    
-	    @Test
+	    @Test(timeout=300000)
 	    public void classHierarchyTest2(){
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();

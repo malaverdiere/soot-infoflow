@@ -23,7 +23,7 @@ import soot.jimple.infoflow.Infoflow;
  */
 public class OverwriteTests extends JUnitTests {
 
-	  @Test
+	  @Test(timeout=300000)
 	    public void varOverwriteTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -32,7 +32,7 @@ public class OverwriteTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void staticFieldOverwriteTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -41,7 +41,7 @@ public class OverwriteTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void fieldOverwriteTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -50,7 +50,7 @@ public class OverwriteTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void returnOverwriteTest(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -59,7 +59,7 @@ public class OverwriteTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void returnOverwriteTest2(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -68,7 +68,7 @@ public class OverwriteTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 	  
-	  @Test
+	  @Test(timeout=300000)
 	    public void returnOverwriteTest3(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -77,7 +77,7 @@ public class OverwriteTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 	    
-	  @Test
+	  @Test(timeout=300000)
 	    public void returnOverwriteTest4(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -86,7 +86,7 @@ public class OverwriteTests extends JUnitTests {
 			negativeCheckInfoflow(infoflow);
 	    }
 
-	  @Test
+	  @Test(timeout=300000)
 	    public void returnOverwriteTest5(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
@@ -96,7 +96,7 @@ public class OverwriteTests extends JUnitTests {
 			Assert.assertEquals(1, infoflow.getResults().size());
 	    }
 
-	  @Test
+	  @Test(timeout=300000)
 	    public void returnOverwriteTest6(){
 		  Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();

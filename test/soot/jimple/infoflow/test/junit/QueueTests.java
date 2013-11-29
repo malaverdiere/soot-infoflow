@@ -23,7 +23,7 @@ import soot.jimple.infoflow.Infoflow;
 @Ignore
 public class QueueTests extends JUnitTests {
 
-	@Test
+	@Test(timeout=300000)
 	public void concreteSynchronousQueueTest() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
@@ -32,7 +32,7 @@ public class QueueTests extends JUnitTests {
 		checkInfoflow(infoflow, 1);
 	}
 
-	@Test
+	@Test(timeout=300000)
 	public void concreteSynchronousQueueNegativeTest() {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();

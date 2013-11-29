@@ -9,7 +9,6 @@
  ******************************************************************************/
 package soot.jimple.infoflow;
 
-import heros.InterproceduralCFG;
 import heros.solver.CountingThreadPoolExecutor;
 
 import java.io.BufferedWriter;
@@ -41,53 +40,65 @@ import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.AbstractInfoflowProblem.PathTrackingMethod;
 import soot.jimple.infoflow.InfoflowResults.SinkInfo;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
+import soot.jimple.infoflow.aliasing.FlowSensitiveAliasStrategy;
+import soot.jimple.infoflow.aliasing.IAliasingStrategy;
+import soot.jimple.infoflow.aliasing.PtsBasedAliasStrategy;
 import soot.jimple.infoflow.config.IInfoflowConfig;
-import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
+import soot.jimple.infoflow.handlers.TaintPropagationHandler;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowSolver;
+import soot.jimple.infoflow.problems.BackwardsInfoflowProblem;
+import soot.jimple.infoflow.problems.InfoflowProblem;
 import soot.jimple.infoflow.source.DefaultSourceSinkManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
-import soot.jimple.toolkits.ide.JimpleIFDSSolver;
-import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
 import soot.options.Options;
 /**
  * main infoflow class which triggers the analysis and offers method to customize it.
  *
  */
 public class Infoflow implements IInfoflow {
-
+	
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-	private static boolean debug = true;
+	private static boolean debug = false;
 	private static int accessPathLength = 5;
-	private static int abstractionDepth = 3;
 	
 	private InfoflowResults results;
 
 	private final String androidPath;
 	private final boolean forceAndroidJar;
 	private ITaintPropagationWrapper taintWrapper;
-	private PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	private IInfoflowConfig sootConfig;
+	
 	private boolean stopAfterFirstFlow = false;
 	private boolean enableImplicitFlows = false;
+	private boolean enableStaticFields = true;
+	private boolean enableExceptions = true;
+	private boolean computeResultPaths = true;
+	private boolean flowSensitiveAliasing = true;
 	
-	private boolean inspectSources = true;
-	private boolean inspectSinks = true;
+	private boolean inspectSources = false;
+	private boolean inspectSinks = false;
+	
+	private int maxThreadNum = -1;
+	
+	private CallgraphAlgorithm callgraphAlgorithm = CallgraphAlgorithm.AutomaticSelection;
+	private AliasingAlgorithm aliasingAlgorithm = AliasingAlgorithm.FlowSensitive;
 
     private BiDirICFGFactory icfgFactory = new DefaultBiDiICFGFactory();
     private List<Transform> preProcessors = Collections.emptyList();
-    private BiDiInterproceduralCFG<Unit,SootMethod> iCfg;
+    private IInfoflowCFG iCfg;
     
     private Set<ResultsAvailableHandler> onResultsAvailable = new HashSet<ResultsAvailableHandler>();
+    private Set<TaintPropagationHandler> taintPropagationHandlers = new HashSet<TaintPropagationHandler>();
 
 	/**
 	 * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
@@ -128,13 +139,28 @@ public class Infoflow implements IInfoflow {
 	}
 	
 	@Override
-	public void setPathTracking(PathTrackingMethod method) {
-		this.pathTracking = method;
-	}
-	
-	@Override
 	public void setEnableImplicitFlows(boolean enableImplicitFlows) {
 		this.enableImplicitFlows = enableImplicitFlows;
+	}
+
+	@Override
+	public void setEnableStaticFieldTracking(boolean enableStaticFields) {
+		this.enableStaticFields = enableStaticFields;
+	}
+
+	@Override
+	public void setEnableExceptionTracking(boolean enableExceptions) {
+		this.enableExceptions = enableExceptions;
+	}
+
+	@Override
+	public void setComputeResultPaths(boolean computeResultPaths) {
+		this.computeResultPaths = computeResultPaths;
+	}
+
+	@Override
+	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing) {
+		this.flowSensitiveAliasing = flowSensitiveAliasing;
 	}
 
 	public void setSootConfig(IInfoflowConfig config){
@@ -155,8 +181,18 @@ public class Infoflow implements IInfoflow {
     public void setPreProcessors(List<Transform> preprocessors){
         this.preProcessors = preprocessors;
     }
+    
+    @Override
+    public void setCallgraphAlgorithm(CallgraphAlgorithm algorithm) {
+    	this.callgraphAlgorithm = algorithm;
+    }
 	
-	@Override
+    @Override
+    public void setAliasingAlgorithm(AliasingAlgorithm algorithm) {
+    	this.aliasingAlgorithm = algorithm;
+    }
+
+    @Override
 	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
 			List<String> entryPoints, List<String> sources, List<String> sinks) {
 		this.computeInfoflow(path, entryPointCreator, entryPoints,
@@ -172,8 +208,6 @@ public class Infoflow implements IInfoflow {
 	public void computeInfoflow(String path, String entryPoint, List<String> sources, List<String> sinks) {
 		this.computeInfoflow(path, entryPoint, new DefaultSourceSinkManager(sources, sinks));
 	}
-
-
 	
 	/**
 	 * Initializes Soot.
@@ -197,6 +231,7 @@ public class Infoflow implements IInfoflow {
 	 */
 	private void initializeSoot(String path, Set<String> classes, ISourceSinkManager sourcesSinks, String extraSeed) {
 		// reset Soot:
+		logger.info("Resetting Soot...");
 		soot.G.reset();
 		
 		// add SceneTransformer which calculates and prints infoflow
@@ -215,10 +250,25 @@ public class Infoflow implements IInfoflow {
 		Options.v().set_soot_classpath(path);
 		Options.v().set_process_dir(new ArrayList<String>(classes));
 
-		if (extraSeed == null || extraSeed.isEmpty())
-			Options.v().setPhaseOption("cg.spark", "on");
-		else
-			Options.v().setPhaseOption("cg.spark", "vta:true");
+		// Configure the callgraph algorithm
+		switch (callgraphAlgorithm) {
+			case AutomaticSelection:
+				if (extraSeed == null || extraSeed.isEmpty())
+					Options.v().setPhaseOption("cg.spark", "on");
+				else
+					Options.v().setPhaseOption("cg.spark", "vta:true");
+				break;
+			case RTA:
+				Options.v().setPhaseOption("cg.spark", "on");
+				Options.v().setPhaseOption("cg.spark", "rta:true");
+				break;
+			case VTA:
+				Options.v().setPhaseOption("cg.spark", "on");
+				Options.v().setPhaseOption("cg.spark", "vta:true");
+				break;
+			default:
+				throw new RuntimeException("Invalid callgraph algorithm");
+		}
 		// do not merge variables (causes problems with PointsToSets)
 		Options.v().setPhaseOption("jb.ulp", "off");
 		
@@ -325,11 +375,34 @@ public class Infoflow implements IInfoflow {
 			protected void internalTransform(String phaseName, @SuppressWarnings("rawtypes") Map options) {
                 logger.info("Callgraph has {} edges", Scene.v().getCallGraph().size());
                 iCfg = icfgFactory.buildBiDirICFG();
-				InfoflowProblem forwardProblem  = new InfoflowProblem(iCfg, sourcesSinks);
-				forwardProblem.setTaintWrapper(taintWrapper);
-				forwardProblem.setPathTracking(pathTracking);
-				forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
+                
+                int numThreads = Runtime.getRuntime().availableProcessors();
 
+				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor
+						(maxThreadNum == -1 ? numThreads : Math.min(maxThreadNum, numThreads),
+						Integer.MAX_VALUE, 30, TimeUnit.SECONDS,
+						new LinkedBlockingQueue<Runnable>());
+
+				BackwardsInfoflowProblem backProblem;
+				InfoflowSolver backSolver;
+				final IAliasingStrategy aliasingStrategy;
+				switch (aliasingAlgorithm) {
+					case FlowSensitive:
+						backProblem = new BackwardsInfoflowProblem();
+						backSolver = new InfoflowSolver(backProblem, executor);
+						aliasingStrategy = new FlowSensitiveAliasStrategy(iCfg, backSolver);
+						break;
+					case PtsBased:
+						backProblem = null;
+						backSolver = null;
+						aliasingStrategy = new PtsBasedAliasStrategy(iCfg);
+						break;
+					default:
+						throw new RuntimeException("Unsupported aliasing algorithm");
+				}
+
+				InfoflowProblem forwardProblem  = new InfoflowProblem(iCfg, sourcesSinks, aliasingStrategy);
+				
 				// We have to look through the complete program to find sources
 				// which are then taken as seeds.
 				int sinkCount = 0;
@@ -357,11 +430,11 @@ public class Infoflow implements IInfoflow {
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
-							if (sourcesSinks.isSource(s, forwardProblem.interproceduralCFG())) {
-								forwardProblem.initialSeeds.put(u, Collections.singleton(forwardProblem.zeroValue()));
+							if (sourcesSinks.isSource(s, iCfg)) {
+								forwardProblem.addInitialSeeds(u, Collections.singleton(forwardProblem.zeroValue()));
 								logger.debug("Source found: {}", u);
 							}
-							if (sourcesSinks.isSink(s, forwardProblem.interproceduralCFG())) {
+							if (sourcesSinks.isSink(s, iCfg)) {
                                 logger.debug("Sink found: {}", u);
 								sinkCount++;
 							}
@@ -378,7 +451,7 @@ public class Infoflow implements IInfoflow {
 							logger.warn("Seed method {} has no active body", m);
 							continue;
 						}
-						forwardProblem.initialSeeds.put(m.getActiveBody().getUnits().getFirst(),
+						forwardProblem.addInitialSeeds(m.getActiveBody().getUnits().getFirst(),
 								Collections.singleton(forwardProblem.zeroValue()));
 					}
 
@@ -394,51 +467,90 @@ public class Infoflow implements IInfoflow {
 						} catch (IOException e) {
 							logger.error("Could not write jimple file: {}", entry.getKey() + ".jimple", e);
 						}
-					
 					}
 				}
 
-				if (forwardProblem.initialSeeds.isEmpty() || sinkCount == 0){
+				if (!forwardProblem.hasInitialSeeds() || sinkCount == 0){
 					logger.error("No sources or sinks found, aborting analysis");
 					return;
 				}
 
-				JimpleIFDSSolver<Abstraction, InterproceduralCFG<Unit, SootMethod>> forwardSolver;
-				logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.initialSeeds.size(),
+				logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.getInitialSeeds().size(),
 						sinkCount);
-
-				CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(1, forwardProblem.numThreads(), 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-				forwardSolver = new InfoflowSolver(forwardProblem, debug, executor);
-				BackwardsInfoflowProblem backProblem = new BackwardsInfoflowProblem();
-				InfoflowSolver backSolver = new InfoflowSolver(backProblem, debug, executor);
-				forwardProblem.setBackwardSolver(backSolver);
+				
+				InfoflowSolver forwardSolver = new InfoflowSolver(forwardProblem, executor);
+				aliasingStrategy.setForwardSolver(forwardSolver);
+				
 				forwardProblem.setInspectSources(inspectSources);
 				forwardProblem.setInspectSinks(inspectSinks);
 				forwardProblem.setEnableImplicitFlows(enableImplicitFlows);
+				forwardProblem.setEnableStaticFieldTracking(enableStaticFields);
+				forwardProblem.setEnableExceptionTracking(enableExceptions);
+				for (TaintPropagationHandler tp : taintPropagationHandlers)
+					forwardProblem.addTaintPropagationHandler(tp);
+				forwardProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
+				forwardProblem.setTaintWrapper(taintWrapper);
+				forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
 				
-				backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
-				backProblem.setTaintWrapper(taintWrapper);
-				backProblem.setZeroValue(forwardProblem.createZeroValue());
+				if (backProblem != null) {
+					backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
+					backProblem.setTaintWrapper(taintWrapper);
+					backProblem.setZeroValue(forwardProblem.createZeroValue());
+					backProblem.setEnableStaticFieldTracking(enableStaticFields);
+					backProblem.setEnableExceptionTracking(enableExceptions);
+					for (TaintPropagationHandler tp : taintPropagationHandlers)
+						backProblem.addTaintPropagationHandler(tp);
+					backProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
+					backProblem.setTaintWrapper(taintWrapper);
+				}
+				
+				if (!enableStaticFields)
+					logger.warn("Static field tracking is disabled, results may be incomplete");
+				if (!flowSensitiveAliasing)
+					logger.warn("Using flow-insensitive alias tracking, results may be imprecise");
 
 				forwardSolver.solve();
-
-				for (SootMethod ep : Scene.v().getEntryPoints()) {
-					Unit ret = ep.getActiveBody().getUnits().getLast();
-
-					logger.info("----------------------------------------------\n"+
-                                "At end of: {}\n"+
-                                "{} Variables (with {} source-to-sink connections):\n"+
-                                "----------------------------------------------",
-                            ep.getSignature(), forwardSolver.ifdsResultsAt(ret).size(), forwardProblem.results.size());
-
-					for (Abstraction l : forwardSolver.ifdsResultsAt(ret)) {
-						logger.info("{} contains value from {}",l.getAccessPath(), l.getSource());
+				
+				// Not really nice, but sometimes Heros returns before all
+				// executor tasks are actually done. This way, we give it a
+				// chance to terminate gracefully before moving on.
+				int terminateTries = 0;
+				while (terminateTries < 10) {
+					if (executor.getActiveCount() != 0 || !executor.isTerminated()) {
+						terminateTries++;
+						try {
+							Thread.sleep(500);
+						}
+						catch (InterruptedException e) {
+							logger.error("Could not wait for executor termination", e);
+						}
 					}
-					logger.info("---");
+					else
+						break;
 				}
+				if (executor.getActiveCount() != 0 || !executor.isTerminated())
+					logger.error("Executor did not terminate gracefully");
 
-
-				results = forwardProblem.results;
+				// Print taint wrapper statistics
+				if (taintWrapper != null) {
+					logger.info("Taint wrapper hits: " + taintWrapper.getWrapperHits());
+					logger.info("Taint wrapper misses: " + taintWrapper.getWrapperMisses());
+				}
+				
+				logger.info("IFDS problem solved, processing results...");
+				
+				// Force a cleanup. Everything we need is reachable through the
+				// results set, the other abstractions can be killed now.
+				forwardSolver.cleanup();
+				if (backSolver != null) {
+					backSolver.cleanup();
+					backSolver = null;
+				}
+				forwardSolver = null;
+				Runtime.getRuntime().gc();
+				
+				results = forwardProblem.getResults(computeResultPaths);
+				
 				if (results.getResults().isEmpty())
 					logger.warn("No results found.");
 				else for (Entry<SinkInfo, Set<SourceInfo>> entry : results.getResults().entrySet()) {
@@ -504,21 +616,20 @@ public class Infoflow implements IInfoflow {
 		Infoflow.accessPathLength = accessPathLength;
 	}
 	
-	public static int getAbstractionDepth() {
-		return abstractionDepth;
-	}
-	
-	@Override
-	public void setAbstractionDepth(int abstractionDepth) {
-		Infoflow.abstractionDepth = abstractionDepth;
-	}
-
 	/**
 	 * Adds a handler that is called when information flow results are available
 	 * @param handler The handler to add
 	 */
 	public void addResultsAvailableHandler(ResultsAvailableHandler handler) {
-		onResultsAvailable.add(handler);
+		this.onResultsAvailable.add(handler);
+	}
+	
+	/**
+	 * Adds a handler which is invoked whenever a taint is propagated
+	 * @param handler The handler to be invoked when propagating taints
+	 */
+	public void addTaintPropagationHandler(TaintPropagationHandler handler) {
+		this.taintPropagationHandlers.add(handler);
 	}
 	
 	/**
@@ -527,6 +638,11 @@ public class Infoflow implements IInfoflow {
 	 */
 	public void removeResultsAvailableHandler(ResultsAvailableHandler handler) {
 		onResultsAvailable.remove(handler);
+	}
+	
+	@Override
+	public void setMaxThreadNum(int threadNum) {
+		this.maxThreadNum = threadNum;
 	}
 
 }

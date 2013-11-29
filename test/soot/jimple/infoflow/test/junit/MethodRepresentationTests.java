@@ -21,7 +21,7 @@ import soot.jimple.infoflow.util.SootMethodRepresentationParser;
  */
 public class MethodRepresentationTests {
 
-	@Test
+	@Test(timeout=300000)
 	public void testParser(){
 		String s = "<soot.jimple.infoflow.test.TestNoMain: java.lang.String function1()>";
 		

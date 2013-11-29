@@ -33,6 +33,10 @@ public class ForwardBackwardTest {
 	
 	private class A{
 		public G g;
+		
+		public A() {
+			this.g = new G();
+		}
 	}
 	
 	private class C{

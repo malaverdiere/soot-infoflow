@@ -8,15 +8,15 @@
  * Contributors: Christian Fritz, Steven Arzt, Siegfried Rasthofer, Eric
  * Bodden, and others.
  ******************************************************************************/
-package soot.jimple.infoflow;
+package soot.jimple.infoflow.problems;
 
 import heros.InterproceduralCFG;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import soot.NullType;
 import soot.PrimType;
 import soot.RefType;
 import soot.SootMethod;
@@ -26,14 +26,14 @@ import soot.jimple.ArrayRef;
 import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
-import soot.jimple.infoflow.data.AbstractionWithPath;
+import soot.jimple.infoflow.handlers.TaintPropagationHandler;
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowCFG;
-import soot.jimple.infoflow.heros.PDomICFG;
+import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.DataTypeHandler;
-import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 /**
  * abstract super class which 
@@ -43,45 +43,32 @@ import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
  */
 public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
 
-	/**
-	 * Supported methods for tracking data flow paths through applications
-	 * @author sarzt
-	 *
-	 */
-	public enum PathTrackingMethod {
-		/**
-		 * Do not track any paths. Just search for connections between sources
-		 * and sinks, but forget about the path between them.
-		 */
-		NoTracking,
-		
-		/**
-		 * Perform a simple forward tracking. Whenever propagating taint
-		 * information, also track the current statement on the path. Consumes
-		 * a lot of memory.
-		 */
-		ForwardTracking
-	}
-
-	
-	
 	protected final Map<Unit, Set<Abstraction>> initialSeeds = new HashMap<Unit, Set<Abstraction>>();
-	protected final InfoflowResults results;
 	protected ITaintPropagationWrapper taintWrapper;
-	protected PathTrackingMethod pathTracking = PathTrackingMethod.NoTracking;
 	protected NativeCallHandler ncHandler = new DefaultNativeCallHandler();
-	protected boolean debug = false;
+	
 	protected boolean enableImplicitFlows = false;
+	protected boolean enableStaticFields = true;
+	protected boolean enableExceptions = true;
+	protected boolean flowSensitiveAliasing = true;
 
 	protected boolean inspectSources = true;
 	protected boolean inspectSinks = true;
 
 	Abstraction zeroValue = null;
 	
+	protected InfoflowSolver solver = null;
+	
 	protected boolean stopAfterFirstFlow = false;
+	
+	protected Set<TaintPropagationHandler> taintPropagationHandlers = new HashSet<TaintPropagationHandler>();
+	
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
-		results = new InfoflowResults();
+	}
+	
+	public void setSolver(InfoflowSolver solver) {
+		this.solver = solver;
 	}
 	
 	public void setZeroValue(Abstraction zeroValue) {
@@ -100,11 +87,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper){
 		taintWrapper = wrapper;
 	}
-	
-	public void setDebug(boolean debug){
-		this.debug = debug;
-	}
-	
+		
 	/**
 	 * Sets whether the information flow analysis shall stop after the first
 	 * flow has been found
@@ -114,19 +97,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {
 		this.stopAfterFirstFlow = stopAfterFirstFlow;
 	}
-	
-	
-	/**
-	 * Sets whether and how the paths between the sources and sinks shall be
-	 * tracked
-	 * @param method The method for tracking data flow paths through the
-	 * program.
-	 */
-	public void setPathTracking(PathTrackingMethod method) {
-		this.pathTracking = method;
-		this.ncHandler.setPathTracking(method);
-	}
-	
+		
 	/**
 	 * Sets whether the solver shall consider implicit flows.
 	 * @param enableImplicitFlows True if implicit flows shall be considered,
@@ -136,18 +107,40 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		this.enableImplicitFlows = enableImplicitFlows;
 	}
 
+	/**
+	 * Sets whether the solver shall consider assignments to static fields.
+	 * @param enableStaticFields True if assignments to static fields shall be
+	 * tracked, otherwise false
+	 */
+	public void setEnableStaticFieldTracking(boolean enableStaticFields) {
+		this.enableStaticFields = enableStaticFields;
+	}
+
+	/**
+	 * Sets whether the solver shall track taints over exceptions, i.e. throw
+	 * new RuntimeException(secretData).
+	 * @param enableExceptions True if taints in thrown exception objects shall
+	 * be tracked.
+	 */
+	public void setEnableExceptionTracking(boolean enableExceptions) {
+		this.enableExceptions = enableExceptions;
+	}
+
+	/**
+	 * Sets whether the solver shall use flow sensitive aliasing. This makes
+	 * the analysis more precise, but also requires more time.
+	 * @param flowSensitiveAliasing True if flow sensitive aliasing shall be
+	 * used, otherwise false
+	 */
+	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing) {
+		this.flowSensitiveAliasing = flowSensitiveAliasing;
+	}
+
 	@Override
 	public Abstraction createZeroValue() {
-		if (zeroValue == null) {
-			zeroValue = this.pathTracking == PathTrackingMethod.NoTracking ?
-				new Abstraction(new JimpleLocal("zero", NullType.v()), null, null, false, true, null) :
-				new AbstractionWithPath(new JimpleLocal("zero", NullType.v()), null, null, false, true, null);
-		}
+		if (zeroValue == null)
+			zeroValue = Abstraction.getZeroAbstraction(flowSensitiveAliasing);
 		return zeroValue;
-	}
-	
-	public InfoflowResults getResults(){
-	    return results;
 	}
 
 	/**
@@ -198,36 +191,6 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	}
 	
 	/**
-	 * returns if the value is transferable (= no primitive datatype / immutable datatype / Constant)
-	 * @param val the value which should be analyzed
-	 * @return
-	 */
-	public boolean isTransferableValue(Value val){
-		if(val == null){
-			return false;
-		}
-		//no string
-		if(!(val instanceof InstanceFieldRef) && val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
-			return false;
-		}
-		if(val instanceof InstanceFieldRef && ((InstanceFieldRef)val).getBase().getType() instanceof RefType &&
-				 ((RefType)((InstanceFieldRef)val).getBase().getType()).getClassName().equals("java.lang.String")){
-			return false;
-		}
-		if(val.getType() instanceof PrimType){
-			return false;
-		}
-		if(val instanceof Constant)
-			return false;
-		
-		if(DataTypeHandler.isFieldRefOrArrayRef(val))
-			return true;
-		
-		return false;
-	}
-	
-	
-	/**
 	 * we cannot rely just on "real" heap objects, but must also inspect locals because of Jimple's representation ($r0 =... )
 	 * @param val the value which gets tainted
 	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
@@ -252,17 +215,56 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		if(val instanceof Constant)
 			return false;
 		
-		 if(DataTypeHandler.isFieldRefOrArrayRef(val) ||
-				source.getAccessPath().isInstanceFieldRef() ||
-				source.getAccessPath().isStaticFieldRef()){
+		if(DataTypeHandler.isFieldRefOrArrayRef(val)
+				|| source.getAccessPath().isInstanceFieldRef()
+				|| source.getAccessPath().isStaticFieldRef())
 			return true;
-		}
+		
 		return false;
 	}
 	
 	@Override
-	public PDomICFG interproceduralCFG() {
-		return (PDomICFG) super.interproceduralCFG();
+	public IInfoflowCFG interproceduralCFG() {
+		return (IInfoflowCFG) super.interproceduralCFG();
+	}
+	
+	/**
+	 * Adds the given initial seeds to the information flow problem
+	 * @param unit The unit to be considered as a seed
+	 * @param seeds The abstractions with which to start at the given seed
+	 */
+	public void addInitialSeeds(Unit unit, Set<Abstraction> seeds) {
+		if (this.initialSeeds.containsKey(unit))
+			this.initialSeeds.get(unit).addAll(seeds);
+		else
+			this.initialSeeds.put(unit, new HashSet<Abstraction>(seeds));
+	}
+	
+	/**
+	 * Gets whether this information flow problem has initial seeds
+	 * @return True if this information flow problem has initial seeds,
+	 * otherwise false
+	 */
+	public boolean hasInitialSeeds() {
+		return !this.initialSeeds.isEmpty();
 	}
 
+	/**
+	 * Gets the initial seeds with which this information flow problem has been
+	 * configured
+	 * @return The initial seeds with which this information flow problem has
+	 * been configured.
+	 */
+	public Map<Unit, Set<Abstraction>> getInitialSeeds() {
+		return this.initialSeeds;
+	}
+	
+	/**
+	 * Adds a handler which is invoked whenever a taint is propagated
+	 * @param handler The handler to be invoked when propagating taints
+	 */
+	public void addTaintPropagationHandler(TaintPropagationHandler handler) {
+		this.taintPropagationHandlers.add(handler);
+	}
+	
 }

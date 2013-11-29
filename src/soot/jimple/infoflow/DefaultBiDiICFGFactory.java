@@ -5,13 +5,13 @@
 package soot.jimple.infoflow;
 
 
+import soot.jimple.infoflow.heros.IInfoflowCFG;
 import soot.jimple.infoflow.heros.InfoflowCFG;
-import soot.jimple.infoflow.heros.PDomICFG;
 
 public class DefaultBiDiICFGFactory implements BiDirICFGFactory {
 
     @Override
-    public PDomICFG buildBiDirICFG(){
+    public IInfoflowCFG buildBiDirICFG(){
         return new InfoflowCFG();
     }
 }

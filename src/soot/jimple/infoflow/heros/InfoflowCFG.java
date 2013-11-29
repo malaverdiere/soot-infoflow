@@ -1,10 +1,18 @@
+/*******************************************************************************
+ * Copyright (c) 2012 Secure Software Engineering Group at EC SPRIDE.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser Public License v2.1
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * 
+ * Contributors: Christian Fritz, Steven Arzt, Siegfried Rasthofer, Eric
+ * Bodden, and others.
+ ******************************************************************************/
 package soot.jimple.infoflow.heros;
 
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import heros.solver.IDESolver;
-
-import java.util.HashSet;
-import java.util.Set;
-
 import soot.Scene;
 import soot.SootMethod;
 import soot.Unit;
@@ -15,15 +23,15 @@ import soot.jimple.toolkits.pointer.SideEffectAnalysis;
 import soot.toolkits.graph.DirectedGraph;
 import soot.toolkits.graph.MHGPostDominatorsFinder;
 
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Interprocedural control-flow graph for the infoflow solver
  * 
  * @author Steven Arzt
  */
-public class InfoflowCFG extends JimpleBasedBiDiICFG implements PDomICFG {
+public class InfoflowCFG extends JimpleBasedBiDiICFG implements IInfoflowCFG {
 
     protected final LoadingCache<Unit,UnitContainer> unitToPostdominator =
 			IDESolver.DEFAULT_CACHE_BUILDER.build( new CacheLoader<Unit,UnitContainer>() {

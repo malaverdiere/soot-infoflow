@@ -21,7 +21,7 @@ import soot.jimple.internal.JAssignStmt;
 /**
  * Internal taint wrapper for the use in some test cases
  */
-public class ListExampleWrapper implements ITaintPropagationWrapper {
+public class ListExampleWrapper extends AbstractTaintWrapper {
 
 	@Override
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
@@ -48,7 +48,7 @@ public class ListExampleWrapper implements ITaintPropagationWrapper {
 	}
 
 	@Override
-	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
 		return false;
 	}
 }

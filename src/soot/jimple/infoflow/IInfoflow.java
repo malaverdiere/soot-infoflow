@@ -61,14 +61,7 @@ public interface IInfoflow {
 	 * first flow has been found, otherwise false.
 	 */
 	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow);
-
-
-    /**
-     * Sets the interprocedural CFG to be used by the InfoFlowProblem
-     * @param factory the interprocedural control flow factory
-     */
-    public void setIcfgFactory(BiDirICFGFactory factory);
-
+	
     /**
      * List of preprocessors that need to be executed in order before
      * the information flow.
@@ -214,15 +207,6 @@ public interface IInfoflow {
 	 * @param algorithm The aliasing algorithm to be used by the data flow tracker
 	 */
 	public void setAliasingAlgorithm(AliasingAlgorithm algorithm);
-
-	/**
-	 * sets the depth of the access path that are tracked
-	 * @param accessPathLength the maximum value of an access path. If it gets longer than
-	 *  this value, it is truncated and all following fields are assumed as tainted 
-	 *  (which is imprecise but gains performance)
-	 *  Default value is 5.
-	 */
-	public void setAccessPathLength(int accessPathLength);
 	
 	/**
 	 * Sets the maximum number of threads to be used by the solver. A value of -1

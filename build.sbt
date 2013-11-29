@@ -8,10 +8,6 @@ sbtVersion := "0.13"
 
 javacOptions ++= Seq("-source", "1.6")
 
-ideaExcludeFolders += ".idea"
-
-ideaExcludeFolders += ".idea_modules"
-
 resolvers += Resolver.mavenLocal
 
 //Temporary - until Scala extensions are split off

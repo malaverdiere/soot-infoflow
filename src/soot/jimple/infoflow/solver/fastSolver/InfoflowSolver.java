@@ -158,7 +158,6 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		this.jumpFn.clear();
 		this.incoming.clear();
 		this.endSummary.clear();
-		this.val.clear();
 		this.cache.clear();
 	}
 	

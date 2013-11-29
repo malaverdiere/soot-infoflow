@@ -116,9 +116,6 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 	@DontSynchronize("readOnly")
 	protected final boolean followReturnsPastSeeds;
 	
-	@SynchronizedBy("consistent lock on field")
-	protected final Map<N,Set<D>> val = new HashMap<N, Set<D>>();	
-
 	/**
 	 * Creates a solver for the given problem, which caches flow functions and edge functions.
 	 * The solver must then be started by calling {@link #solve()}.
@@ -187,7 +184,6 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 			runExecutorAndAwaitCompletion();
 			durationFlowFunctionConstruction = System.currentTimeMillis() - before;
 		}
-		computeValues();
 		if(logger.isDebugEnabled())
 			printStats();
 
@@ -528,17 +524,6 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 			}
 			set.add(d2);
 		}
-	}	
-		
-	/**
-	 * Returns the resulting environment for the given statement.
-	 * The artificial zero value is automatically stripped. TOP values are
-	 * never returned.
-	 */
-	public Set<D> resultsAt(N stmt) {
-		//filter out the artificial zero-value
-		//no need to synchronize here as all threads are known to have terminated
-		return val.get(stmt);
 	}
 	
 	/**
@@ -585,103 +570,6 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 					processNormalFlow(edge);
 				}
 			}
-		}
-	}
-	
-	/**
-	 * Computes the final values for edge functions.
-	 */
-	private void computeValues() {	
-		//Phase II(i)
-        logger.info("Computing the final values for the edge functions");
-		for(Entry<N, Set<D>> seed: initialSeeds.entrySet()) {
-			N startPoint = seed.getKey();
-			for(D val: seed.getValue()) {
-				setVal(startPoint, val);
-				scheduleValueProcessing(new ValuePropagationTask(startPoint, val));
-			}
-		}
-		//await termination of tasks
-		try {
-			executor.awaitCompletion();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		logger.info("Computed the final values of the edge functions");
-	}
-	
-	/**
-     * Dispatch the processing of a given value. It may be executed in a different thread.
-     * @param vpt
-     */
-    private void scheduleValueProcessing(ValuePropagationTask vpt){
-    	// If the executor has been killed, there is little point
-    	// in submitting new tasks
-    	if (executor.isTerminating())
-    		return;
-    	executor.execute(vpt);
-    }
-
-    private class ValuePropagationTask implements Runnable {
-    	private final N n;
-    	private final D d;
-
-		public ValuePropagationTask(N n, D d) {
-			this.n = n;
-			this.d = d;
-		}
-
-		public void run() {
-			if(icfg.isStartPoint(n) ||
-				initialSeeds.containsKey(n)) { 		//our initial seeds are not necessarily method-start points but here they should be treated as such
-				propagateValueAtStart(n, d);
-			}
-			if(icfg.isCallStmt(n)) {
-				propagateValueAtCall(n, d);
-			}
-		}
-	}
-
-	private void propagateValueAtStart(N n, D d) {
-		M p = icfg.getMethodOf(n);
-		for(N c: icfg.getCallsFromWithin(p)) {					
-			synchronized (jumpFn) {
-				for (D dPrime : jumpFn.forwardLookup(d,c)) {
-					propagateValue(c,dPrime);
-					flowFunctionApplicationCount++;
-				}
-			}
-		}
-	}
-	
-	private void propagateValueAtCall(N n, D d) {
-		for(M q: icfg.getCalleesOfCallAt(n)) {
-			FlowFunction<D> callFlowFunction = flowFunctions.getCallFlowFunction(n, q);
-			flowFunctionConstructionCount++;
-			for(D dPrime: callFlowFunction.computeTargets(d)) {
-				for(N startPoint: icfg.getStartPointsOf(q)) {
-					propagateValue(startPoint,dPrime);
-					flowFunctionApplicationCount++;
-				}
-			}
-		}
-	}
-	
-	private void propagateValue(N nHashN, D nHashD) {
-		synchronized (val) {
-			if (setVal(nHashN, nHashD))
-				scheduleValueProcessing(new ValuePropagationTask(nHashN, nHashD));
-		}
-	}
-	
-	private boolean setVal(N nHashN, D nHashD){
-		synchronized (val) {
-			Set<D> ds = val.get(nHashN);
-			if (ds == null) {
-				ds = new HashSet<D>();
-				val.put(nHashN, ds);
-			}
-			return ds.add(nHashD);
 		}
 	}
 

@@ -36,12 +36,6 @@ public class JumpFunctions<N,D> {
 	@SynchronizedBy("consistent lock on this")
 	protected Table<N,D,Set<D>> nonEmptyReverseLookup = HashBasedTable.create();
 	
-	//mapping from source value and target node to a list of all target values and associated functions
-	//where the list is implemented as a mapping from the source value to the function
-	//we exclude empty default functions 
-	@SynchronizedBy("consistent lock on this")
-	protected Table<D,N,Set<D>> nonEmptyForwardLookup = HashBasedTable.create();
-	
 	public JumpFunctions() {
 	}
 
@@ -63,13 +57,6 @@ public class JumpFunctions<N,D> {
 		}
 		isNew |= sourceValToFunc.add(sourceVal);
 		
-		Set<D> targetValToFunc = nonEmptyForwardLookup.get(sourceVal, target);
-		if(targetValToFunc==null) {
-			targetValToFunc = new HashSet<D>();
-			nonEmptyForwardLookup.put(sourceVal,target,targetValToFunc);
-		}
-		isNew |= targetValToFunc.add(targetVal);
-		
 		return isNew;
 	}
 	
@@ -82,19 +69,6 @@ public class JumpFunctions<N,D> {
 		assert target!=null;
 		assert targetVal!=null;
 		Set<D> res = nonEmptyReverseLookup.get(target,targetVal);
-		if(res==null) return Collections.emptySet();
-		return res;
-	}
-	
-	/**
-	 * Returns, for a given source value and target statement all
-	 * associated target values, and for each the associated edge function. 
-     * The return value is a mapping from target value to function.
-	 */
-	public synchronized Set<D> forwardLookup(D sourceVal, N target) {
-		assert sourceVal!=null;
-		assert target!=null;
-		Set<D> res = nonEmptyForwardLookup.get(sourceVal, target);
 		if(res==null) return Collections.emptySet();
 		return res;
 	}
@@ -118,14 +92,6 @@ public class JumpFunctions<N,D> {
 		if (sourceValToFunc.isEmpty())
 			nonEmptyReverseLookup.remove(targetVal, targetVal);
 		
-		Set<D> targetValToFunc = nonEmptyForwardLookup.get(sourceVal, target);
-		if (targetValToFunc == null)
-			return false;
-		if (!targetValToFunc.remove(targetVal))
-			return false;
-		if (targetValToFunc.isEmpty())
-			nonEmptyForwardLookup.remove(sourceVal, target);
-		
 		return true;
 	}
 	
@@ -134,15 +100,14 @@ public class JumpFunctions<N,D> {
 	 * @return True if the edge is in the table, otherwise false
 	 */
 	public synchronized boolean containsFact(D sourceVal, N target, D targetVal) {
-		Set<D> res = nonEmptyForwardLookup.get(sourceVal, target);
-		return res == null ? false : res.contains(targetVal);
+		Set<D> res = nonEmptyReverseLookup.get(target, targetVal);
+		return res == null ? false : res.contains(sourceVal);
 	}
 
 	/**
 	 * Removes all jump functions
 	 */
 	public synchronized void clear() {
-		this.nonEmptyForwardLookup.clear();
 		this.nonEmptyReverseLookup.clear();
 	}
 

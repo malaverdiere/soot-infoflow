@@ -356,34 +356,35 @@ public class IFDSSolver<N,D,M,I extends InterproceduralCFG<N, M>> {
 		
 		//for each incoming call edge already processed
 		//(see processCall(..))
-		for (Entry<N,Set<D>> entry: inc.entrySet()) {
-			//line 22
-			N c = entry.getKey();
-			//for each return site
-			for(N retSiteC: icfg.getReturnSitesOfCallAt(c)) {
-				//compute return-flow function
-				FlowFunction<D> retFunction = flowFunctions.getReturnFlowFunction(c, methodThatNeedsSummary,n,retSiteC);
-				flowFunctionConstructionCount++;
-				Set<D> targets = computeReturnFlowFunction(retFunction, d2, c, entry.getValue());
-				//for each incoming-call value
-				for(D d4: entry.getValue()) {
-					synchronized (jumpFn) { // some other thread might change jumpFn on the way
-						//for each jump function coming into the call, propagate to return site using the composed function
-						for(D d3: jumpFn.reverseLookup(c,d4))
-							//for each target value at the return site
-							//line 23
-							for(D d5: targets) {
-								propagate(d3, retSiteC, d5, c, false);
+		if (inc != null)
+			for (Entry<N,Set<D>> entry: inc.entrySet()) {
+				//line 22
+				N c = entry.getKey();
+				//for each return site
+				for(N retSiteC: icfg.getReturnSitesOfCallAt(c)) {
+					//compute return-flow function
+					FlowFunction<D> retFunction = flowFunctions.getReturnFlowFunction(c, methodThatNeedsSummary,n,retSiteC);
+					flowFunctionConstructionCount++;
+					Set<D> targets = computeReturnFlowFunction(retFunction, d2, c, entry.getValue());
+					//for each incoming-call value
+					for(D d4: entry.getValue()) {
+						synchronized (jumpFn) { // some other thread might change jumpFn on the way
+							//for each jump function coming into the call, propagate to return site using the composed function
+							for(D d3: jumpFn.reverseLookup(c,d4))
+								//for each target value at the return site
+								//line 23
+								for(D d5: targets) {
+									propagate(d3, retSiteC, d5, c, false);
+							}
 						}
 					}
 				}
 			}
-		}
 		
 		//handling for unbalanced problems where we return out of a method with a fact for which we have no incoming flow
 		//note: we propagate that way only values that originate from ZERO, as conditionally generated values should only
 		//be propagated into callers that have an incoming edge for this condition
-		if(followReturnsPastSeeds && inc.isEmpty() && d1.equals(zeroValue)) {
+		if(followReturnsPastSeeds && (inc == null || inc.isEmpty()) && d1.equals(zeroValue)) {
 			// only propagate up if we 
 				Set<N> callers = icfg.getCallersOf(methodThatNeedsSummary);
 				for(N c: callers) {

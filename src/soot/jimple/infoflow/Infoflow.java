@@ -87,6 +87,15 @@ public class Infoflow extends AbstractInfoflow {
 		this.forceAndroidJar = false;
 	}
 
+    /**
+     * Creates a new instance of the InfoFlow class for analyzing plain Java code without any references to APKs or the Android SDK.
+     */
+    public Infoflow(BiDirICFGFactory icfgFactory) {
+        super(icfgFactory);
+        this.androidPath = "";
+        this.forceAndroidJar = false;
+    }
+
 	/**
 	 * Creates a new instance of the Infoflow class for analyzing Android APK files.
 	 * @param androidPath If forceAndroidJar is false, this is the base directory

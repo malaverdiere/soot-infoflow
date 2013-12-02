@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.heros;
+package soot.jimple.infoflow.solver.functions;
 
 import heros.FlowFunction;
 

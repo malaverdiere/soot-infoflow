@@ -1,4 +1,4 @@
-package soot.jimple.infoflow.heros;
+package soot.jimple.infoflow.solver.functions;
 
 import java.util.Collections;
 import java.util.Set;

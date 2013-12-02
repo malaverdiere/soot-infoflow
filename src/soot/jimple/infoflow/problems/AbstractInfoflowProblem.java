@@ -19,6 +19,8 @@ import java.util.Set;
 
 import soot.PrimType;
 import soot.RefType;
+import soot.Scene;
+import soot.SootClass;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -26,12 +28,12 @@ import soot.jimple.ArrayRef;
 import soot.jimple.Constant;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.infoflow.data.Abstraction;
+import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
-import soot.jimple.infoflow.heros.IInfoflowCFG;
-import soot.jimple.infoflow.heros.InfoflowCFG;
-import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
+import soot.jimple.infoflow.solver.IInfoflowSolver;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
@@ -57,7 +59,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 
 	Abstraction zeroValue = null;
 	
-	protected InfoflowSolver solver = null;
+	protected IInfoflowSolver solver = null;
 	
 	protected boolean stopAfterFirstFlow = false;
 	
@@ -67,7 +69,31 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		super(icfg);
 	}
 	
-	public void setSolver(InfoflowSolver solver) {
+	protected boolean hasCompatibleTypes(AccessPath ap, SootClass dest) {
+		if (ap.getType() instanceof PrimType)
+			return false;
+		
+		SootClass sc1 = ((RefType) ap.getType()).getSootClass();
+		if (sc1.isInterface() && dest.isInterface())
+			return Scene.v().getActiveHierarchy().isInterfaceSubinterfaceOf(sc1, dest)
+					|| Scene.v().getActiveHierarchy().isInterfaceSubinterfaceOf(dest, sc1);
+		
+		if (sc1.isInterface() && !dest.isInterface()) {
+			SootClass curClass = dest;
+			while (curClass != null) {
+				for (SootClass intf : curClass.getInterfaces())
+					if (Scene.v().getActiveHierarchy().getSuperinterfacesOfIncluding(intf).contains(sc1))
+						return true;
+				curClass = curClass.hasSuperclass() ? curClass.getSuperclass() : null;
+			}
+			return false;
+		}
+		
+		return Scene.v().getActiveHierarchy().isClassSubclassOfIncluding(dest, sc1)
+				|| Scene.v().getActiveHierarchy().isClassSubclassOfIncluding(sc1, dest);
+	}
+
+	public void setSolver(IInfoflowSolver solver) {
 		this.solver = solver;
 	}
 	

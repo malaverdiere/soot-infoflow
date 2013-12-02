@@ -12,8 +12,11 @@ package soot.jimple.infoflow.data;
 
 import java.util.Arrays;
 
+import soot.ArrayType;
 import soot.Local;
+import soot.RefType;
 import soot.SootField;
+import soot.Type;
 import soot.Value;
 import soot.jimple.ArrayRef;
 import soot.jimple.InstanceFieldRef;
@@ -35,6 +38,8 @@ public class AccessPath implements Cloneable {
 	 * list of fields, either they are based on a concrete @value or they indicate a static field
 	 */
 	private final SootField[] fields;
+	private final Type baseType;
+	private final Type[] fieldTypes;
 	private int hashCode = 0;
 
 	/**
@@ -48,57 +53,95 @@ public class AccessPath implements Cloneable {
 	private AccessPath() {
 		this.value = null;
 		this.fields = null;
+		this.baseType = null;
+		this.fieldTypes = null;
 	}
-
+	
 	public AccessPath(Value val){
-		this(val, (SootField[]) null);
+		this(val, (SootField[]) null, null, (Type[]) null);
 	}
 	
 	public AccessPath(Value val, SootField[] appendingFields){
+		this(val, appendingFields, null, (Type[]) null);
+	}
+	
+	public AccessPath(Value val, SootField[] appendingFields, Type baseType, Type[] appendingFieldTypes){
 		assert (val == null && appendingFields != null && appendingFields.length > 0)
 		 	|| canContainValue(val);
 
 		SootField baseField = null;
+		Type bFieldType = null;
 		if(val instanceof StaticFieldRef){
 			StaticFieldRef ref = (StaticFieldRef) val;
-			value = null;
+			this.value = null;
 			baseField = ref.getField();
+			
+			this.baseType = null;
+			bFieldType = baseType == null ? baseField.getType() : baseType;
 		}
 		else if(val instanceof InstanceFieldRef){
 			InstanceFieldRef ref = (InstanceFieldRef) val;
-			value = ref.getBase();
+			this.value = ref.getBase();
 			baseField = ref.getField();
+			
+			this.baseType = this.value.getType();
+			bFieldType = baseType == null ? baseField.getType() : baseType;
 		}
 		else if (val instanceof ArrayRef) {
 			ArrayRef ref = (ArrayRef) val;
 			value = ref.getBase();
+			
+			this.baseType = baseType == null ? this.value.getType() : baseType;
+			bFieldType = null;
 		}
 		else {
-			value = val;
+			this.value = val;
+			this.baseType = baseType == null ? this.value.getType() : baseType;
+			bFieldType = null;			
 		}
 
 		int fieldNum = (baseField == null ? 0 : 1)
 				+ (appendingFields == null ? 0 : appendingFields.length);
-		this.fields = new SootField[Math.min(Infoflow.getAccessPathLength(), fieldNum)];
+		fieldNum = Math.min(Infoflow.getAccessPathLength(), fieldNum);
+		if (fieldNum == 0) {
+			this.fields = null;
+			this.fieldTypes = null;
+		}
+		else {
+			this.fields = new SootField[fieldNum];
+			this.fieldTypes = new Type[fieldNum];
+			if (baseField != null) {
+				this.fields[0] = baseField;
+				this.fieldTypes[0] = bFieldType;
+			}
+			if (appendingFields != null)
+				for (int i = (baseField == null ? 0 : 1); i < this.fields.length; i++) {
+					this.fields[i] = appendingFields[i - (baseField == null ? 0 : 1)];
+					this.fieldTypes[i] = appendingFieldTypes == null ? fields[i].getType()
+							: appendingFieldTypes[i - (baseField == null ? 0 : 1)];
+				}
+		}
 		
-		if (baseField != null)
-			this.fields[0] = baseField;
-
-		if (appendingFields != null)
-			for (int i = (baseField == null ? 0 : 1); i < this.fields.length; i++)
-				this.fields[i] = appendingFields[i - (baseField == null ? 0 : 1)];
+		assert this.value == null || !(!(this.baseType instanceof ArrayType)
+				&& !(this.baseType instanceof RefType && ((RefType) this.baseType).getSootClass().getName().equals("java.lang.Object")) 
+				&& this.value.getType() instanceof ArrayType);
+		assert this.value == null || !(this.baseType instanceof ArrayType
+				&& !(this.value.getType() instanceof ArrayType)
+				&& !(this.value.getType() instanceof RefType && ((RefType) this.value.getType()).getSootClass().getName().equals("java.lang.Object")));
 	}
 	
 	public AccessPath(SootField staticfield){
 		this.fields = new SootField[] { staticfield };
-		value = null;
+		this.value = null;
+		this.baseType = staticfield.getType();
+		this.fieldTypes = new Type[] { staticfield.getType() };
 	}
-	
+
 	public AccessPath(Value base, SootField field){
-		this(base, new SootField[] { field });
+		this(base, new SootField[] { field }, null, new Type[] { field.getType() });
 		assert base instanceof Local;
 	}
-	
+
 	/**
 	 * Checks whether the given value can be the base value value of an access
 	 * path
@@ -136,8 +179,18 @@ public class AccessPath implements Cloneable {
 		return fields[0];
 	}
 	
+	public Type getFirstFieldType(){
+		if (fieldTypes == null || fieldTypes.length == 0)
+			return null;
+		return fieldTypes[0];
+	}
+
 	protected SootField[] getFields(){
 		return fields;
+	}
+	
+	protected Type[] getFieldTypes(){
+		return fieldTypes;
 	}
 	
 	public int getFieldCount() {
@@ -209,14 +262,21 @@ public class AccessPath implements Cloneable {
 				}
 		return str;
 	}
+
+	public AccessPath copyWithNewValue(Value val){
+		return copyWithNewValue(val, baseType);
+	}
 	
 	/**
 	 * value val gets new base, fields are preserved.
 	 * @param val
 	 * @return
 	 */
-	public AccessPath copyWithNewValue(Value val){
-		return new AccessPath(val, this.fields);
+	public AccessPath copyWithNewValue(Value val, Type newType){
+		if (this.value != null && this.value.equals(val))
+			return this;
+		
+		return new AccessPath(val, this.fields, newType, this.fieldTypes);
 	}
 	
 	@Override
@@ -225,7 +285,7 @@ public class AccessPath implements Cloneable {
 		if (this == emptyAccessPath)
 			return this;
 
-		AccessPath a = new AccessPath(value, fields);
+		AccessPath a = new AccessPath(value, fields, baseType, fieldTypes);
 		assert a.equals(this);
 		return a;
 	}
@@ -270,22 +330,46 @@ public class AccessPath implements Cloneable {
 	 * @return The new access path
 	 */
 	public AccessPath merge(AccessPath ap) {
-		SootField[] fields = new SootField[this.fields.length + ap.fields.length];
-		for (int i = 0; i < this.fields.length; i++)
-			fields[i] = this.fields[i];
-		if (ap.fields != null && ap.fields.length > 0)
-			for (int i = 0; i < ap.fields.length; i++)
-				fields[this.fields.length + i] = ap.fields[i];
+		int offset = this.fields == null ? 0 : this.fields.length;
+		SootField[] fields = new SootField[offset + (ap.fields == null ? 0 : ap.fields.length)];
+		Type[] fieldTypes = new Type[offset + (ap.fields == null ? 0 : ap.fields.length)];
+		if (this.fields != null)
+			for (int i = 0; i < this.fields.length; i++) {
+				fields[i] = this.fields[i];
+				fieldTypes[i] = this.fieldTypes[i];
+			}
+		if (ap.fields != null)
+			if (ap.fields != null && ap.fields.length > 0)
+				for (int i = 0; i < ap.fields.length; i++) {
+					fields[offset + i] = ap.fields[i];
+					fieldTypes[offset + i] = ap.fieldTypes[i];
+				}
 		
-		return new AccessPath(this.value, fields);
+		return new AccessPath(this.value, fields, baseType, fieldTypes);
 	}
 	
 	public AccessPath dropLastField() {
 		if (fields == null || fields.length == 0)
 			return this;
-		SootField[] newFields = new SootField[fields.length - 1];
-		System.arraycopy(fields, 0, newFields, 0, fields.length - 1);
-		return new AccessPath(value, newFields);
+		
+		final SootField[] newFields;
+		final Type[] newTypes;
+		if (fields.length > 1) {
+			newFields = new SootField[fields.length - 1];
+			System.arraycopy(fields, 0, newFields, 0, fields.length - 1);
+
+			newTypes = new Type[fields.length - 1];
+			System.arraycopy(fieldTypes, 0, newTypes, 0, fields.length - 1);
+		}
+		else {
+			newFields = null;
+			newTypes = null;
+		}
+		return new AccessPath(value, newFields, baseType, newTypes);
 	}
 
+	public Type getType() {
+		return this.baseType;
+	}
+	
 }

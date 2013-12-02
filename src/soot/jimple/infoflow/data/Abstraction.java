@@ -22,10 +22,11 @@ import java.util.Set;
 import soot.NullType;
 import soot.SootField;
 import soot.SootMethod;
+import soot.Type;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.heros.IInfoflowCFG.UnitContainer;
+import soot.jimple.infoflow.solver.IInfoflowCFG.UnitContainer;
 import soot.jimple.internal.JimpleLocal;
 
 import com.google.common.collect.Sets;
@@ -106,7 +107,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		
 		public SourceContextAndPath(Value value, Stmt stmt) {
 			super(value, stmt);
-			path.add(stmt);
 		}
 		
 		public List<Stmt> getPath() {
@@ -139,7 +139,6 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		@Override
 		public SourceContextAndPath clone() {
 			SourceContextAndPath scap = new SourceContextAndPath(getValue(), getStmt());
-			scap.path.clear();
 			scap.path.addAll(this.path);
 			assert scap.equals(this);
 			return scap;
@@ -185,7 +184,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 * The postdominators we need to pass in order to leave the current conditional
 	 * branch. Do not use the synchronized Stack class here to avoid deadlocks.
 	 */
-	private final List<UnitContainer> postdominators = new ArrayList<UnitContainer>();
+	private List<UnitContainer> postdominators = null;
 	
 	private final boolean flowSensitiveAliasing;
 	
@@ -231,8 +230,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			
 			isActive = original.isActive;
 			
-			postdominators.addAll(original.postdominators);
-			assert this.postdominators.equals(original.postdominators);
+			postdominators = original.postdominators == null ? null
+					: new ArrayList<UnitContainer>(original.postdominators);
 			
 			flowSensitiveAliasing = original.flowSensitiveAliasing;
 			assert flowSensitiveAliasing || this.activationUnit == null;
@@ -252,7 +251,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 
 		Abstraction a = deriveNewAbstractionMutable(accessPath, null);
 		a.isActive = false;
-		a.postdominators.clear();
+		a.postdominators = null;
 		return a;
 	}
 
@@ -271,25 +270,43 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		abs.currentStmt = currentStmt;
 		
 		if (!abs.getAccessPath().isEmpty())
-			abs.postdominators.clear();
+			abs.postdominators = null;
 		
 		abs.sourceContext = null;
 		return abs;
 	}
 	
 	public final Abstraction deriveNewAbstraction(Value taint, Unit activationUnit){
-		return this.deriveNewAbstraction(taint, false, activationUnit);
+		return this.deriveNewAbstraction(taint, false, activationUnit, null);
 	}
 	
-	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit){
+	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Unit newActUnit,
+			Type baseType){
 		assert !this.getAccessPath().isEmpty();
 
 		Abstraction a;
 		SootField[] orgFields = accessPath.getFields();
-		SootField[] fields = new SootField[cutFirstField ? orgFields.length - 1 : orgFields.length];
-		for (int i = cutFirstField ? 1 : 0; i < orgFields.length; i++)
-			fields[cutFirstField ? i - 1 : i] = orgFields[i];
-		AccessPath newAP = new AccessPath(taint, fields);
+		SootField[] fields = null;
+
+		if (orgFields != null) {
+			fields = new SootField[cutFirstField ? orgFields.length - 1 : orgFields.length];
+			for (int i = cutFirstField ? 1 : 0; i < orgFields.length; i++)
+				fields[cutFirstField ? i - 1 : i] = orgFields[i];
+		}
+
+		Type[] orgTypes = accessPath.getFieldTypes();
+		Type[] types = null;
+		
+		if (orgTypes != null) {
+			types = new Type[cutFirstField ? orgTypes.length - 1 : orgTypes.length];
+			for (int i = cutFirstField ? 1 : 0; i < orgTypes.length; i++)
+				types[cutFirstField ? i - 1 : i] = orgTypes[i];
+		}
+		
+		if (cutFirstField)
+			baseType = accessPath.getFirstFieldType();
+		
+		AccessPath newAP = new AccessPath(taint, fields, baseType, types);
 		
 		a = deriveNewAbstractionMutable(newAP, (Stmt) newActUnit);
 		if (flowSensitiveAliasing && isActive) {
@@ -323,7 +340,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 */
 	public final Abstraction deriveNewAbstractionOnCatch(Value taint, Unit newActivationUnit){
 		assert this.exceptionThrown;
-		Abstraction abs = deriveNewAbstractionMutable(new AccessPath(taint), (Stmt) newActivationUnit);
+		Abstraction abs = deriveNewAbstractionMutable(new AccessPath(taint),
+				(Stmt) newActivationUnit);
 		abs.exceptionThrown = false;
 		
 		if(flowSensitiveAliasing && isActive) {
@@ -374,7 +392,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		if (sourceContext != null) {
 			// Construct the path root
 			SourceContextAndPath sourceAndPath = new SourceContextAndPath
-					(sourceContext.value, sourceContext.stmt);
+					(sourceContext.value, sourceContext.stmt).extendPath
+					(sourceContext.stmt);
 			pathCache = Collections.singleton(sourceAndPath);
 			
 			// Sources may not have neighbors
@@ -440,14 +459,17 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	
 	public final Abstraction deriveConditionalAbstractionEnter(UnitContainer postdom,
 			Stmt conditionalUnit) {
-		if (postdominators.contains(postdom))
+		if (postdominators != null && postdominators.contains(postdom))
 			return this;
 		
 		Abstraction abs = deriveNewAbstractionMutable
 				(AccessPath.getEmptyAccessPath(), conditionalUnit);
 		// TODO
 //		abs.activationUnit = null;
-		abs.postdominators.add(0, postdom);
+		if (abs.postdominators == null)
+			abs.postdominators = Collections.singletonList(postdom);
+		else
+			abs.postdominators.add(0, postdom);
 		abs.isActive = true;
 		return abs;
 	}
@@ -462,13 +484,13 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		
 		// Postdominators are only kept intraprocedurally in order to not
 		// mess up the summary functions with caller-side information
-		abs.postdominators.clear();
+		abs.postdominators = null;
 
 		return abs;
 	}
 	
 	public final Abstraction dropTopPostdominator() {
-		if (postdominators.isEmpty())
+		if (postdominators == null || postdominators.isEmpty())
 			return this;
 		
 		Abstraction abs = clone();
@@ -478,7 +500,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	}
 	
 	public UnitContainer getTopPostdominator() {
-		if (this.postdominators.isEmpty())
+		if (postdominators == null || postdominators.isEmpty())
 			return null;
 		return this.postdominators.get(0);
 	}
@@ -551,7 +573,10 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			return false;
 		if(this.isActive != other.isActive)
 			return false;
-		if(!this.postdominators.equals(other.postdominators))
+		if (postdominators == null) {
+			if (other.postdominators != null)
+				return false;
+		} else if (!postdominators.equals(other.postdominators))
 			return false;
 		if(this.flowSensitiveAliasing != other.flowSensitiveAliasing)
 			return false;
@@ -573,7 +598,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			this.hashCode = prime * this.hashCode + ((activationUnit == null) ? 0 : activationUnit.hashCode());
 			this.hashCode = prime * this.hashCode + (exceptionThrown ? 1231 : 1237);
 			this.hashCode = prime * this.hashCode + (isActive ? 1231 : 1237);
-			this.hashCode = prime * this.hashCode + postdominators.hashCode();
+			this.hashCode = prime * this.hashCode + ((postdominators == null) ? 0 : postdominators.hashCode());
 			this.hashCode = prime * this.hashCode + (flowSensitiveAliasing ? 1231 : 1237);
 			return hashCode;
 		}

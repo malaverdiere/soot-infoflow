@@ -46,17 +46,14 @@ import soot.jimple.infoflow.aliasing.FlowSensitiveAliasStrategy;
 import soot.jimple.infoflow.aliasing.IAliasingStrategy;
 import soot.jimple.infoflow.aliasing.PtsBasedAliasStrategy;
 import soot.jimple.infoflow.config.IInfoflowConfig;
-import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
-import soot.jimple.infoflow.heros.IInfoflowCFG;
-import soot.jimple.infoflow.heros.InfoflowSolver;
 import soot.jimple.infoflow.problems.BackwardsInfoflowProblem;
 import soot.jimple.infoflow.problems.InfoflowProblem;
-import soot.jimple.infoflow.source.DefaultSourceSinkManager;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
+import soot.jimple.infoflow.solver.fastSolver.InfoflowSolver;
 import soot.jimple.infoflow.source.ISourceSinkManager;
-import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
 import soot.options.Options;
@@ -64,7 +61,7 @@ import soot.options.Options;
  * main infoflow class which triggers the analysis and offers method to customize it.
  *
  */
-public class Infoflow implements IInfoflow {
+public class Infoflow extends AbstractInfoflow {
 	
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -75,26 +72,8 @@ public class Infoflow implements IInfoflow {
 
 	private final String androidPath;
 	private final boolean forceAndroidJar;
-	private ITaintPropagationWrapper taintWrapper;
 	private IInfoflowConfig sootConfig;
 	
-	private boolean stopAfterFirstFlow = false;
-	private boolean enableImplicitFlows = false;
-	private boolean enableStaticFields = true;
-	private boolean enableExceptions = true;
-	private boolean computeResultPaths = true;
-	private boolean flowSensitiveAliasing = true;
-	
-	private boolean inspectSources = false;
-	private boolean inspectSinks = false;
-	
-	private int maxThreadNum = -1;
-	
-	private CallgraphAlgorithm callgraphAlgorithm = CallgraphAlgorithm.AutomaticSelection;
-	private AliasingAlgorithm aliasingAlgorithm = AliasingAlgorithm.FlowSensitive;
-
-    private BiDirICFGFactory icfgFactory = new DefaultBiDiICFGFactory();
-    private List<Transform> preProcessors = Collections.emptyList();
     private IInfoflowCFG iCfg;
     
     private Set<ResultsAvailableHandler> onResultsAvailable = new HashSet<ResultsAvailableHandler>();
@@ -109,104 +88,40 @@ public class Infoflow implements IInfoflow {
 	}
 
 	/**
-	 * Creates a new instance of the InfoFlow class for analyzing Android APK files. This constructor sets the right options for analyzing APK files.
-	 * 
-	 * @param androidPath
-	 *            If forceAndroidJar is false, this is the base directory of the platform files in the Android SDK. If forceAndroidJar is true, this is the full path of a single android.jar file.
-	 * @param forceAndroidJar
+	 * Creates a new instance of the Infoflow class for analyzing Android APK files.
+	 * @param androidPath If forceAndroidJar is false, this is the base directory
+	 * of the platform files in the Android SDK. If forceAndroidJar is true, this
+	 * is the full path of a single android.jar file.
+	 * @param forceAndroidJar True if a single platform JAR file shall be forced,
+	 * false if Soot shall pick the appropriate platform version 
 	 */
 	public Infoflow(String androidPath, boolean forceAndroidJar) {
+		super();
 		this.androidPath = androidPath;
 		this.forceAndroidJar = forceAndroidJar;
 	}
 
-	public void setTaintWrapper(ITaintPropagationWrapper wrapper) {
-		taintWrapper = wrapper;
+	/**
+	 * Creates a new instance of the Infoflow class for analyzing Android APK files.
+	 * @param androidPath If forceAndroidJar is false, this is the base directory
+	 * of the platform files in the Android SDK. If forceAndroidJar is true, this
+	 * is the full path of a single android.jar file.
+	 * @param forceAndroidJar True if a single platform JAR file shall be forced,
+	 * false if Soot shall pick the appropriate platform version
+	 * @param icfgFactory The interprocedural CFG to be used by the InfoFlowProblem 
+	 */
+	public Infoflow(String androidPath, boolean forceAndroidJar, BiDirICFGFactory icfgFactory) {
+		super(icfgFactory);
+		this.androidPath = androidPath;
+		this.forceAndroidJar = forceAndroidJar;
 	}
 
 	public static void setDebug(boolean debugflag) {
 		debug = debugflag;
 	}
-
-	@Override
-	public void setInspectSources(boolean inspect){
-		inspectSources = inspect;
-	}
-
-	@Override
-	public void setInspectSinks(boolean inspect){
-		inspectSinks = inspect;
-	}
 	
-	@Override
-	public void setEnableImplicitFlows(boolean enableImplicitFlows) {
-		this.enableImplicitFlows = enableImplicitFlows;
-	}
-
-	@Override
-	public void setEnableStaticFieldTracking(boolean enableStaticFields) {
-		this.enableStaticFields = enableStaticFields;
-	}
-
-	@Override
-	public void setEnableExceptionTracking(boolean enableExceptions) {
-		this.enableExceptions = enableExceptions;
-	}
-
-	@Override
-	public void setComputeResultPaths(boolean computeResultPaths) {
-		this.computeResultPaths = computeResultPaths;
-	}
-
-	@Override
-	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing) {
-		this.flowSensitiveAliasing = flowSensitiveAliasing;
-	}
-
 	public void setSootConfig(IInfoflowConfig config){
 		sootConfig = config;
-	}
-	
-	@Override
-	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {
-		this.stopAfterFirstFlow = stopAfterFirstFlow;
-	}
-
-    @Override
-    public void setIcfgFactory(BiDirICFGFactory factory){
-        this.icfgFactory = factory;
-    }
-
-    @Override
-    public void setPreProcessors(List<Transform> preprocessors){
-        this.preProcessors = preprocessors;
-    }
-    
-    @Override
-    public void setCallgraphAlgorithm(CallgraphAlgorithm algorithm) {
-    	this.callgraphAlgorithm = algorithm;
-    }
-	
-    @Override
-    public void setAliasingAlgorithm(AliasingAlgorithm algorithm) {
-    	this.aliasingAlgorithm = algorithm;
-    }
-
-    @Override
-	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
-			List<String> entryPoints, List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, entryPointCreator, entryPoints,
-				new DefaultSourceSinkManager(sources, sinks));
-	}
-	
-	@Override
-	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, new DefaultEntryPointCreator(), entryPoints, new DefaultSourceSinkManager(sources, sinks));
-	}
-
-	@Override
-	public void computeInfoflow(String path, String entryPoint, List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, entryPoint, new DefaultSourceSinkManager(sources, sinks));
 	}
 	
 	/**
@@ -248,8 +163,7 @@ public class Infoflow implements IInfoflow {
 			Options.v().set_output_format(Options.output_format_none);
 		Options.v().set_whole_program(true);
 		Options.v().set_soot_classpath(path);
-		Options.v().set_process_dir(new ArrayList<String>(classes));
-
+		
 		// Configure the callgraph algorithm
 		switch (callgraphAlgorithm) {
 			case AutomaticSelection:
@@ -321,7 +235,11 @@ public class Infoflow implements IInfoflow {
 		// entryPoints are the entryPoints required by Soot to calculate Graph - if there is no main method,
 		// we have to create a new main method and use it as entryPoint and store our real entryPoints
 		Scene.v().setEntryPoints(Collections.singletonList(entryPointCreator.createDummyMain(entryPoints)));
-		PackManager.v().runPacks();
+		
+		// We explicitly select the packs we want to run for performance reasons
+        PackManager.v().getPack("wjpp").apply();
+        PackManager.v().getPack("cg").apply();
+        PackManager.v().getPack("wjtp").apply();
 		if (debug)
 			PackManager.v().writeOutput();
 	}
@@ -335,22 +253,8 @@ public class Infoflow implements IInfoflow {
 			return;
 		}
 
-		// parse classNames as String and methodNames as string in soot representation
-		HashMap<String, List<String>> classes = SootMethodRepresentationParser.v().parseClassNames
-						(Collections.singletonList(entryPoint), false);
-
-		initializeSoot(path, classes.keySet(), sourcesSinks, entryPoint);
-		
-		if (debug) {
-			for (List<String> methodList : classes.values()) {
-				for (String methodSignature : methodList) {
-					if (Scene.v().containsMethod(methodSignature)) {
-						SootMethod method = Scene.v().getMethod(methodSignature);
-						logger.debug(method.retrieveActiveBody().toString());
-					}
-				}
-			}
-		}
+		initializeSoot(path, SootMethodRepresentationParser.v().parseClassNames
+				(Collections.singletonList(entryPoint), false).keySet(), sourcesSinks, entryPoint);
 
 		if (!Scene.v().containsMethod(entryPoint)){
 			logger.error("Entry point not found: " + entryPoint);
@@ -365,7 +269,11 @@ public class Infoflow implements IInfoflow {
 		}
 		Scene.v().setEntryPoints(Collections.singletonList(ep));
 		Options.v().set_main_class(ep.getDeclaringClass().getName());
-		PackManager.v().runPacks();
+		
+		// We explicitly select the packs we want to run for performance reasons
+        PackManager.v().getPack("wjpp").apply();
+        PackManager.v().getPack("cg").apply();
+        PackManager.v().getPack("wjtp").apply();
 		if (debug)
 			PackManager.v().writeOutput();
 	}
@@ -611,7 +519,14 @@ public class Infoflow implements IInfoflow {
 		return accessPathLength;
 	}
 	
-	@Override
+	/**
+	 * Sets the maximum depth of the access paths. All paths will be truncated
+	 * if they exceed the given size.
+	 * @param accessPathLength the maximum value of an access path. If it gets longer than
+	 *  this value, it is truncated and all following fields are assumed as tainted 
+	 *  (which is imprecise but gains performance)
+	 *  Default value is 5.
+	 */
 	public void setAccessPathLength(int accessPathLength) {
 		Infoflow.accessPathLength = accessPathLength;
 	}
@@ -640,9 +555,4 @@ public class Infoflow implements IInfoflow {
 		onResultsAvailable.remove(handler);
 	}
 	
-	@Override
-	public void setMaxThreadNum(int threadNum) {
-		this.maxThreadNum = threadNum;
-	}
-
 }

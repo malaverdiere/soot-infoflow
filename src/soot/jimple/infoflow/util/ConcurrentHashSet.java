@@ -8,7 +8,7 @@
  * Contributors: Christian Fritz, Steven Arzt, Siegfried Rasthofer, Eric
  * Bodden, and others.
  ******************************************************************************/
-package soot.jimple.infoflow.heros;
+package soot.jimple.infoflow.util;
 
 import java.util.AbstractSet;
 import java.util.Iterator;

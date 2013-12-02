@@ -5,8 +5,8 @@
 package soot.jimple.infoflow;
 
 
-import soot.jimple.infoflow.heros.IInfoflowCFG;
-import soot.jimple.infoflow.heros.InfoflowCFG;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
+import soot.jimple.infoflow.solver.InfoflowCFG;
 
 public class DefaultBiDiICFGFactory implements BiDirICFGFactory {
 

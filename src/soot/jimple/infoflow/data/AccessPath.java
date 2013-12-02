@@ -128,6 +128,7 @@ public class AccessPath implements Cloneable {
 		assert this.value == null || !(this.baseType instanceof ArrayType
 				&& !(this.value.getType() instanceof ArrayType)
 				&& !(this.value.getType() instanceof RefType && ((RefType) this.value.getType()).getSootClass().getName().equals("java.lang.Object")));
+		assert !isEmpty() || this.baseType == null;
 	}
 	
 	public AccessPath(SootField staticfield){

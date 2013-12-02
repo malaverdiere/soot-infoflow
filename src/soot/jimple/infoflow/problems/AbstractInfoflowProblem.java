@@ -17,11 +17,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import soot.ArrayType;
 import soot.PrimType;
 import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Type;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.ArrayRef;
@@ -67,6 +69,24 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
 		super(icfg);
+	}
+	
+	protected boolean hasCompatibleTypes(AccessPath ap, Type tp) {
+		if (ap.getType() instanceof PrimType)
+			return tp instanceof PrimType;
+		if (tp instanceof PrimType)
+			return ap.getType() instanceof PrimType;
+		
+		if (ap.getType() instanceof ArrayType
+				&& !(tp instanceof ArrayType)
+				&& !(tp instanceof RefType && ((RefType) tp).getSootClass().getName().equals("java.lang.Object")))
+			return false;
+		if (tp instanceof ArrayType
+				&& !(ap.getType() instanceof ArrayType)
+				&& !(ap.getType() instanceof RefType && ((RefType) ap.getType()).getSootClass().getName().equals("java.lang.Object")))
+			return false;
+		
+		return true;
 	}
 	
 	protected boolean hasCompatibleTypes(AccessPath ap, SootClass dest) {

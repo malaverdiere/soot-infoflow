@@ -37,6 +37,7 @@ import soot.Value;
 import soot.ValueBox;
 import soot.jimple.ArrayRef;
 import soot.jimple.AssignStmt;
+import soot.jimple.CastExpr;
 import soot.jimple.CaughtExceptionRef;
 import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
@@ -304,7 +305,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 				if (targetValue instanceof ArrayRef)
 					baseTarget = ((ArrayRef) targetValue).getBase();
 
-				// also taint the target of the assignment 
+				// also taint the target of the assignment
 				Abstraction newAbs;
 				if (!source.getAccessPath().isEmpty())
 					newAbs = source.deriveNewAbstraction(baseTarget, cutFirstField, src, targetType);
@@ -577,6 +578,13 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 
 							// if one of them is true -> add leftValue
 							if (addLeftValue) {
+								// If the right side is a typecast, it must be compatible,
+								// or this path is not realizable
+								if (assignStmt.getRightOp() instanceof CastExpr)
+									if (!hasCompatibleTypes(newSource.getAccessPath(),
+											((CastExpr) assignStmt.getRightOp()).getCastType()))
+										return Collections.emptySet();
+
 								if (!newSource.getAccessPath().isEmpty()) {
 									// Special type handling for certain operations
 									if (assignStmt.getRightOp() instanceof LengthExpr) {
@@ -592,7 +600,9 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 											targetType = ((ArrayType) targetType).getArrayElementType();
 									}
 								}
-								
+								else
+									assert targetType == null;
+																
 								if (isSink && newSource.isAbstractionActive() && newSource.getAccessPath().isEmpty())
 									results.add(new AbstractionAtSink(newSource, leftValue, assignStmt));
 								if(triggerInaktiveTaintOrReverseFlow(leftValue, newSource) || newSource.isAbstractionActive())

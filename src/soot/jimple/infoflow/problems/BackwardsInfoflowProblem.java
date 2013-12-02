@@ -194,8 +194,10 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 										addRightValue = true;
 										cutFirstField = true;
 									}
-								} else
+								} else {
 									addRightValue = true;
+									targetType = source.getAccessPath().getFirstFieldType();
+								}
 							}
 							// indirect taint propagation:
 							// if leftValue is local and source is instancefield of this local:

@@ -596,7 +596,7 @@ public class InfoflowProblem extends AbstractInfoflowProblem {
 									if (targetType != null) {
 										if (leftValue instanceof ArrayRef)
 											targetType = ArrayType.v(targetType, 1);
-										else if (assignStmt.getRightOp() instanceof ArrayRef)
+										else if (assignStmt.getRightOp() instanceof ArrayRef && targetType instanceof ArrayType)
 											targetType = ((ArrayType) targetType).getArrayElementType();
 									}
 								}

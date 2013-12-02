@@ -221,7 +221,7 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						if (addRightValue) {
 							if (targetType != null) {
 								// Special handling for some operations
-								if (assignStmt.getRightOp() instanceof ArrayRef)
+								if (assignStmt.getRightOp() instanceof ArrayRef && ! (targetType instanceof ArrayType))
 									targetType = ArrayType.v(targetType, 1);
 								else if (leftValue instanceof ArrayRef)
 									targetType = ((ArrayType) targetType).getArrayElementType();

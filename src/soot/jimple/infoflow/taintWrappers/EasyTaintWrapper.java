@@ -11,13 +11,7 @@
 package soot.jimple.infoflow.taintWrappers;
 
 import java.io.*;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -225,7 +219,7 @@ public class EasyTaintWrapper extends AbstractTaintWrapper {
 		if(!c.isInterface()) {
 			// We have to walk up the hierarchy to also include all methods
 			// registered for superclasses
-			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
+			Collection<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
 			for(SootClass sclass : superclasses){
 				if(classList.containsKey(sclass.getName()))
 					methodList.addAll(getMethodsForClass(sclass));
@@ -247,7 +241,7 @@ public class EasyTaintWrapper extends AbstractTaintWrapper {
 		if(!c.isInterface()) {
 			// We have to walk up the hierarchy to also include all methods
 			// registered for superclasses
-			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
+			Collection<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOf(c);
 			for(SootClass sclass : superclasses){
 				if(classList.containsKey(sclass.getName()))
 					return true;

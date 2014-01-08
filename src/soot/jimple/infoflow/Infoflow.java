@@ -180,14 +180,17 @@ public class Infoflow extends AbstractInfoflow {
 					Options.v().setPhaseOption("cg.spark", "on");
 				else
 					Options.v().setPhaseOption("cg.spark", "vta:true");
+				Options.v().setPhaseOption("cg.spark", "string-constants:true");
 				break;
 			case RTA:
 				Options.v().setPhaseOption("cg.spark", "on");
 				Options.v().setPhaseOption("cg.spark", "rta:true");
+				Options.v().setPhaseOption("cg.spark", "string-constants:true");
 				break;
 			case VTA:
 				Options.v().setPhaseOption("cg.spark", "on");
 				Options.v().setPhaseOption("cg.spark", "vta:true");
+				Options.v().setPhaseOption("cg.spark", "string-constants:true");
 				break;
 			default:
 				throw new RuntimeException("Invalid callgraph algorithm");
@@ -305,7 +308,7 @@ public class Infoflow extends AbstractInfoflow {
 				final IAliasingStrategy aliasingStrategy;
 				switch (aliasingAlgorithm) {
 					case FlowSensitive:
-						backProblem = new BackwardsInfoflowProblem();
+						backProblem = new BackwardsInfoflowProblem(sourcesSinks);
 						backSolver = new InfoflowSolver(backProblem, executor);
 						aliasingStrategy = new FlowSensitiveAliasStrategy(iCfg, backSolver);
 						break;
@@ -347,7 +350,7 @@ public class Infoflow extends AbstractInfoflow {
 						PatchingChain<Unit> units = m.getActiveBody().getUnits();
 						for (Unit u : units) {
 							Stmt s = (Stmt) u;
-							if (sourcesSinks.isSource(s, iCfg)) {
+							if (sourcesSinks.getSourceInfo(s, iCfg) != null) {
 								forwardProblem.addInitialSeeds(u, Collections.singleton(forwardProblem.zeroValue()));
 								logger.debug("Source found: {}", u);
 							}
@@ -419,11 +422,12 @@ public class Infoflow extends AbstractInfoflow {
 						backProblem.addTaintPropagationHandler(tp);
 					backProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
 					backProblem.setTaintWrapper(taintWrapper);
+					backProblem.setActivationUnitsToCallSites(forwardProblem);
 				}
 				
 				if (!enableStaticFields)
 					logger.warn("Static field tracking is disabled, results may be incomplete");
-				if (!flowSensitiveAliasing)
+				if (!flowSensitiveAliasing || !aliasingStrategy.isFlowSensitive())
 					logger.warn("Using flow-insensitive alias tracking, results may be imprecise");
 
 				forwardSolver.solve();

@@ -46,6 +46,7 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		return executor;
 	}
 
+	@Override
 	public boolean processEdge(PathEdge<Unit, Abstraction> edge){
 		// We are generating a fact out of thin air here. If we have an
 		// edge <d1,n,d2>, there need not necessarily be a jump function
@@ -57,14 +58,14 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		return false;
 	}
 	
-	public void injectContext(IInfoflowSolver otherSolver, SootMethod callee, Abstraction d3, Unit callSite, Abstraction d2) {
+	@Override
+	public void injectContext(IInfoflowSolver otherSolver, SootMethod callee,
+			Abstraction d3, Unit callSite, Abstraction d2) {
 		if (!(otherSolver instanceof InfoflowSolver))
 			throw new RuntimeException("Other solver must be of same type");
 
-		synchronized (incoming) {
-			for (Unit sP : icfg.getStartPointsOf(callee))
-				addIncoming(sP, d3, callSite, d2);
-		}
+		for (Unit sP : icfg.getStartPointsOf(callee))
+			addIncoming(sP, d3, callSite, d2);
 		
 		// First, get a list of the other solver's jump functions.
 		// Then release the lock on otherSolver.jumpFn before doing
@@ -72,12 +73,11 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		final Set<Abstraction> otherAbstractions;
 		final InfoflowSolver solver = (InfoflowSolver) otherSolver;
 		synchronized (solver.jumpFn) {
-			otherAbstractions = new HashSet<Abstraction>
-					(solver.jumpFn.reverseLookup(callSite, d2));
+			otherAbstractions = new HashSet<Abstraction>(solver.jumpFn.reverseLookup
+					(callSite, d2));
 		}
 		for (Abstraction d1: otherAbstractions)
-			if (!d1.getAccessPath().isEmpty() && !d1.getAccessPath().isStaticFieldRef())
-				processEdge(new PathEdge<Unit, Abstraction>(d1, callSite, d2));
+			jumpFn.addFunction(d1, callSite, d2);
 	}
 	
 	@Override
@@ -149,16 +149,12 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		if (!noProp)
 			super.propagate(sourceVal, target, targetVal, relatedCallSite, isUnbalancedReturn);
 	}
-
-	/**
-	 * Cleans up some unused memory. Results will still be available afterwards,
-	 * but no intermediate computation values.
-	 */
+	
 	public void cleanup() {
 		this.jumpFn.clear();
 		this.incoming.clear();
 		this.endSummary.clear();
 		this.cache.clear();
 	}
-	
+		
 }

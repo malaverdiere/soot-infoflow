@@ -28,7 +28,8 @@ public class ListExampleWrapper extends AbstractTaintWrapper {
 		// method add + added element is tainted -> whole list is tainted
 		if(stmt.getInvokeExpr().getMethod().getSubSignature().equals("boolean add(java.lang.Object)"))
 			if (taintedPath.getPlainValue().equals(stmt.getInvokeExpr().getArg(0)))
-				return Collections.singleton(new AccessPath(((InstanceInvokeExpr) stmt.getInvokeExprBox().getValue()).getBase()));
+				return Collections.singleton(new AccessPath(((InstanceInvokeExpr) stmt.getInvokeExprBox().getValue()).getBase(),
+						false));
 
 		// method get + whole list is tainted -> returned element is tainted
 		if(stmt.getInvokeExpr().getMethod().getSubSignature().equals("java.lang.Object get(int)"))
@@ -36,7 +37,7 @@ public class ListExampleWrapper extends AbstractTaintWrapper {
 				InstanceInvokeExpr iiExpr = (InstanceInvokeExpr) stmt.getInvokeExpr();
 				if (taintedPath.getPlainValue().equals(iiExpr.getBase()))
 					if(stmt instanceof JAssignStmt)
-						return Collections.singleton(new AccessPath(((JAssignStmt)stmt).getLeftOp()));
+						return Collections.singleton(new AccessPath(((JAssignStmt)stmt).getLeftOp(), true));
 			}
 
 		// For the moment, we don't implement static taints on wrappers. Pass it on

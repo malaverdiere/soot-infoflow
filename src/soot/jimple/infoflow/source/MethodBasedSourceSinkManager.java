@@ -11,7 +11,9 @@
 package soot.jimple.infoflow.source;
 
 import heros.InterproceduralCFG;
+import soot.RefType;
 import soot.SootMethod;
+import soot.Type;
 import soot.Unit;
 import soot.jimple.Stmt;
 
@@ -25,14 +27,15 @@ import soot.jimple.Stmt;
  */
 public abstract class MethodBasedSourceSinkManager implements ISourceSinkManager {
 
-	public abstract boolean isSourceMethod(SootMethod method);
+	public abstract SourceInfo getSourceMethodInfo(SootMethod method);
 	public abstract boolean isSinkMethod(SootMethod method);
 	
 	@Override
-	public boolean isSource(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg) {
+	public SourceInfo getSourceInfo(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg) {
 		assert sCallSite != null;
-		return sCallSite.containsInvokeExpr()
-				&& isSourceMethod(sCallSite.getInvokeExpr().getMethod());
+		if (!sCallSite.containsInvokeExpr())
+			return null;
+		return getSourceMethodInfo(sCallSite.getInvokeExpr().getMethod());
 	}
 
 	@Override
@@ -42,4 +45,9 @@ public abstract class MethodBasedSourceSinkManager implements ISourceSinkManager
 				&& isSinkMethod(sCallSite.getInvokeExpr().getMethod());
 	}
 
+	protected boolean typeIsString(Type type) {
+		return type instanceof RefType
+				&& ((RefType) type).getSootClass().getName().equals("java.lang.String");
+	}
+	
 }

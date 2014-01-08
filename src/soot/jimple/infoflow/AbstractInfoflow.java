@@ -55,6 +55,11 @@ public abstract class AbstractInfoflow implements IInfoflow {
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper) {
 		taintWrapper = wrapper;
 	}
+    
+    @Override
+    public ITaintPropagationWrapper getTaintWrapper() {
+    	return taintWrapper;
+    }
 
 	@Override
 	public void setStopAfterFirstFlow(boolean stopAfterFirstFlow) {

@@ -16,19 +16,27 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import soot.ArrayType;
+import soot.IntType;
+import soot.Local;
+import soot.LongType;
 import soot.PrimType;
-import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Type;
 import soot.Unit;
 import soot.Value;
-import soot.jimple.ArrayRef;
 import soot.jimple.Constant;
+import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceFieldRef;
+import soot.jimple.StaticFieldRef;
+import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
@@ -36,7 +44,9 @@ import soot.jimple.infoflow.nativ.DefaultNativeCallHandler;
 import soot.jimple.infoflow.nativ.NativeCallHandler;
 import soot.jimple.infoflow.solver.IInfoflowCFG;
 import soot.jimple.infoflow.solver.IInfoflowSolver;
+import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
+import soot.jimple.infoflow.util.ConcurrentHashSet;
 import soot.jimple.infoflow.util.DataTypeHandler;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
 /**
@@ -49,15 +59,20 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 
 	protected final Map<Unit, Set<Abstraction>> initialSeeds = new HashMap<Unit, Set<Abstraction>>();
 	protected ITaintPropagationWrapper taintWrapper;
-	protected NativeCallHandler ncHandler = new DefaultNativeCallHandler();
 	
-	protected boolean enableImplicitFlows = false;
+	protected final NativeCallHandler ncHandler = new DefaultNativeCallHandler();
+	protected final ISourceSinkManager sourceSinkManager;
+
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
+
+    protected boolean enableImplicitFlows = false;
 	protected boolean enableStaticFields = true;
 	protected boolean enableExceptions = true;
 	protected boolean flowSensitiveAliasing = true;
+	protected boolean enableTypeChecking = true;
 
-	protected boolean inspectSources = true;
-	protected boolean inspectSinks = true;
+	protected boolean inspectSources = false;
+	protected boolean inspectSinks = false;
 
 	Abstraction zeroValue = null;
 	
@@ -66,51 +81,48 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected boolean stopAfterFirstFlow = false;
 	
 	protected Set<TaintPropagationHandler> taintPropagationHandlers = new HashSet<TaintPropagationHandler>();
+
+	private Map<Unit, Set<Unit>> activationUnitsToCallSites = new ConcurrentHashMap<Unit, Set<Unit>>();
 	
-	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg) {
+	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg,
+			ISourceSinkManager sourceSinkManager) {
 		super(icfg);
+		this.sourceSinkManager = sourceSinkManager;
 	}
 	
-	protected boolean hasCompatibleTypes(AccessPath ap, Type tp) {
-		if (ap.getType() instanceof PrimType)
-			return tp instanceof PrimType;
-		if (tp instanceof PrimType)
-			return ap.getType() instanceof PrimType;
+	protected boolean canCastType(Type destType, Type sourceType) {
+		if (!enableTypeChecking)
+			return true;
 		
-		if (ap.getType() instanceof ArrayType
-				&& !(tp instanceof ArrayType)
-				&& !(tp instanceof RefType && ((RefType) tp).getSootClass().getName().equals("java.lang.Object")))
-			return false;
-		if (tp instanceof ArrayType
-				&& !(ap.getType() instanceof ArrayType)
-				&& !(ap.getType() instanceof RefType && ((RefType) ap.getType()).getSootClass().getName().equals("java.lang.Object")))
-			return false;
+		// If we don't have a source type, we generally allow the cast
+		if (sourceType == null)
+			return true;
 		
-		return true;
+		if (Scene.v().getFastHierarchy().canStoreType(destType, sourceType) // cast-up, i.e. Object to String
+				|| Scene.v().getFastHierarchy().canStoreType(sourceType, destType)) // cast-down, i.e. String to Object
+			return true;
+		
+		if (destType instanceof PrimType && sourceType instanceof PrimType)
+			if (sourceType instanceof LongType && destType instanceof IntType
+					|| destType instanceof LongType && sourceType instanceof IntType)
+				return true;
+			
+		return false;
 	}
-	
-	protected boolean hasCompatibleTypes(AccessPath ap, SootClass dest) {
-		if (ap.getType() instanceof PrimType)
+		
+	protected boolean hasCompatibleTypesForCall(AccessPath apBase, SootClass dest) {
+		if (!enableTypeChecking)
+			return true;
+
+		// Cannot invoke a method on a primitive type
+		if (apBase.getType() instanceof PrimType)
 			return false;
+		// Cannot invoke a method on an array
+		if (apBase.getType() instanceof ArrayType)
+			return dest.getName().equals("java.lang.Object");
 		
-		SootClass sc1 = ((RefType) ap.getType()).getSootClass();
-		if (sc1.isInterface() && dest.isInterface())
-			return Scene.v().getActiveHierarchy().isInterfaceSubinterfaceOf(sc1, dest)
-					|| Scene.v().getActiveHierarchy().isInterfaceSubinterfaceOf(dest, sc1);
-		
-		if (sc1.isInterface() && !dest.isInterface()) {
-			SootClass curClass = dest;
-			while (curClass != null) {
-				for (SootClass intf : curClass.getInterfaces())
-					if (Scene.v().getActiveHierarchy().getSuperinterfacesOfIncluding(intf).contains(sc1))
-						return true;
-				curClass = curClass.hasSuperclass() ? curClass.getSuperclass() : null;
-			}
-			return false;
-		}
-		
-		return Scene.v().getActiveHierarchy().isClassSubclassOfIncluding(dest, sc1)
-				|| Scene.v().getActiveHierarchy().isClassSubclassOfIncluding(sc1, dest);
+		return Scene.v().getFastHierarchy().canStoreType(apBase.getType(), dest.getType())
+				|| Scene.v().getFastHierarchy().canStoreType(dest.getType(), apBase.getType());
 	}
 
 	public void setSolver(IInfoflowSolver solver) {
@@ -181,6 +193,15 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing) {
 		this.flowSensitiveAliasing = flowSensitiveAliasing;
 	}
+	
+	/**
+	 * Sets whether type checking shall be done on casts and method calls
+	 * @param enableTypeChecking True if type checking shall be performed,
+	 * otherwise false
+	 */
+	public void setEnableTypeChecking(boolean enableTypeChecking) {
+		this.enableTypeChecking = enableTypeChecking;
+	}
 
 	@Override
 	public Abstraction createZeroValue() {
@@ -242,33 +263,126 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
 	 * @return true if a reverseFlow should be triggered or an inactive taint should be propagated (= resulting object is stored in heap = alias)
 	 */
-	public boolean triggerInaktiveTaintOrReverseFlow(Value val, Abstraction source){
-		if(val == null){
-			return false;
-		}
-		//no string
-		if(!(val instanceof InstanceFieldRef) && !(val instanceof ArrayRef) 
-				&& val.getType() instanceof RefType && ((RefType)val.getType()).getClassName().equals("java.lang.String")){
-			return false;
-		}
-		if(val instanceof InstanceFieldRef && ((InstanceFieldRef)val).getBase().getType() instanceof RefType &&
-				 ((RefType)((InstanceFieldRef)val).getBase().getType()).getClassName().equals("java.lang.String")){
-			return false;
-		}
-		if(val.getType() instanceof PrimType){
-			return false;
-		}
-		if(val instanceof Constant)
+	protected boolean triggerInaktiveTaintOrReverseFlow(Stmt stmt, Value val, Abstraction source){
+		if (stmt == null || source.getAccessPath().isEmpty())
 			return false;
 		
-		if(DataTypeHandler.isFieldRefOrArrayRef(val)
-				|| source.getAccessPath().isInstanceFieldRef()
-				|| source.getAccessPath().isStaticFieldRef())
+		if (stmt instanceof DefinitionStmt) {
+			DefinitionStmt defStmt = (DefinitionStmt) stmt;
+			// If the left side is overwritten completely, we do not need to
+			// look for aliases. This also covers strings.
+			if (defStmt.getLeftOp() instanceof Local
+					&& defStmt.getLeftOp() == source.getAccessPath().getPlainValue())
+				return false;
+		}
+
+		// Primitive types or constants do not have aliases
+		if (val.getType() instanceof PrimType)
+			return false;
+		if (val instanceof Constant)
+			return false;
+			
+		// If the left side is a field or array reference (which is not
+		// overwritten completely), we must look for aliases.
+		if (DataTypeHandler.isFieldRefOrArrayRef(val))
 			return true;
 		
+		return source.getAccessPath().isInstanceFieldRef()
+				|| source.getAccessPath().isStaticFieldRef();
+	}
+	
+	/**
+	 * Checks whether the given base value matches the base of the given
+	 * taint abstraction
+	 * @param baseValue The value to check
+	 * @param source The taint abstraction to check
+	 * @return True if the given value has the same base value as the given
+	 * taint abstraction, otherwise false
+	 */
+	protected boolean baseMatches(final Value baseValue, Abstraction source) {
+		if (baseValue instanceof Local) {
+			if (baseValue.equals(source.getAccessPath().getPlainValue()))
+				return true;
+		}
+		else if (baseValue instanceof InstanceFieldRef) {
+			InstanceFieldRef ifr = (InstanceFieldRef) baseValue;
+			if (ifr.getBase().equals(source.getAccessPath().getPlainValue())
+					&& ifr.getField().equals(source.getAccessPath().getFirstField()))
+				return true;
+		}
+		else if (baseValue instanceof StaticFieldRef) {
+			StaticFieldRef sfr = (StaticFieldRef) baseValue;
+			if (sfr.getField().equals(source.getAccessPath().getFirstField()))
+				return true;
+		}
 		return false;
 	}
 	
+	/**
+	 * Checks whether the given base value matches the base of the given
+	 * taint abstraction and ends there. So a will match a, but not a.x.
+	 * Not that this function will still match a to a.*.
+	 * @param baseValue The value to check
+	 * @param source The taint abstraction to check
+	 * @return True if the given value has the same base value as the given
+	 * taint abstraction and no further elements, otherwise false
+	 */
+	protected boolean baseMatchesStrict(final Value baseValue, Abstraction source) {
+		if (!baseMatches(baseValue, source))
+			return false;
+		
+		if (baseValue instanceof Local)
+			return source.getAccessPath().isLocal();
+		else if (baseValue instanceof InstanceFieldRef || baseValue instanceof StaticFieldRef)
+			return source.getAccessPath().getFieldCount() == 1;
+		
+		throw new RuntimeException("Unexpected left side");
+	}
+	
+	protected boolean isCallSiteActivatingTaint(Unit callSite, Unit activationUnit) {
+		if (!flowSensitiveAliasing)
+			return false;
+
+		if (activationUnit == null)
+			return false;
+		Set<Unit> callSites = activationUnitsToCallSites.get(activationUnit);
+		return (callSites != null && callSites.contains(callSite));
+	}
+	
+	protected boolean registerActivationCallSite(Unit callSite, SootMethod callee, Abstraction activationAbs) {
+		if (!flowSensitiveAliasing)
+			return false;
+		Unit activationUnit = activationAbs.getActivationUnit();
+		if (activationUnit == null)
+			return false;
+		
+		synchronized (activationUnitsToCallSites) {
+			if (!activationUnitsToCallSites.containsKey(activationUnit))
+				activationUnitsToCallSites.put(activationUnit, new ConcurrentHashSet<Unit>());
+		}
+		Set<Unit> callSites = activationUnitsToCallSites.get(activationUnit);
+		if (callSites.contains(callSite))
+			return false;
+		
+		if (!activationAbs.isAbstractionActive())
+			if (!callee.getActiveBody().getUnits().contains(activationUnit)) {
+				boolean found = false;
+				for (Unit au : callSites)
+					if (callee.getActiveBody().getUnits().contains(au)) {
+						found = true;
+						break;
+					}
+				if (!found)
+					return false;
+			}
+
+		return callSites.add(callSite);
+	}
+	
+	public void setActivationUnitsToCallSites(AbstractInfoflowProblem other) {
+		this.activationUnitsToCallSites = other.activationUnitsToCallSites;
+	}
+
 	@Override
 	public IInfoflowCFG interproceduralCFG() {
 		return (IInfoflowCFG) super.interproceduralCFG();

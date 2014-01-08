@@ -237,7 +237,7 @@
 
 <android.content.ContentValues: void put(java.lang.String,java.lang.Integer)>
 
-
+<android.content.Intent: void <init>(android.content.Context,java.lang.Class)>
 <android.content.Intent: android.content.Intent addFlags(int)>
 <android.content.Intent: android.content.Intent setFlags(int)>
 <android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean)>
@@ -267,6 +267,8 @@
 <android.content.Intent: android.content.Intent putExtras(android.content.Intent)>
 <android.content.Intent: android.content.Intent putExtras(android.os.Bundle)>
 
+~<android.content.ContextWrapper: android.content.Context getBaseContext()>
+
 <android.content.IntentFilter: void addAction(java.lang.String)>
 
 <android.database.MatrixCursor: void addRow(java.lang.Object[])>
@@ -287,6 +289,8 @@
 <java.util.UUID: void <init>(long,long)> 
 
 ~<android.app.Activity: android.view.View findViewById(int)>
+~<android.app.Activity: void setContentView(int)>
+~<android.app.Activity: void setContentView(android.view.View)>
 <android.widget.EditText: android.text.Editable getText()>
 <android.text.Editable: java.lang.String toString()>
 

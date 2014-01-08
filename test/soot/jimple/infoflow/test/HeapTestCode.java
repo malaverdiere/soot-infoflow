@@ -668,5 +668,37 @@ public class HeapTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(b1.attr.b);
 	}
+	
+	public void aliasTaintLeakTaintTest() {
+		B b = new B();
+		b.attr = new A();
+		A a = b.attr;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.attr.b);
+		b.attr.b = TelephonyManager.getDeviceId();
+		cm.publish(a.b);
+	}
+	
+	public void fieldBaseOverwriteTest() {
+		A a = new A();
+		a.b = TelephonyManager.getDeviceId();
+		A a2 = a;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a2.b);
+	}
+	
+	private A alias(A a) {
+		return a;
+	}
+	
+	public void doubleAliasTest() {
+		A a = new A();
+		A b = alias(a);
+		A c = alias(a);
+		a.b = TelephonyManager.getDeviceId();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(b.b);
+		cm.publish(c.b);
+	}
 
 }

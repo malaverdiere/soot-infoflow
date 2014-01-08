@@ -48,16 +48,12 @@ public class JumpFunctions<N,D> {
 		assert target!=null;
 		assert targetVal!=null;
 		
-		boolean isNew = false;
-		
 		Set<D> sourceValToFunc = nonEmptyReverseLookup.get(target, targetVal);
 		if(sourceValToFunc==null) {
 			sourceValToFunc = new HashSet<D>();
 			nonEmptyReverseLookup.put(target,targetVal,sourceValToFunc);
 		}
-		isNew |= sourceValToFunc.add(sourceVal);
-		
-		return isNew;
+		return sourceValToFunc.add(sourceVal);
 	}
 	
 	/**

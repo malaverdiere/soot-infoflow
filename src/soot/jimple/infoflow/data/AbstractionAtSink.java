@@ -75,10 +75,14 @@ public class AbstractionAtSink {
 		if (obj == null || !(obj instanceof AbstractionAtSink))
 			return false;
 		AbstractionAtSink other = (AbstractionAtSink) obj;
+		/*
 		if (abstraction == null) {
 			if (other.abstraction != null)
 				return false;
 		} else if (!abstraction.equals(other.abstraction))
+			return false;
+		*/
+		if (abstraction != other.abstraction)
 			return false;
 		if (sinkStmt == null) {
 			if (other.sinkStmt != null)
@@ -91,6 +95,11 @@ public class AbstractionAtSink {
 		} else if (!sinkValue.equals(other.sinkValue))
 			return false;
 		return true;
+	}
+	
+	@Override
+	public String toString() {
+		return abstraction + " at " + sinkStmt;
 	}
 
 }

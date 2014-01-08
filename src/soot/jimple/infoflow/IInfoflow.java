@@ -53,6 +53,14 @@ public interface IInfoflow {
 	 * propagated through black-box methods
 	 */
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper);
+	
+	/**
+	 * Gets the taint wrapper for deciding on taint propagation through black-box
+	 * methods
+	 * @return The taint wrapper object that decides on how information is
+	 * propagated through black-box methods
+	 */
+	public ITaintPropagationWrapper getTaintWrapper();
 
 	/**
 	 * Sets whether the information flow analysis shall stop after the first

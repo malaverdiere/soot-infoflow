@@ -12,7 +12,9 @@ package soot.jimple.infoflow.util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -76,8 +78,8 @@ public class SootMethodRepresentationParser {
        
 	}
 	//returns classname and unresolved! method names and return types and parameters
-	public HashMap<String, List<String>> parseClassNames(List<String> methods, boolean subSignature){
-		HashMap<String, List<String>> result = new HashMap<String,  List<String>>();
+	public HashMap<String, Set<String>> parseClassNames(List<String> methods, boolean subSignature){
+		HashMap<String, Set<String>> result = new HashMap<String,  Set<String>>();
 		Pattern pattern = Pattern.compile("^\\s*<(.*?):\\s*(.*?)>\\s*$");
 		for(String parseString : methods){
 			//parse className:
@@ -94,7 +96,7 @@ public class SootMethodRepresentationParser {
 				if(result.containsKey(className))
 					result.get(className).add(params);
 				else {
-					List<String> methodList = new ArrayList<String>(); 
+					Set<String> methodList = new HashSet<String>(); 
 					methodList.add(params);
 					result.put(className, methodList);
 				}

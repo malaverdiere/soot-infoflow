@@ -14,9 +14,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import soot.IntType;
 import soot.Local;
 import soot.Scene;
@@ -49,7 +51,7 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 	 */
 	@Override
 	protected SootMethod createDummyMainInternal(List<String> methods) {
-		Map<String, List<String>> classMap =
+		Map<String, Set<String>> classMap =
 				SootMethodRepresentationParser.v().parseClassNames(methods, false);
 		
 		// create new class:
@@ -78,7 +80,7 @@ public class DefaultEntryPointCreator extends BaseEntryPointCreator {
 		JNopStmt endStmt = new JNopStmt();
 		Value intCounter = generator.generateLocal(IntType.v());
 		body.getUnits().add(startStmt);
-		for (Entry<String, List<String>> entry : classMap.entrySet()){
+		for (Entry<String, Set<String>> entry : classMap.entrySet()){
 			Local classLocal = localVarsForClasses.get(entry.getKey());
 			for (String method : entry.getValue()){
 				SootMethodAndClass methodAndClass =

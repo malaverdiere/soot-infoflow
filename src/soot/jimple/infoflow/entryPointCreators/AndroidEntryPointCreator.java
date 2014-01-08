@@ -141,11 +141,11 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 */
 	@Override
 	protected SootMethod createDummyMainInternal(List<String> methods){
-		Map<String, List<String>> classMap =
+		Map<String, Set<String>> classMap =
 				SootMethodRepresentationParser.v().parseClassNames(methods, false);
 		for (String androidClass : this.androidClasses)
 			if (!classMap.containsKey(androidClass))
-				classMap.put(androidClass, new ArrayList<String>());
+				classMap.put(androidClass, new HashSet<String>());
 		
 		// create new class:
  		body = Jimple.v().newBody();
@@ -162,7 +162,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		body.getUnits().add(assignStmt);
 
 		// Resolve all requested classes
-		for (Entry<String, List<String>> entry : classMap.entrySet())
+		for (Entry<String, Set<String>> entry : classMap.entrySet())
 			Scene.v().forceResolve(entry.getKey(), SootClass.BODIES);
 		
 		// For some weird reason unknown to anyone except the flying spaghetti
@@ -199,7 +199,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		}
 		
 		// If we have an application, we need to start it in the very beginning
-		for (Entry<String, List<String>> entry : classMap.entrySet()) {
+		for (Entry<String, Set<String>> entry : classMap.entrySet()) {
 			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
 			Collection<SootClass> extendedClasses = Scene.v().getActiveHierarchy().getSuperclassesOf(currentClass);
 			for(SootClass sc : extendedClasses)
@@ -255,7 +255,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		JNopStmt outerStartStmt = new JNopStmt();
 		body.getUnits().add(outerStartStmt);
 		
-		for(Entry<String, List<String>> entry : classMap.entrySet()){
+		for(Entry<String, Set<String>> entry : classMap.entrySet()){
 			//no execution order given for all apps:
 //			JNopStmt entryExitStmt = new JNopStmt();
 //			createIfStmt(entryExitStmt);
@@ -313,9 +313,6 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 				}
 				Local classLocal = localVarsForClasses.get(entry.getKey());
 				
-				if (currentClass.getName().equals("nxtvwpsa.dtljjuhwhhk.bgixlckwb"))
-					System.out.println("x");
-	
 				// Generate the lifecycles for the different kinds of Android classes
 				switch (componentType) {
 				case Activity:
@@ -431,7 +428,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * @param classLocal The local referencing an instance of the current class
 	 */
 	private void generateContentProviderLifecycle
-			(List<String> entryPoints,
+			(Set<String> entryPoints,
 			SootClass currentClass,
 			JNopStmt endClassStmt,
 			Local classLocal) {
@@ -477,7 +474,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * @param classLocal The local referencing an instance of the current class
 	 */
 	private void generateBroadcastReceiverLifecycle
-			(List<String> entryPoints,
+			(Set<String> entryPoints,
 			SootClass currentClass,
 			JNopStmt endClassStmt,
 			Local classLocal) {
@@ -518,7 +515,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * @param classLocal The local referencing an instance of the current class
 	 */
 	private void generateServiceLifecycle
-			(List<String> entryPoints,
+			(Set<String> entryPoints,
 			SootClass currentClass,
 			JNopStmt endClassStmt,
 			Local classLocal) {
@@ -613,7 +610,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	 * @param classLocal The local referencing an instance of the current class
 	 */
 	private void generateActivityLifecycle
-			(List<String> entryPoints,
+			(Set<String> entryPoints,
 			SootClass currentClass,
 			JNopStmt endClassStmt,
 			Local classLocal) {
@@ -923,7 +920,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		return callbackFound;
 	}
 	
-	private Stmt searchAndBuildMethod(String subsignature, SootClass currentClass, List<String> entryPoints, Local classLocal){
+	private Stmt searchAndBuildMethod(String subsignature, SootClass currentClass,
+			Set<String> entryPoints, Local classLocal){
 		if (currentClass == null || classLocal == null)
 			return null;
 		

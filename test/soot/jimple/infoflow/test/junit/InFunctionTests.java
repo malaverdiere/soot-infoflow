@@ -34,16 +34,9 @@ public class InFunctionTests extends JUnitTests {
 	private static final String SINK_STRING_RETURN = "secret";
 	private static final String SINK_STRING_RETURN_R5 = "$r5";
 	
-	@Override
-	protected Infoflow initInfoflow() {
-		taintWrapper = true;
-		Infoflow infoflow = super.initInfoflow();
-    	return infoflow;
-	}
-
     @Test(timeout=300000)
     public void inFunctionTest1(){
-    	Infoflow infoflow = initInfoflow();
+    	Infoflow infoflow = initInfoflow(true);
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode1(java.lang.String)>";
 
     	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
@@ -56,7 +49,7 @@ public class InFunctionTests extends JUnitTests {
 
     @Test(timeout=300000)
     public void inFunctionTest2(){
-    	Infoflow infoflow = initInfoflow();
+    	Infoflow infoflow = initInfoflow(true);
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode2(java.lang.String)>";
 
     	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
@@ -69,7 +62,7 @@ public class InFunctionTests extends JUnitTests {
 
     @Test(timeout=300000)
     public void inFunctionTest3(){
-    	Infoflow infoflow = initInfoflow();
+    	Infoflow infoflow = initInfoflow(true);
     	String epoint = "<soot.jimple.infoflow.test.InFunctionCode: java.lang.String infSourceCode3(java.lang.String)>";
 
     	DefaultSourceSinkManager ssm = new DefaultSourceSinkManager(sources, sinks);
@@ -82,7 +75,9 @@ public class InFunctionTests extends JUnitTests {
 
     @Test(timeout=300000)
     public void inFunctionTest4(){
-    	Infoflow infoflow = initInfoflow();
+    	Infoflow infoflow = initInfoflow(true);
+    	Assert.assertNotNull(infoflow.getTaintWrapper());
+    	
     	List<String> epoint = new ArrayList<String>();
     	epoint.add("<soot.jimple.infoflow.test.InFunctionCode: void setTmp(java.lang.String)>");
     	epoint.add("<soot.jimple.infoflow.test.InFunctionCode: java.lang.String foo(java.lang.String,java.lang.String)>");
@@ -98,7 +93,7 @@ public class InFunctionTests extends JUnitTests {
 
     @Test(timeout=300000)
     public void parameterFlowTest(){
-    	Infoflow infoflow = initInfoflow();
+    	Infoflow infoflow = initInfoflow(true);
     	List<String> epoint = new ArrayList<String>();
     	epoint.add("<soot.jimple.infoflow.test.InFunctionCode: int paraToParaFlow(int,int,"
     			+ "soot.jimple.infoflow.test.InFunctionCode$DataClass,"

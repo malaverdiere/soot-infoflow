@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
@@ -29,11 +28,6 @@ import soot.options.Options;
  *
  */
 public class StringTests extends JUnitTests {
-	
-	@Before
-	public void init() {
-    	taintWrapper = false;
-	}
 	
 	@Test(timeout=600000)
     public void multipleSourcesTest(){
@@ -217,8 +211,7 @@ public class StringTests extends JUnitTests {
     
 	@Test(timeout=600000)
     public void stringBuilderTest2_NoJDK(){
-    	taintWrapper = true;
-    	Infoflow infoflow = initInfoflow();
+    	Infoflow infoflow = initInfoflow(true);
     	infoflow.setSootConfig(new IInfoflowConfig() {
 			
 			@Override
@@ -266,8 +259,7 @@ public class StringTests extends JUnitTests {
 
 	@Test(timeout=600000)
     public void stringBuilderTest6(){
-    	taintWrapper = true;	// Implicit flow, does not run without taint wrapper
-    	Infoflow infoflow = initInfoflow();
+    	Infoflow infoflow = initInfoflow(true);
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodStringBuilder6()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);

@@ -28,6 +28,7 @@ public class DataTypeHandler {
 			return false;
 		}
 		if(val instanceof FieldRef || val instanceof ArrayRef
+				// TODO: necessary?
 				|| (val instanceof Local && ((Local)val).getType() instanceof ArrayType)){
 			return true;
 		}

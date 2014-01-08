@@ -4,12 +4,13 @@
  */
 package soot.jimple.infoflow.solver;
 
+import java.util.Set;
+
+import soot.SootField;
 import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
-
-import java.util.Set;
 
 public interface IInfoflowCFG extends BiDiInterproceduralCFG<Unit,SootMethod> {
 
@@ -93,8 +94,8 @@ public interface IInfoflowCFG extends BiDiInterproceduralCFG<Unit,SootMethod> {
      */
     public UnitContainer getPostdominatorOf(Unit u);
 
-    public Set<?> getReadVariables(SootMethod caller, Stmt inv);
+    public Set<SootField> getReadVariables(SootMethod caller, Stmt inv);
 
-    public Set<?> getWriteVariables(SootMethod caller, Stmt inv);
+    public Set<SootField> getWriteVariables(SootMethod caller, Stmt inv);
 
 }

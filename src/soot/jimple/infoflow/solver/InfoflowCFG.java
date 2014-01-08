@@ -10,21 +10,24 @@
  ******************************************************************************/
 package soot.jimple.infoflow.solver;
 
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import heros.solver.IDESolver;
+
+import java.util.Set;
+
 import soot.Scene;
+import soot.SootField;
 import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.util.ConcurrentHashSet;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
 import soot.jimple.toolkits.pointer.RWSet;
 import soot.jimple.toolkits.pointer.SideEffectAnalysis;
 import soot.toolkits.graph.DirectedGraph;
 import soot.toolkits.graph.MHGPostDominatorsFinder;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 /**
  * Interprocedural control-flow graph for the infoflow solver
@@ -56,35 +59,45 @@ public class InfoflowCFG extends JimpleBasedBiDiICFG implements IInfoflowCFG {
 		this.sideEffectAnalysis = new SideEffectAnalysis
 				(Scene.v().getPointsToAnalysis(), Scene.v().getCallGraph());
 	}
-
-	/**
-	 * Gets the postdominator of the given unit. If this unit is a conditional,
-	 * the postdominator is the join point behind both branches of the conditional.
-	 * @param u The unit for which to get the postdominator.
-	 * @return The postdominator of the given unit
-	 */
+	
 	@Override
     public UnitContainer getPostdominatorOf(Unit u) {
 		return unitToPostdominator.getUnchecked(u);
 	}
 	
 	@Override
-    public Set<?> getReadVariables(SootMethod caller, Stmt inv) {
-		RWSet rwSet = sideEffectAnalysis.readSet(caller, inv);
+	public Set<SootField> getReadVariables(SootMethod caller, Stmt inv) {
+		final RWSet rwSet;
+		synchronized (sideEffectAnalysis) {
+			rwSet = sideEffectAnalysis.readSet(caller, inv);
+		}
 		if (rwSet == null)
 			return null;
-		HashSet<Object> objSet = new HashSet<Object>(rwSet.getFields());
-		objSet.addAll(rwSet.getGlobals());
+		Set<SootField> objSet = new ConcurrentHashSet<SootField>();
+		for (Object o : rwSet.getFields())
+			if (o instanceof SootField)
+				objSet.add((SootField) o);
+		for (Object o : rwSet.getGlobals())
+			if (o instanceof SootField)
+				objSet.add((SootField) o);
 		return objSet;
 	}
 	
 	@Override
-    public Set<?> getWriteVariables(SootMethod caller, Stmt inv) {
-		RWSet rwSet = sideEffectAnalysis.writeSet(caller, inv);
+	public Set<SootField> getWriteVariables(SootMethod caller, Stmt inv) {
+		final RWSet rwSet;
+		synchronized (sideEffectAnalysis) {
+			rwSet = sideEffectAnalysis.writeSet(caller, inv);
+		}
 		if (rwSet == null)
 			return null;
-		HashSet<Object> objSet = new HashSet<Object>(rwSet.getFields());
-		objSet.addAll(rwSet.getGlobals());
+		Set<SootField> objSet = new ConcurrentHashSet<SootField>();
+		for (Object o : rwSet.getFields())
+			if (o instanceof SootField)
+				objSet.add((SootField) o);
+		for (Object o : rwSet.getGlobals())
+			if (o instanceof SootField)
+				objSet.add((SootField) o);
 		return objSet;
 	}
 

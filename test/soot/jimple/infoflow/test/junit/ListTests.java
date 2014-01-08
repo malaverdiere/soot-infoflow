@@ -115,6 +115,21 @@ public class ListTests extends JUnitTests {
     }
     
     @Test(timeout=300000)
+    public void linkedListIteratorTest(){
+    	Infoflow infoflow = initInfoflow();
+
+    	int oldAPLength = Infoflow.getAccessPathLength();
+    	infoflow.setAccessPathLength(1);
+    	
+    	List<String> epoints = new ArrayList<String>();
+    	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedList()>");
+		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		checkInfoflow(infoflow, 1);	
+	
+		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+    }
+
+    @Test(timeout=300000)
     public void staticLinkedListIteratorTest(){
     	Infoflow infoflow = initInfoflow();
 

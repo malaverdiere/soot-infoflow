@@ -11,6 +11,10 @@ public interface IInfoflowSolver {
 
 	public void injectContext(IInfoflowSolver otherSolver, SootMethod callee, Abstraction d3, Unit callSite, Abstraction d2);
 	
+	/**
+	 * Cleans up some unused memory. Results will still be available afterwards,
+	 * but no intermediate computation values.
+	 */
 	public void cleanup();	
-
+	
 }

@@ -14,6 +14,7 @@ import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.solver.IInfoflowCFG;
+import soot.jimple.infoflow.solver.IInfoflowSolver;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
@@ -59,8 +60,8 @@ public class ImplicitFlowAliasStrategy extends AbstractBulkAliasStrategy {
 									|| assign.getLeftOp() instanceof Local)))
 						continue;
 				
-				final AccessPath apLeft = new AccessPath(assign.getLeftOp());
-				final AccessPath apRight = new AccessPath(assign.getRightOp());
+				final AccessPath apLeft = new AccessPath(assign.getLeftOp(), true);
+				final AccessPath apRight = new AccessPath(assign.getRightOp(), true);
 
 				Set<AccessPath> mapLeft = globalAliases.get(method, apLeft);
 				if (mapLeft == null) {
@@ -81,21 +82,36 @@ public class ImplicitFlowAliasStrategy extends AbstractBulkAliasStrategy {
 
 	@Override
 	public void computeAliasTaints(Abstraction d1, Stmt src, Value targetValue,
-			Set<Abstraction> taintSet, SootMethod method, Abstraction newAbs) {
+			Set<Abstraction> taintSet, SootMethod method, Abstraction newAbs) {	
 		// If we don't have an alias set for this method yet, we compute it
 		if (!globalAliases.containsRow(method))
 			computeGlobalAliases(method);
 		
 		// Use global aliasing
 		Value baseValue = ((InstanceFieldRef) targetValue).getBase();
-		Set<AccessPath> aliases = globalAliases.get(method, new AccessPath(
-				baseValue));
+		Set<AccessPath> aliases = globalAliases.get(method, new AccessPath
+				(baseValue, true));
 		if (aliases != null)
 			for (AccessPath ap : aliases) {
 				Abstraction aliasAbs = newAbs.deriveNewAbstraction(
 						ap.merge(newAbs.getAccessPath()), src);
 				taintSet.add(aliasAbs);
 			}
+	}
+
+	@Override
+	public void injectCallingContext(Abstraction abs, IInfoflowSolver fSolver,
+			SootMethod callee, Unit callSite, Abstraction source, Abstraction d1) {
+	}
+
+	@Override
+	public boolean isFlowSensitive() {
+		return false;
+	}
+
+	@Override
+	public boolean requiresAnalysisOnReturn() {
+		return true;
 	}
 	
 }

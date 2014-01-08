@@ -8,29 +8,12 @@
  * Contributors: Christian Fritz, Steven Arzt, Siegfried Rasthofer, Eric
  * Bodden, and others.
  ******************************************************************************/
-package soot.jimple.infoflow.source;
+package soot.jimple.infoflow.test.android;
 
-import soot.SootMethod;
+public class Bundle {
 
-/**
- * A {@link ISourceSinkManager} that always returns false, i.e. one for which
- * there are no sources or sinks at all.
- * 
- * @author Steven Arzt
- */
-public class EmptySourceSinkManager extends MethodBasedSourceSinkManager {
-
-	public EmptySourceSinkManager(){
+	public static Object get(String key){
+		return new String[] { key };
 	}
 	
-	@Override
-	public SourceInfo getSourceMethodInfo(SootMethod sMethod) {
-		return null;
-	}
-
-	@Override
-	public boolean isSinkMethod(SootMethod sMethod) {
-		return false;
-	}
-
 }

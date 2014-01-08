@@ -20,18 +20,21 @@ import soot.jimple.Stmt;
 public interface ISourceSinkManager {
 
 	/**
-	 * determines if a method called by the Stmt is a source method or not
+	 * Determines if a method called by the Stmt is a source method or not. If
+	 * so, additional information is returned
 	 * @param sCallSite a Stmt which should include an invokeExrp calling a method
 	 * @param cfg the interprocedural controlflow graph
-	 * @return true if source method is called
+	 * @return A SourceInfo object containing additional information if this call
+	 * is a source, otherwise null
 	 */
-	public abstract boolean isSource(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg);
+	public SourceInfo getSourceInfo(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg);
+	
 	/**
 	 * determines if a method called by the Stmt is a sink method or not
 	 * @param sCallSite a Stmt which should include an invokeExrp calling a method
 	 * @param cfg the interprocedural controlflow graph
 	 * @return true if sink method is called
 	 */
-	public abstract boolean isSink(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg);
+	public boolean isSink(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg);
 
 }

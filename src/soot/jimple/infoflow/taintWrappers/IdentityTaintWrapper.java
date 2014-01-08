@@ -43,14 +43,16 @@ public class IdentityTaintWrapper extends AbstractTaintWrapper {
 			// If the base object is tainted, the return value is always tainted
 			if (taintedPath.getPlainValue().equals(iiExpr.getBase()))
 				if (stmt instanceof JAssignStmt)
-					return Collections.singleton(new AccessPath(((JAssignStmt)stmt).getLeftOp()));
+					return Collections.singleton(new AccessPath(((JAssignStmt)stmt).getLeftOp(),
+							taintedPath.getTaintSubFields()));
 		}
 			
 		// If one of the parameters is tainted, the return value is tainted, too
 		for (Value param : stmt.getInvokeExpr().getArgs())
 			if (taintedPath.getPlainValue().equals(param))
 				if (stmt instanceof JAssignStmt)
-					return Collections.singleton(new AccessPath(((JAssignStmt)stmt).getLeftOp()));
+					return Collections.singleton(new AccessPath(((JAssignStmt)stmt).getLeftOp(),
+							taintedPath.getTaintSubFields()));
 		
 		return Collections.emptySet();
 	}

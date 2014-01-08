@@ -218,6 +218,14 @@ public class ListTestCode {
 		cm.publish(untaintedElement);
 	}
 
+	private final Collection<String> c = new LinkedList<String>();
+
+	public void linkedList() {
+		bar2(TelephonyManager.getDeviceId());
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish((String) c.iterator().next());
+	}
+
 	public void staticLinkedList() {
 		bar(TelephonyManager.getDeviceId());
 		ConnectionManager cm = new ConnectionManager();
@@ -229,4 +237,9 @@ public class ListTestCode {
 	private void bar(Object s) {
 		COLLECTION1.add(s);
 	}
+
+	private void bar2(String s) {
+		c.add(s);
+	}
+	
 }

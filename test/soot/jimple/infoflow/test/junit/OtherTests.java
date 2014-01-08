@@ -209,8 +209,7 @@ public class OtherTests extends JUnitTests{
     
     @Test(timeout=300000)
     public void paramTransferTest(){
-    	taintWrapper = true;
-    	Infoflow infoflow = initInfoflow();
+    	Infoflow infoflow = initInfoflow(true);
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void paramTransferTest()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
@@ -220,8 +219,7 @@ public class OtherTests extends JUnitTests{
 
     @Test(timeout=300000)
     public void objectSensitiveTest1(){
-    	taintWrapper = true;
-    	Infoflow infoflow = initInfoflow();
+    	Infoflow infoflow = initInfoflow(true);
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void objectSensitiveTest1()>");
 		infoflow.computeInfoflow(path, epoints,sources, sinks);
@@ -231,7 +229,6 @@ public class OtherTests extends JUnitTests{
 
     @Test(timeout=300000)
     public void accessPathTest(){
-    	taintWrapper = false;
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.OtherTestCode: void accessPathTest()>");

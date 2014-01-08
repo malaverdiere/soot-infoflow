@@ -31,11 +31,30 @@ public class FlowSensitiveAliasStrategy extends AbstractBulkAliasStrategy {
 			(final Abstraction d1, final Stmt src,
 			final Value targetValue, Set<Abstraction> taintSet,
 			SootMethod method, Abstraction newAbs) {
+		if (!newAbs.isAbstractionActive())
+			return;
+		
 		// Start the backwards solver
-		Abstraction bwAbs = newAbs.deriveInactiveAbstraction();
+		Abstraction bwAbs = newAbs.deriveInactiveAbstraction(src);
 		for (Unit predUnit : interproceduralCFG().getPredsOf(src))
 			bSolver.processEdge(new PathEdge<Unit, Abstraction>(d1,
 					predUnit, bwAbs));
+	}
+	
+	@Override
+	public void injectCallingContext(Abstraction abs, IInfoflowSolver fSolver,
+			SootMethod callee, Unit callSite, Abstraction source, Abstraction d1) {
+		bSolver.injectContext(fSolver, callee, abs, callSite, source);
+	}
+
+	@Override
+	public boolean isFlowSensitive() {
+		return true;
+	}
+
+	@Override
+	public boolean requiresAnalysisOnReturn() {
+		return false;
 	}
 
 }

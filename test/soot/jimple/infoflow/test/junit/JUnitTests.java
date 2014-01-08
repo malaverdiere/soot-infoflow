@@ -47,9 +47,8 @@ public abstract class JUnitTests {
     protected static final String sourceIMSI = "<soot.jimple.infoflow.test.android.TelephonyManager: int getIMSI()>";
     protected static final String sourcePwd = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>";
     protected static final String sourceUserData = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String[] getUserData(java.lang.String)>";
+    protected static final String sourceBundleGet = "<soot.jimple.infoflow.test.android.Bundle: java.lang.Object get(java.lang.String)>";
    	
-
-    protected static boolean taintWrapper = false;
     protected static boolean debug = false;
    
     @BeforeClass
@@ -74,6 +73,7 @@ public abstract class JUnitTests {
         sources.add(sourceDeviceId);
         sources.add(sourceIMEI);
         sources.add(sourceIMSI);
+        sources.add(sourceBundleGet);
         
         sinks = new ArrayList<String>();
         sinks.add(sink);
@@ -95,6 +95,7 @@ public abstract class JUnitTests {
 				assertTrue(map.isPathBetweenMethods(sink, sourceDeviceId)
 						|| map.isPathBetweenMethods(sink, sourceIMEI)	// implicit flows
 						|| map.isPathBetweenMethods(sink, sourcePwd)
+						|| map.isPathBetweenMethods(sink, sourceBundleGet)
 						|| map.isPathBetweenMethods(sinkInt, sourceDeviceId)
 						|| map.isPathBetweenMethods(sinkInt, sourceIMEI)
 						|| map.isPathBetweenMethods(sinkInt, sourceIMSI));
@@ -127,11 +128,15 @@ public abstract class JUnitTests {
 	  }
     
     protected Infoflow initInfoflow(){
+    	return initInfoflow(false);
+    }
+    
+    protected Infoflow initInfoflow(boolean useTaintWrapper){
     	Infoflow result = new Infoflow();
     	Infoflow.setDebug(debug);
     	ConfigForTest testConfig = new ConfigForTest();
     	result.setSootConfig(testConfig);
-    	if(taintWrapper){
+    	if (useTaintWrapper){
     		EasyTaintWrapper easyWrapper;
 			try {
 				easyWrapper = new EasyTaintWrapper(new File("EasyTaintWrapperSource.txt"));

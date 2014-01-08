@@ -34,6 +34,8 @@ public class DefaultSourceSinkManager extends MethodBasedSourceSinkManager {
 	private List<String> parameterTaintMethods;
 	private List<String> returnTaintMethods;
 	
+	private static final SourceInfo sourceInfo = new SourceInfo(true);
+	
 	/**
 	 * Creates a new instance of the {@link DefaultSourceSinkManager} class
 	 * @param sources The list of methods to be treated as sources
@@ -83,29 +85,32 @@ public class DefaultSourceSinkManager extends MethodBasedSourceSinkManager {
 	}
 	
 	@Override
-	public boolean isSourceMethod(SootMethod sMethod) {
-		return sources.contains(sMethod.toString());
+	public SourceInfo getSourceMethodInfo(SootMethod sMethod) {
+		if (!sources.contains(sMethod.toString()))
+			return null;
+		return sourceInfo;
 	}
-
+	
 	@Override
 	public boolean isSinkMethod(SootMethod sMethod) {
 		return sinks.contains(sMethod.toString());
 	}
 	
 	@Override
-	public boolean isSource(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg) {
-		if (super.isSource(sCallSite, cfg))
-			return true;
+	public SourceInfo getSourceInfo(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg) {
+		SourceInfo si = super.getSourceInfo(sCallSite, cfg);
+		if (si != null)
+			return si;
 		
 		if (sCallSite instanceof IdentityStmt) {
 			IdentityStmt is = (IdentityStmt) sCallSite;
 			if (is.getRightOp() instanceof ParameterRef)
 				if (this.parameterTaintMethods != null && this.parameterTaintMethods.contains
 						(cfg.getMethodOf(sCallSite).getSignature()))
-					return true;
+					return sourceInfo;
 		}
 		
-		return false;
+		return null;
 	}
 
 	@Override

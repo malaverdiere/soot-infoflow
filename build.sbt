@@ -1,3 +1,5 @@
+import java.util.UUID
+import java.io.File
 name := "soot-infoflow"
 
 organization := "ec-spride"
@@ -21,6 +23,13 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies += "junit" % "junit" % "4.11" % "test"
+
+libraryDependencies += "com.servlets" % "cos" % "05Nov2002" % "test"
+
+libraryDependencies += "javax.servlet" % "javax.servlet-api" % "3.1.0"
+
+//Nasty hack to disable the lib/ folder - we use managed deps instead
+unmanagedBase := new File(UUID.randomUUID().toString)
 
 unmanagedSourceDirectories in Compile := Seq( baseDirectory.value / "src")
 

@@ -10,9 +10,9 @@
  ******************************************************************************/
 package soot.jimple.infoflow.test.securibench.supportClasses;
 
-import java.io.IOException;
-
+import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
+import java.io.IOException;
 
 public class DummyServletInputStream extends ServletInputStream {
 
@@ -21,6 +21,20 @@ public class DummyServletInputStream extends ServletInputStream {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-	
 
+
+    @Override
+    public boolean isFinished() {
+        return false;
+    }
+
+    @Override
+    public boolean isReady() {
+        return false;
+    }
+
+    @Override
+    public void setReadListener(ReadListener readListener) {
+
+    }
 }

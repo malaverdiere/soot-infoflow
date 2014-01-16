@@ -1,8 +1,11 @@
 import java.util.UUID
 import java.io.File
+
 name := "soot-infoflow"
 
 organization := "ec-spride"
+
+scalaVersion := "2.10.3"
 
 version := "dev-SNAPSHOT"
 

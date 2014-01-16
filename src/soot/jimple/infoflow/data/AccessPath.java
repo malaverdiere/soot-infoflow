@@ -209,7 +209,7 @@ public class AccessPath implements Cloneable {
 		return fieldTypes[0];
 	}
 
-	protected SootField[] getFields(){
+	public SootField[] getFields(){
 		return fields;
 	}
 	

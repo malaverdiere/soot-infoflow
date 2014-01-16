@@ -232,8 +232,10 @@ public class ListTestCode {
 		cm.publish((String) COLLECTION1.iterator().next());
 	}
 
+	@SuppressWarnings("rawtypes")
 	static final Collection COLLECTION1 = new LinkedList();
 
+	@SuppressWarnings("unchecked")
 	private void bar(Object s) {
 		COLLECTION1.add(s);
 	}

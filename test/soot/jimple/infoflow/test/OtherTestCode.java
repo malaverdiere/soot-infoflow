@@ -387,6 +387,7 @@ public class OtherTestCode {
 		String f;
 	}
 	
+	@SuppressWarnings("unused")
 	public void objectSensitiveTest1(){
 		ConnectionManager cm = new ConnectionManager();
 		IntermediateObject i1 = new IntermediateObject("123");

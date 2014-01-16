@@ -51,6 +51,7 @@ import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
 import soot.jimple.infoflow.problems.BackwardsInfoflowProblem;
 import soot.jimple.infoflow.problems.InfoflowProblem;
+import soot.jimple.infoflow.solver.BackwardsInfoflowCFG;
 import soot.jimple.infoflow.solver.IInfoflowCFG;
 import soot.jimple.infoflow.solver.fastSolver.InfoflowSolver;
 import soot.jimple.infoflow.source.ISourceSinkManager;
@@ -308,7 +309,7 @@ public class Infoflow extends AbstractInfoflow {
 				final IAliasingStrategy aliasingStrategy;
 				switch (aliasingAlgorithm) {
 					case FlowSensitive:
-						backProblem = new BackwardsInfoflowProblem(sourcesSinks);
+						backProblem = new BackwardsInfoflowProblem(new BackwardsInfoflowCFG(iCfg), sourcesSinks);
 						backSolver = new InfoflowSolver(backProblem, executor);
 						aliasingStrategy = new FlowSensitiveAliasStrategy(iCfg, backSolver);
 						break;

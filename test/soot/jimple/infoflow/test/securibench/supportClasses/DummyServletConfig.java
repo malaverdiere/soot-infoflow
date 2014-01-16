@@ -23,6 +23,7 @@ public class DummyServletConfig implements ServletConfig{
 		return arg0;
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Override
 	public Enumeration getInitParameterNames() {
 		return new StringTokenizer("one two three");

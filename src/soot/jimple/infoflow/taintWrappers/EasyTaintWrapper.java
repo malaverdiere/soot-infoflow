@@ -24,6 +24,7 @@ import soot.jimple.DefinitionStmt;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 
 /**
@@ -119,7 +120,8 @@ public class EasyTaintWrapper extends AbstractTaintWrapper implements Cloneable 
 	}
 	
     @Override
-	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath,
+			IInfoflowCFG icfg) {
 		if (!stmt.containsInvokeExpr())
 			return Collections.emptySet();
 		
@@ -268,7 +270,7 @@ public class EasyTaintWrapper extends AbstractTaintWrapper implements Cloneable 
 	}
 
 	@Override
-	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath, IInfoflowCFG icfg) {
 		SootMethod method = stmt.getInvokeExpr().getMethod();
 		
 		// In aggressive mode, we always taint the return value if the base

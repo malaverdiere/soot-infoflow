@@ -173,5 +173,32 @@ public class OverwriteTestCode {
 		setData2(null);
 		cm.publish(data2.data);
 	}
+	
+	private String nonsource() {
+		return "foo";
+	}
+	
+	public void loopOverwrite() {
+		String tmp;
+		ConnectionManager cm = new ConnectionManager();
+		do {
+			cm.publish(nonsource());
+			tmp = TelephonyManager.getDeviceId();
+			cm.publish(tmp);
+		}
+		while (true);
+	}
+
+	public void loopOverwrite2() {
+		String tmp;
+		ConnectionManager cm = new ConnectionManager();
+		do {
+			tmp = nonsource();
+			cm.publish(tmp);
+			tmp = TelephonyManager.getDeviceId();
+			cm.publish(tmp);
+		}
+		while (true);
+	}
 
 }

@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
 
 /**
  * Abstract base class for all taint propagation wrappers
@@ -20,14 +21,16 @@ public abstract class AbstractTaintWrapper implements ITaintPropagationWrapper {
 	 * no other taints than those produced by the wrapper. In effect, this tells the analysis
 	 * not to propagate inside the callee.
 	 * @param stmt The call statement to check
-	 * @param taintedPath The tainted field or value to propagate 
+	 * @param taintedPath The tainted field or value to propagate
+	 * @param icfg The interprocedural cfg 
 	 * @return True if this taint wrapper is exclusive, otherwise false. 
 	 */
-	public abstract boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath);
+	protected abstract boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath,
+			IInfoflowCFG icfg);
 
 	@Override
-	public boolean isExclusive(Stmt stmt, AccessPath taintedPath) {
-		if (isExclusiveInternal(stmt, taintedPath)) {
+	public boolean isExclusive(Stmt stmt, AccessPath taintedPath, IInfoflowCFG icfg) {
+		if (isExclusiveInternal(stmt, taintedPath, icfg)) {
 			wrapperHits.incrementAndGet();
 			return true;
 		}

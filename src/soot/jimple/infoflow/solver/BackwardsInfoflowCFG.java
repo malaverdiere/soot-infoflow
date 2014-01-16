@@ -1,15 +1,24 @@
 package soot.jimple.infoflow.solver;
 
-import soot.Body;
-import soot.Unit;
-import soot.toolkits.graph.DirectedGraph;
-import soot.toolkits.graph.InverseGraph;
+import soot.jimple.toolkits.ide.icfg.BackwardsInterproceduralCFG;
 
+/**
+ * Inverse interprocedural control-flow graph for the infoflow solver
+ * 
+ * @author Steven Arzt
+ * @author Eric Bodden
+ */
 public class BackwardsInfoflowCFG extends InfoflowCFG {
-
-	@Override
-	protected DirectedGraph<Unit> makeGraph(Body body) {
-		return new InverseGraph<Unit>(super.makeGraph(body));
+	
+	private final IInfoflowCFG baseCFG;
+	
+	public BackwardsInfoflowCFG(IInfoflowCFG baseCFG) {
+		super(new BackwardsInterproceduralCFG(baseCFG));
+		this.baseCFG = baseCFG;
+	}
+	
+	public IInfoflowCFG getBaseCFG() {
+		return this.baseCFG;
 	}
 	
 }

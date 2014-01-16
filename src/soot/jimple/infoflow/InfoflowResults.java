@@ -44,6 +44,7 @@ public class InfoflowResults {
 	public class SourceInfo {
 		private final Value source;
 		private final Stmt context;
+		private final Object userData;
 		private final List<Stmt> path;
 		
 		public SourceInfo(Value source, Stmt context) {
@@ -51,14 +52,16 @@ public class InfoflowResults {
 			
 			this.source = source;
 			this.context = context;
+			this.userData = null;
 			this.path = null;
 		}
 		
-		public SourceInfo(Value source, Stmt context, List<Stmt> path) {
+		public SourceInfo(Value source, Stmt context, Object userData, List<Stmt> path) {
 			assert source != null;
 
 			this.source = source;
 			this.context = context;
+			this.userData = userData;
 			this.path = path;
 		}
 
@@ -68,6 +71,10 @@ public class InfoflowResults {
 		
 		public Stmt getContext() {
 			return this.context;
+		}
+		
+		public Object getUserData() {
+			return this.userData;
 		}
 		
 		public List<Stmt> getPath() {
@@ -206,19 +213,22 @@ public class InfoflowResults {
 	}
 	
 	public void addResult(Value sink, Stmt sinkStmt, Value source,
-			Stmt sourceStmt, List<Stmt> propagationPath) {
-		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source, sourceStmt, propagationPath));
+			Stmt sourceStmt, Object userData, List<Stmt> propagationPath) {
+		this.addResult(new SinkInfo(sink, sinkStmt), new SourceInfo(source, sourceStmt, userData, propagationPath));
 	}
 
 	public void addResult(Value sink, Stmt sinkContext, Value source,
-			Stmt sourceStmt, List<Stmt> propagationPath, Stmt stmt) {
+			Stmt sourceStmt, Object userData, List<Stmt> propagationPath, Stmt stmt) {
 		List<Stmt> newPropPath = new LinkedList<Stmt>(propagationPath);
 		newPropPath.add(stmt);
 		this.addResult(new SinkInfo(sink, sinkContext),
-				new SourceInfo(source, sourceStmt, newPropPath));
+				new SourceInfo(source, sourceStmt, userData, newPropPath));
 	}
 
 	public synchronized void addResult(SinkInfo sink, SourceInfo source) {
+		assert sink != null;
+		assert source != null;
+		
 		Set<SourceInfo> sourceInfo = this.results.get(sink);
 		if (sourceInfo == null) {
 			sourceInfo = new HashSet<SourceInfo>();

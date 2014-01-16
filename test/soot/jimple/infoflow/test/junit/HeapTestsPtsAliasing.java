@@ -29,6 +29,7 @@ import soot.jimple.Stmt;
 import soot.jimple.infoflow.IInfoflow.AliasingAlgorithm;
 import soot.jimple.infoflow.Infoflow;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
 import soot.jimple.infoflow.taintWrappers.AbstractTaintWrapper;
 import soot.jimple.infoflow.test.utilclasses.TestWrapper;
 /**
@@ -430,14 +431,16 @@ public class HeapTestsPtsAliasing extends JUnitTests {
 	    	infoflow.setTaintWrapper(new AbstractTaintWrapper() {
 				
 				@Override
-				public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
+				public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath,
+						IInfoflowCFG icfg) {
 					return stmt.containsInvokeExpr()
 							&& (stmt.getInvokeExpr().getMethod().getName().equals("foo2")
 									|| stmt.getInvokeExpr().getMethod().getName().equals("bar2"));
 				}
 				
 				@Override
-				public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
+				public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath,
+						IInfoflowCFG icfg) {
 					if (!stmt.containsInvokeExpr())
 						return Collections.singleton(taintedPath);
 					

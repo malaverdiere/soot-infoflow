@@ -15,6 +15,7 @@ import java.util.Set;
 
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
 
 /**
  * Set of taint wrappers. It supports taint wrapping for a class if at least one
@@ -36,17 +37,19 @@ public class TaintWrapperSet extends AbstractTaintWrapper {
 	}
 
 	@Override
-	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath,
+			IInfoflowCFG icfg) {
 		Set<AccessPath> resList = new HashSet<AccessPath>();
 		for (ITaintPropagationWrapper w : this.wrappers)
-			resList.addAll(w.getTaintsForMethod(stmt, taintedPath));
+			resList.addAll(w.getTaintsForMethod(stmt, taintedPath, icfg));
 		return new HashSet<AccessPath>(resList);
 	}
 
 	@Override
-	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath,
+			IInfoflowCFG icfg) {
 		for (ITaintPropagationWrapper w : this.wrappers)
-			if (w.isExclusive(stmt, taintedPath))
+			if (w.isExclusive(stmt, taintedPath, icfg))
 				return true;
 		return false;
 	}

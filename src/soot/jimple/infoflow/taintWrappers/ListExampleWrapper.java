@@ -16,6 +16,7 @@ import java.util.Set;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
 import soot.jimple.internal.JAssignStmt;
 
 /**
@@ -24,7 +25,8 @@ import soot.jimple.internal.JAssignStmt;
 public class ListExampleWrapper extends AbstractTaintWrapper {
 
 	@Override
-	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath,
+			IInfoflowCFG icfg) {
 		// method add + added element is tainted -> whole list is tainted
 		if(stmt.getInvokeExpr().getMethod().getSubSignature().equals("boolean add(java.lang.Object)"))
 			if (taintedPath.getPlainValue().equals(stmt.getInvokeExpr().getArg(0)))
@@ -49,7 +51,8 @@ public class ListExampleWrapper extends AbstractTaintWrapper {
 	}
 
 	@Override
-	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath,
+			IInfoflowCFG icfg) {
 		return false;
 	}
 }

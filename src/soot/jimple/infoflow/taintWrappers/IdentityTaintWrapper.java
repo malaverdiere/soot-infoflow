@@ -17,6 +17,7 @@ import soot.Value;
 import soot.jimple.InstanceInvokeExpr;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.AccessPath;
+import soot.jimple.infoflow.solver.IInfoflowCFG;
 import soot.jimple.internal.JAssignStmt;
 
 /**
@@ -29,7 +30,8 @@ import soot.jimple.internal.JAssignStmt;
 public class IdentityTaintWrapper extends AbstractTaintWrapper {
 
 	@Override
-	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath) {
+	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath,
+			IInfoflowCFG icfg) {
 		assert stmt.containsInvokeExpr();
 		
 		// For the moment, we don't implement static taints on wrappers. Pass it on
@@ -58,7 +60,7 @@ public class IdentityTaintWrapper extends AbstractTaintWrapper {
 	}
 
 	@Override
-	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath) {
+	public boolean isExclusiveInternal(Stmt stmt, AccessPath taintedPath, IInfoflowCFG icfg) {
 		assert stmt.containsInvokeExpr();
 		
 		// We are exclusive if the base object is tainted

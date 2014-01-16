@@ -203,6 +203,7 @@ public class HeapTestCode {
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(ClassWithStatic.staticString);
 		
+		@SuppressWarnings("unused")
 		ClassWithStatic c1 = new ClassWithStatic();
 		
 		WrapperClass w1 = new WrapperClass();
@@ -580,6 +581,7 @@ public class HeapTestCode {
 		this.b2 = b2;
 	}
 
+	@SuppressWarnings("unused")
 	private void foo2(B b1, B b2) {
 		//
 	}
@@ -589,6 +591,7 @@ public class HeapTestCode {
 		return this.b2.attr;
 	}
 
+	@SuppressWarnings("unused")
 	private A bar2(A a) {
 		return null;
 	}

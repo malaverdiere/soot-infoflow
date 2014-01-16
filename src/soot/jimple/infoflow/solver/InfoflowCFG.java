@@ -12,15 +12,19 @@ package soot.jimple.infoflow.solver;
 
 import heros.solver.IDESolver;
 
+import java.util.List;
 import java.util.Set;
 
+import soot.Body;
 import soot.Scene;
 import soot.SootField;
 import soot.SootMethod;
 import soot.Unit;
+import soot.Value;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.util.ConcurrentHashSet;
-import soot.jimple.toolkits.ide.icfg.JimpleBasedBiDiICFG;
+import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
+import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.jimple.toolkits.pointer.RWSet;
 import soot.jimple.toolkits.pointer.SideEffectAnalysis;
 import soot.toolkits.graph.DirectedGraph;
@@ -33,15 +37,18 @@ import com.google.common.cache.LoadingCache;
  * Interprocedural control-flow graph for the infoflow solver
  * 
  * @author Steven Arzt
+ * @author Eric Bodden
  */
-public class InfoflowCFG extends JimpleBasedBiDiICFG implements IInfoflowCFG {
+public class InfoflowCFG implements IInfoflowCFG {
 
+	protected final BiDiInterproceduralCFG<Unit, SootMethod> delegate; 
+	
     protected final LoadingCache<Unit,UnitContainer> unitToPostdominator =
 			IDESolver.DEFAULT_CACHE_BUILDER.build( new CacheLoader<Unit,UnitContainer>() {
 				@Override
 				public UnitContainer load(Unit unit) throws Exception {
 					SootMethod method = getMethodOf(unit);
-					DirectedGraph<Unit> graph = bodyToUnitGraph.getUnchecked(method.getActiveBody());
+					DirectedGraph<Unit> graph = delegate.getOrCreateUnitGraph(method.getActiveBody());
 					MHGPostDominatorsFinder<Unit> postdominatorFinder = new MHGPostDominatorsFinder<Unit>(graph);
 					Unit postdom = postdominatorFinder.getImmediateDominator(unit);
 					if (postdom == null)
@@ -54,8 +61,11 @@ public class InfoflowCFG extends JimpleBasedBiDiICFG implements IInfoflowCFG {
 	protected final SideEffectAnalysis sideEffectAnalysis;
 	
 	public InfoflowCFG() {
-		super();
-		
+		this(new JimpleBasedInterproceduralCFG());
+	}
+	
+	public InfoflowCFG(BiDiInterproceduralCFG<Unit,SootMethod> delegate) {
+		this.delegate = delegate;
 		this.sideEffectAnalysis = new SideEffectAnalysis
 				(Scene.v().getPointsToAnalysis(), Scene.v().getCallGraph());
 	}
@@ -99,6 +109,88 @@ public class InfoflowCFG extends JimpleBasedBiDiICFG implements IInfoflowCFG {
 			if (o instanceof SootField)
 				objSet.add((SootField) o);
 		return objSet;
+	}
+
+	//delegate methods follow
+	
+	public SootMethod getMethodOf(Unit u) {
+		return delegate.getMethodOf(u);
+	}
+
+	public List<Unit> getSuccsOf(Unit u) {
+		return delegate.getSuccsOf(u);
+	}
+
+	public boolean isExitStmt(Unit u) {
+		return delegate.isExitStmt(u);
+	}
+
+	public boolean isStartPoint(Unit u) {
+		return delegate.isStartPoint(u);
+	}
+
+	public boolean isFallThroughSuccessor(Unit u, Unit succ) {
+		return delegate.isFallThroughSuccessor(u, succ);
+	}
+
+	public boolean isBranchTarget(Unit u, Unit succ) {
+		return delegate.isBranchTarget(u, succ);
+	}
+
+	public Set<Unit> getStartPointsOf(SootMethod m) {
+		return delegate.getStartPointsOf(m);
+	}
+
+	public boolean isCallStmt(Unit u) {
+		return delegate.isCallStmt(u);
+	}
+
+	public Set<Unit> allNonCallStartNodes() {
+		return delegate.allNonCallStartNodes();
+	}
+
+	public Set<SootMethod> getCalleesOfCallAt(Unit u) {
+		return delegate.getCalleesOfCallAt(u);
+	}
+
+	public Set<Unit> getCallersOf(SootMethod m) {
+		return delegate.getCallersOf(m);
+	}
+
+	public List<Unit> getReturnSitesOfCallAt(Unit u) {
+		return delegate.getReturnSitesOfCallAt(u);
+	}
+
+	public Set<Unit> getCallsFromWithin(SootMethod m) {
+		return delegate.getCallsFromWithin(m);
+	}
+
+	public List<Unit> getPredsOf(Unit u) {
+		return delegate.getPredsOf(u);
+	}
+
+	public Set<Unit> getEndPointsOf(SootMethod m) {
+		return delegate.getEndPointsOf(m);
+	}
+
+	@Override
+	public List<Unit> getPredsOfCallAt(Unit u) {
+		return delegate.getPredsOf(u);
+	}
+
+	@Override
+	public Set<Unit> allNonCallEndNodes() {
+		return delegate.allNonCallEndNodes();
+	}
+
+	@Override
+	public DirectedGraph<Unit> getOrCreateUnitGraph(Body body) {
+		return delegate.getOrCreateUnitGraph(body);
+	}
+
+	@Override
+	public List<Value> getParameterRefs(SootMethod m) {
+		return delegate.getParameterRefs(m);
 	}
 
 }

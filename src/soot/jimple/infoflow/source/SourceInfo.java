@@ -10,6 +10,7 @@ package soot.jimple.infoflow.source;
 public class SourceInfo {
 	
 	private boolean taintSubFields = true;
+	private Object userData = null;
 	
 	/**
 	 * Creates a new instance of the {@link SourceInfo} class
@@ -21,9 +22,22 @@ public class SourceInfo {
 		this.taintSubFields = taintSubFields;
 	}
 	
+	/**
+	 * Creates a new instance of the {@link SourceInfo} class
+	 * @param taintSubFields True if all fields reachable through the source
+	 * shall also be considered as tainted, false if only the source as such
+	 * shall be tainted.
+	 * @param userData Additional user data to be propagated with the source
+	 */
+	public SourceInfo(boolean taintSubFields, Object userData) {
+		this.taintSubFields = taintSubFields;
+		this.userData = userData;
+	}
+
 	@Override
 	public int hashCode() {
-		return 31 * (taintSubFields ? 1 : 0);
+		return 31 * (taintSubFields ? 1 : 0)
+				+ 31 * (this.userData == null ? 0 : this.userData.hashCode());
 	}
 	
 	@Override
@@ -31,7 +45,15 @@ public class SourceInfo {
 		if (other == null || !(other instanceof SourceInfo))
 			return false;
 		SourceInfo otherInfo = (SourceInfo) other;
-		return taintSubFields == otherInfo.taintSubFields;
+		if (taintSubFields != otherInfo.taintSubFields)
+			return false;
+		if (this.userData == null) {
+			if (otherInfo.userData != null)
+				return false;
+		}
+		else if (!this.userData.equals(otherInfo.userData))
+			return false;
+		return true;
 	}
 
 	/**
@@ -43,6 +65,14 @@ public class SourceInfo {
 	 */
 	public boolean getTaintSubFields() {
 		return taintSubFields;
+	}
+	
+	/**
+	 * Gets the user data to be tracked together with this source
+	 * @return The user data to be tracked together with this source
+	 */
+	public Object getUserData() {
+		return this.userData;
 	}
 
 }

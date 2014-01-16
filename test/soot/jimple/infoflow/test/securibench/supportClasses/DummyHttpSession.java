@@ -18,6 +18,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
 
+@SuppressWarnings("deprecation")
 public class DummyHttpSession implements HttpSession {
 	HashMap<String, Object> attributes = new HashMap<String, Object>();
 	HashMap<String, Object> values = new HashMap<String, Object>();
@@ -29,6 +30,7 @@ public class DummyHttpSession implements HttpSession {
 		return null;
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Override
 	public Enumeration getAttributeNames() {
 		return new StringTokenizer("");

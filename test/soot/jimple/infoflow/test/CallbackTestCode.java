@@ -60,6 +60,7 @@ public class CallbackTestCode {
 	private class Activity{
 		String field;
 		public void onCreate(){
+			@SuppressWarnings("unused")
 			LocListener l = new LocListener(this);
 			
 		}

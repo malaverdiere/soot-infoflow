@@ -49,6 +49,7 @@ public class InFunctionCode {
 		public int j;
 	}
 
+	@SuppressWarnings("unused")
 	public int paraToParaFlow(int a, int b, DataClass data, DataClass data2) {
 		int c = a;
 		data.i = c;

@@ -33,7 +33,7 @@ public class FutureTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.OperationSemanticTestCode: void mathTestCode()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -43,7 +43,7 @@ public class FutureTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void staticInitTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 
@@ -53,7 +53,7 @@ public class FutureTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.OverwriteTestCode: void returnOverwrite7()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}

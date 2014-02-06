@@ -12,7 +12,6 @@ package soot.jimple.infoflow.solver.heros;
 
 import heros.EdgeFunction;
 import heros.FlowFunction;
-import heros.InterproceduralCFG;
 import heros.edgefunc.EdgeIdentity;
 import heros.solver.CountingThreadPoolExecutor;
 import heros.solver.IFDSSolver;
@@ -31,12 +30,13 @@ import soot.jimple.infoflow.solver.functions.SolverCallFlowFunction;
 import soot.jimple.infoflow.solver.functions.SolverCallToReturnFlowFunction;
 import soot.jimple.infoflow.solver.functions.SolverNormalFlowFunction;
 import soot.jimple.infoflow.solver.functions.SolverReturnFlowFunction;
+import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
 /**
  * We are subclassing the JimpleIFDSSolver because we need the same executor for both the forward and the backward analysis
  * Also we need to be able to insert edges containing new taint information
  * 
  */
-public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>>
+public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, SootMethod, BiDiInterproceduralCFG<Unit, SootMethod>>
 		implements IInfoflowSolver {
 
 	public InfoflowSolver(AbstractInfoflowProblem problem, CountingThreadPoolExecutor executor) {
@@ -62,7 +62,9 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		return false;
 	}
 	
-	public void injectContext(IInfoflowSolver otherSolver, SootMethod callee, Abstraction d3, Unit callSite, Abstraction d2) {
+	@Override
+	public void injectContext(IInfoflowSolver otherSolver, SootMethod callee, Abstraction d3,
+			Unit callSite, Abstraction d2, Abstraction d1) {
 		if (!(otherSolver instanceof InfoflowSolver))
 			throw new RuntimeException("Other solver must be of same type");
 		
@@ -80,8 +82,8 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 			otherAbstractions = new HashSet<Abstraction>
 					(solver.jumpFn.reverseLookup(callSite, d2).keySet());
 		}
-		for (Abstraction d1: otherAbstractions)
-			if (!d1.getAccessPath().isEmpty() && !d1.getAccessPath().isStaticFieldRef())
+		for (Abstraction dx1: otherAbstractions)
+			if (!dx1.getAccessPath().isEmpty() && !dx1.getAccessPath().isStaticFieldRef())
 				processEdge(new PathEdge<Unit, Abstraction>(d1, callSite, d2));
 	}
 	

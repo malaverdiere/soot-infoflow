@@ -31,6 +31,7 @@ public class ConfigForTest implements IInfoflowConfig{
 
 		includeList.add("android.");
 		includeList.add("org.apache.http.");
+
 		includeList.add("de.test.");
 		includeList.add("soot.");
 		includeList.add("com.example.");

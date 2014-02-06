@@ -130,28 +130,39 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 	public SootMethod createDummyMain() {
 		return createDummyMain(new ArrayList<String>());
 	}
+	
+	/**
+	 * Creates a new dummy main method based only on the Android classes and
+	 * the automatic detection of the Android lifecycle methods
+	 * @param emptySootMethod an empty soot method
+	 * @return The generated dummy main method
+	 */
+	public SootMethod createDummyMain(SootMethod emptySootMethod)
+	{
+		return createDummyMain(new ArrayList<String>(), emptySootMethod);
+	}
 
 	/**
-	 *  Soot requires a main method, so we create a dummy method which calls all entry functions. 
-	 *  Android's components are detected and treated according to their lifecycles. This
-	 *  method automatically resolves the classes containing the given methods.
-	 *  
-	 * @param methods The list of methods to be called inside the generated dummy main method.
-	 * @return the dummyMethod which was created
+	 * default createDummyMaiInternal create a dummyMainMethod for all component calsses and 
+	 * the dummyMainClass is belong to dummyMainClass, we want to provide a interface to generate
+	 * a dummyMainMethod for each component class.
+	 * 
+	 * @param methods
+	 * @param emptySootMethod
+	 * @return The generated dummy main method
 	 */
 	@Override
-	protected SootMethod createDummyMainInternal(List<String> methods){
+	protected SootMethod createDummyMainInternal(List<String> methods, SootMethod emptySootMethod)
+	{
 		Map<String, Set<String>> classMap =
 				SootMethodRepresentationParser.v().parseClassNames(methods, false);
 		for (String androidClass : this.androidClasses)
 			if (!classMap.containsKey(androidClass))
 				classMap.put(androidClass, new HashSet<String>());
 		
-		// create new class:
- 		body = Jimple.v().newBody();
- 		
- 		SootMethod mainMethod = createEmptyMainMethod(body);
-		
+ 		//
+ 		SootMethod mainMethod = emptySootMethod;
+ 		body = (JimpleBody) emptySootMethod.getActiveBody();
 		generator = new LocalGenerator(body);
 		
 		// add entrypoint calls
@@ -163,7 +174,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 
 		// Resolve all requested classes
 		for (Entry<String, Set<String>> entry : classMap.entrySet())
-			Scene.v().forceResolve(entry.getKey(), SootClass.BODIES);
+			Scene.v().forceResolve(entry.getKey(), SootClass.SIGNATURES);
 		
 		// For some weird reason unknown to anyone except the flying spaghetti
 		// monster, the onCreate() methods of content providers run even before
@@ -257,8 +268,8 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		for(Entry<String, Set<String>> entry : classMap.entrySet()){
 			//no execution order given for all apps:
-//			JNopStmt entryExitStmt = new JNopStmt();
-//			createIfStmt(entryExitStmt);
+			JNopStmt entryExitStmt = new JNopStmt();
+			createIfStmt(entryExitStmt);
 			
 			SootClass currentClass = Scene.v().getSootClass(entry.getKey());
 			currentClass.setApplicationClass();
@@ -358,7 +369,7 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			}
 			finally {
 				body.getUnits().add(endClassStmt);
-//				body.getUnits().add(entryExitStmt);
+				body.getUnits().add(entryExitStmt);
 			}
 		}
 		
@@ -381,12 +392,27 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 		
 		// Optimize and check the generated main method
 		NopEliminator.v().transform(body);
+		eliminateSelfLoops(body);
 		if (DEBUG || Options.v().validate())
 			mainMethod.getActiveBody().validate();
 		
 		logger.info("Generated main method:\n{}", body);
 		return mainMethod;
 	}
+	
+	/**
+	 *  Soot requires a main method, so we create a dummy method which calls all entry functions. 
+	 *  Android's components are detected and treated according to their lifecycles. This
+	 *  method automatically resolves the classes containing the given methods.
+	 *  
+	 * @param methods The list of methods to be called inside the generated dummy main method.
+	 * @return the dummyMethod which was created
+	 */
+	/*@Override
+	protected SootMethod createDummyMainInternal(List<String> methods){
+		SootMethod emptySootMethod = createEmptyMainMethod(Jimple.v().newBody());
+		return createDummyMainInternal(methods, emptySootMethod);
+	}*/
 	
 	private Map<SootClass, ComponentType> componentTypeCache = new HashMap<SootClass, ComponentType>();
 
@@ -708,12 +734,10 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			createIfStmt(onSaveInstance);
 
 		//goTo Stop, Resume or Create:
-		JNopStmt pauseToStopStmt = new JNopStmt();
-		createIfStmt(pauseToStopStmt);
+		// (to stop is fall-through, no need to add)
 		createIfStmt(onResumeStmt);
 		createIfStmt(onCreateStmt);
 		
-		body.getUnits().add(pauseToStopStmt);
 		//5. onStop:
 		Stmt onStop = searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONSTOP, currentClass, entryPoints, classLocal);
 		boolean hasAppOnStop = addCallbackMethods(applicationClass, referenceClasses,
@@ -722,14 +746,12 @@ public class AndroidEntryPointCreator extends BaseEntryPointCreator implements I
 			createIfStmt(onStop);
 
 		//goTo onDestroy, onRestart or onCreate:
+		// (to restart is fall-through, no need to add)
 		JNopStmt stopToDestroyStmt = new JNopStmt();
-		JNopStmt stopToRestartStmt = new JNopStmt();
 		createIfStmt(stopToDestroyStmt);
-		createIfStmt(stopToRestartStmt);
 		createIfStmt(onCreateStmt);
 		
 		//6. onRestart:
-		body.getUnits().add(stopToRestartStmt);
 		searchAndBuildMethod(AndroidEntryPointConstants.ACTIVITY_ONRESTART, currentClass, entryPoints, classLocal);
 		createIfStmt(onStartStmt);	// jump to onStart(), fall through to onDestroy()
 		

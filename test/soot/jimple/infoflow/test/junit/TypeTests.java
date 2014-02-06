@@ -29,7 +29,7 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void typeTest1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}
 	
@@ -38,7 +38,7 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void classCastTest1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}
 
@@ -47,7 +47,7 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void classCastTest2()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}
 
@@ -56,7 +56,7 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void classCastTest3()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}
 
@@ -65,7 +65,7 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void instanceofTest1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 2);	
 	}
 
@@ -74,7 +74,7 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void callTargetTest1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}
 
@@ -83,7 +83,7 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void arrayObjectCastTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}
 
@@ -92,7 +92,7 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void arrayObjectCastTest2()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}
 
@@ -101,7 +101,7 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void callTypeTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}
 
@@ -110,7 +110,52 @@ public class TypeTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void callTypeTest2()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);	
+	}
+
+	@Test(timeout=300000)
+	public void arrayCastAndAliasTest(){
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void arrayCastAndAliasTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);	
+	}
+
+	@Test(timeout=300000)
+	public void arrayCastAndAliasTest2(){
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void arrayCastAndAliasTest2()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);	
+	}
+
+	@Test(timeout=300000)
+	public void arrayIncompatibleCastAndAliasTest(){
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void arrayIncompatibleCastAndAliasTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);		// doesn't really matter since the code cannot be executed anyway	
+	}
+
+	@Test(timeout=300000)
+	public void fieldIncompatibleCastAndAliasTest(){
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void fieldIncompatibleCastAndAliasTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		negativeCheckInfoflow(infoflow);	
+	}
+
+	@Test(timeout=300000)
+	public void twoDimensionArrayTest(){
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.TypeTestCode: void twoDimensionArrayTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	}
 

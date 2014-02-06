@@ -44,7 +44,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setTaintWrapper(new TestWrapper());
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testForEarlyTermination()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 
@@ -54,7 +54,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setTaintWrapper(new TestWrapper());
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testForLoop()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 
@@ -64,7 +64,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setTaintWrapper(new TestWrapper());
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testForWrapper()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -73,7 +73,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void simpleTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -82,7 +82,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void argumentTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -91,7 +91,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void negativeTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -100,7 +100,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void doubleCallTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -109,7 +109,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void methodTest0()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -118,7 +118,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void methodTest1()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 
@@ -127,7 +127,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.ForwardBackwardTest: void testMethod()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 
@@ -136,7 +136,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void methodReturn()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 
@@ -145,7 +145,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void twoLevelTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -154,7 +154,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void multiAliasTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -164,7 +164,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void overwriteAliasTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 		Assert.assertEquals(0, infoflow.getResults().size());
 	}
@@ -174,7 +174,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void arrayAliasTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -184,7 +184,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void functionAliasTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -194,7 +194,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void functionAliasTest2()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -204,7 +204,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void multiLevelTaint()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -214,7 +214,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void multiLevelTaint2()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -224,7 +224,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void negativeMultiLevelTaint()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -233,7 +233,7 @@ public class HeapTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void negativeMultiLevelTaint2()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 
@@ -243,7 +243,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void threeLevelTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -258,7 +258,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void threeLevelTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		
 		infoflow.setAccessPathLength(oldAPLength); // this is a global setting!
@@ -273,7 +273,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void recursionTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -284,7 +284,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest1()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -295,7 +295,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest2()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 		Assert.assertEquals(0, infoflow.getResults().size());
 	}
@@ -306,7 +306,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest3()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -317,7 +317,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest4()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 		Assert.assertEquals(0, infoflow.getResults().size());
 	}
@@ -328,7 +328,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest4b()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 		Assert.assertEquals(0, infoflow.getResults().size());
 	}
@@ -339,7 +339,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void activationUnitTest5()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 		Assert.assertEquals(0, infoflow.getResults().size());
 	}
@@ -350,7 +350,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void returnAliasTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -361,7 +361,7 @@ public class HeapTests extends JUnitTests {
 		infoflow.setInspectSinks(false);
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void callPerformanceTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -378,7 +378,7 @@ public class HeapTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testAliases()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 
@@ -463,7 +463,7 @@ public class HeapTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void testWrapperAliases()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 
@@ -483,7 +483,7 @@ public class HeapTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void negativeTestAliases()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 
 		infoflow.setAccessPathLength(oldLength);
@@ -501,7 +501,7 @@ public class HeapTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void aliasPerformanceTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 2);
 		Assert.assertEquals(2, infoflow.getResults().size());
 
@@ -521,7 +521,7 @@ public class HeapTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void aliasPerformanceTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 3);	// PTS-based alias analysis is not flow-sensitive
 		Assert.assertEquals(3, infoflow.getResults().size());
 
@@ -537,7 +537,7 @@ public class HeapTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void backwardsParameterTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -551,7 +551,7 @@ public class HeapTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void aliasTaintLeakTaintTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -565,7 +565,7 @@ public class HeapTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void fieldBaseOverwriteTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		Assert.assertEquals(1, infoflow.getResults().size());
 	}
@@ -579,9 +579,23 @@ public class HeapTests extends JUnitTests {
 
 		List<String> epoints = new ArrayList<String>();
 		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void doubleAliasTest()>");
-		infoflow.computeInfoflow(path, epoints, sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 2);
 		Assert.assertEquals(2, infoflow.getResults().size());
+	}
+
+	@Test(timeout = 300000)
+	public void intAliasTest() {
+		Infoflow infoflow = initInfoflow();
+		infoflow.setInspectSources(false);
+		infoflow.setInspectSinks(false);
+		infoflow.setEnableImplicitFlows(false);
+
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.HeapTestCode: void intAliasTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);
+		Assert.assertEquals(1, infoflow.getResults().size());
 	}
 
 }

@@ -29,7 +29,7 @@ public class HTTPTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.HTTPTestCode: void testURL()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		
 		checkInfoflow(infoflow, 1);
     }
@@ -40,7 +40,7 @@ public class HTTPTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.HTTPTestCode: void method1()>");
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		
 		checkInfoflow(infoflow, 1);
     }

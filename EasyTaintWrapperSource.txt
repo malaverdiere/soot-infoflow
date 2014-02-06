@@ -8,6 +8,7 @@
 <java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>
 -<java.util.Map: void clear()>
 
+<java.util.TreeMap: void <init>(java.util.Map)>
 <java.util.HashMap: void <init>(java.util.Map)>
 <java.util.WeakHashMap: void <init>(java.util.Map)>
 <java.util.ConcurrentHashMap: void <init>(java.util.Map)>
@@ -235,6 +236,10 @@
 <java.util.Collections: java.util.List unmodifiableSortedMap(java.util.SortedMap)>
 <java.util.Collections: java.util.List unmodifiableSortedSet(java.util.SortedSet)>
 
+<java.util.Collections: java.util.Set singleton(java.lang.Object)>
+<java.util.Collections: java.util.List singletonList(java.lang.Object)>
+<java.util.Collections: java.util.Map singletonMap(java.lang.Object,java.lang.Object)>
+
 <android.content.ContentValues: void put(java.lang.String,java.lang.Integer)>
 
 <android.content.Intent: void <init>(android.content.Context,java.lang.Class)>
@@ -295,3 +300,7 @@
 <android.text.Editable: java.lang.String toString()>
 
 <javax.servlet.ServletResponse: java.io.PrintWriter getWriter()>
+
+# Exclude the ServerSocket stuff
+# ~<java.net.ServerSocket: java.net.Socket accept()>
+# ~<java.net.Socket: java.io.InputStream getInputStream()>

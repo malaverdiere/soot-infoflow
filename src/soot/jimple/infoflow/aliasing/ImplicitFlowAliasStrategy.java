@@ -10,6 +10,7 @@ import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.FieldRef;
 import soot.jimple.InstanceFieldRef;
+import soot.jimple.Jimple;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AccessPath;
@@ -30,9 +31,9 @@ public class ImplicitFlowAliasStrategy extends AbstractBulkAliasStrategy {
     public ImplicitFlowAliasStrategy(IInfoflowCFG cfg) {
 		super(cfg);
 	}
-
+    
 	private final Table<SootMethod, AccessPath, Set<AccessPath>> globalAliases = HashBasedTable.create();
-
+	
 	/**
 	 * Computes the global non-flow-sensitive alias information for the given
 	 * method
@@ -94,8 +95,15 @@ public class ImplicitFlowAliasStrategy extends AbstractBulkAliasStrategy {
 		if (aliases != null)
 			for (AccessPath ap : aliases) {
 				Abstraction aliasAbs = newAbs.deriveNewAbstraction(
-						ap.merge(newAbs.getAccessPath()), src);
-				taintSet.add(aliasAbs);
+						ap.merge(newAbs.getAccessPath()), null);
+				if (taintSet.add(aliasAbs))
+					// We have found a new alias. This new base object may however yet
+					// again alias with something, so we need to check again
+					if (ap.isInstanceFieldRef()) {
+						InstanceFieldRef aliasBaseVal = Jimple.v().newInstanceFieldRef
+								(ap.getPlainValue(), ap.getFirstField().makeRef());
+						computeAliasTaints(d1, src, aliasBaseVal, taintSet, method, aliasAbs);
+					}
 			}
 	}
 
@@ -112,6 +120,11 @@ public class ImplicitFlowAliasStrategy extends AbstractBulkAliasStrategy {
 	@Override
 	public boolean requiresAnalysisOnReturn() {
 		return true;
+	}
+
+	@Override
+	public boolean hasProcessedMethod(SootMethod method) {
+		return globalAliases.containsRow(method);
 	}
 	
 }

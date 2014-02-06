@@ -17,6 +17,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
+
 /**
  * check taint propagation in all sorts of lists, for example LinkedLists, ArrayLists and Stacks.
  */
@@ -27,7 +28,7 @@ public class ListTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadPos0Test()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
 	
@@ -36,7 +37,7 @@ public class ListTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadPos1Test()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
     
@@ -46,7 +47,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadNegativeTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
    }
     
@@ -55,7 +56,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void writeReadTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
     
@@ -64,7 +65,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void iteratorTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);		
     }
     
@@ -73,7 +74,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void subListTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);		
     }
     
@@ -82,7 +83,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListConcreteWriteReadNegativeTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
     }
     
@@ -91,7 +92,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListConcreteWriteReadTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 
@@ -100,17 +101,16 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListWriteReadTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
-    }
-    
+    }    
     
     @Test(timeout=300000)
     public void concreteLinkedListIteratorTest(){
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListIteratorTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
     }
     
@@ -123,7 +123,7 @@ public class ListTests extends JUnitTests {
     	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedList()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -138,7 +138,7 @@ public class ListTests extends JUnitTests {
     	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void staticLinkedList()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 	
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -149,7 +149,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void linkedListSubListTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
     
@@ -158,7 +158,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackGetTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
     
@@ -167,7 +167,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackPeekTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
     }
     
@@ -176,7 +176,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackPopTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
     }
     
@@ -185,7 +185,7 @@ public class ListTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.ListTestCode: void concreteWriteReadStackNegativeTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);	
     }
     

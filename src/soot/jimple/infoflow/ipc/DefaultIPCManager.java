@@ -45,5 +45,9 @@ public class DefaultIPCManager extends MethodBasedIPCManager {
 		return ipcMethods.contains(sMethod.toString());
 	}
 
+	@Override
+    public void updateJimpleForICC() {
+        return;
 
+    }
 }

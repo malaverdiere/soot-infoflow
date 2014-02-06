@@ -33,7 +33,7 @@ public class DefaultNativeCallHandler extends NativeCallHandler {
 		if(call.getInvokeExpr().getMethod().toString().contains("arraycopy")){
 			if(params.get(0).equals(source.getAccessPath().getPlainValue())){
 				Abstraction abs = source.deriveNewAbstraction(params.get(2), false, call,
-						source.getAccessPath().getType());
+						source.getAccessPath().getBaseType());
 				set.add(abs);
 			}
 		}else{

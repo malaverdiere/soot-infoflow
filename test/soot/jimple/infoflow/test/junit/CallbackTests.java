@@ -16,37 +16,38 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
+
+
 /**
- *  aim to produce a setting similar to the one that occurs when callback methods, for instance from the LocationListener are executed.
- *
+ * aim to produce a setting similar to the one that occurs when callback
+ * methods, for instance from the LocationListener are executed.
  */
 public class CallbackTests extends JUnitTests {
-	
-	
-	@Test(timeout=300000)
-	public void thirdCallBackTest(){
+
+	@Test(timeout = 300000)
+	public void thirdCallBackTest() {
 		Infoflow infoflow = initInfoflow();
-    	List<String> epoints = new ArrayList<String>();
-    	epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void tryNext2()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void tryNext2()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 
-	@Test(timeout=300000)
-	public void secondCallBackTest(){
+	@Test(timeout = 300000)
+	public void secondCallBackTest() {
 		Infoflow infoflow = initInfoflow();
-    	List<String> epoints = new ArrayList<String>();
-    	epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void tryNext()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void tryNext()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
-	
-	@Test(timeout=300000)
-	public void callbackTest(){
+
+	@Test(timeout = 300000)
+	public void callbackTest() {
 		Infoflow infoflow = initInfoflow();
-    	List<String> epoints = new ArrayList<String>();
-    	epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void checkLocation()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.CallbackTestCode: void checkLocation()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 

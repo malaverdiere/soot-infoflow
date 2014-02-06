@@ -29,7 +29,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void multiSourceCode()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 2);
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
     }
@@ -39,7 +39,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void multiSourceCode2()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 2);
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
     }
@@ -49,7 +49,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void ifPathTestCode1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(2, infoflow.getResults().size());
@@ -60,7 +60,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void ifPathTestCode2()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
@@ -71,7 +71,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void ifPathTestCode3()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
@@ -82,7 +82,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void ifPathTestCode4()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
@@ -93,7 +93,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void loopPathTestCode1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
@@ -104,7 +104,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void hashTestCode1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
@@ -115,7 +115,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void shiftTestCode1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, SOURCE_STRING_PWD));
 		Assert.assertEquals(1, infoflow.getResults().size());
@@ -126,7 +126,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void intMultiTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, sourceIMEI));
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, sourceIMSI));
@@ -138,7 +138,7 @@ public class MultiTest extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MultiTestCode: void intMultiTest2()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, sourceIMEI));
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sinkInt, sourceIMSI));

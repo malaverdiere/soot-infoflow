@@ -703,5 +703,17 @@ public class HeapTestCode {
 		cm.publish(b.b);
 		cm.publish(c.b);
 	}
+	
+	private int intData;
+	
+	private void setIntData() {
+		this.intData = TelephonyManager.getIMEI();
+	}
+	
+	public void intAliasTest() {
+		setIntData();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(intData);
+	}
 
 }

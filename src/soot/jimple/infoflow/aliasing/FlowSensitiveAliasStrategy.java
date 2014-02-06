@@ -42,9 +42,9 @@ public class FlowSensitiveAliasStrategy extends AbstractBulkAliasStrategy {
 	}
 	
 	@Override
-	public void injectCallingContext(Abstraction abs, IInfoflowSolver fSolver,
+	public void injectCallingContext(Abstraction d3, IInfoflowSolver fSolver,
 			SootMethod callee, Unit callSite, Abstraction source, Abstraction d1) {
-		bSolver.injectContext(fSolver, callee, abs, callSite, source);
+		bSolver.injectContext(fSolver, callee, d3, callSite, source, d1);
 	}
 
 	@Override
@@ -56,5 +56,5 @@ public class FlowSensitiveAliasStrategy extends AbstractBulkAliasStrategy {
 	public boolean requiresAnalysisOnReturn() {
 		return false;
 	}
-
+	
 }

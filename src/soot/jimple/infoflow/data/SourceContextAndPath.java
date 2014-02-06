@@ -51,19 +51,12 @@ public class SourceContextAndPath extends SourceContext implements Cloneable {
 
 	@Override
 	public boolean equals(Object other) {
-		if (this == other)
-			return true;
-		if (other == null || !(other instanceof SourceContextAndPath))
-			return false;
-		if (!super.equals(other))
-			return false;
-		//SourceContextAndPath scap = (SourceContextAndPath) other;
-		return true; //this.path.equals(scap.path);
+		return super.equals(other);
 	}
 	
 	@Override
 	public int hashCode() {
-		return 31 * super.hashCode(); // + 7 * path.hashCode();
+		return super.hashCode();
 	}
 	
 	@Override

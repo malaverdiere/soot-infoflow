@@ -76,7 +76,7 @@ public class AccessPath implements Cloneable {
 			Type[] appendingFieldTypes, boolean taintSubFields){
 		assert (val == null && appendingFields != null && appendingFields.length > 0)
 		 	|| canContainValue(val);
-
+		
 		SootField baseField = null;
 		Type bFieldType = null;
 		if(val instanceof StaticFieldRef){
@@ -105,7 +105,13 @@ public class AccessPath implements Cloneable {
 		else {
 			this.value = val;
 			this.baseType = baseType == null ? (this.value == null ? null : this.value.getType()) : baseType;
-			bFieldType = null;			
+			bFieldType = null;
+			
+			// Make sure that only heap objects may have fields
+			assert val == null
+					|| val.getType() instanceof RefType 
+					|| val.getType() instanceof ArrayType
+					|| appendingFields == null || appendingFields.length == 0;
 		}
 
 		// Cut the fields at the maximum access path length. If this happens,
@@ -226,23 +232,23 @@ public class AccessPath implements Cloneable {
 		if (hashCode != 0)
 			return hashCode;
 		
-		synchronized (this) {
-			final int prime = 31;
-			this.hashCode = 1;
-			this.hashCode = prime * this.hashCode + ((fields == null) ? 0 : Arrays.hashCode(fields));
-			this.hashCode = prime * this.hashCode + ((fieldTypes == null) ? 0 : Arrays.hashCode(fieldTypes));
-			this.hashCode = prime * this.hashCode + ((value == null) ? 0 : value.hashCode());
-			this.hashCode = prime * this.hashCode + ((baseType == null) ? 0 : baseType.hashCode());
-			this.hashCode = prime * this.hashCode + (this.taintSubFields ? 1 : 0);
-			return this.hashCode;
-		}
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((fields == null) ? 0 : Arrays.hashCode(fields));
+		result = prime * result + ((fieldTypes == null) ? 0 : Arrays.hashCode(fieldTypes));
+		result = prime * result + ((value == null) ? 0 : value.hashCode());
+		result = prime * result + ((baseType == null) ? 0 : baseType.hashCode());
+		result = prime * result + (this.taintSubFields ? 1 : 0);
+		this.hashCode = result;
+		
+		return this.hashCode;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this || super.equals(obj))
 			return true;
-		if (obj == null || !(obj instanceof AccessPath))
+		if (obj == null || getClass() != obj.getClass())
 			return false;
 		
 		AccessPath other = (AccessPath) obj;
@@ -413,7 +419,7 @@ public class AccessPath implements Cloneable {
 		return new AccessPath(value, newFields, baseType, newTypes, taintSubFields);
 	}
 
-	public Type getType() {
+	public Type getBaseType() {
 		return this.baseType;
 	}
 	

@@ -82,5 +82,15 @@ public interface IAliasingStrategy {
 	 * from a method, otherwise false
 	 */
 	public boolean requiresAnalysisOnReturn();
+	
+	/**
+	 * Checks whether this aliasing strategy has already computed aliases in the
+	 * given method or not. Strategies that do not want to implement this method
+	 * should always return true. 
+	 * @param method The method to check
+	 * @return True if this aliasing strategy has alreay computed aliases in the
+	 * given method, otherwise false.
+	 */
+	public boolean hasProcessedMethod(SootMethod method);
 
 }

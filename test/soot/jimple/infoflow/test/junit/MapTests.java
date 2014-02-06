@@ -17,6 +17,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
+
 /**
  * contain test cases for taint propagation in Maps.
  */
@@ -31,7 +32,7 @@ public class MapTests extends JUnitTests {
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void writeReadPos0Test()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);		
 		
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -46,7 +47,7 @@ public class MapTests extends JUnitTests {
     	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void writeReadPos1Test()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -61,7 +62,7 @@ public class MapTests extends JUnitTests {
     	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadPos0Test()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -76,7 +77,7 @@ public class MapTests extends JUnitTests {
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteLinkedWriteReadPos0Test()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -91,7 +92,7 @@ public class MapTests extends JUnitTests {
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadPos1Test()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -106,7 +107,7 @@ public class MapTests extends JUnitTests {
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteRead2Test()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -121,7 +122,7 @@ public class MapTests extends JUnitTests {
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void iteratorTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);		
 
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -136,7 +137,7 @@ public class MapTests extends JUnitTests {
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void entryTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
     
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -151,7 +152,7 @@ public class MapTests extends JUnitTests {
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadTableTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
@@ -167,7 +168,7 @@ public class MapTests extends JUnitTests {
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadNegativeTest()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
     
 		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done

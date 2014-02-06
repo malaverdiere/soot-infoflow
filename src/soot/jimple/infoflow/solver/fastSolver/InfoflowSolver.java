@@ -11,11 +11,10 @@
 package soot.jimple.infoflow.solver.fastSolver;
 
 import heros.FlowFunction;
-import heros.InterproceduralCFG;
 import heros.solver.CountingThreadPoolExecutor;
 import heros.solver.PathEdge;
 
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.Set;
 
 import soot.SootMethod;
@@ -27,12 +26,13 @@ import soot.jimple.infoflow.solver.functions.SolverCallFlowFunction;
 import soot.jimple.infoflow.solver.functions.SolverCallToReturnFlowFunction;
 import soot.jimple.infoflow.solver.functions.SolverNormalFlowFunction;
 import soot.jimple.infoflow.solver.functions.SolverReturnFlowFunction;
+import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
 /**
  * We are subclassing the JimpleIFDSSolver because we need the same executor for both the forward and the backward analysis
  * Also we need to be able to insert edges containing new taint information
  * 
  */
-public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, SootMethod, InterproceduralCFG<Unit, SootMethod>>
+public class InfoflowSolver extends IFDSSolver<Unit, Abstraction, SootMethod, BiDiInterproceduralCFG<Unit, SootMethod>>
 		implements IInfoflowSolver {
 
 	public InfoflowSolver(AbstractInfoflowProblem problem, CountingThreadPoolExecutor executor) {
@@ -48,53 +48,22 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 
 	@Override
 	public boolean processEdge(PathEdge<Unit, Abstraction> edge){
-		// We are generating a fact out of thin air here. If we have an
-		// edge <d1,n,d2>, there need not necessarily be a jump function
-		// to <n,d2>.
- 		if (!jumpFn.containsFact(edge.factAtSource(), edge.getTarget(), edge.factAtTarget())) {
-			propagate(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(), null, false);
-			return true;
-		}
-		return false;
+		propagate(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(), null, false);
+		return true;
 	}
 	
 	@Override
 	public void injectContext(IInfoflowSolver otherSolver, SootMethod callee,
-			Abstraction d3, Unit callSite, Abstraction d2) {
-		if (!(otherSolver instanceof InfoflowSolver))
-			throw new RuntimeException("Other solver must be of same type");
-
-		for (Unit sP : icfg.getStartPointsOf(callee))
-			addIncoming(sP, d3, callSite, d2);
-		
-		// First, get a list of the other solver's jump functions.
-		// Then release the lock on otherSolver.jumpFn before doing
-		// anything that locks our own jumpFn.
-		final Set<Abstraction> otherAbstractions;
-		final InfoflowSolver solver = (InfoflowSolver) otherSolver;
-		synchronized (solver.jumpFn) {
-			otherAbstractions = new HashSet<Abstraction>(solver.jumpFn.reverseLookup
-					(callSite, d2));
-		}
-		for (Abstraction d1: otherAbstractions)
-			jumpFn.addFunction(d1, callSite, d2);
+			Abstraction d3, Unit callSite, Abstraction d2, Abstraction d1) {
+		addIncoming(callee, d3, callSite, d1);
 	}
 	
 	@Override
 	protected Set<Abstraction> computeReturnFlowFunction
-			(FlowFunction<Abstraction> retFunction, Abstraction d2, Unit callSite, Set<Abstraction> callerSideDs) {
+			(FlowFunction<Abstraction> retFunction, Abstraction d2, Unit callSite, Collection<Abstraction> callerSideDs) {
 		if (retFunction instanceof SolverReturnFlowFunction) {
 			// Get the d1s at the start points of the caller
-			Set<Abstraction> d1s = new HashSet<Abstraction>(callerSideDs.size() * 5);
-			for (Abstraction d4 : callerSideDs)
-				if (d4 == zeroValue)
-					d1s.add(d4);
-				else
-					synchronized (jumpFn) {
-						d1s.addAll(jumpFn.reverseLookup(callSite, d4));
-					}
-			
-			return ((SolverReturnFlowFunction) retFunction).computeTargets(d2, d1s);
+			return ((SolverReturnFlowFunction) retFunction).computeTargets(d2, callerSideDs);
 		}
 		else
 			return retFunction.computeTargets(d2);
@@ -154,7 +123,6 @@ public class InfoflowSolver extends PathTrackingIFDSSolver<Unit, Abstraction, So
 		this.jumpFn.clear();
 		this.incoming.clear();
 		this.endSummary.clear();
-		this.cache.clear();
 	}
 		
 }

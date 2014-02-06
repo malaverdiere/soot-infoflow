@@ -70,7 +70,7 @@ public class SourceSinkTests extends JUnitTests{
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SourceSinkTestCode: void testDataObject()>");
-		infoflow.computeInfoflow(path, new DefaultEntryPointCreator(), epoints, sourceSinkManager);
+		infoflow.computeInfoflow(appPath, libPath, new DefaultEntryPointCreator(), epoints, sourceSinkManager);
 		Assert.assertTrue(infoflow.isResultAvailable());
 		Assert.assertEquals(1, infoflow.getResults().size());
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourceGetSecret));
@@ -94,7 +94,7 @@ public class SourceSinkTests extends JUnitTests{
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SourceSinkTestCode: void testDataObject()>");
-		infoflow.computeInfoflow(path, new DefaultEntryPointCreator(), epoints, sourceSinkManager);
+		infoflow.computeInfoflow(appPath, libPath, new DefaultEntryPointCreator(), epoints, sourceSinkManager);
 		negativeCheckInfoflow(infoflow);
     }
 
@@ -117,7 +117,7 @@ public class SourceSinkTests extends JUnitTests{
     	Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SourceSinkTestCode: void testAccessPathTypes()>");
-		infoflow.computeInfoflow(path, new DefaultEntryPointCreator(), epoints, sourceSinkManager);
+		infoflow.computeInfoflow(appPath, libPath, new DefaultEntryPointCreator(), epoints, sourceSinkManager);
 		Assert.assertTrue(infoflow.isResultAvailable());
 		Assert.assertEquals(1, infoflow.getResults().size());
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourceGetSecret));

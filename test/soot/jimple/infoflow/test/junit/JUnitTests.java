@@ -34,7 +34,7 @@ import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 public abstract class JUnitTests {
 
 
-    protected static String path;
+    protected static String appPath, libPath;
     
     protected static List<String> sinks;
 
@@ -63,9 +63,8 @@ public abstract class JUnitTests {
             fail("Test aborted - none of the test sources are available");
         }
 
-    	path = System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar"
-    			+ sep + testSrc1.getCanonicalPath()
-    			+ sep + testSrc2.getCanonicalPath();
+    	appPath = testSrc1.getCanonicalPath() + sep + testSrc2.getCanonicalPath();
+    	libPath = System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar";
     	
         sources = new ArrayList<String>();
         sources.add(sourcePwd);

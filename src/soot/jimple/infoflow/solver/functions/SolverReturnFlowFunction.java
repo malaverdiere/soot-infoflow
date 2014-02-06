@@ -1,10 +1,12 @@
 package soot.jimple.infoflow.solver.functions;
 
+import heros.FlowFunction;
+
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
 import soot.jimple.infoflow.data.Abstraction;
-import heros.FlowFunction;
 
 /**
  * A special implementation of the return flow function that allows access to
@@ -14,7 +16,7 @@ import heros.FlowFunction;
  * @author Steven Arzt
  */
 public abstract class SolverReturnFlowFunction implements FlowFunction<Abstraction> {
-
+		
 	@Override
 	public Set<Abstraction> computeTargets(Abstraction source) {
 		return computeTargets(source, Collections.<Abstraction>emptySet());
@@ -28,6 +30,6 @@ public abstract class SolverReturnFlowFunction implements FlowFunction<Abstracti
 	 * applied).
 	 * @return The set of abstractions at the return site.
 	 */
-	public abstract Set<Abstraction> computeTargets(Abstraction source, Set<Abstraction> callerD1s);
+	public abstract Set<Abstraction> computeTargets(Abstraction source, Collection<Abstraction> callerD1s);
 	
 }

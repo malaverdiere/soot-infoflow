@@ -25,6 +25,16 @@ public interface IEntryPointCreator {
 	public SootMethod createDummyMain(List<String> methods);
 	
 	/**
+	 * Generates a dummy main for specified method
+	 * 
+	 * @param methods The methods to call in the generated dummy main method.
+	 * Methods are given in Soot's signature syntax.
+	 * @param dummyMainMethod The method to hold the content of generated dummy main method
+	 * @return
+	 */
+	public SootMethod createDummyMain(List<String> methods, SootMethod dummyMainMethod);
+	
+	/**
 	 * with this option enabled the EntryPointCreator tries to find suitable subclasses of abstract classes and implementers of interfaces
 	 * @param b sets substitution of call parameters
 	 */

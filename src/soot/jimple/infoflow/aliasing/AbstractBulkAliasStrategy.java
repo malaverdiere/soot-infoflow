@@ -18,5 +18,5 @@ public abstract class AbstractBulkAliasStrategy extends AbstractAliasStrategy {
 	public boolean mayAlias(AccessPath ap1, AccessPath ap2) {
 		return false;
 	}
-
+	
 }

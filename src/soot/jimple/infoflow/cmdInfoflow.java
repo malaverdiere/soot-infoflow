@@ -34,7 +34,7 @@ public class cmdInfoflow {
 					return;
 				}
 				IInfoflow infoflow = new Infoflow();
-				infoflow.computeInfoflow(inputArgs.get(3).get(0), inputArgs.get(0), inputArgs.get(1), inputArgs.get(2));
+				infoflow.computeInfoflow(inputArgs.get(3).get(0), "", inputArgs.get(0), inputArgs.get(1), inputArgs.get(2));
 			}
 		}
 	}

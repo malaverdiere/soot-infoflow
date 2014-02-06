@@ -197,5 +197,74 @@ public class TypeTestCode {
 	private void objArgFunction2(Object[] x) {
 		x[0] = TelephonyManager.getDeviceId();
 	}
+	
+	public void arrayCastAndAliasTest() {
+		String[] x = new String[1];
+		Object y = x;
+		x[0] = TelephonyManager.getDeviceId();
+		Object obj = y;
+		String[] out = (String[]) obj;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(out[0]);
+	}
+	
+	public void arrayCastAndAliasTest2() {
+		String[] x = new String[1];
+		Object e = x;
+		Object a = (Object) e;
+		Object z = a;
+		Object y = z;
+		x[0] = TelephonyManager.getDeviceId();
+		Object obj = y;
+		String[] out = (String[]) obj;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(out[0]);
+	}
+
+	public void arrayIncompatibleCastAndAliasTest() {
+		String[] x = new String[1];
+		Object e = x;
+		String a = (String) e;
+		Object a2 = a;
+		String[] z = (String[]) a2;
+		Object y = z;
+		z[0] = TelephonyManager.getDeviceId();
+		Object obj = y;
+		String[] out = (String[]) obj;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(out[0]);
+	}
+	
+	private class X {
+		private B b;
+		
+		public X() {
+			this.b = new B();
+		}
+	}
+
+	public void fieldIncompatibleCastAndAliasTest() {
+		X x = new X();
+		x.b.data = TelephonyManager.getDeviceId();
+		Object e = x;
+		String a = (String) e;
+		Object z = a;
+		Object y = z;
+		X x2 = (X) y; 
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(x2.b.data);
+	}
+
+	public void twoDimensionArrayTest() {
+		String[] x = new String[1];
+		Object y = x;
+		x[0] = TelephonyManager.getDeviceId();
+		Object[] foo = new Object[1];
+		foo[0] = y;
+		Object bar = foo;
+		String[][] out = (String[][]) bar;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(out[0][0]);
+	}
 
 }

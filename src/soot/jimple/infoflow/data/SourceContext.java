@@ -73,7 +73,7 @@ public class SourceContext implements Cloneable {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null || !(obj instanceof SourceContext))
+		if (obj == null || getClass() != obj.getClass())
 			return false;
 		SourceContext other = (SourceContext) obj;
 		if (stmt == null) {

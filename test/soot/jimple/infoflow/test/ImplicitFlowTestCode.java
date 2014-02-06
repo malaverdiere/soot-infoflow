@@ -461,6 +461,22 @@ public class ImplicitFlowTestCode {
 		System.out.println(a);
 	}
 	
+	private B b1;
+	
+	public void conditionalAliasingTest3() {
+		b1 = new B();
+		b1.a = new A();
+		A a = b1.a;
+		if (TelephonyManager.getIMEI() == 42)
+			setVal();
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(a.data);
+	}
+
+	private void setVal() {
+		b1.a.data = "foo";
+	}
+
 	private void setVal(A a) {
 		String s = "foo";
 		a.data = s;

@@ -10,13 +10,10 @@
  ******************************************************************************/
 package soot.jimple.infoflow.problems;
 
-import heros.InterproceduralCFG;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +29,10 @@ import soot.SootMethod;
 import soot.Type;
 import soot.Unit;
 import soot.Value;
+import soot.jimple.ArrayRef;
 import soot.jimple.Constant;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.FieldRef;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
@@ -47,15 +46,18 @@ import soot.jimple.infoflow.solver.IInfoflowSolver;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 import soot.jimple.infoflow.util.ConcurrentHashSet;
-import soot.jimple.infoflow.util.DataTypeHandler;
+import soot.jimple.infoflow.util.MyConcurrentHashMap;
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem;
+import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
+
 /**
  * abstract super class which 
  * 	- concentrates functionality used by InfoflowProblem and BackwardsInfoflowProblem
  *  - contains helper functions which should not pollute the naturally large InfofflowProblems
  *
  */
-public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction, InterproceduralCFG<Unit, SootMethod>> {
+public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulationProblem<Abstraction,
+			BiDiInterproceduralCFG<Unit, SootMethod>> {
 
 	protected final Map<Unit, Set<Abstraction>> initialSeeds = new HashMap<Unit, Set<Abstraction>>();
 	protected ITaintPropagationWrapper taintWrapper;
@@ -82,9 +84,10 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	
 	protected Set<TaintPropagationHandler> taintPropagationHandlers = new HashSet<TaintPropagationHandler>();
 
-	private Map<Unit, Set<Unit>> activationUnitsToCallSites = new ConcurrentHashMap<Unit, Set<Unit>>();
+	private MyConcurrentHashMap<Unit, Set<Unit>> activationUnitsToCallSites =
+			new MyConcurrentHashMap<Unit, Set<Unit>>();
 	
-	public AbstractInfoflowProblem(InterproceduralCFG<Unit, SootMethod> icfg,
+	public AbstractInfoflowProblem(BiDiInterproceduralCFG<Unit, SootMethod> icfg,
 			ISourceSinkManager sourceSinkManager) {
 		super(icfg);
 		this.sourceSinkManager = sourceSinkManager;
@@ -115,14 +118,14 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 			return true;
 
 		// Cannot invoke a method on a primitive type
-		if (apBase.getType() instanceof PrimType)
+		if (apBase.getBaseType() instanceof PrimType)
 			return false;
 		// Cannot invoke a method on an array
-		if (apBase.getType() instanceof ArrayType)
+		if (apBase.getBaseType() instanceof ArrayType)
 			return dest.getName().equals("java.lang.Object");
 		
-		return Scene.v().getFastHierarchy().canStoreType(apBase.getType(), dest.getType())
-				|| Scene.v().getFastHierarchy().canStoreType(dest.getType(), apBase.getType());
+		return Scene.v().getOrMakeFastHierarchy().canStoreType(apBase.getBaseType(), dest.getType())
+				|| Scene.v().getOrMakeFastHierarchy().canStoreType(dest.getType(), apBase.getBaseType());
 	}
 
 	public void setSolver(IInfoflowSolver solver) {
@@ -264,9 +267,6 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 * @return true if a reverseFlow should be triggered or an inactive taint should be propagated (= resulting object is stored in heap = alias)
 	 */
 	protected boolean triggerInaktiveTaintOrReverseFlow(Stmt stmt, Value val, Abstraction source){
-		if (stmt == null || source.getAccessPath().isEmpty())
-			return false;
-		
 		if (stmt instanceof DefinitionStmt) {
 			DefinitionStmt defStmt = (DefinitionStmt) stmt;
 			// If the left side is overwritten completely, we do not need to
@@ -274,21 +274,22 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 			if (defStmt.getLeftOp() instanceof Local
 					&& defStmt.getLeftOp() == source.getAccessPath().getPlainValue())
 				return false;
-		}
 
+			// Arrays are heap objects
+			if (val instanceof ArrayRef)
+				return true;
+			if (val instanceof FieldRef)
+				return true;
+		}
+		
 		// Primitive types or constants do not have aliases
 		if (val.getType() instanceof PrimType)
 			return false;
 		if (val instanceof Constant)
 			return false;
-			
-		// If the left side is a field or array reference (which is not
-		// overwritten completely), we must look for aliases.
-		if (DataTypeHandler.isFieldRefOrArrayRef(val))
-			return true;
 		
-		return source.getAccessPath().isInstanceFieldRef()
-				|| source.getAccessPath().isStaticFieldRef();
+		return val instanceof FieldRef
+				|| (val instanceof Local && ((Local)val).getType() instanceof ArrayType);
 	}
 	
 	/**
@@ -355,12 +356,9 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		Unit activationUnit = activationAbs.getActivationUnit();
 		if (activationUnit == null)
 			return false;
-		
-		synchronized (activationUnitsToCallSites) {
-			if (!activationUnitsToCallSites.containsKey(activationUnit))
-				activationUnitsToCallSites.put(activationUnit, new ConcurrentHashSet<Unit>());
-		}
-		Set<Unit> callSites = activationUnitsToCallSites.get(activationUnit);
+
+		Set<Unit> callSites = activationUnitsToCallSites.putIfAbsentElseGet
+				(activationUnit, new ConcurrentHashSet<Unit>());
 		if (callSites.contains(callSite))
 			return false;
 		
@@ -425,6 +423,21 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 */
 	public void addTaintPropagationHandler(TaintPropagationHandler handler) {
 		this.taintPropagationHandlers.add(handler);
+	}
+	
+	/**
+	 * Builds a new array of the given type if it is a base type or increments
+	 * the dimensions of the given array by 1 otherwise.
+	 * @param type The base type or incoming array
+	 * @return The resulting array
+	 */
+	public Type buildArrayOrAddDimension(Type type) {
+		if (type instanceof ArrayType) {
+			ArrayType array = (ArrayType) type;
+			return array.makeArrayType();
+		}
+		else
+			return ArrayType.v(type, 1);
 	}
 	
 }

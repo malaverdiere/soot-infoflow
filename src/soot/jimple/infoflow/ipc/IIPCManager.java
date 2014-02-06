@@ -25,4 +25,5 @@ public interface IIPCManager {
      */
     public abstract boolean isIPC(Stmt sCallSite, InterproceduralCFG<Unit, SootMethod> cfg);
 
+    public abstract void updateJimpleForICC();
 }

@@ -12,10 +12,10 @@ package soot.jimple.infoflow.solver;
 
 import heros.solver.IDESolver;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import soot.Body;
 import soot.Scene;
 import soot.SootField;
 import soot.SootMethod;
@@ -48,7 +48,7 @@ public class InfoflowCFG implements IInfoflowCFG {
 				@Override
 				public UnitContainer load(Unit unit) throws Exception {
 					SootMethod method = getMethodOf(unit);
-					DirectedGraph<Unit> graph = delegate.getOrCreateUnitGraph(method.getActiveBody());
+					DirectedGraph<Unit> graph = delegate.getOrCreateUnitGraph(method);
 					MHGPostDominatorsFinder<Unit> postdominatorFinder = new MHGPostDominatorsFinder<Unit>(graph);
 					Unit postdom = postdominatorFinder.getImmediateDominator(unit);
 					if (postdom == null)
@@ -66,8 +66,11 @@ public class InfoflowCFG implements IInfoflowCFG {
 	
 	public InfoflowCFG(BiDiInterproceduralCFG<Unit,SootMethod> delegate) {
 		this.delegate = delegate;
-		this.sideEffectAnalysis = new SideEffectAnalysis
-				(Scene.v().getPointsToAnalysis(), Scene.v().getCallGraph());
+		if (Scene.v().hasCallGraph())
+			this.sideEffectAnalysis = new SideEffectAnalysis
+					(Scene.v().getPointsToAnalysis(), Scene.v().getCallGraph());
+		else
+			this.sideEffectAnalysis = null;
 	}
 	
 	@Override
@@ -77,6 +80,9 @@ public class InfoflowCFG implements IInfoflowCFG {
 	
 	@Override
 	public Set<SootField> getReadVariables(SootMethod caller, Stmt inv) {
+		if (sideEffectAnalysis == null)
+			return null;
+		
 		final RWSet rwSet;
 		synchronized (sideEffectAnalysis) {
 			rwSet = sideEffectAnalysis.readSet(caller, inv);
@@ -95,6 +101,9 @@ public class InfoflowCFG implements IInfoflowCFG {
 	
 	@Override
 	public Set<SootField> getWriteVariables(SootMethod caller, Stmt inv) {
+		if (sideEffectAnalysis == null)
+			return null;
+
 		final RWSet rwSet;
 		synchronized (sideEffectAnalysis) {
 			rwSet = sideEffectAnalysis.writeSet(caller, inv);
@@ -137,7 +146,7 @@ public class InfoflowCFG implements IInfoflowCFG {
 		return delegate.isBranchTarget(u, succ);
 	}
 
-	public Set<Unit> getStartPointsOf(SootMethod m) {
+	public Collection<Unit> getStartPointsOf(SootMethod m) {
 		return delegate.getStartPointsOf(m);
 	}
 
@@ -157,7 +166,7 @@ public class InfoflowCFG implements IInfoflowCFG {
 		return delegate.getCallersOf(m);
 	}
 
-	public List<Unit> getReturnSitesOfCallAt(Unit u) {
+	public Collection<Unit> getReturnSitesOfCallAt(Unit u) {
 		return delegate.getReturnSitesOfCallAt(u);
 	}
 
@@ -169,7 +178,7 @@ public class InfoflowCFG implements IInfoflowCFG {
 		return delegate.getPredsOf(u);
 	}
 
-	public Set<Unit> getEndPointsOf(SootMethod m) {
+	public Collection<Unit> getEndPointsOf(SootMethod m) {
 		return delegate.getEndPointsOf(m);
 	}
 
@@ -184,13 +193,18 @@ public class InfoflowCFG implements IInfoflowCFG {
 	}
 
 	@Override
-	public DirectedGraph<Unit> getOrCreateUnitGraph(Body body) {
-		return delegate.getOrCreateUnitGraph(body);
+	public DirectedGraph<Unit> getOrCreateUnitGraph(SootMethod m) {
+		return delegate.getOrCreateUnitGraph(m);
 	}
 
 	@Override
 	public List<Value> getParameterRefs(SootMethod m) {
 		return delegate.getParameterRefs(m);
+	}
+
+	@Override
+	public boolean isReturnSite(Unit n) {
+		return delegate.isReturnSite(n);
 	}
 
 }

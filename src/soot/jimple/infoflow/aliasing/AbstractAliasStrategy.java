@@ -1,5 +1,6 @@
 package soot.jimple.infoflow.aliasing;
 
+import soot.SootMethod;
 import soot.jimple.infoflow.solver.IInfoflowCFG;
 import soot.jimple.infoflow.solver.IInfoflowSolver;
 
@@ -30,4 +31,9 @@ public abstract class AbstractAliasStrategy implements IAliasingStrategy {
 		return this.fSolver;
 	}
 	
+	@Override
+	public boolean hasProcessedMethod(SootMethod method) {
+		return true;
+	}
+
 }

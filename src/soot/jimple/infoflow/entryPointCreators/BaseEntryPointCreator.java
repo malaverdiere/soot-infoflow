@@ -12,10 +12,13 @@ package soot.jimple.infoflow.entryPointCreators;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import soot.ArrayType;
+import soot.Body;
 import soot.BooleanType;
 import soot.ByteType;
 import soot.CharType;
@@ -27,6 +30,7 @@ import soot.ShortType;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Type;
+import soot.Unit;
 import soot.Value;
 import soot.VoidType;
 import soot.dava.internal.javaRep.DIntConstant;
@@ -34,6 +38,7 @@ import soot.javaToJimple.LocalGenerator;
 import soot.jimple.AssignStmt;
 import soot.jimple.DoubleConstant;
 import soot.jimple.FloatConstant;
+import soot.jimple.IfStmt;
 import soot.jimple.IntConstant;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
@@ -75,14 +80,31 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 		
 		return this.createDummyMainInternal(methods);
 	}
+	
+	@Override
+	public SootMethod createDummyMain(List<String> methods,
+			SootMethod dummyMainMethod) {
+		// Load the substitution classes
+		if (substituteCallParams)
+			for (String className : substituteClasses)
+				Scene.v().forceResolve(className, SootClass.BODIES).setApplicationClass();
+		
+		return this.createDummyMainInternal(methods, dummyMainMethod);
+	}
 
+	protected SootMethod createDummyMainInternal(List<String> methods) 
+	{
+		SootMethod emptySootMethod = createEmptyMainMethod(Jimple.v().newBody());
+		return createDummyMainInternal(methods, emptySootMethod);
+	}
+	
 	/**
 	 * Implementors need to overwrite this method for providing the actual dummy
 	 * main method
 	 * @param methods The methods to be called inside the dummy main method
 	 * @return The generated dummy main method
 	 */
-	protected abstract SootMethod createDummyMainInternal(List<String> methods);
+	protected abstract SootMethod createDummyMainInternal(List<String> methods, SootMethod emptySootMethod);
 	
 	protected SootMethod createEmptyMainMethod(JimpleBody body){
 		SootMethod mainMethod = new SootMethod("dummyMainMethod", new ArrayList<Type>(), VoidType.v());
@@ -523,5 +545,23 @@ public abstract class BaseEntryPointCreator implements IEntryPointCreator {
 			act = act.getSuperclass();
 		}
 	}
+	
+	/**
+	 * Eliminates all loops of length 0 (if a goto <if a>)
+	 * @param body The body from which to eliminate the self-loops
+	 */
+	protected void eliminateSelfLoops(Body body) {
+		// Get rid of self-loops
+		for (Iterator<Unit> unitIt = body.getUnits().iterator(); unitIt.hasNext(); ) {
+			Unit u = unitIt.next();
+			if (u instanceof IfStmt) {
+				IfStmt ifStmt = (IfStmt) u;
+				if (ifStmt.getTarget() == ifStmt)
+					unitIt.remove();
+			}
+		}
+	}
+
+	
 
 }

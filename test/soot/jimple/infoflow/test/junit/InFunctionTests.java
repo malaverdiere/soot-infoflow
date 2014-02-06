@@ -43,7 +43,7 @@ public class InFunctionTests extends JUnitTests {
     	ssm.setParameterTaintMethods(Collections.singletonList(epoint));
     	ssm.setReturnTaintMethods(Collections.singletonList(epoint));
 		
-    	infoflow.computeInfoflow(path, epoint, ssm);
+    	infoflow.computeInfoflow(appPath, libPath, epoint, ssm);
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER));
     }
 
@@ -56,7 +56,7 @@ public class InFunctionTests extends JUnitTests {
     	ssm.setParameterTaintMethods(Collections.singletonList(epoint));
     	ssm.setReturnTaintMethods(Collections.singletonList(epoint));
 		
-    	infoflow.computeInfoflow(path, epoint, ssm);
+    	infoflow.computeInfoflow(appPath, libPath, epoint, ssm);
 		Assert.assertTrue(infoflow.getResults().getResults().isEmpty());
     }
 
@@ -69,7 +69,7 @@ public class InFunctionTests extends JUnitTests {
     	ssm.setParameterTaintMethods(Collections.singletonList(epoint));
     	ssm.setReturnTaintMethods(Collections.singletonList(epoint));
 		
-    	infoflow.computeInfoflow(path, epoint, ssm);
+    	infoflow.computeInfoflow(appPath, libPath, epoint, ssm);
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN, SOURCE_STRING_PARAMETER));
     }
 
@@ -86,7 +86,7 @@ public class InFunctionTests extends JUnitTests {
     	ssm.setParameterTaintMethods(epoint);
     	ssm.setReturnTaintMethods(epoint);
 		
-    	infoflow.computeInfoflow(path, new DefaultEntryPointCreator(), epoint, ssm);
+    	infoflow.computeInfoflow(appPath, libPath, new DefaultEntryPointCreator(), epoint, ssm);
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN_R5, SOURCE_STRING_PARAMETER));
 		Assert.assertTrue(infoflow.getResults().isPathBetween(SINK_STRING_RETURN_R5, SOURCE_STRING_PARAMETER2));
     }
@@ -103,7 +103,7 @@ public class InFunctionTests extends JUnitTests {
     	ssm.setParameterTaintMethods(epoint);
     	ssm.setReturnTaintMethods(epoint);
     	
-    	infoflow.computeInfoflow(path, new DefaultEntryPointCreator(), epoint, ssm);
+    	infoflow.computeInfoflow(appPath, libPath, new DefaultEntryPointCreator(), epoint, ssm);
     	Assert.assertNotNull(infoflow.getResults());
 		Assert.assertTrue(infoflow.getResults().isPathBetween("b", SOURCE_INT_PARAMETER2));
 		Assert.assertFalse(infoflow.getResults().isPathBetween("b", SOURCE_INT_PARAMETER));

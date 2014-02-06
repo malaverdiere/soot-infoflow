@@ -29,4 +29,9 @@ public class EmptyIPCManager extends MethodBasedIPCManager {
         return false;
     }
 
+    @Override
+    public void updateJimpleForICC() {
+        return;
+
+    }
 }

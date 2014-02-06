@@ -10,10 +10,12 @@
  ******************************************************************************/
 package soot.jimple.infoflow;
 
+import java.util.Collection;
 import java.util.List;
 
 import soot.Transform;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
+import soot.jimple.infoflow.ipc.IIPCManager;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.taintWrappers.ITaintPropagationWrapper;
 /**
@@ -29,7 +31,8 @@ public interface IInfoflow {
 	public enum CallgraphAlgorithm {
 		AutomaticSelection,
 		VTA,
-		RTA
+		RTA,
+		OnDemand
 	}
 	
 	/**
@@ -75,21 +78,23 @@ public interface IInfoflow {
      * the information flow.
      * @param preprocessors the pre-processors
      */
-    public void setPreProcessors(List<Transform> preprocessors);
+    public void setPreProcessors(Collection<Transform> preprocessors);
 
 	/**
 	 * Computes the information flow on a list of entry point methods. This list
 	 * is used to construct an artificial main method following the Android
 	 * life cycle for all methods that are detected to be part of Android's
 	 * application infrastructure (e.g. android.app.Activity.onCreate)
-	 * @param path the path to the main folder of the (unpacked) class files
+	 * @param appPath The path containing the client program's files
+	 * @param libPath The path to the main folder of the (unpacked) library class files
 	 * @param entryPointCreator the entry point creator to use for generating the dummy
 	 * main method
 	 * @param entryPoints the entryPoints (string conforms to SootMethod representation)
 	 * @param sources list of source class+method (as string conforms to SootMethod representation)
 	 * @param sinks list of sink class+method (as string conforms to SootMethod representation)
 	 */
-	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
+	public void computeInfoflow(String appPath, String libPath,
+			IEntryPointCreator entryPointCreator,
 			List<String> entryPoints, List<String> sources, List<String> sinks);
 	
 	/**
@@ -97,48 +102,55 @@ public interface IInfoflow {
 	 * is used to construct an artificial main method following the Android
 	 * life cycle for all methods that are detected to be part of Android's
 	 * application infrastructure (e.g. android.app.Activity.onCreate)
-	 * @param path the path to the main folder of the (unpacked) class files
+	 * @param appPath The path containing the client program's files
+	 * @param libPath the path to the main folder of the (unpacked) library class files
 	 * @param entryPoints the entryPoints (string conforms to SootMethod representation)
 	 * @param sources list of source class+method (as string conforms to SootMethod representation)
 	 * @param sinks list of sink class+method (as string conforms to SootMethod representation)
 	 */
-	public void computeInfoflow(String path, List<String> entryPoints, List<String> sources,
-			List<String> sinks);
+	public void computeInfoflow(String appPath, String libPath, List<String> entryPoints,
+			List<String> sources, List<String> sinks);
 
 	/**
 	 * Computes the information flow on a single method. This method is
 	 * directly taken as the entry point into the program, even if it is an
 	 * instance method.
-	 * @param path the path to the main folder of the (unpacked) class files
+	 * @param appPath The path containing the client program's files
+	 * @param libPath the path to the main folder of the (unpacked) library class files
 	 * @param entryPoint the main method to analyze
 	 * @param sources list of source class+method (as string conforms to SootMethod representation)
 	 * @param sinks list of sink class+method (as string conforms to SootMethod representation)
 	 */
-	public void computeInfoflow(String path, String entryPoint, List<String> sources, List<String> sinks);
+	public void computeInfoflow(String appPath, String libPath, String entryPoint,
+			List<String> sources, List<String> sinks);
 
 	/**
 	 * Computes the information flow on a list of entry point methods. This list
 	 * is used to construct an artificial main method following the Android
 	 * life cycle for all methods that are detected to be part of Android's
 	 * application infrastructure (e.g. android.app.Activity.onCreate)
-	 * @param path the path to the main folder of the (unpacked) class files
+	 * @param appPath The path containing the client program's files
+	 * @param libPath the path to the main folder of the (unpacked) library class files
 	 * @param entryPointCreator the entry point creator to use for generating the dummy
 	 * main method
 	 * @param entryPoints the entryPoints (string conforms to SootMethod representation)
 	 * @param sourcesSinks manager class for identifying sources and sinks in the source code
 	 */
-	public void computeInfoflow(String path, IEntryPointCreator entryPointCreator,
+	public void computeInfoflow(String appPath, String libPath,
+			IEntryPointCreator entryPointCreator,
 			List<String> entryPoints, ISourceSinkManager sourcesSinks);
 
 	/**
 	 * Computes the information flow on a single method. This method is
 	 * directly taken as the entry point into the program, even if it is an
 	 * instance method.
-	 * @param path the path to the main folder of the (unpacked) class files
+	 * @param appPath The path containing the client program's files
+	 * @param libPath the path to the main folder of the (unpacked) library class files
 	 * @param entryPoint the main method to analyze
 	 * @param sourcesSinks manager class for identifying sources and sinks in the source code
 	 */
-	public void computeInfoflow(String path, String entryPoint, ISourceSinkManager sourcesSinks);
+	public void computeInfoflow(String appPath, String libPath, String entryPoint,
+			ISourceSinkManager sourcesSinks);
 
 	/**
 	 * getResults returns the results found by the analysis
@@ -224,5 +236,5 @@ public interface IInfoflow {
 	 * or -1 for an unlimited number of threads.
 	 */
 	public void setMaxThreadNum(int threadNum);
-	
+	public void setIPCManager(IIPCManager ipcManager);
 }

@@ -26,7 +26,7 @@ public class StaticTests extends JUnitTests {
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void staticTest()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 			checkInfoflow(infoflow, 1);
 		}
 	    
@@ -35,7 +35,7 @@ public class StaticTests extends JUnitTests {
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void static2Test()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 			checkInfoflow(infoflow, 1);
 	    }
 	  
@@ -44,7 +44,7 @@ public class StaticTests extends JUnitTests {
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void static3Test()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 			checkInfoflow(infoflow, 1);
 	    }
 
@@ -53,7 +53,7 @@ public class StaticTests extends JUnitTests {
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void static4Test()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 			checkInfoflow(infoflow, 1);
 	    }
 
@@ -62,7 +62,7 @@ public class StaticTests extends JUnitTests {
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void staticOverwriteTest()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 			negativeCheckInfoflow(infoflow);
 	    }
 
@@ -71,7 +71,7 @@ public class StaticTests extends JUnitTests {
 	    	Infoflow infoflow = initInfoflow();
 	    	List<String> epoints = new ArrayList<String>();
 	    	epoints.add("<soot.jimple.infoflow.test.StaticTestCode: void staticOverwriteTest2()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
+			infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 			negativeCheckInfoflow(infoflow);
 	    }
 

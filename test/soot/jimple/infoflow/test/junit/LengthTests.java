@@ -16,8 +16,10 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
+
 /**
- * test taint propagation of fields. A certain length of the access paths is required to distinguish the tainted fields.
+ * Test taint propagation of fields. A certain length of the access paths is
+ * required to distinguish the tainted fields.
  */
 public class LengthTests extends JUnitTests {
 
@@ -26,7 +28,7 @@ public class LengthTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.LengthTestCode: void easy1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 	
@@ -35,7 +37,7 @@ public class LengthTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.LengthTestCode: void method1()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 	}
 	
@@ -44,7 +46,7 @@ public class LengthTests extends JUnitTests {
 		Infoflow infoflow = initInfoflow();
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.LengthTestCode: void method2()>");
-		infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 	}
 }

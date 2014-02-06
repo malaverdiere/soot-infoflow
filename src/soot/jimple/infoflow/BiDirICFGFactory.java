@@ -5,10 +5,11 @@
 package soot.jimple.infoflow;
 
 
+import soot.jimple.infoflow.IInfoflow.CallgraphAlgorithm;
 import soot.jimple.infoflow.solver.IInfoflowCFG;
 
 public interface BiDirICFGFactory {
 
-    public IInfoflowCFG buildBiDirICFG();
+    public IInfoflowCFG buildBiDirICFG(CallgraphAlgorithm callgraphAlgorithm);
 
 }

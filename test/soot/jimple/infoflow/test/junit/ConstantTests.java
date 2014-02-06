@@ -16,63 +16,64 @@ import java.util.List;
 import org.junit.Test;
 
 import soot.jimple.infoflow.Infoflow;
+
 /**
- * ensure proper taint propagation for constant values. 
+ * ensure proper taint propagation for constant values.
  */
 public class ConstantTests extends JUnitTests {
-	
-	  @Test(timeout=300000)
-	    public void easyConstantFieldTest(){
-		  Infoflow infoflow = initInfoflow();
-	    	List<String> epoints = new ArrayList<String>();
-	    	epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void easyConstantFieldTest()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow, 1);	
-	    }
-	  
-	  @Test(timeout=300000)
-	    public void easyConstantVarTest(){
-		  Infoflow infoflow = initInfoflow();
-	    	List<String> epoints = new ArrayList<String>();
-	    	epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void easyConstantVarTest()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow, 1);	
-	    }
-	  
-	  @Test(timeout=300000)
-	    public void constantArrayTest(){
-		  Infoflow infoflow = initInfoflow();
-	    	List<String> epoints = new ArrayList<String>();
-	    	epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantArrayTest()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow, 1);	
-	    }
 
-	  @Test(timeout=300000)
-	    public void constantStaticArrayTest(){
-		  Infoflow infoflow = initInfoflow();
-	    	List<String> epoints = new ArrayList<String>();
-	    	epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantStaticArrayTest()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow, 1);	
-	    }
+	@Test(timeout = 300000)
+	public void easyConstantFieldTest() {
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void easyConstantFieldTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);
+	}
 
-	  @Test(timeout=300000)
-	    public void constantFieldArrayTest(){
-		  Infoflow infoflow = initInfoflow();
-	    	List<String> epoints = new ArrayList<String>();
-	    	epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantFieldArrayTest()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow, 2);	
-	    }
-	  
-	  @Test(timeout=300000)
-	    public void constantFieldTest(){
-		  Infoflow infoflow = initInfoflow();
-	    	List<String> epoints = new ArrayList<String>();
-	    	epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantFieldTest()>");
-			infoflow.computeInfoflow(path, epoints,sources, sinks);
-			checkInfoflow(infoflow, 1);	
-	    }
+	@Test(timeout = 300000)
+	public void easyConstantVarTest() {
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void easyConstantVarTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);
+	}
+
+	@Test(timeout = 300000)
+	public void constantArrayTest() {
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantArrayTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);
+	}
+
+	@Test(timeout = 300000)
+	public void constantStaticArrayTest() {
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantStaticArrayTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);
+	}
+
+	@Test(timeout = 300000)
+	public void constantFieldArrayTest() {
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantFieldArrayTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 2);
+	}
+
+	@Test(timeout = 300000)
+	public void constantFieldTest() {
+		Infoflow infoflow = initInfoflow();
+		List<String> epoints = new ArrayList<String>();
+		epoints.add("<soot.jimple.infoflow.test.ConstantTestCode: void constantFieldTest()>");
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
+		checkInfoflow(infoflow, 1);
+	}
 
 }

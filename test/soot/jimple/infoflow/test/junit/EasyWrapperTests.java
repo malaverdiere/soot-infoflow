@@ -44,7 +44,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void equalsTest()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
     }
 	
@@ -57,7 +57,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void hashCodeTest()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
     }
 
@@ -70,7 +70,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void equalsTest2()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
 
@@ -83,7 +83,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void hashCodeTest2()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
 
@@ -96,7 +96,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void constantTest1()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
 
@@ -109,7 +109,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void constantTest1()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
     }
 
@@ -124,7 +124,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void interfaceInheritanceTest()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
 
@@ -139,7 +139,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void interfaceInheritanceTest2()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
 
@@ -154,7 +154,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void interfaceInheritanceTest3()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
     }
 
@@ -169,7 +169,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void interfaceInheritanceTest4()>");
     	infoflow.setTaintWrapper(wrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
     }
 	
@@ -179,7 +179,7 @@ public class EasyWrapperTests extends JUnitTests {
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.EasyWrapperTestCode: void stringConcatTest()>");
     	infoflow.setTaintWrapper(easyWrapper);
-    	infoflow.computeInfoflow(path, epoints,sources, sinks);
+		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 
     	checkInfoflow(infoflow, 1);
 		Assert.assertTrue(infoflow.getResults().isPathBetweenMethods(sink, sourceDeviceId));

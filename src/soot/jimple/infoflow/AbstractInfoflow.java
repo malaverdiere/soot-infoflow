@@ -1,5 +1,6 @@
 package soot.jimple.infoflow;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,10 +32,10 @@ public abstract class AbstractInfoflow implements IInfoflow {
 	protected final BiDirICFGFactory icfgFactory;
 	protected int maxThreadNum = -1;
 
-	protected CallgraphAlgorithm callgraphAlgorithm = CallgraphAlgorithm.AutomaticSelection;
+	protected CallgraphAlgorithm callgraphAlgorithm = /*CallgraphAlgorithm.OnDemand;*/ CallgraphAlgorithm.AutomaticSelection;
 	protected AliasingAlgorithm aliasingAlgorithm = AliasingAlgorithm.FlowSensitive;
 	
-	protected List<Transform> preProcessors = Collections.emptyList();
+	protected Collection<Transform> preProcessors = Collections.emptyList();
     
     /**
      * Creates a new instance of the abstract info flow problem
@@ -67,29 +68,30 @@ public abstract class AbstractInfoflow implements IInfoflow {
 	}
 	
 	@Override
-	public void setPreProcessors(List<Transform> preprocessors) {
+	public void setPreProcessors(Collection<Transform> preprocessors) {
         this.preProcessors = preprocessors;
 	}
 
 	@Override
-	public void computeInfoflow(String path,
+	public void computeInfoflow(String appPath, String libPath,
 			IEntryPointCreator entryPointCreator, List<String> entryPoints,
 			List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, entryPointCreator, entryPoints,
+		this.computeInfoflow(appPath, libPath, entryPointCreator, entryPoints,
 				new DefaultSourceSinkManager(sources, sinks));
 	}
 
 	@Override
-	public void computeInfoflow(String path, List<String> entryPoints,
+	public void computeInfoflow(String appPath, String libPath,
+			List<String> entryPoints,
 			List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, new DefaultEntryPointCreator(), entryPoints,
+		this.computeInfoflow(appPath, libPath, new DefaultEntryPointCreator(), entryPoints,
 				new DefaultSourceSinkManager(sources, sinks));
 	}
 
 	@Override
-	public void computeInfoflow(String path, String entryPoint,
-			List<String> sources, List<String> sinks) {
-		this.computeInfoflow(path, entryPoint, new DefaultSourceSinkManager(sources, sinks));
+	public void computeInfoflow(String libPath, String appPath,
+			String entryPoint, List<String> sources, List<String> sinks) {
+		this.computeInfoflow(appPath, libPath, entryPoint, new DefaultSourceSinkManager(sources, sinks));
 	}
 	
 	@Override

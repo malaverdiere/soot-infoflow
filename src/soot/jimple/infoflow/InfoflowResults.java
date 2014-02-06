@@ -13,12 +13,10 @@ package soot.jimple.infoflow;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import soot.Value;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.util.ConcurrentHashSet;
+import soot.jimple.infoflow.util.MyConcurrentHashMap;
 import soot.tagkit.LineNumberTag;
 
 /**
@@ -160,7 +160,8 @@ public class InfoflowResults {
 		}
 	}
 	
-	private final Map<SinkInfo, Set<SourceInfo>> results = new ConcurrentHashMap<SinkInfo, Set<SourceInfo>>();
+	private final MyConcurrentHashMap<SinkInfo, Set<SourceInfo>> results =
+			new MyConcurrentHashMap<SinkInfo, Set<SourceInfo>>();
 	
 	public InfoflowResults() {
 		
@@ -225,15 +226,12 @@ public class InfoflowResults {
 				new SourceInfo(source, sourceStmt, userData, newPropPath));
 	}
 
-	public synchronized void addResult(SinkInfo sink, SourceInfo source) {
+	public void addResult(SinkInfo sink, SourceInfo source) {
 		assert sink != null;
 		assert source != null;
 		
-		Set<SourceInfo> sourceInfo = this.results.get(sink);
-		if (sourceInfo == null) {
-			sourceInfo = new HashSet<SourceInfo>();
-			this.results.put(sink, sourceInfo);
-		}
+		Set<SourceInfo> sourceInfo = this.results.putIfAbsentElseGet
+				(sink, new ConcurrentHashSet<SourceInfo>());
 		sourceInfo.add(source);
 	}
 
@@ -355,6 +353,13 @@ public class InfoflowResults {
 					wr.write("\t\ton Path " + source.getPath() + "\n");
 			}
 		}
+	}
+	
+	/**
+	 * Removes all results from the data structure
+	 */
+	public void clear() {
+		this.results.clear();
 	}
 	
 	@Override

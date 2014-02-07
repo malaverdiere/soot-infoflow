@@ -283,7 +283,7 @@ public class EasyTaintWrapper extends AbstractTaintWrapper implements Cloneable 
 		else {
 			// We have to walk up the hierarchy to also include all methods
 			// registered for superclasses
-			List<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOfIncluding(parentClass);
+			Collection<SootClass> superclasses = Scene.v().getActiveHierarchy().getSuperclassesOfIncluding(parentClass);
 			for(SootClass sclass : superclasses) {
 				MethodWrapType wtClass = getMethodWrapTypeDirect(sclass.getName(), subSig);
 				if (wtClass != MethodWrapType.NotRegistered)

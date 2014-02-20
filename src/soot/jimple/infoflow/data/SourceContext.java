@@ -12,36 +12,23 @@ public class SourceContext implements Cloneable {
 	private final Value value;
 	private final Stmt stmt;
 	private final Object userData;
-	private final Abstraction symbolic;
 	
 	public SourceContext(Value value, Stmt stmt) {
+		assert value != null;
+		
 		this.value = value;
 		this.stmt = stmt;
-		this.symbolic = null;
 		this.userData = null;
 	}
 	
 	public SourceContext(Value value, Stmt stmt, Object userData) {
+		assert value != null;
+
 		this.value = value;
 		this.stmt = stmt;
-		this.symbolic = null;
 		this.userData = userData;
-	}
-
-	public SourceContext(Abstraction symbolic) {
-		this.value = null;
-		this.stmt = null;
-		this.symbolic = symbolic;
-		this.userData = null;
 	}
 	
-	public SourceContext(Abstraction symbolic, Object userData) {
-		this.value = null;
-		this.stmt = null;
-		this.symbolic = symbolic;
-		this.userData = userData;
-	}
-
 	public Value getValue() {
 		return this.value;
 	}
@@ -54,10 +41,6 @@ public class SourceContext implements Cloneable {
 		return this.userData;
 	}
 	
-	public Abstraction getSymbolic() {
-		return this.symbolic;
-	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -65,7 +48,6 @@ public class SourceContext implements Cloneable {
 		result = prime * result + ((stmt == null) ? 0 : stmt.hashCode());
 		result = prime * result + ((value == null) ? 0 : value.hashCode());
 		result = prime * result + ((userData == null) ? 0 : userData.hashCode());
-		result = prime * result + ((symbolic == null) ? 0 : symbolic.hashCode());
 		return result;
 	}
 
@@ -91,11 +73,6 @@ public class SourceContext implements Cloneable {
 				return false;
 		} else if (!userData.equals(other.userData))
 			return false;
-		if (symbolic == null) {
-			if (other.symbolic != null)
-				return false;
-		} else if (!symbolic.equals(other.symbolic))
-			return false;
 		return true;
 	}
 	
@@ -108,8 +85,6 @@ public class SourceContext implements Cloneable {
 
 	@Override
 	public String toString() {
-		if (symbolic != null)
-			return "SYMBOLIC: " + symbolic;
 		return value.toString();
 	}
 }

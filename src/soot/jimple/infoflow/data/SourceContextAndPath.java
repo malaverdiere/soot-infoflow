@@ -24,15 +24,7 @@ public class SourceContextAndPath extends SourceContext implements Cloneable {
 	public SourceContextAndPath(Value value, Stmt stmt, Object userData) {
 		super(value, stmt, userData);
 	}
-
-	public SourceContextAndPath(Abstraction symbolic) {
-		super(symbolic);
-	}
-
-	public SourceContextAndPath(Abstraction symbolic, Object userData) {
-		super(symbolic, userData);
-	}
-
+	
 	public List<Stmt> getPath() {
 		return Collections.unmodifiableList(this.path);
 	}
@@ -61,11 +53,7 @@ public class SourceContextAndPath extends SourceContext implements Cloneable {
 	
 	@Override
 	public SourceContextAndPath clone() {
-		final SourceContextAndPath scap;
-		if (getSymbolic() == null)
-			scap = new SourceContextAndPath(getValue(), getStmt(), getUserData());
-		else
-			scap = new SourceContextAndPath(getSymbolic(), getUserData());
+		final SourceContextAndPath scap = new SourceContextAndPath(getValue(), getStmt(), getUserData());
 		scap.path.addAll(this.path);
 		assert scap.equals(this);
 		return scap;

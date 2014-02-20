@@ -26,6 +26,7 @@ import java.util.Set;
 import soot.ArrayType;
 import soot.IntType;
 import soot.Local;
+import soot.RefType;
 import soot.SootMethod;
 import soot.Type;
 import soot.Unit;
@@ -63,7 +64,7 @@ import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
  */
 public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 	private IInfoflowSolver fSolver;
-
+	
 	public void setTaintWrapper(ITaintPropagationWrapper wrapper) {
 		taintWrapper = wrapper;
 	}
@@ -99,37 +100,34 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				
 				// A backward analysis looks for aliases of existing taints and thus
 				// cannot create new taints out of thin air
-				if (source.equals(zeroValue))
+				if (source == getZeroValue())
 					return Collections.emptySet();
-
+				
 				// Check whether the left side of the assignment matches our
 				// current taint abstraction
 				final boolean leftSideMatches = baseMatches(leftValue, source);
 				if (!leftSideMatches)
 					res.add(source);
-				
-				// Is the left side overwritten completely?
-				if (leftSideMatches) {
+				else {
+					// The left side is overwritten completely
+					
 					// If we have an assignment to the base local of the current taint,
 					// all taint propagations must be below that point, so this is the
 					// right point to turn around.
-					Abstraction fabs = getForwardAbstraction(source);
 					for (Unit u : interproceduralCFG().getPredsOf(defStmt))
-						fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
+						fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, source));
 				}
 				
 				if (defStmt instanceof AssignStmt) {
 					// Get the right side of the assignment
-					final AssignStmt assignStmt = (AssignStmt) defStmt;
-					final Value rightValue = BaseSelector.selectBase(assignStmt.getRightOp(), false);
-
+					final Value rightValue = BaseSelector.selectBase(defStmt.getRightOp(), false);
+	
 					// Is the left side overwritten completely?
 					if (leftSideMatches) {
 						// Termination shortcut: If the right side is a value we do not track,
 						// we can stop here.
-						if (!(rightValue instanceof Local || rightValue instanceof FieldRef)) {
+						if (!(rightValue instanceof Local || rightValue instanceof FieldRef))
 							return Collections.emptySet();
-						}
 					}
 					
 					// If we assign a constant, there is no need to track the right side
@@ -137,61 +135,73 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 					// carry taint.
 					if (rightValue instanceof Constant)
 						return res;
-
+	
 					// We only process heap objects. Binary operations can only
 					// be performed on primitive objects.
 					if (rightValue instanceof BinopExpr)
 						return res;
+									
+					// If we have a = x with the taint "x" being inactive,
+					// we must not taint the left side. We can only taint
+					// the left side if the tainted value is some "x.y".
+					boolean aliasOverwritten = baseMatchesStrict(rightValue, source)
+							&& rightValue.getType() instanceof RefType
+							&& !source.dependsOnCutAP();
 					
-					// If the tainted value 'b' is assigned to variable 'a' and 'b'
-					// is a heap object, we must also look for aliases of 'a' upwards
-					// from the current statement.
-					if (rightValue instanceof InstanceFieldRef) {
-						InstanceFieldRef ref = (InstanceFieldRef) rightValue;
-						if (source.getAccessPath().isInstanceFieldRef()
-								&& ref.getBase().equals(source.getAccessPath().getPlainValue())
-								&& ref.getField().equals(source.getAccessPath().getFirstField())) {
-							Abstraction abs = source.deriveNewAbstraction(leftValue, true,
-									source.getAccessPath().getBaseType());
-							res.add(abs);
+					if (!aliasOverwritten) {
+						// If the tainted value 'b' is assigned to variable 'a' and 'b'
+						// is a heap object, we must also look for aliases of 'a' upwards
+						// from the current statement.
+						Abstraction newLeftAbs = null;
+						if (rightValue instanceof InstanceFieldRef) {
+							InstanceFieldRef ref = (InstanceFieldRef) rightValue;
+							if (source.getAccessPath().isInstanceFieldRef()
+									&& ref.getBase().equals(source.getAccessPath().getPlainValue())
+									&& source.getAccessPath().firstFieldMatches(ref.getField())) {
+								newLeftAbs = source.deriveNewAbstraction(leftValue, true,
+										source.getAccessPath().getFirstFieldType());
+							}
 						}
-					}
-					else if (enableStaticFields && rightValue instanceof StaticFieldRef) {
-						StaticFieldRef ref = (StaticFieldRef) rightValue;
-						if (source.getAccessPath().isStaticFieldRef()
-								&& ref.getField().equals(source.getAccessPath().getFirstField())) {
-							Abstraction abs = source.deriveNewAbstraction(leftValue, true,
-									source.getAccessPath().getBaseType());
-							res.add(abs);
+						else if (enableStaticFields && rightValue instanceof StaticFieldRef) {
+							StaticFieldRef ref = (StaticFieldRef) rightValue;
+							if (source.getAccessPath().isStaticFieldRef()
+									&& source.getAccessPath().firstFieldMatches(ref.getField())) {
+								newLeftAbs = source.deriveNewAbstraction(leftValue, true,
+										source.getAccessPath().getBaseType());
+							}
 						}
-					}
-					else if (rightValue.equals(source.getAccessPath().getPlainValue())) {
-						Type newType = source.getAccessPath().getBaseType();
-						if (leftValue instanceof ArrayRef)
-							newType = buildArrayOrAddDimension(newType);
-						else if (assignStmt.getRightOp() instanceof ArrayRef)
-							newType = ((ArrayType) newType).getElementType();
-						
-						// If this is an unrealizable typecast, drop the abstraction
-						if (defStmt.getRightOp() instanceof CastExpr) {
-							CastExpr ce = (CastExpr) defStmt.getRightOp();
-							if (!source.getAccessPath().isStaticFieldRef()
-									&& !canCastType(ce.getCastType(), source.getAccessPath().getBaseType()))
-								return Collections.emptySet();
-						}
-						// Special type handling for certain operations
-						else if (assignStmt.getRightOp() instanceof LengthExpr) {
-							assert source.getAccessPath().getBaseType() instanceof ArrayType;
-							newType = IntType.v();
+						else if (rightValue.equals(source.getAccessPath().getPlainValue())) {
+							Type newType = source.getAccessPath().getBaseType();
+							if (leftValue instanceof ArrayRef)
+								newType = buildArrayOrAddDimension(newType);
+							else if (defStmt.getRightOp() instanceof ArrayRef)
+								newType = ((ArrayType) newType).getElementType();
 							
-							Abstraction abs = source.deriveNewAbstraction(new AccessPath(leftValue, null,
-									IntType.v(), (Type[]) null, true), defStmt);
-							res.add(abs);
+							// If this is an unrealizable typecast, drop the abstraction
+							if (defStmt.getRightOp() instanceof CastExpr) {
+								CastExpr ce = (CastExpr) defStmt.getRightOp();
+								if (!checkCast(source.getAccessPath(), ce.getCastType()))
+									return Collections.emptySet();
+							}
+							// Special type handling for certain operations
+							else if (defStmt.getRightOp() instanceof LengthExpr) {
+								assert source.getAccessPath().getBaseType() instanceof ArrayType;
+								newType = IntType.v();
+								
+								newLeftAbs = source.deriveNewAbstraction(new AccessPath(leftValue, null,
+										IntType.v(), (Type[]) null, true), defStmt);
+							}
+							else {
+								newLeftAbs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
+										(leftValue, newType, false), defStmt);
+							}
 						}
-						else {
-							Abstraction abs = source.deriveNewAbstraction(source.getAccessPath().copyWithNewValue
-									(leftValue, newType), defStmt);
-							res.add(abs);
+						if (newLeftAbs != null) {
+							res.add(newLeftAbs);
+							
+							// Inject the new alias into the forward solver
+							for (Unit u : interproceduralCFG().getPredsOf(defStmt))
+								fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, newLeftAbs));
 						}
 					}
 					
@@ -205,12 +215,12 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						Type targetType = null;
 						
 						// if both are fields, we have to compare their fieldName via equals and their bases via PTS
-						targetType = source.getAccessPath().getBaseType();
 						if (leftValue instanceof InstanceFieldRef) {
 							InstanceFieldRef leftRef = (InstanceFieldRef) leftValue;
 							if (leftRef.getBase().equals(source.getAccessPath().getPlainLocal())) {
 								if (source.getAccessPath().isInstanceFieldRef()) {
-									if (leftRef.getField().equals(source.getAccessPath().getFirstField())) {
+									if (source.getAccessPath().firstFieldMatches(leftRef.getField())) {
+										targetType = source.getAccessPath().getFirstFieldType();
 										addRightValue = true;
 										cutFirstField = true;
 									}
@@ -221,23 +231,26 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						} else if (leftValue instanceof Local && source.getAccessPath().isInstanceFieldRef()) {
 							Local base = source.getAccessPath().getPlainLocal(); // ?
 							if (leftValue.equals(base)) {
+								targetType = source.getAccessPath().getBaseType();
 								addRightValue = true;
 							}
 						} else if (leftValue instanceof ArrayRef) {
 							Local leftBase = (Local) ((ArrayRef) leftValue).getBase();
 							if (leftBase.equals(source.getAccessPath().getPlainValue())) {
 								addRightValue = true;
+								targetType = source.getAccessPath().getBaseType();
 								assert source.getAccessPath().getBaseType() instanceof ArrayType;
 							}
 							// generic case, is true for Locals, ArrayRefs that are equal etc..
 						} else if (leftValue.equals(source.getAccessPath().getPlainValue())) {
 							addRightValue = true;
-
-							// Check for unrealizable casts
-							if (assignStmt.getRightOp() instanceof CastExpr) {
+							targetType = source.getAccessPath().getBaseType();
+							
+							// Check for unrealizable casts. If a = (O) b and a is tainted,
+							// but incompatible to the type of b, this cast is impossible
+							if (defStmt.getRightOp() instanceof CastExpr) {
 								CastExpr ce = (CastExpr) defStmt.getRightOp();
-								if (!source.getAccessPath().isStaticFieldRef()
-										&& !canCastType(ce.getOp().getType(), source.getAccessPath().getBaseType()))
+								if (!checkCast(source.getAccessPath(), ce.getOp().getType()))
 									return Collections.emptySet();
 							}
 						}
@@ -246,60 +259,41 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 						if (addRightValue) {
 							if (targetType != null) {
 								// Special handling for some operations
-								if (assignStmt.getRightOp() instanceof ArrayRef && ! (targetType instanceof ArrayType))
+								if (defStmt.getRightOp() instanceof ArrayRef)
 									targetType = buildArrayOrAddDimension(targetType);
 								else if (leftValue instanceof ArrayRef) {
 									assert source.getAccessPath().getBaseType() instanceof ArrayType;
 									targetType = ((ArrayType) targetType).getElementType();
+									
+									// If the types do not match, the right side cannot be an alias
+									if (!canCastType(rightValue.getType(), targetType))
+										addRightValue = false;
 								}
 							}
 							
 							// Special type handling for certain operations
-							if (assignStmt.getRightOp() instanceof LengthExpr)
+							if (defStmt.getRightOp() instanceof LengthExpr)
 								targetType = null;
 							// We do not need to handle casts. Casts only make
-							// types more imprecise when going backwards.							
-							//		else if (assignStmt.getRightOp() instanceof CastExpr)
-							//			targetType = null;
-							
-							Abstraction newAbs = source.deriveNewAbstraction(rightValue, cutFirstField,
-									targetType);
-							res.add(newAbs);
+							// types more imprecise when going backwards.
+							if (addRightValue) {
+								Abstraction newAbs = source.deriveNewAbstraction(rightValue, cutFirstField,
+										targetType);
+								res.add(newAbs);
+								
+								// Inject the new alias into the forward solver
+								for (Unit u : interproceduralCFG().getPredsOf(defStmt))
+									fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, newAbs));
+							}
 						}
 					}
 				}
 				else if (defStmt instanceof IdentityStmt)
 					res.add(source);
-
-				// Trigger the forward solver with every newly-created alias
-				// on a static field. Since we don't have a fixed turn-around
-				// point for static fields, we turn around on every use.
-				if (enableStaticFields)
-					for (Abstraction newAbs : res)
-						if (newAbs.getAccessPath().isStaticFieldRef() && newAbs != source) {
-							Abstraction fabs = getForwardAbstraction(newAbs);
-							for (Unit u : interproceduralCFG().getPredsOf(defStmt))
-								fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
-						}
-
+				
 				return res;
 			}
 			
-			/**
-			 * Computes the abstraction to be injected into the forward solver
-			 * @param bwAbs The backward abstraction from the alias search
-			 * @return The new forward abstraction to be injected into the other
-			 * solver
-			 */
-			private Abstraction getForwardAbstraction(Abstraction bwAbs) {
-				if (flowSensitiveAliasing)
-					return bwAbs;
-				if (bwAbs.isAbstractionActive())
-					return bwAbs;
-				
-				return bwAbs.getActiveCopy();
-			}
-
 			@Override
 			public FlowFunction<Abstraction> getNormalFlowFunction(final Unit src, final Unit dest) {
 				
@@ -310,24 +304,16 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
-							if (source.equals(zeroValue))
+							if (source == getZeroValue())
 								return Collections.emptySet();
-							assert !source.isAbstractionActive() || !flowSensitiveAliasing;
+							assert source.isAbstractionActive() || flowSensitiveAliasing;
+							
 							Set<Abstraction> res = computeAliases(defStmt, d1, source);
 							
-							// If the next statement assigns the base of the tainted value,
-							// we look ahead with the alias search. This fixes the problem
-							// that the first statement of a method never ends up in "src".
-							if (dest instanceof DefinitionStmt) {
-								DefinitionStmt defStmt = (DefinitionStmt) dest;
-								for (Abstraction newAbs : res)
-									if (baseMatches(defStmt.getLeftOp(), newAbs)) {
-										Abstraction fabs = getForwardAbstraction(newAbs);
-										for (Unit u : interproceduralCFG().getPredsOf(defStmt))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
-									}
- 							}
-
+							if (dest instanceof DefinitionStmt && interproceduralCFG().isExitStmt(dest))
+								for (Abstraction abs : res)
+									computeAliases((DefinitionStmt) dest, d1, abs);
+							
 							return res;
 						}
 
@@ -362,9 +348,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
-						if (source.equals(zeroValue))
+						if (source == getZeroValue())
 							return Collections.emptySet();
-						assert !source.isAbstractionActive() || !flowSensitiveAliasing;
+						assert source.isAbstractionActive() || flowSensitiveAliasing;
 						
 						//if we do not have to look into sources or sinks:
 						if (!inspectSources && sourceInfo != null)
@@ -392,7 +378,8 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 										if (rStmt.getOp() instanceof Local
 												|| rStmt.getOp() instanceof FieldRef) {
 											Abstraction abs = source.deriveNewAbstraction
-													(source.getAccessPath().copyWithNewValue(rStmt.getOp(), null), (Stmt) src);
+													(source.getAccessPath().copyWithNewValue
+															(rStmt.getOp(), null, false), (Stmt) src);
 											res.add(abs);
 										}
 									}
@@ -439,6 +426,23 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 							}
 						}
 						
+						// Check whether we need to directly map back any of
+						// the parameters
+						if (stmt instanceof DefinitionStmt) {
+							Value leftVal = ((DefinitionStmt) stmt).getLeftOp();
+							for (Unit sP : interproceduralCFG().getStartPointsOf(dest))
+								if (sP instanceof ReturnStmt) {
+									Value retVal = ((ReturnStmt) sP).getOp();
+									for (Abstraction abs : res)
+										if (abs.getAccessPath().getPlainValue() == retVal) {
+											Abstraction retAbs = abs.deriveNewAbstraction
+													(source.getAccessPath().copyWithNewValue(leftVal), stmt);
+											for (Unit u : interproceduralCFG().getPredsOf(stmt))
+												fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, retAbs));
+										}
+								}
+						}
+						
 						return res;
 					}
 				};
@@ -462,9 +466,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 					@Override
 					public Set<Abstraction> computeTargets(Abstraction source,
 							Collection<Abstraction> callerD1s) {
-						if (source.equals(zeroValue))
+						if (source == getZeroValue())
 							return Collections.emptySet();
-						assert !source.isAbstractionActive() || !flowSensitiveAliasing;
+						assert source.isAbstractionActive() || flowSensitiveAliasing;
 						
 						// If we have no caller, we have nowhere to propagate. This
 						// can happen when leaving the main method.
@@ -505,7 +509,9 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 									// If this is a constant parameter, we can safely ignore it
 									if (!AccessPath.canContainValue(originalCallArg))
 										continue;
-
+									if (!checkCast(source.getAccessPath(), originalCallArg.getType()))
+										continue;
+									
 									Abstraction abs = source.deriveNewAbstraction
 											(source.getAccessPath().copyWithNewValue(originalCallArg), (Stmt) exitStmt);
 									res.add(abs);
@@ -552,36 +558,38 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 				// special treatment for native methods:
 				if (call instanceof Stmt) {
 					final Stmt iStmt = (Stmt) call;
-
+					final List<Value> callArgs = iStmt.getInvokeExpr().getArgs();
+					
 					return new SolverCallToReturnFlowFunction() {
 						@Override
 						public Set<Abstraction> computeTargets(Abstraction d1, Abstraction source) {
-							if (source.equals(zeroValue))
+							if (source == getZeroValue())
 								return Collections.emptySet();
-							assert !source.isAbstractionActive() || !flowSensitiveAliasing;
-
-							// only pass source if the source is not created by this method call
+							assert source.isAbstractionActive() || flowSensitiveAliasing;
+							
+							// We never pass static taints over the call-to-return edge
+							if (source.getAccessPath().isStaticFieldRef())
+								return Collections.emptySet();
+							
+							// We may not pass on a taint if it is overwritten by this call
 							if (iStmt instanceof DefinitionStmt && ((DefinitionStmt) iStmt).getLeftOp().equals
-									(source.getAccessPath().getPlainValue())){
-								//terminates here, but we have to start a forward pass to consider all method calls:
-								Abstraction fabs = getForwardAbstraction(source);
-								for (Unit u : interproceduralCFG().getPredsOf(iStmt))
-									fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
+									(source.getAccessPath().getPlainValue()))
 								return Collections.emptySet();
+							
+							// If the base local of the invocation is tainted, we do not
+							// pass on the taint
+							if (iStmt.getInvokeExpr() instanceof InstanceInvokeExpr) {
+								InstanceInvokeExpr iinv = (InstanceInvokeExpr) iStmt.getInvokeExpr();
+								if (iinv.getBase().equals(source.getAccessPath().getPlainValue()))
+									return Collections.emptySet();
 							}
-							else {
-								// If the return site matches on an abstraction we pass on, we may have to turn around
-								// that the first statement of a method never ends up in "src".
-								if (returnSite instanceof DefinitionStmt) {
-									DefinitionStmt defStmt = (DefinitionStmt) returnSite;
-									if (baseMatches(defStmt.getLeftOp(), source)) {
-										Abstraction fabs = getForwardAbstraction(source);
-										for (Unit u : interproceduralCFG().getPredsOf(defStmt))
-											fSolver.processEdge(new PathEdge<Unit, Abstraction>(d1, u, fabs));
-									}
-	 							}
-								return Collections.singleton(source);
-							}
+							
+							// We do not pass taints on parameters over the call-to-return edge
+							for (int i = 0; i < callArgs.size(); i++)
+								if (callArgs.get(i).equals(source.getAccessPath().getPlainLocal()))
+									return Collections.emptySet();
+							
+							return Collections.singleton(source);
 						}
 					};
 				}
@@ -589,5 +597,5 @@ public class BackwardsInfoflowProblem extends AbstractInfoflowProblem {
 			}
 		};
 	}
-
+	
 }

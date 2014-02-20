@@ -48,14 +48,14 @@ public class InfoflowSolver extends IFDSSolver<Unit, Abstraction, SootMethod, Bi
 
 	@Override
 	public boolean processEdge(PathEdge<Unit, Abstraction> edge){
-		propagate(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(), null, false);
+		propagate(edge.factAtSource(), edge.getTarget(), edge.factAtTarget(), null, false, true);
 		return true;
 	}
 	
 	@Override
 	public void injectContext(IInfoflowSolver otherSolver, SootMethod callee,
 			Abstraction d3, Unit callSite, Abstraction d2, Abstraction d1) {
-		addIncoming(callee, d3, callSite, d1);
+		addIncoming(callee, d3, callSite, d1, d2);
 	}
 	
 	@Override
@@ -95,34 +95,25 @@ public class InfoflowSolver extends IFDSSolver<Unit, Abstraction, SootMethod, Bi
 		else
 			return flowFunction.computeTargets(d2);		
 	}
-
-	@Override
-	protected void propagate(Abstraction sourceVal, Unit target, Abstraction targetVal,
-			/* deliberately exposed to clients */ Unit relatedCallSite,
-			/* deliberately exposed to clients */ boolean isUnbalancedReturn) {	
-		// Check whether we already have an abstraction that entails the new one.
-		// In such a case, we can simply ignore the new abstraction.
-		boolean noProp = false;
-		/*
-		for (Abstraction abs : new HashSet<Abstraction>(jumpFn.forwardLookup(sourceVal, target).keySet()))
-			if (abs != targetVal) {
-				if (abs.entails(targetVal)) {
-					noProp = true;
-					break;
-				}
-				if (targetVal.entails(abs)) {
-					jumpFn.removeFunction(sourceVal, target, abs);
-				}
-			}
-		*/
-		if (!noProp)
-			super.propagate(sourceVal, target, targetVal, relatedCallSite, isUnbalancedReturn);
-	}
 	
+	@Override
 	public void cleanup() {
 		this.jumpFn.clear();
 		this.incoming.clear();
 		this.endSummary.clear();
 	}
+	
+	@Override
+	public void solve() {
+		super.solve();
 		
+		// Compute function path summaries
+		/*
+		for (Entry<Pair<SootMethod, Abstraction>, Set<Pair<Unit, Abstraction>>>
+				entry : endSummary.entrySet()) {
+			entry.
+		}
+		*/
+	}
+	
 }

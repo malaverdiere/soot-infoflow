@@ -31,9 +31,6 @@ public class FlowSensitiveAliasStrategy extends AbstractBulkAliasStrategy {
 			(final Abstraction d1, final Stmt src,
 			final Value targetValue, Set<Abstraction> taintSet,
 			SootMethod method, Abstraction newAbs) {
-		if (!newAbs.isAbstractionActive())
-			return;
-		
 		// Start the backwards solver
 		Abstraction bwAbs = newAbs.deriveInactiveAbstraction(src);
 		for (Unit predUnit : interproceduralCFG().getPredsOf(src))

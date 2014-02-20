@@ -13,7 +13,6 @@ package soot.jimple.infoflow.test;
 import soot.jimple.infoflow.test.android.ConnectionManager;
 import soot.jimple.infoflow.test.android.TelephonyManager;
 
-
 public class CallbackTestCode {
 	public void checkLocation(){
 		Container con = new Container();
@@ -31,7 +30,7 @@ public class CallbackTestCode {
 			this.con = con;
 		}
 		
-		  public void onLocationChanged() {  
+		  public void onLocationChanged() {
 			  con.field = TelephonyManager.getDeviceId();
 		  }
 	}
@@ -45,7 +44,6 @@ public class CallbackTestCode {
 		}
 		
 	}
-	
 	
 	//---------- 2nd try:
 	

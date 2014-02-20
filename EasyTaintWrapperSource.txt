@@ -137,6 +137,12 @@
 
 <java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>
 
+<java.lang.Byte: java.lang.Byte valueOf(byte)>
+<java.lang.Byte: java.lang.Byte valueOf(java.lang.String)>
+<java.lang.Byte: java.lang.Byte valueOf(java.lang.String,int)>
+<java.lang.Byte: long parseByte(java.lang.String)>
+<java.lang.Byte: long parseByte(java.lang.String,int)>
+
 <java.lang.Integer: java.lang.String toBinaryString(int)>
 <java.lang.Integer: java.lang.String toHexString(int)>
 <java.lang.Integer: java.lang.String toOctalString(int)>
@@ -150,6 +156,12 @@
 <java.lang.Integer: java.lang.Integer valueOf(java.lang.String,int)>
 <java.lang.Integer: java.lang.Integer toString(int)>
 <java.lang.Integer: java.lang.Integer toString(int,int)>
+
+<java.lang.Short: java.lang.Short valueOf(short)>
+<java.lang.Short: java.lang.Short valueOf(java.lang.String)>
+<java.lang.Short: java.lang.Short valueOf(java.lang.String,int)>
+<java.lang.Short: long parseShort(java.lang.String)>
+<java.lang.Short: long parseShort(java.lang.String,int)>
 
 <java.lang.Long: void <init>(long)>
 <java.lang.Long: void <init>(java.lang.String)>
@@ -171,7 +183,7 @@
 <java.lang.Double: void <init>(double)>
 <java.lang.Double: void <init>(java.lang.String)>
 <java.lang.Double: double parseDouble(java.lang.String)>
-<java.lang.Double: java.lang.Double valueOf(float)>
+<java.lang.Double: java.lang.Double valueOf(double)>
 <java.lang.Double: java.lang.Double valueOf(java.lang.String)>
 <java.lang.Double: java.lang.String toString(double)>
 

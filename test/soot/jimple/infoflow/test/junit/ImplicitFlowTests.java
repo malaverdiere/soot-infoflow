@@ -84,7 +84,7 @@ public class ImplicitFlowTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
 
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
 		infoflow.setInspectSinks(false);
 		infoflow.setEnableImplicitFlows(true);
 		infoflow.setEnableStaticFieldTracking(false);
@@ -94,7 +94,7 @@ public class ImplicitFlowTests extends JUnitTests {
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("convertTest took " + (System.nanoTime() - timeBefore) / 1E9 + " seconds");
 	}
 
@@ -321,7 +321,7 @@ public class ImplicitFlowTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
 		infoflow.setInspectSinks(false);
 		infoflow.setEnableImplicitFlows(true);
 		infoflow.setEnableStaticFieldTracking(false);
@@ -331,7 +331,7 @@ public class ImplicitFlowTests extends JUnitTests {
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("stringClassTest took " + (System.nanoTime() - timeBefore) / 1E9 + " seconds");
 	}
 

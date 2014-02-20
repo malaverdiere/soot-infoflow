@@ -263,4 +263,16 @@ public class StringTestCode {
 		Runtime.getRuntime().exec(s1);
 	}
 	
+	public void methodToCharArray(){
+        String tainted = TelephonyManager.getDeviceId();
+        char[] chars = tainted.toCharArray();
+        String newString = "";
+        for (char c : chars) {
+            newString += c;
+        }
+        
+        ConnectionManager cm = new ConnectionManager();
+        cm.publish(newString);
+    }
+	
 }

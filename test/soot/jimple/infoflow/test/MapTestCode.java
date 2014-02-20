@@ -28,7 +28,6 @@ import soot.jimple.infoflow.test.android.TelephonyManager;
  */
 public class MapTestCode {
 	
-	
 	public void concreteWriteReadPos0Test(){
 		String tainted = TelephonyManager.getDeviceId();
 		HashMap<String, String> map = new HashMap<String, String>();
@@ -64,7 +63,6 @@ public class MapTestCode {
 		cm.publish(taintedElement);
 	}
 	
-	
 	public void concreteWriteRead2Test(){
 		String tainted = TelephonyManager.getDeviceId();
 		HashMap<String, String> map = new HashMap<String, String>();
@@ -74,9 +72,7 @@ public class MapTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement2);
-		
 	}
-	
 	
 	public void writeReadPos0Test(){
 		String tainted = TelephonyManager.getDeviceId();
@@ -134,7 +130,6 @@ public class MapTestCode {
 		
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(taintedElement2);
-		
 	}
 	
 	public void concreteWriteReadNegativeTest(){

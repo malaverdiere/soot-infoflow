@@ -26,152 +26,96 @@ public class MapTests extends JUnitTests {
     @Test(timeout=300000)
     public void mapPos0Test(){
     	Infoflow infoflow = initInfoflow();
-
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void writeReadPos0Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);		
-		
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
     @Test(timeout=300000)
     public void mapPos1Test(){
     	Infoflow infoflow = initInfoflow();
-
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-    	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void writeReadPos1Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
-
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
 
     @Test(timeout=300000)
     public void concreteMapPos0Test(){
     	Infoflow infoflow = initInfoflow();
-
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-    	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadPos0Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
-
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
     @Test(timeout=300000)
     public void concreteLinkedMapPos0Test(){
     	Infoflow infoflow = initInfoflow();
-
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-
+    	infoflow.setFlowSensitiveAliasing(false);
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteLinkedWriteReadPos0Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
-
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
 
     @Test(timeout=300000)
     public void concreteMapPos1Test(){
     	Infoflow infoflow = initInfoflow();
-    	
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadPos1Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
-
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
     @Test(timeout=300000)
     public void concreteMapTest2(){
     	Infoflow infoflow = initInfoflow();
-    	
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteRead2Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
-		checkInfoflow(infoflow, 1);
-    
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		
+		// We only publish a constant string, though the key in the map is
+		// sensitive - but never gets sent out
+		negativeCheckInfoflow(infoflow);
     }
     
     @Test(timeout=300000)
     public void mapIteratorTest(){
     	Infoflow infoflow = initInfoflow();
-    	
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void iteratorTest()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);		
-
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
     @Test(timeout=300000)
     public void mapEntryTest(){
     	Infoflow infoflow = initInfoflow();
-    	
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void entryTest()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);	
-    
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
     @Test(timeout=300000)
     public void concreteTableTest(){
     	Infoflow infoflow = initInfoflow();
-    	
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadTableTest()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
-		
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
     
     @Test(timeout=300000)
     @Ignore // does not work anymore since JRE 1.7.0_45
     public void concreteNegativeTest(){
     	Infoflow infoflow = initInfoflow();
-    	
-    	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
-
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.MapTestCode: void concreteWriteReadNegativeTest()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
-    
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
     }
 
 }

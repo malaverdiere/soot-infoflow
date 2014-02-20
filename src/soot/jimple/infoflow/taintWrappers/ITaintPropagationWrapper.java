@@ -19,8 +19,9 @@ import soot.jimple.infoflow.solver.IInfoflowCFG;
 /**
  * This interface declares methods to define classes and methods which should not be analyzed directly.
  * Instead the outcome of the analysis is summarized (which improves performance and helps if the sources are not available)
- * @author Christian
- *
+ * 
+ * @author Christian Fritz
+ * @author Steven Arzt
  */
 public interface ITaintPropagationWrapper {
 	
@@ -35,7 +36,7 @@ public interface ITaintPropagationWrapper {
 	 * has been executed
 	 */
 	public Set<AccessPath> getTaintsForMethod(Stmt stmt, AccessPath taintedPath, IInfoflowCFG icfg);
-
+	
 	/**
 	 * Gets whether the taints produced by this taint wrapper are exclusive, i.e. there are
 	 * no other taints than those produced by the wrapper. In effect, this tells the analysis
@@ -46,7 +47,7 @@ public interface ITaintPropagationWrapper {
 	 * @return True if this taint wrapper is exclusive, otherwise false. 
 	 */
 	public boolean isExclusive(Stmt stmt, AccessPath taintedPath, IInfoflowCFG icfg);
-
+	
 	/**
 	 * Gets the number of times in which the taint wrapper was able to
 	 * exclusively model a method call. This is equal to the number of times
@@ -55,7 +56,6 @@ public interface ITaintPropagationWrapper {
 	 */
 	public int getWrapperHits();
 	
-
 	/**
 	 * Gets the number of times in which the taint wrapper was NOT able to
 	 * exclusively model a method call. This is equal to the number of times

@@ -29,13 +29,8 @@ import soot.SootMethod;
 import soot.Type;
 import soot.Unit;
 import soot.Value;
-import soot.jimple.ArrayRef;
-import soot.jimple.Constant;
-import soot.jimple.DefinitionStmt;
-import soot.jimple.FieldRef;
 import soot.jimple.InstanceFieldRef;
 import soot.jimple.StaticFieldRef;
-import soot.jimple.Stmt;
 import soot.jimple.infoflow.data.Abstraction;
 import soot.jimple.infoflow.data.AccessPath;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
@@ -76,7 +71,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	protected boolean inspectSources = false;
 	protected boolean inspectSinks = false;
 
-	Abstraction zeroValue = null;
+	private Abstraction zeroValue = null;
 	
 	protected IInfoflowSolver solver = null;
 	
@@ -195,6 +190,10 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	 */
 	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing) {
 		this.flowSensitiveAliasing = flowSensitiveAliasing;
+		
+		// We need to reset the zero value since it depends on the flow
+		// sensitivity setting
+		this.zeroValue = null;
 	}
 	
 	/**
@@ -205,14 +204,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public void setEnableTypeChecking(boolean enableTypeChecking) {
 		this.enableTypeChecking = enableTypeChecking;
 	}
-
-	@Override
-	public Abstraction createZeroValue() {
-		if (zeroValue == null)
-			zeroValue = Abstraction.getZeroAbstraction(flowSensitiveAliasing);
-		return zeroValue;
-	}
-
+	
 	/**
 	 * Gets whether the given method is an entry point, i.e. one of the initial
 	 * seeds belongs to the given method
@@ -259,39 +251,7 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 	public void setInspectSinks(boolean inspect){
 		inspectSinks = inspect;
 	}
-	
-	/**
-	 * we cannot rely just on "real" heap objects, but must also inspect locals because of Jimple's representation ($r0 =... )
-	 * @param val the value which gets tainted
-	 * @param source the source from which the taints comes from. Important if not the value, but a field is tainted
-	 * @return true if a reverseFlow should be triggered or an inactive taint should be propagated (= resulting object is stored in heap = alias)
-	 */
-	protected boolean triggerInaktiveTaintOrReverseFlow(Stmt stmt, Value val, Abstraction source){
-		if (stmt instanceof DefinitionStmt) {
-			DefinitionStmt defStmt = (DefinitionStmt) stmt;
-			// If the left side is overwritten completely, we do not need to
-			// look for aliases. This also covers strings.
-			if (defStmt.getLeftOp() instanceof Local
-					&& defStmt.getLeftOp() == source.getAccessPath().getPlainValue())
-				return false;
-
-			// Arrays are heap objects
-			if (val instanceof ArrayRef)
-				return true;
-			if (val instanceof FieldRef)
-				return true;
-		}
 		
-		// Primitive types or constants do not have aliases
-		if (val.getType() instanceof PrimType)
-			return false;
-		if (val instanceof Constant)
-			return false;
-		
-		return val instanceof FieldRef
-				|| (val instanceof Local && ((Local)val).getType() instanceof ArrayType);
-	}
-	
 	/**
 	 * Checks whether the given base value matches the base of the given
 	 * taint abstraction
@@ -308,12 +268,12 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 		else if (baseValue instanceof InstanceFieldRef) {
 			InstanceFieldRef ifr = (InstanceFieldRef) baseValue;
 			if (ifr.getBase().equals(source.getAccessPath().getPlainValue())
-					&& ifr.getField().equals(source.getAccessPath().getFirstField()))
+					&& source.getAccessPath().firstFieldMatches(ifr.getField()))
 				return true;
 		}
 		else if (baseValue instanceof StaticFieldRef) {
 			StaticFieldRef sfr = (StaticFieldRef) baseValue;
-			if (sfr.getField().equals(source.getAccessPath().getFirstField()))
+			if (source.getAccessPath().firstFieldMatches(sfr.getField()))
 				return true;
 		}
 		return false;
@@ -440,4 +400,29 @@ public abstract class AbstractInfoflowProblem extends DefaultJimpleIFDSTabulatio
 			return ArrayType.v(type, 1);
 	}
 	
+	/**
+	 * Checks whether the type of the given taint can be cast to the given
+	 * target type
+	 * @param accessPath The access path of the taint to be cast
+	 * @param type The target type to which to cast the taint
+	 * @return True if the cast is possible, otherwise false
+	 */
+	protected boolean checkCast(AccessPath accessPath, Type type) {
+		if (accessPath.isStaticFieldRef())
+			return canCastType(type, accessPath.getFirstFieldType());
+		else
+			return canCastType(type, accessPath.getBaseType());
+	}
+	
+	@Override
+	public Abstraction createZeroValue() {
+		if (zeroValue == null)
+			zeroValue = Abstraction.getZeroAbstraction(flowSensitiveAliasing);
+		return zeroValue;
+	}
+	
+	protected Abstraction getZeroValue() {
+		return zeroValue;
+	}
+
 }

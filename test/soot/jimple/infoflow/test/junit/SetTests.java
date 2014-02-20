@@ -27,14 +27,14 @@ public class SetTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
 
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
     	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadHashTest()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case concreteHashSetTest done.");
     }
     
@@ -46,14 +46,14 @@ public class SetTests extends JUnitTests {
     	infoflow.setEnableStaticFieldTracking(false);
 
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
     	
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void containsTest()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case containsTest done.");
     }
     
@@ -61,17 +61,16 @@ public class SetTests extends JUnitTests {
     public void concreteTreeSetPos0Test(){
     	System.out.println("Running test case concreteTreeSetPos0Test...");
     	Infoflow infoflow = initInfoflow();
-//    	infoflow.setComputeResultPaths(false);
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadTreePos0Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case concreteTreeSetPos0Test done.");
     }
     
@@ -79,17 +78,16 @@ public class SetTests extends JUnitTests {
     public void concreteTreeSetPos1Test(){
     	System.out.println("Running test case concreteTreeSetPos1Test...");
     	Infoflow infoflow = initInfoflow();
-//    	infoflow.setComputeResultPaths(false);
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadTreePos1Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case concreteTreeSetPos1Test done.");
     }
     
@@ -99,14 +97,14 @@ public class SetTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadLinkedPos0Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 		
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case concreteLinkedSetPos0Test done.");
     }
     
@@ -116,14 +114,14 @@ public class SetTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadLinkedPos1Test()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case concreteLinkedSetPos1Test done.");
     }
     
@@ -133,14 +131,14 @@ public class SetTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void writeReadTest()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case setTest done.");
     }
     
@@ -150,14 +148,14 @@ public class SetTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
     	
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void iteratorTest()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		checkInfoflow(infoflow, 1);		
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case setIteratorTest done.");
     }
     
@@ -167,14 +165,14 @@ public class SetTests extends JUnitTests {
     	Infoflow infoflow = initInfoflow();
 
     	int oldAPLength = Infoflow.getAccessPathLength();
-    	infoflow.setAccessPathLength(1);
+    	Infoflow.setAccessPathLength(1);
 
     	List<String> epoints = new ArrayList<String>();
     	epoints.add("<soot.jimple.infoflow.test.SetTestCode: void concreteWriteReadNegativeTest()>");
 		infoflow.computeInfoflow(appPath, libPath, epoints, sources, sinks);
 		negativeCheckInfoflow(infoflow);
 
-		infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
+		Infoflow.setAccessPathLength(oldAPLength);	// this is a global setting! Restore it when we're done
 		System.out.println("Test case concreteNegativeTest done.");
     }
 }

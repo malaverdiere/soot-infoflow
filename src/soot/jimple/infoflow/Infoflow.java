@@ -43,7 +43,9 @@ import soot.jimple.infoflow.aliasing.IAliasingStrategy;
 import soot.jimple.infoflow.aliasing.PtsBasedAliasStrategy;
 import soot.jimple.infoflow.config.IInfoflowConfig;
 import soot.jimple.infoflow.data.AbstractionAtSink;
-import soot.jimple.infoflow.data.SourceContextAndPath;
+import soot.jimple.infoflow.data.pathBuilders.DefaultPathBuilderFactory;
+import soot.jimple.infoflow.data.pathBuilders.IAbstractionPathBuilder;
+import soot.jimple.infoflow.data.pathBuilders.IPathBuilderFactory;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.handlers.TaintPropagationHandler;
@@ -65,11 +67,12 @@ import soot.options.Options;
 public class Infoflow extends AbstractInfoflow {
 	
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    private static boolean debug = false;
+    
 	private static int accessPathLength = 5;
+	private static boolean useRecursiveAccessPaths = true;
 	
-	private final InfoflowResults results = new InfoflowResults();
+	private InfoflowResults results = null;
+	private final IPathBuilderFactory pathBuilderFactory;
 
 	private final String androidPath;
 	private final boolean forceAndroidJar;
@@ -88,6 +91,7 @@ public class Infoflow extends AbstractInfoflow {
 	public Infoflow() {
 		this.androidPath = "";
 		this.forceAndroidJar = false;
+		this.pathBuilderFactory = new DefaultPathBuilderFactory();
 	}
 
     /**
@@ -111,6 +115,7 @@ public class Infoflow extends AbstractInfoflow {
 		super();
 		this.androidPath = androidPath;
 		this.forceAndroidJar = forceAndroidJar;
+		this.pathBuilderFactory = new DefaultPathBuilderFactory();
 	}
 
 	/**
@@ -120,16 +125,16 @@ public class Infoflow extends AbstractInfoflow {
 	 * is the full path of a single android.jar file.
 	 * @param forceAndroidJar True if a single platform JAR file shall be forced,
 	 * false if Soot shall pick the appropriate platform version
-	 * @param icfgFactory The interprocedural CFG to be used by the InfoFlowProblem 
+	 * @param icfgFactory The interprocedural CFG to be used by the InfoFlowProblem
+	 * @param pathBuilderFactory The factory class for constructing a path builder
+	 * algorithm 
 	 */
-	public Infoflow(String androidPath, boolean forceAndroidJar, BiDirICFGFactory icfgFactory) {
+	public Infoflow(String androidPath, boolean forceAndroidJar, BiDirICFGFactory icfgFactory,
+			IPathBuilderFactory pathBuilderFactory) {
 		super(icfgFactory);
 		this.androidPath = androidPath;
 		this.forceAndroidJar = forceAndroidJar;
-	}
-	
-	public static void setDebug(boolean debugflag) {
-		debug = debugflag;
+		this.pathBuilderFactory = pathBuilderFactory;
 	}
 	
 	public void setSootConfig(IInfoflowConfig config){
@@ -164,7 +169,7 @@ public class Infoflow extends AbstractInfoflow {
 				
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
-		if (debug)
+		if (logger.isDebugEnabled())
 			Options.v().set_output_format(Options.output_format_jimple);
 		else
 			Options.v().set_output_format(Options.output_format_none);
@@ -253,7 +258,6 @@ public class Infoflow extends AbstractInfoflow {
 	public void computeInfoflow(String appPath, String libPath,
 			IEntryPointCreator entryPointCreator,
 			List<String> entryPoints, ISourceSinkManager sourcesSinks) {
-		results.clear();
 		if (sourcesSinks == null) {
 			logger.error("Sources are empty!");
 			return;
@@ -273,7 +277,7 @@ public class Infoflow extends AbstractInfoflow {
 	        PackManager.v().getPack("cg").apply();
 		}
         runAnalysis(sourcesSinks, null);
-		if (debug)
+		if (logger.isDebugEnabled())
 			PackManager.v().writeOutput();
 	}
 
@@ -281,7 +285,6 @@ public class Infoflow extends AbstractInfoflow {
 	@Override
 	public void computeInfoflow(String appPath, String libPath, String entryPoint,
 			ISourceSinkManager sourcesSinks) {
-		results.clear();
 		if (sourcesSinks == null) {
 			logger.error("Sources are empty!");
 			return;
@@ -317,7 +320,7 @@ public class Infoflow extends AbstractInfoflow {
 	        PackManager.v().getPack("cg").apply();
 		}
         runAnalysis(sourcesSinks, seeds);
-		if (debug)
+		if (logger.isDebugEnabled())
 			PackManager.v().writeOutput();
 	}
 
@@ -339,7 +342,13 @@ public class Infoflow extends AbstractInfoflow {
 		switch (aliasingAlgorithm) {
 			case FlowSensitive:
 				backProblem = new BackwardsInfoflowProblem(new BackwardsInfoflowCFG(iCfg), sourcesSinks);
+				// need to set this before creating the zero abstraction
+				backProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
+				
 				backSolver = new InfoflowSolver(backProblem, executor);
+				backSolver.setJumpPredecessors(!computeResultPaths);
+				backSolver.setEnableMergePointChecking(true);
+				
 				aliasingStrategy = new FlowSensitiveAliasStrategy(iCfg, backSolver);
 				break;
 			case PtsBased:
@@ -351,8 +360,45 @@ public class Infoflow extends AbstractInfoflow {
 				throw new RuntimeException("Unsupported aliasing algorithm");
 		}
 		
-		InfoflowProblem forwardProblem  = new InfoflowProblem(iCfg, sourcesSinks, aliasingStrategy);
+		InfoflowProblem forwardProblem  = new InfoflowProblem(iCfg, sourcesSinks,
+				aliasingStrategy);
+		// need to set this before creating the zero abstraction
+		forwardProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
+		if (backProblem != null)
+			forwardProblem.setZeroValue(backProblem.createZeroValue());
+
+		// Set the options
+		InfoflowSolver forwardSolver = new InfoflowSolver(forwardProblem, executor);
+		aliasingStrategy.setForwardSolver(forwardSolver);
+		forwardSolver.setJumpPredecessors(!computeResultPaths);
+		forwardSolver.setEnableMergePointChecking(true);
 		
+		forwardProblem.setInspectSources(inspectSources);
+		forwardProblem.setInspectSinks(inspectSinks);
+		forwardProblem.setEnableImplicitFlows(enableImplicitFlows);
+		forwardProblem.setEnableStaticFieldTracking(enableStaticFields);
+		forwardProblem.setEnableExceptionTracking(enableExceptions);
+		for (TaintPropagationHandler tp : taintPropagationHandlers)
+			forwardProblem.addTaintPropagationHandler(tp);
+		forwardProblem.setTaintWrapper(taintWrapper);
+		forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
+		
+		if (backProblem != null) {
+			backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
+			backProblem.setTaintWrapper(taintWrapper);
+			backProblem.setEnableStaticFieldTracking(enableStaticFields);
+			backProblem.setEnableExceptionTracking(enableExceptions);
+			for (TaintPropagationHandler tp : taintPropagationHandlers)
+				backProblem.addTaintPropagationHandler(tp);
+			backProblem.setTaintWrapper(taintWrapper);
+			backProblem.setActivationUnitsToCallSites(forwardProblem);
+		}
+		
+		if (!enableStaticFields)
+			logger.warn("Static field tracking is disabled, results may be incomplete");
+		if (!flowSensitiveAliasing || !aliasingStrategy.isFlowSensitive())
+			logger.warn("Using flow-insensitive alias tracking, results may be imprecise");
+
 		// We have to look through the complete program to find sources
 		// which are then taken as seeds.
 		int sinkCount = 0;
@@ -381,38 +427,6 @@ public class Infoflow extends AbstractInfoflow {
 		logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.getInitialSeeds().size(),
 				sinkCount);
 		
-		InfoflowSolver forwardSolver = new InfoflowSolver(forwardProblem, executor);
-		aliasingStrategy.setForwardSolver(forwardSolver);
-		
-		forwardProblem.setInspectSources(inspectSources);
-		forwardProblem.setInspectSinks(inspectSinks);
-		forwardProblem.setEnableImplicitFlows(enableImplicitFlows);
-		forwardProblem.setEnableStaticFieldTracking(enableStaticFields);
-		forwardProblem.setEnableExceptionTracking(enableExceptions);
-		for (TaintPropagationHandler tp : taintPropagationHandlers)
-			forwardProblem.addTaintPropagationHandler(tp);
-		forwardProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
-		forwardProblem.setTaintWrapper(taintWrapper);
-		forwardProblem.setStopAfterFirstFlow(stopAfterFirstFlow);
-		
-		if (backProblem != null) {
-			backProblem.setForwardSolver((InfoflowSolver) forwardSolver);
-			backProblem.setTaintWrapper(taintWrapper);
-			backProblem.setZeroValue(forwardProblem.createZeroValue());
-			backProblem.setEnableStaticFieldTracking(enableStaticFields);
-			backProblem.setEnableExceptionTracking(enableExceptions);
-			for (TaintPropagationHandler tp : taintPropagationHandlers)
-				backProblem.addTaintPropagationHandler(tp);
-			backProblem.setFlowSensitiveAliasing(flowSensitiveAliasing);
-			backProblem.setTaintWrapper(taintWrapper);
-			backProblem.setActivationUnitsToCallSites(forwardProblem);
-		}
-		
-		if (!enableStaticFields)
-			logger.warn("Static field tracking is disabled, results may be incomplete");
-		if (!flowSensitiveAliasing || !aliasingStrategy.isFlowSensitive())
-			logger.warn("Using flow-insensitive alias tracking, results may be imprecise");
-
 		forwardSolver.solve();
 		
 		// Not really nice, but sometimes Heros returns before all
@@ -441,7 +455,9 @@ public class Infoflow extends AbstractInfoflow {
 			logger.info("Taint wrapper misses: " + taintWrapper.getWrapperMisses());
 		}
 		
-		logger.info("IFDS problem solved, processing results...");
+		logger.info("IFDS problem with {} forward and {} backward edges solved, "
+				+ "processing results...", forwardSolver.propagationCount,
+				backSolver == null ? 0 : backSolver.propagationCount);
 		
 		// Force a cleanup. Everything we need is reachable through the
 		// results set, the other abstractions can be killed now.
@@ -478,8 +494,8 @@ public class Infoflow extends AbstractInfoflow {
 	
 	/**
 	 * Creates a new executor object for spawning worker threads
-	 * @param numThreads
-	 * @return
+	 * @param numThreads The number of threads to use
+	 * @return The generated executor
 	 */
 	private CountingThreadPoolExecutor createExecutor(int numThreads) {
 		return new CountingThreadPoolExecutor
@@ -493,42 +509,13 @@ public class Infoflow extends AbstractInfoflow {
 	 * @param res The data flow tracker results
 	 */
 	private void computeTaintPaths(final Set<AbstractionAtSink> res) {
-        int numThreads = Runtime.getRuntime().availableProcessors();
-		CountingThreadPoolExecutor executor = createExecutor(numThreads);
-    	
-		logger.debug("Running path reconstruction");
-    	logger.info("Obtainted {} connections between sources and sinks", res.size());
-    	int curResIdx = 0;
-    	for (final AbstractionAtSink abs : res) {
-    		logger.info("Building path " + ++curResIdx);
-    		executor.execute(new Runnable() {
-				
-				@Override
-				public void run() {
-		    		for (SourceContextAndPath context : computeResultPaths ? abs.getAbstraction().getPaths()
-		    				: abs.getAbstraction().getSources())
-		    			if (context.getSymbolic() == null) {
-							results.addResult(abs.getSinkValue(), abs.getSinkStmt(),
-									context.getValue(), context.getStmt(), context.getUserData(),
-									context.getPath(), abs.getSinkStmt());
-//							System.out.println("\n\n\n\n\n");
-//							System.out.println(context.getPath());
-//							System.out.println("\n\n\n\n\n");
-		    			}
-				}
-				
-			});
-    		
-    	}
-    	
-    	try {
-			executor.awaitCompletion();
-		} catch (InterruptedException ex) {
-			logger.error("Could not wait for path executor completion: {0}", ex.getMessage());
-			ex.printStackTrace();
-		}
-    	executor.shutdown();
-    	logger.debug("Path reconstruction done.");
+		IAbstractionPathBuilder builder = this.pathBuilderFactory.createPathBuilder(maxThreadNum);
+    	if (computeResultPaths)
+    		builder.computeTaintPaths(res);
+    	else
+    		builder.computeTaintSources(res);
+    	this.results = builder.getResults();
+    	builder.shutdown();
 	}
 
 	private Collection<SootMethod> getMethodsForSeeds(IInfoflowCFG icfg) {
@@ -614,7 +601,6 @@ public class Infoflow extends AbstractInfoflow {
 		}
 		return true;
 	}
-
 	
 	public static int getAccessPathLength() {
 		return accessPathLength;
@@ -628,8 +614,22 @@ public class Infoflow extends AbstractInfoflow {
 	 *  (which is imprecise but gains performance)
 	 *  Default value is 5.
 	 */
-	public void setAccessPathLength(int accessPathLength) {
+	public static void setAccessPathLength(int accessPathLength) {
 		Infoflow.accessPathLength = accessPathLength;
+	}
+	
+	public static boolean getUseRecursiveAccessPaths() {
+		return useRecursiveAccessPaths;
+	}
+	
+	/**
+	 * Sets whether recursive access paths shall be reduced, e.g. whether we
+	 * shall propagate a.[next].data instead of a.next.next.data.
+	 * @param useRecursiveAccessPaths True if recursive access paths shall be
+	 * reduced, otherwise false
+	 */
+	public static void setUseRecursiveAccessPaths(boolean useRecursiveAccessPaths) {
+		Infoflow.useRecursiveAccessPaths = useRecursiveAccessPaths;
 	}
 	
 	/**

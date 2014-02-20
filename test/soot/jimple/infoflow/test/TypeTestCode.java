@@ -235,8 +235,33 @@ public class TypeTestCode {
 		cm.publish(out[0]);
 	}
 	
+	private static String[] aci_x;
+	private static Object aci_e;
+	private static String aci_a;
+	private static Object aci_a2;
+	private static String[] aci_z;
+	private static Object aci_y;
+	private static Object aci_obj;
+	private static String[] aci_out;
+	
+	public void arrayIncompatibleCastAndAliasTest2() {
+		aci_x = new String[1];
+		aci_e = aci_x;
+		aci_a = (String) aci_e;
+		aci_a2 = aci_a;
+		aci_z = (String[]) aci_a2;
+		aci_y = aci_z;
+		aci_z[0] = TelephonyManager.getDeviceId();
+		aci_obj = aci_y;
+		aci_out = (String[]) aci_obj;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(aci_out[0]);
+	}
+
 	private class X {
 		private B b;
+		private Object o;
+		private Object[] arr;
 		
 		public X() {
 			this.b = new B();
@@ -265,6 +290,124 @@ public class TypeTestCode {
 		String[][] out = (String[][]) bar;
 		ConnectionManager cm = new ConnectionManager();
 		cm.publish(out[0][0]);
+	}
+	
+	public void arrayBackPropTypeTest() {
+		Object[] oarr = new Object[2];
+		Object odata = new String[] { TelephonyManager.getDeviceId() };
+		oarr[0] = odata;
+		oarr[1] = TelephonyManager.getDeviceId();
+		Object o = oarr[1];
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish((String) o);
+	}
+	
+	public void arrayBackPropTypeTest2() {
+		Object[] oarr = new Object[2];
+		Object odata = new String[] { TelephonyManager.getDeviceId() };
+		Object foo = odata;
+		oarr[0] = odata;
+		oarr[1] = TelephonyManager.getDeviceId();
+		String[] o = (String[]) foo;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(o[1]);
+	}
+	
+	public void arrayBackPropTypeTest3() {
+		Object[] oarr = new Object[2];
+		Object foo = oarr;
+		Object odata = new String[] { TelephonyManager.getDeviceId() };
+		oarr[0] = odata;
+		oarr[1] = TelephonyManager.getDeviceId();
+		String[] o = (String[]) foo;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(o[1]);
+	}
+	
+	public void arrayBackPropTypeTest4() {
+		Object[] oarr = new Object[2];
+		Object foo = oarr;
+		Object odata = new String[] { TelephonyManager.getDeviceId() };
+		String[] sa = (String[]) oarr[1];
+		String s = (String) oarr[1];
+		System.out.println(s + sa);
+		oarr[0] = odata;
+		oarr[1] = TelephonyManager.getDeviceId();
+		String[] o = (String[]) foo;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(o[1]);
+	}
+
+	public void arrayBackPropTypeTest5() {
+		Object[] oarr = new Object[2];
+		Object foo = oarr;
+		Object odata = new String[] { TelephonyManager.getDeviceId() };
+		String[] sa = (String[]) oarr[1];
+		String s = (String) oarr[1];
+		System.out.println(s + sa);
+		oarr[1] = TelephonyManager.getDeviceId();	// different ordering of array writes
+		oarr[0] = odata;
+		String[] o = (String[]) foo;
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(o[1]);
+	}
+
+	public void objectTypeBackPropTest() {
+		X b = new X();
+		X c = b;
+		b.o = TelephonyManager.getDeviceId();
+		b.o = new String[] { TelephonyManager.getDeviceId() };
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(((String[]) c.o)[1]);
+	}
+	
+	public void objectArrayBackPropTest() {
+		X b = new X();
+		X c = b;
+		b.arr = new Object[] { TelephonyManager.getDeviceId(), "foo" };
+		b.arr[0] = TelephonyManager.getDeviceId();
+		b.arr[1] = new String[] { TelephonyManager.getDeviceId() };
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(((String[]) c.arr)[0]);
+	}
+
+	public void aliasTypeTest() {
+		X b = new X();
+		b.arr = new Object[2];
+		X c = new X();
+		
+		doAlias(b, c);
+		b.arr[0] = TelephonyManager.getDeviceId();
+		
+		X d = new X();
+		doAlias(c, d);
+		b.arr[1] = new String[] { TelephonyManager.getDeviceId() };
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(((String[]) d.arr)[0]);
+	}
+
+	private void doAlias(X b, X c) {
+		c.arr = b.arr;
+	}
+
+	public void aliasReturnTest() {
+		X b = new X();
+		b.arr = new Object[2];
+		Object[] x = b.arr;
+		
+		Object[] c = id(x);
+		c[0] = TelephonyManager.getDeviceId();
+		
+		Object[] d = id(x);
+		b.arr[1] = new String[] { TelephonyManager.getDeviceId() };
+		
+		ConnectionManager cm = new ConnectionManager();
+		cm.publish(((String[]) d)[0]);
+	}
+	
+	private <T> T id(T x) {
+		return x;
 	}
 
 }

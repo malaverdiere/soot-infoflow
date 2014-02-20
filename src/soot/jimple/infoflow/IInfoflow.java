@@ -208,7 +208,7 @@ public interface IInfoflow {
 	 * shall be used, otherwise false
 	 */
 	public void setFlowSensitiveAliasing(boolean flowSensitiveAliasing);
-
+	
 	/**
 	 * Sets whether the solver shall track taints of thrown exception objects
 	 * @param enableExceptions True if taints associated with exceptions shall

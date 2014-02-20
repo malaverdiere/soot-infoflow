@@ -48,9 +48,7 @@ public abstract class JUnitTests {
     protected static final String sourcePwd = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String getPassword()>";
     protected static final String sourceUserData = "<soot.jimple.infoflow.test.android.AccountManager: java.lang.String[] getUserData(java.lang.String)>";
     protected static final String sourceBundleGet = "<soot.jimple.infoflow.test.android.Bundle: java.lang.Object get(java.lang.String)>";
-   	
-    protected static boolean debug = false;
-   
+    
     @BeforeClass
     public static void setUp() throws IOException
     {
@@ -132,7 +130,6 @@ public abstract class JUnitTests {
     
     protected Infoflow initInfoflow(boolean useTaintWrapper){
     	Infoflow result = new Infoflow();
-    	Infoflow.setDebug(debug);
     	ConfigForTest testConfig = new ConfigForTest();
     	result.setSootConfig(testConfig);
     	if (useTaintWrapper){

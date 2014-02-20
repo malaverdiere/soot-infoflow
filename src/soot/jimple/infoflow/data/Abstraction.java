@@ -14,24 +14,24 @@ package soot.jimple.infoflow.data;
 import heros.solver.LinkedNode;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import soot.NullType;
-import soot.SootField;
 import soot.SootMethod;
 import soot.Type;
 import soot.Unit;
 import soot.Value;
+import soot.jimple.NullConstant;
 import soot.jimple.Stmt;
+import soot.jimple.infoflow.solver.ChainedNode;
 import soot.jimple.infoflow.solver.IInfoflowCFG.UnitContainer;
 import soot.jimple.infoflow.source.SourceInfo;
+import soot.jimple.infoflow.util.ConcurrentHashSet;
 import soot.jimple.internal.JimpleLocal;
 
-import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
 
 /**
@@ -40,11 +40,10 @@ import com.google.common.collect.Sets;
  * @author Steven Arzt
  * @author Christian Fritz
  */
-public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
-
-	private static Abstraction zeroValue = null;
-	private static boolean flowSensitiveAliasing;
-		
+public class Abstraction implements Cloneable, LinkedNode<Abstraction>, ChainedNode<Abstraction> {
+	
+	private static boolean flowSensitiveAliasing = true;
+	
 	/**
 	 * the access path contains the currently tainted variable or field
 	 */
@@ -57,7 +56,8 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	private SourceContext sourceContext = null;
 
 	// only used in path generation
-	private Map<Object, Set<SourceContextAndPath>> pathCache = null;
+	private Set<SourceContextAndPath> pathCache = null;
+	private BitSet pathFlags = null;
 	
 	/**
 	 * Unit/Stmt which activates the taint when the abstraction passes it
@@ -136,6 +136,7 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 			sourceContext = original.sourceContext;
 			exceptionThrown = original.exceptionThrown;
 			activationUnit = original.activationUnit;
+			assert activationUnit == null || flowSensitiveAliasing;
 			
 			postdominators = original.postdominators == null ? null
 					: new ArrayList<UnitContainer>(original.postdominators);
@@ -148,8 +149,10 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	}
 	
 	public final Abstraction deriveInactiveAbstraction(Unit activationUnit){
-		if (!flowSensitiveAliasing)
+		if (!flowSensitiveAliasing) {
+			assert this.isAbstractionActive();
 			return this;
+		}
 		
 		// If this abstraction is already inactive, we keep it
 		if (!this.isAbstractionActive())
@@ -201,35 +204,12 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Type baseType){
 		return deriveNewAbstraction(taint, cutFirstField, null, baseType);
 	}
-
+	
 	public final Abstraction deriveNewAbstraction(Value taint, boolean cutFirstField, Stmt currentStmt,
 			Type baseType){
 		assert !this.getAccessPath().isEmpty();
-
-		SootField[] orgFields = accessPath.getFields();
-		SootField[] fields = null;
-
-		if (orgFields != null) {
-			fields = new SootField[cutFirstField ? orgFields.length - 1 : orgFields.length];
-			for (int i = cutFirstField ? 1 : 0; i < orgFields.length; i++)
-				fields[cutFirstField ? i - 1 : i] = orgFields[i];
-		}
-
-		Type[] orgTypes = accessPath.getFieldTypes();
-		Type[] types = null;
 		
-		if (orgTypes != null) {
-			types = new Type[cutFirstField ? orgTypes.length - 1 : orgTypes.length];
-			for (int i = cutFirstField ? 1 : 0; i < orgTypes.length; i++)
-				types[cutFirstField ? i - 1 : i] = orgTypes[i];
-		}
-		
-		if (cutFirstField)
-			baseType = accessPath.getFirstFieldType();
-		
-		AccessPath newAP = new AccessPath(taint, fields, baseType, types,
-				accessPath.getTaintSubFields());
-		
+		AccessPath newAP = accessPath.copyWithNewValue(taint, baseType, cutFirstField);
 		if (this.getAccessPath().equals(newAP) && this.currentStmt == currentStmt)
 			return this;
 		return deriveNewAbstractionMutable(newAP, currentStmt);
@@ -271,70 +251,34 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 	 * @return The path from the source to the current statement
 	 */
 	public Set<SourceContextAndPath> getPaths() {
-		return getPaths(true, new Object());
+		return pathCache;
 	}
 	
-	/**
-	 * Gets the path of statements from the source to the current statement
-	 * with which this abstraction is associated. If this path is ambiguous,
-	 * a single path is selected randomly.
-	 * @return The path from the source to the current statement
-	 */
-	public Set<SourceContextAndPath> getSources() {
-		Runtime.getRuntime().gc();
-		return getPaths(false, new Object());
+	public Set<SourceContextAndPath> getOrMakePathCache() {
+		// We're optimistic about having a path cache. If we definitely have one,
+		// we return it. Otherwise, we need to lock and create one.
+		if (this.pathCache != null)
+			return pathCache;
+		
+		synchronized (this) {
+			if (this.pathCache == null)
+				this.pathCache = new ConcurrentHashSet<SourceContextAndPath>();
+		}
+		return pathCache;
 	}
 	
-	/**
-	 * Gets the path of statements from the source to the current statement
-	 * with which this abstraction is associated. If this path is ambiguous,
-	 * a single path is selected randomly.
-	 * @return The path from the source to the current statement
-	 */
-	private Set<SourceContextAndPath> getPaths(boolean reconstructPaths, Object flagAbs) {
-		if (this.pathCache == null)
-			this.pathCache = new MapMaker().weakKeys().concurrencyLevel
-					(Runtime.getRuntime().availableProcessors()).makeMap();
+	public boolean registerPathFlag(int id) {
+		if (pathFlags != null && pathFlags.get(id))
+			return false;
+		
+		synchronized (this) {
+			if (pathFlags == null)
+				pathFlags = new BitSet();
+			pathFlags.set(id);
+		}
+		return true;
+	}
 
-		// If we run into a loop, we symbolically save where to continue on the
-		// next run and abort for now
-		Set<SourceContextAndPath> cacheData = null;
-		synchronized (pathCache) {
-			cacheData = pathCache.get(flagAbs);
-			if (cacheData != null)
-				return Collections.unmodifiableSet(cacheData);
-			
-			// Create a cache entry
-			cacheData = new HashSet<SourceContextAndPath>();
-			this.pathCache.put(flagAbs, cacheData);
-		}
-		
-		if (sourceContext != null) {
-			// Construct the path root
-			SourceContextAndPath sourceAndPath = new SourceContextAndPath
-					(sourceContext.getValue(), sourceContext.getStmt(),
-							sourceContext.getUserData()).extendPath(sourceContext.getStmt());
-			cacheData.add(sourceAndPath);
-			
-			// Sources may not have predecessors
-			assert predecessor == null;
-		}
-		else {
-			for (SourceContextAndPath curScap : predecessor.getPaths(reconstructPaths, flagAbs)) {
-				SourceContextAndPath extendedPath = (currentStmt == null || !reconstructPaths)
-						? curScap : curScap.extendPath(currentStmt);
-				cacheData.add(extendedPath);
-			}
-		}
-			
-		if (neighbors != null)
-			for (Abstraction nb : neighbors)
-				cacheData.addAll(nb.getPaths(reconstructPaths, flagAbs));
-		
-		assert pathCache != null;
-		return Collections.unmodifiableSet(cacheData);
-	}
-	
 	public boolean isAbstractionActive(){
 		return activationUnit == null;
 	}
@@ -543,36 +487,48 @@ public class Abstraction implements Cloneable, LinkedNode<Abstraction> {
 		return dependsOnCutAP;
 	}
 	
-	Abstraction getPredecessor() {
+	public Abstraction getPredecessor() {
 		return this.predecessor;
+	}
+	
+	public Set<Abstraction> getNeighbors() {
+		return this.neighbors;
+	}
+	
+	public Stmt getCurrentStmt() {
+		return this.currentStmt;
 	}
 	
 	@Override
 	public void addNeighbor(Abstraction originalAbstraction) {
-		assert this != zeroValue;
 		assert originalAbstraction.equals(this);
 		
 		// We should not register ourselves as a neighbor
 		if (originalAbstraction == this)
 			return;
+		if (this.predecessor == originalAbstraction.predecessor
+				&& this.currentStmt == originalAbstraction.currentStmt)
+			return;
 		
 		synchronized (this) {
 			if (neighbors == null)
 				neighbors = Sets.newIdentityHashSet();
-			
-			if (this.predecessor != originalAbstraction.predecessor
-					|| this.currentStmt != originalAbstraction.currentStmt)
-				this.neighbors.add(originalAbstraction);
+			this.neighbors.add(originalAbstraction);
 		}
 	}
 		
 	public static Abstraction getZeroAbstraction(boolean flowSensitiveAliasing) {
-		if (zeroValue == null) {
-			zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), new SourceInfo(false), null,
-					null, false, false);
-			Abstraction.flowSensitiveAliasing = flowSensitiveAliasing;
-		}
+		Abstraction zeroValue = new Abstraction(new JimpleLocal("zero", NullType.v()), new SourceInfo(false),
+				NullConstant.v(), null, false, false);
+		Abstraction.flowSensitiveAliasing = flowSensitiveAliasing;
 		return zeroValue;
+	}
+
+	@Override
+	public Abstraction setJumpPredecessor(Abstraction predecessor) {
+		Abstraction abs = clone();
+		abs.predecessor = predecessor;
+		return abs;
 	}
 	
 }

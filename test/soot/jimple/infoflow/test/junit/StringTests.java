@@ -303,4 +303,13 @@ public class StringTests extends JUnitTests {
 		assertTrue(infoflow.getResults().isPathBetweenMethods(sinks.get(0), sources.get(0)));
     }
 
+    @Test
+    public void methodToCharArrayTest(){
+        Infoflow infoflow = initInfoflow();
+        List<String> epoints = new ArrayList<String>();
+        epoints.add("<soot.jimple.infoflow.test.StringTestCode: void methodToCharArray()>");
+        infoflow.computeInfoflow(appPath, libPath, epoints,sources, sinks);
+        checkInfoflow(infoflow, 1);
+    }
+
 }

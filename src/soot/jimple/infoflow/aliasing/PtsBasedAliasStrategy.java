@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import soot.Local;
+import soot.PointsToAnalysis;
 import soot.PointsToSet;
 import soot.Scene;
 import soot.SootField;
@@ -175,22 +176,25 @@ public class PtsBasedAliasStrategy extends AbstractBulkAliasStrategy {
 	 * @return The points-to-set for the given value
 	 */
 	private PointsToSet getPointsToSet(Value targetValue) {
-		if (targetValue instanceof Local)
-			return Scene.v().getPointsToAnalysis().reachingObjects((Local) targetValue);
-		else if (targetValue instanceof InstanceFieldRef) {
-			InstanceFieldRef iref = (InstanceFieldRef) targetValue;
-			return Scene.v().getPointsToAnalysis().reachingObjects((Local) iref.getBase(), iref.getField());
+		PointsToAnalysis pta = Scene.v().getPointsToAnalysis();
+		synchronized (pta) {			
+			if (targetValue instanceof Local)
+				return pta.reachingObjects((Local) targetValue);
+			else if (targetValue instanceof InstanceFieldRef) {
+				InstanceFieldRef iref = (InstanceFieldRef) targetValue;
+				return pta.reachingObjects((Local) iref.getBase(), iref.getField());
+			}
+			else if (targetValue instanceof StaticFieldRef) {
+				StaticFieldRef sref = (StaticFieldRef) targetValue;
+				return pta.reachingObjects(sref.getField());
+			}
+			else if (targetValue instanceof ArrayRef) {
+				ArrayRef aref = (ArrayRef) targetValue;
+				return pta.reachingObjects((Local) aref.getBase());
+			}
+			else
+				throw new RuntimeException("Unexpected value type for aliasing: " + targetValue.getClass());
 		}
-		else if (targetValue instanceof StaticFieldRef) {
-			StaticFieldRef sref = (StaticFieldRef) targetValue;
-			return Scene.v().getPointsToAnalysis().reachingObjects(sref.getField());
-		}
-		else if (targetValue instanceof ArrayRef) {
-			ArrayRef aref = (ArrayRef) targetValue;
-			return Scene.v().getPointsToAnalysis().reachingObjects((Local) aref.getBase());
-		}
-		else
-			throw new RuntimeException("Unexpected value type for aliasing: " + targetValue.getClass());
 	}
 
 	/**

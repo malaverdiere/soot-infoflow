@@ -18,7 +18,6 @@ import heros.FlowFunction;
 import heros.FlowFunctionCache;
 import heros.FlowFunctions;
 import heros.IFDSTabulationProblem;
-import heros.InterproceduralCFG;
 import heros.SynchronizedBy;
 import heros.ZeroedFlowFunctions;
 import heros.solver.CountingThreadPoolExecutor;
@@ -28,9 +27,11 @@ import heros.solver.PathEdge;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -39,8 +40,10 @@ import org.slf4j.LoggerFactory;
 
 import soot.SootMethod;
 import soot.Unit;
+import soot.jimple.infoflow.solver.ChainedNode;
 import soot.jimple.infoflow.util.ConcurrentHashSet;
 import soot.jimple.infoflow.util.MyConcurrentHashMap;
+import soot.jimple.toolkits.ide.icfg.BiDiInterproceduralCFG;
 
 import com.google.common.cache.CacheBuilder;
 
@@ -55,7 +58,7 @@ import com.google.common.cache.CacheBuilder;
  * @param <I> The type of inter-procedural control-flow graph being used.
  * @see IFDSTabulationProblem
  */
-public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG<N, M>> {
+public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends BiDiInterproceduralCFG<N, M>> {
 	
 	public static CacheBuilder<Object, Object> DEFAULT_CACHE_BUILDER = CacheBuilder.newBuilder().concurrencyLevel
 			(Runtime.getRuntime().availableProcessors()).initialCapacity(10000).softValues();
@@ -85,8 +88,8 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 	//edges going along calls
 	//see CC 2010 paper by Naeem, Lhotak and Rodriguez
 	@SynchronizedBy("consistent lock on field")
-	protected final MyConcurrentHashMap<Pair<M,D>,MyConcurrentHashMap<N,Set<D>>> incoming =
-			new MyConcurrentHashMap<Pair<M,D>,MyConcurrentHashMap<N,Set<D>>>();
+	protected final MyConcurrentHashMap<Pair<M,D>,MyConcurrentHashMap<N,Map<D, D>>> incoming =
+			new MyConcurrentHashMap<Pair<M,D>,MyConcurrentHashMap<N,Map<D, D>>>();
 	
 	@DontSynchronize("stateless")
 	protected final FlowFunctions<N, D, M> flowFunctions;
@@ -105,6 +108,12 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 	
 	@DontSynchronize("readOnly")
 	protected final boolean followReturnsPastSeeds;
+	
+	@DontSynchronize("readOnly")
+	private boolean setJumpPredecessors = false;
+	
+	@DontSynchronize("readOnly")
+	private boolean enableMergePointChecking = false;
 	
 	/**
 	 * Creates a solver for the given problem, which caches flow functions and edge functions.
@@ -220,6 +229,7 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 	 * 
 	 * @param edge an edge whose target node resembles a method call
 	 */
+	@SuppressWarnings("unchecked")
 	private void processCall(PathEdge<N,D> edge) {
 		final D d1 = edge.factAtSource();
 		final N n = edge.getTarget(); // a call node; line 14...
@@ -237,40 +247,43 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 			FlowFunction<D> function = flowFunctions.getCallFlowFunction(n, sCalledProcN);
 			Set<D> res = computeCallFlowFunction(function, d1, d2);
 			
-			//for each callee's start point(s)
 			Collection<N> startPointsOf = icfg.getStartPointsOf(sCalledProcN);
-			for(N sP: startPointsOf) {
-				//for each result node of the call-flow function
-				for(D d3: res) {
+			//for each result node of the call-flow function
+			for(D d3: res) {
+				//for each callee's start point(s)
+				for(N sP: startPointsOf) {
 					//create initial self-loop
 					propagate(d3, sP, d3, n, false); //line 15
-	
-					//register the fact that <sp,d3> has an incoming edge from <n,d2>
-					//line 15.1 of Naeem/Lhotak/Rodriguez
-					if (!addIncoming(sCalledProcN,d3,n,d1))
-						continue;
-						
-					//line 15.2
-					Set<Pair<N, D>> endSumm = endSummary(sCalledProcN, d3);
+				}
+				
+				//register the fact that <sp,d3> has an incoming edge from <n,d2>
+				//line 15.1 of Naeem/Lhotak/Rodriguez
+				if (!addIncoming(sCalledProcN,d3,n,d1,d2))
+					continue;
+				
+				//line 15.2
+				Set<Pair<N, D>> endSumm = endSummary(sCalledProcN, d3);
 					
-					//still line 15.2 of Naeem/Lhotak/Rodriguez
-					//for each already-queried exit value <eP,d4> reachable from <sP,d3>,
-					//create new caller-side jump functions to the return sites
-					//because we have observed a potentially new incoming edge into <sP,d3>
-					if (endSumm != null)
-						for(Pair<N, D> entry: endSumm) {
-							N eP = entry.getO1();
-							D d4 = entry.getO2();
-							//for each return site
-							for(N retSiteN: returnSiteNs) {
-								//compute return-flow function
-								FlowFunction<D> retFunction = flowFunctions.getReturnFlowFunction(n, sCalledProcN, eP, retSiteN);
-								//for each target value of the function
-								for(D d5: computeReturnFlowFunction(retFunction, d4, n, Collections.singleton(d2)))
-									propagate(d1, retSiteN, d5, n, false);
+				//still line 15.2 of Naeem/Lhotak/Rodriguez
+				//for each already-queried exit value <eP,d4> reachable from <sP,d3>,
+				//create new caller-side jump functions to the return sites
+				//because we have observed a potentially new incoming edge into <sP,d3>
+				if (endSumm != null)
+					for(Pair<N, D> entry: endSumm) {
+						N eP = entry.getO1();
+						D d4 = entry.getO2();
+						//for each return site
+						for(N retSiteN: returnSiteNs) {
+							//compute return-flow function
+							FlowFunction<D> retFunction = flowFunctions.getReturnFlowFunction(n, sCalledProcN, eP, retSiteN);
+							//for each target value of the function
+							for(D d5: computeReturnFlowFunction(retFunction, d4, n, Collections.singleton(d2))) {
+								D d5p = setJumpPredecessors && d5 instanceof ChainedNode
+										? d5p = ((ChainedNode<D>) d5).setJumpPredecessor(d2) : d5;
+								propagate(d1, retSiteN, d5p, n, false);
 							}
 						}
-				}
+					}
 			}
 		}
 		//line 17-19 of Naeem/Lhotak/Rodriguez		
@@ -317,6 +330,7 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 	 * 
 	 * @param edge an edge whose target node resembles a method exits
 	 */
+	@SuppressWarnings("unchecked")
 	protected void processExit(PathEdge<N,D> edge) {
 		final N n = edge.getTarget(); // an exit node; line 21...
 		M methodThatNeedsSummary = icfg.getMethodOf(n);
@@ -330,23 +344,26 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 		//register end-summary
 		if (!addEndSummary(methodThatNeedsSummary, d1, n, d2))
 			return;
-		Map<N,Set<D>> inc = incoming(d1, methodThatNeedsSummary);
+		Map<N,Map<D, D>> inc = incoming(d1, methodThatNeedsSummary);
 		
 		//for each incoming call edge already processed
 		//(see processCall(..))
 		if (inc != null)
-			for (Entry<N,Set<D>> entry: inc.entrySet()) {
+			for (Entry<N,Map<D, D>> entry: inc.entrySet()) {
 				//line 22
 				N c = entry.getKey();
 				//for each return site
 				for(N retSiteC: icfg.getReturnSitesOfCallAt(c)) {
 					//compute return-flow function
 					FlowFunction<D> retFunction = flowFunctions.getReturnFlowFunction(c, methodThatNeedsSummary,n,retSiteC);
-					Set<D> targets = computeReturnFlowFunction(retFunction, d2, c, entry.getValue());
+					Set<D> targets = computeReturnFlowFunction(retFunction, d2, c, entry.getValue().keySet());
 					//for each incoming-call value
-					for(D d4: entry.getValue())
-						for(D d5: targets)
-							propagate(d4, retSiteC, d5, c, false);
+					for(D d4: entry.getValue().keySet())
+						for(D d5: targets) {
+							D d5p = setJumpPredecessors && d5 instanceof ChainedNode
+									? d5p = ((ChainedNode<D>) d5).setJumpPredecessor(entry.getValue().get(d4)) : d5;
+							propagate(d4, retSiteC, d5p, c, false);
+						}
 				}
 			}
 		
@@ -354,24 +371,24 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 		//note: we propagate that way only values that originate from ZERO, as conditionally generated values should only
 		//be propagated into callers that have an incoming edge for this condition
 		if(followReturnsPastSeeds && (inc == null || inc.isEmpty()) && d1.equals(zeroValue)) {
-				Set<N> callers = icfg.getCallersOf(methodThatNeedsSummary);
-				for(N c: callers) {
-					for(N retSiteC: icfg.getReturnSitesOfCallAt(c)) {
-						FlowFunction<D> retFunction = flowFunctions.getReturnFlowFunction(c, methodThatNeedsSummary,n,retSiteC);
-						Set<D> targets = computeReturnFlowFunction(retFunction, d2, c, Collections.singleton(zeroValue));
-						for(D d5: targets)
-							propagate(zeroValue, retSiteC, d5, c, true);
-					}
-				}
-				//in cases where there are no callers, the return statement would normally not be processed at all;
-				//this might be undesirable if the flow function has a side effect such as registering a taint;
-				//instead we thus call the return flow function will a null caller
-				if(callers.isEmpty()) {
-					FlowFunction<D> retFunction = flowFunctions.getReturnFlowFunction(null, methodThatNeedsSummary,n,null);
-					retFunction.computeTargets(d2);
+			Set<N> callers = icfg.getCallersOf(methodThatNeedsSummary);
+			for(N c: callers) {
+				for(N retSiteC: icfg.getReturnSitesOfCallAt(c)) {
+					FlowFunction<D> retFunction = flowFunctions.getReturnFlowFunction(c, methodThatNeedsSummary,n,retSiteC);
+					Set<D> targets = computeReturnFlowFunction(retFunction, d2, c, Collections.singleton(zeroValue));
+					for(D d5: targets)
+						propagate(zeroValue, retSiteC, d5, c, true);
 				}
 			}
+			//in cases where there are no callers, the return statement would normally not be processed at all;
+			//this might be undesirable if the flow function has a side effect such as registering a taint;
+			//instead we thus call the return flow function will a null caller
+			if(callers.isEmpty()) {
+				FlowFunction<D> retFunction = flowFunctions.getReturnFlowFunction(null, methodThatNeedsSummary,n,null);
+				retFunction.computeTargets(d2);
+			}
 		}
+	}
 	
 	/**
 	 * Computes the return flow function for the given set of caller-side
@@ -431,8 +448,29 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 	protected void propagate(D sourceVal, N target, D targetVal,
 		/* deliberately exposed to clients */ N relatedCallSite,
 		/* deliberately exposed to clients */ boolean isUnbalancedReturn) {
+		propagate(sourceVal, target, targetVal, relatedCallSite, isUnbalancedReturn, false);
+	}
+	
+	/**
+	 * Propagates the flow further down the exploded super graph. 
+	 * @param sourceVal the source value of the propagated summary edge
+	 * @param target the target statement
+	 * @param targetVal the target value at the target statement
+	 * @param relatedCallSite for call and return flows the related call statement, <code>null</code> otherwise
+	 *        (this value is not used within this implementation but may be useful for subclasses of {@link IFDSSolver}) 
+	 * @param isUnbalancedReturn <code>true</code> if this edge is propagating an unbalanced return
+	 *        (this value is not used within this implementation but may be useful for subclasses of {@link IFDSSolver})
+	 * @param forceRegister True if the jump function must always be registered with jumpFn .
+	 * 		  This can happen when externally injecting edges that don't come out of this
+	 * 		  solver.
+	 */
+	protected void propagate(D sourceVal, N target, D targetVal,
+			/* deliberately exposed to clients */ N relatedCallSite,
+			/* deliberately exposed to clients */ boolean isUnbalancedReturn,
+			boolean forceRegister) {
 		final PathEdge<N,D> edge = new PathEdge<N,D>(sourceVal, target, targetVal);
-		final D existingVal = jumpFn.addFunction(new WeakPathEdge<N, D>(sourceVal, target, targetVal));
+		final D existingVal = (forceRegister || !enableMergePointChecking || isMergePoint(target)) ?
+				jumpFn.addFunction(new WeakPathEdge<N, D>(sourceVal, target, targetVal)) : null;
 		if (existingVal != null) {
 			if (existingVal != targetVal)
 				existingVal.addNeighbor(targetVal);
@@ -441,10 +479,33 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 			scheduleEdgeProcessing(edge);
 			if(targetVal!=zeroValue)
 				logger.trace("EDGE: <{},{}> -> <{},{}>", icfg.getMethodOf(target), sourceVal, target, targetVal);
+//				logger.info("EDGE: <{},{}> -> <{},{}>", icfg.getMethodOf(target), sourceVal, target, targetVal);
 		}
 	}
 	
-	private Set<Pair<N, D>> endSummary(M m, D d3) {
+	/**
+	 * Gets whether the given unit is a merge point in the ICFG
+	 * @param target The unit to check
+	 * @return True if the given unit is a merge point in the ICFG, otherwise
+	 * false
+	 */
+	private boolean isMergePoint(N target) {
+		if (icfg.isStartPoint(target))
+			return true;
+		
+		List<N> preds = icfg.getPredsOf(target);
+		int size = preds.size();
+		if (size > 1)
+			return true;
+		if (size > 0)
+			for (N pred : preds)
+				if (icfg.isCallStmt(pred))
+					return true;
+		
+		return false;
+	}
+
+	protected Set<Pair<N, D>> endSummary(M m, D d3) {
 		Set<Pair<N, D>> map = endSummary.get(new Pair<M, D>(m, d3));
 		return map;
 	}
@@ -455,16 +516,16 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 		return summaries.add(new Pair<N, D>(eP, d2));
 	}	
 	
-	protected Map<N, Set<D>> incoming(D d1, M m) {
-		Map<N, Set<D>> map = incoming.get(new Pair<M, D>(m, d1));
+	protected Map<N, Map<D, D>> incoming(D d1, M m) {
+		Map<N, Map<D, D>> map = incoming.get(new Pair<M, D>(m, d1));
 		return map;
 	}
 	
-	protected boolean addIncoming(M m, D d3, N n, D d2) {
-		MyConcurrentHashMap<N, Set<D>> summaries = incoming.putIfAbsentElseGet
-				(new Pair<M, D>(m, d3), new MyConcurrentHashMap<N, Set<D>>());
-		Set<D> set = summaries.putIfAbsentElseGet(n, new ConcurrentHashSet<D>());
-		return set.add(d2);
+	protected boolean addIncoming(M m, D d3, N n, D d1, D d2) {
+		MyConcurrentHashMap<N, Map<D, D>> summaries = incoming.putIfAbsentElseGet
+				(new Pair<M, D>(m, d3), new MyConcurrentHashMap<N, Map<D, D>>());
+		Map<D, D> set = summaries.putIfAbsentElseGet(n, new ConcurrentHashMap<D, D>());
+		return set.put(d1, d2) == null;
 	}
 	
 	/**
@@ -512,6 +573,25 @@ public class IFDSSolver<N,D extends LinkedNode<D>,M,I extends InterproceduralCFG
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Sets whether abstractions on method returns shall be connected to the
+	 * respective call abstractions to shortcut paths.
+	 * @param setJumpPredecessors True if return abstractions shall be connected
+	 * to call abstractions as predecessors, otherwise false.
+	 */
+	public void setJumpPredecessors(boolean setJumpPredecessors) {
+		this.setJumpPredecessors = setJumpPredecessors;
+	}
+	
+	/**
+	 * Sets whether only abstractions at merge points shall be recorded to jumpFn.
+	 * @param enableMergePointChecking True if only abstractions at merge points
+	 * shall be recorded to jumpFn, otherwise false.
+	 */
+	public void setEnableMergePointChecking(boolean enableMergePointChecking) {
+		this.enableMergePointChecking = enableMergePointChecking;
 	}
 
 }

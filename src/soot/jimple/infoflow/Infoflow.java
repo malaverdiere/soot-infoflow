@@ -10,31 +10,9 @@
 package soot.jimple.infoflow;
 
 import heros.solver.CountingThreadPoolExecutor;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import soot.MethodOrMethodContext;
-import soot.PackManager;
-import soot.PatchingChain;
-import soot.Scene;
-import soot.SootClass;
-import soot.SootMethod;
-import soot.Transform;
-import soot.Unit;
+import soot.*;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.InfoflowResults.SinkInfo;
 import soot.jimple.infoflow.InfoflowResults.SourceInfo;
@@ -60,6 +38,12 @@ import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
 import soot.options.Options;
+
+import java.io.File;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 /**
  * main infoflow class which triggers the analysis and offers method to customize it.
  *
@@ -101,6 +85,7 @@ public class Infoflow extends AbstractInfoflow {
         super(icfgFactory);
         this.androidPath = "";
         this.forceAndroidJar = false;
+        this.pathBuilderFactory = new DefaultPathBuilderFactory();
     }
 
 	/**

@@ -311,8 +311,10 @@ public class Infoflow extends AbstractInfoflow {
 
 	private void runAnalysis(final ISourceSinkManager sourcesSinks, final Set<String> additionalSeeds) {
 		// Run the preprocessors
-        for (Transform tr : preProcessors)
+        for (Transform tr : preProcessors){
+            PackManager.v().getPack("wjtp").add(tr);
             tr.apply();
+        }
 
         if (callgraphAlgorithm != CallgraphAlgorithm.OnDemand)
         	logger.info("Callgraph has {} edges", Scene.v().getCallGraph().size());
